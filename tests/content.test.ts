@@ -42,6 +42,7 @@ describe("Markdown content pipeline", () => {
 
     expect(posts.map((post) => post.slug)).toEqual([
       "building-a-markdown-blog",
+      "understanding-context-switching-from-cpu-to-goroutines",
       "go-context-patterns",
       "understanding-event-loops",
     ]);
