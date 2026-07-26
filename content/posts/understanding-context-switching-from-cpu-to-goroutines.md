@@ -3,6 +3,7 @@ title: "从晶体管到 Go 协程：图解 Linux 上下文切换的物理本质�
 description: "直击上下文切换的核心物理本质：从 CPU 寄存器状态机、Linux 内核 switch_to 汇编、TLB/Cache 隐性开销到 Go 协程 gogo 汇编的极速演化。"
 publishedAt: "2026-07-26"
 tags: ["Linux 内核", "操作系统", "Go", "体系结构", "性能优化"]
+draft: false
 featured: true
 series: "硬核底层原理"
 ---
