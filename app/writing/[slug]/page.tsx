@@ -114,9 +114,11 @@ export default async function ArticlePage({ params }: PageProps) {
             <div>
               {related.map((item) => (
                 <Link key={item.slug} href={`/writing/${item.slug}`}>
-                  <span>{item.meta.tags[0]}</span>
+                  <span className="related-tag">{item.meta.tags[0]}</span>
                   <strong>{item.meta.title}</strong>
-                  <small>↗</small>
+                  <p>{item.meta.description}</p>
+                  <time>{item.meta.publishedAt.replaceAll("-", ".")}</time>
+                  <span className="related-arrow" aria-hidden="true">↗</span>
                 </Link>
               ))}
             </div>
