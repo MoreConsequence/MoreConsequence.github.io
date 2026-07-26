@@ -1,4 +1,5 @@
 import { CodeCopy } from "./code-copy";
+import { MermaidRenderer } from "./mermaid-renderer";
 
 export function ArticleBody({ html }: { html: string }) {
   return (
@@ -8,6 +9,7 @@ export function ArticleBody({ html }: { html: string }) {
         dangerouslySetInnerHTML={{ __html: html }}
       />
       <CodeCopy />
+      <MermaidRenderer />
     </div>
   );
 }
