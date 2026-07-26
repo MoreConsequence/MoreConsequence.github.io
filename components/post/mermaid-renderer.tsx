@@ -131,10 +131,8 @@ export function MermaidRenderer() {
 
           const { svg } = await mermaid.render(uniqueId, rawCode);
 
-          // Clean up inline styles to allow CSS responsive scaling
-          const scaledSvg = svg
-            .replace(/style="[^"]*"/i, 'style="width: 100%; height: auto;"')
-            .replace(/width="[0-9.]+(px)?"/i, 'width="100%"');
+          // Remove root SVG inline style so CSS handles responsive sizing
+          const scaledSvg = svg.replace(/(<svg[^>]+) style="[^"]*"/i, "$1");
 
           wrapper.innerHTML = `
             <div class="mermaid-diagram-header">
