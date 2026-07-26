@@ -17,9 +17,10 @@ export default async function Home() {
         <div className="hero-copy">
           <p className="eyebrow">Software / Systems / Durable ideas</p>
           <h1>
-            在复杂系统里，
-            <br />
-            寻找<span>清晰的边界。</span>
+            <span className="hero-line">在复杂系统里，</span>
+            <span className="hero-line hero-line-accent">
+              寻找清晰的边界。
+            </span>
           </h1>
           <p className="hero-intro">
             这里记录软件工程、系统设计与工具实践。比起追逐每一次更新，我更关心那些经得住时间的判断。

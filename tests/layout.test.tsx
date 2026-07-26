@@ -3,8 +3,20 @@ import { describe, expect, it } from "vitest";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import Home from "@/app/page";
 
 describe("site shell", () => {
+  it("renders the home hero as two explicit horizontal title lines", async () => {
+    const html = renderToStaticMarkup(await Home());
+
+    expect(html).toContain(
+      '<span class="hero-line">在复杂系统里，</span>',
+    );
+    expect(html).toContain(
+      '<span class="hero-line hero-line-accent">寻找清晰的边界。</span>',
+    );
+  });
+
   it("renders primary navigation, search and theme controls", () => {
     const html = renderToStaticMarkup(
       <ThemeProvider>

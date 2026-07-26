@@ -13,6 +13,18 @@ describe("theme registry", () => {
 
     expect(new Set(ids).size).toBe(ids.length);
     expect(themes.every((theme) => theme.colors.length === 3)).toBe(true);
+    expect(themes).toMatchObject([
+      {
+        id: "paper",
+        label: "云白",
+        colors: ["#f7f9ff", "#5b5fe8", "#8b5cf6"],
+      },
+      {
+        id: "midnight",
+        label: "深空",
+        colors: ["#090d1c", "#8ea2ff", "#b794f6"],
+      },
+    ]);
   });
 
   it("recognizes only registered preferences", () => {
