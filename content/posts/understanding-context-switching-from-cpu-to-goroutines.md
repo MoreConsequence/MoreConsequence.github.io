@@ -107,27 +107,29 @@ graph TD
 调度器入口 `__schedule()` 会调用 `pick_next_task()` 从 CFS（完全公平调度器）红黑树或 RT 优先级队列中选出下一个任务 `next`，最终进入核心函数 `context_switch()`。
 
 ```mermaid
-sequenceDiagram
-    participant Prev as "当前任务 (prev)"
-    participant Sched as "__schedule()"
-    participant MM as "switch_mm_irqs_off()"
-    participant ASM as "__switch_to_asm()"
-    participant Next as "目标任务 (next)"
-
-    Prev->>Sched: "触发调度 (时钟中断 / 阻塞 syscall)"
-    Sched->>Sched: "pick_next_task() 选出 next"
-    Sched->>MM: "检查内存空间 (prev 与 next)"
-    alt 进程级切换
-        MM->>MM: "写入 CR3 寄存器 (更新页表 PGD 物理地址)"
-    else 线程级切换
-        MM->>MM: "保留原 CR3 映射 (0 页表重映射开销)"
+flowchart TB
+    subgraph Step1["阶段 1：调度触发与任务遴选"]
+        A["1. 当前任务 (prev) 触发中断 / 阻塞 syscall"] --> B["2. 调度器 __schedule() 调用 pick_next_task() 选出 next"]
     end
-    Sched->>ASM: "调用 switch_to(prev, next) 汇编入口"
-    ASM->>ASM: "PUSH prev 的 Callee-saved 寄存器到旧内核栈"
-    ASM->>ASM: "核心物理原子置换: movq next_thread_sp, %rsp"
-    ASM->>ASM: "POP next 的 Callee-saved 寄存器"
-    ASM->>ASM: "jmp __switch_to 完成 TLS/FPU 更新"
-    ASM->>Next: "恢复 CPU 控制权，next 成功复活"
+
+    subgraph Step2["阶段 2：内存空间判定与切换"]
+        B --> C{"检查 prev.mm 与 next.mm 关系"}
+        C -- "进程级切换 (地址空间不同)" --> D["写入 CR3 控制寄存器<br/>更新页表 PGD 物理基地址"]
+        C -- "线程级切换 (共享 mm_struct)" --> E["保留原 CR3 映射<br/>0 页表重映射开销"]
+    end
+
+    subgraph Step3["阶段 3：汇编级内核栈与寄存器置换"]
+        D --> F["调用 switch_to(prev, next) 汇编入口"]
+        E --> F
+        F --> G["1. PUSH prev 的 Callee-saved 寄存器到旧内核栈"]
+        G --> H["2. 【核心物理原子置换】: movq next_thread_sp, %rsp"]
+        H --> I["3. POP next 的 Callee-saved 寄存器"]
+        I --> J["4. jmp __switch_to 完成 TLS/FPU 更新并 ret 恢复 next"]
+    end
+
+    style Step1 fill:#0f172a,stroke:#38bdf8,color:#fff
+    style Step2 fill:#0f172a,stroke:#eab308,color:#fff
+    style Step3 fill:#0f172a,stroke:#22c55e,color:#fff
 ```
 
 ### 2.2 地址空间切换：switch_mm_irqs_off()
@@ -157,16 +159,16 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
 
 ```mermaid
 graph LR
-    subgraph 阶段 1：切换前 (运行 Prev 任务)
+    subgraph Stage1["阶段 1：切换前 - 运行 Prev 任务"]
         CPU_RSP_1["CPU RSP 寄存器"] --> PREV_STACK["Prev 的内核栈<br/>(栈顶地址: 0xFFFF_8800_1000)"]
         PREV_STACK --> PREV_DATA["[Saved R15..RBP]<br/>[Saved RIP (返回地址)]"]
     end
 
-    subgraph 阶段 2：执行单条原子指令
+    subgraph Stage2["阶段 2：执行单条原子指令"]
         SW["movq TASK_thread_sp(%rsi), %rsp<br/>硬件栈指针物理置换！"]
     end
 
-    subgraph 阶段 3：切换后 (运行 Next 任务)
+    subgraph Stage3["阶段 3：切换后 - 运行 Next 任务"]
         CPU_RSP_2["CPU RSP 寄存器"] --> NEXT_STACK["Next 的内核栈<br/>(栈顶地址: 0xFFFF_8800_5000)"]
         NEXT_STACK --> NEXT_DATA["[Saved R15..RBP]<br/>[Saved RIP (返回地址)]"]
     end
@@ -233,17 +235,17 @@ SYM_FUNC_END(__switch_to_asm)
 
 ```mermaid
 graph TD
-    subgraph 进程级 (Process Switch - 高开销)
+    subgraph ProcessLevel["进程级切换 - 高开销"]
         P1["进程 A (页表 CR3 = 0x1000)"] --- P2["进程 B (页表 CR3 = 0x2000)"]
         P1 -.->|切换 CR3 + 全量/部分 TLB Flush| P2
     end
 
-    subgraph 线程级 (Thread Switch - 中开销)
+    subgraph ThreadLevel["线程级切换 - 中开销"]
         T1["线程 1 (内核栈 A)"] --- T2["线程 2 (内核栈 B)"]
         T1 -.->|共享 CR3 页表 / 仅切内核栈与通用寄存器| T2
     end
 
-    subgraph 协程级 (Goroutine Switch - 极低开销)
+    subgraph GoroutineLevel["协程级切换 - 极低开销"]
         G1["Goroutine 1 (2KB 动态栈)"] --- G2["Goroutine 2 (2KB 动态栈)"]
         G1 -.->|用户态 runtime.gogo / 0 系统调用| G2
     end
@@ -260,19 +262,19 @@ graph TD
 
 ```mermaid
 flowchart LR
-    subgraph P["进程切换 Process (~1000-2000ns)"]
+    subgraph ProcessGroup["进程切换 Process 约 1000-2000ns"]
         direction TB
         P1["1. Trap 陷入内核态 (Ring 3 -> Ring 0)"] --> P2["2. 覆写 CR3 页表 + TLB Invalidate"]
         P2 --> P3["3. 全量寄存器 PUSH/POP 与内核栈置换"] --> P4["4. TLB Miss & Cache 污染 (隐性微秒级惩罚)"]
     end
 
-    subgraph T["线程切换 Thread (~300-800ns)"]
+    subgraph ThreadGroup["线程切换 Thread 约 300-800ns"]
         direction TB
         T1["1. Trap 陷入内核态 (Ring 3 -> Ring 0)"] --> T2["2. 保留原 CR3 (共享地址空间)"]
         T2 --> T3["3. 保存/恢复通用寄存器与 16KB 内核栈"]
     end
 
-    subgraph G["Go 协程切换 Goroutine (~10-30ns)"]
+    subgraph GoroutineGroup["Go 协程切换 Goroutine 约 10-30ns"]
         direction TB
         G1["1. Go runtime 用户态 GMP 调度 (全程 Ring 3)"] --> G2["2. 仅保存 8 个 Callee-saved 寄存器"]
         G2 --> G3["3. 2KB 动态栈切换 (0 系统调用)"]

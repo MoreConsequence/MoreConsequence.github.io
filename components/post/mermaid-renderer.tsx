@@ -28,29 +28,68 @@ export function MermaidRenderer() {
 
     mermaid.initialize({
       startOnLoad: false,
-      theme: isMidnight ? "dark" : "neutral",
+      theme: "base",
       securityLevel: "loose",
-      fontFamily: "var(--font-sans)",
+      fontFamily:
+        'ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif',
       themeVariables: isMidnight
         ? {
             darkMode: true,
             background: "#11172b",
-            primaryColor: "#1e293b",
-            primaryTextColor: "#f8fafc",
-            primaryBorderColor: "#0284c7",
-            lineColor: "#38bdf8",
-            secondaryColor: "#18213d",
+            primaryColor: "#1e3a5f",
+            primaryTextColor: "#e2e8f0",
+            primaryBorderColor: "#60a5fa",
+            lineColor: "#60a5fa",
+            secondaryColor: "#1e293b",
             tertiaryColor: "#0f172a",
+            clusterBkg: "#0f172a",
+            clusterBorder: "#334155",
+            edgeLabelBackground: "#1e293b",
+            nodeBorder: "#60a5fa",
+            mainBkg: "#1e3a5f",
+            nodeTextColor: "#e2e8f0",
+            titleColor: "#f1f5f9",
+            actorBorder: "#60a5fa",
+            actorBkg: "#1e3a5f",
+            actorTextColor: "#e2e8f0",
+            signalColor: "#60a5fa",
+            signalTextColor: "#e2e8f0",
+            labelBoxBkgColor: "#1e293b",
+            labelBoxBorderColor: "#60a5fa",
+            labelTextColor: "#94a3b8",
+            loopTextColor: "#94a3b8",
+            noteBkgColor: "#1e293b",
+            noteBorderColor: "#475569",
+            sequenceNumberColor: "#94a3b8",
           }
         : {
             darkMode: false,
             background: "#ffffff",
-            primaryColor: "#f0f3ff",
-            primaryTextColor: "#171a33",
-            primaryBorderColor: "#5b5fe8",
-            lineColor: "#5b5fe8",
-            secondaryColor: "#eef2ff",
-            tertiaryColor: "#f7f9ff",
+            primaryColor: "#eef2ff",
+            primaryTextColor: "#1e293b",
+            primaryBorderColor: "#6366f1",
+            lineColor: "#6366f1",
+            secondaryColor: "#f8faff",
+            tertiaryColor: "#f1f5f9",
+            clusterBkg: "#fafbff",
+            clusterBorder: "#d7def0",
+            edgeLabelBackground: "#ffffff",
+            nodeBorder: "#6366f1",
+            mainBkg: "#eef2ff",
+            nodeTextColor: "#1e293b",
+            titleColor: "#0f172a",
+            actorBorder: "#6366f1",
+            actorBkg: "#eef2ff",
+            actorTextColor: "#1e293b",
+            signalColor: "#6366f1",
+            signalTextColor: "#1e293b",
+            labelBoxBkgColor: "#f8faff",
+            labelBoxBorderColor: "#6366f1",
+            labelTextColor: "#475569",
+            loopTextColor: "#475569",
+            noteBkgColor: "#fef9e7",
+            noteBorderColor: "#eab308",
+            sequenceNumberColor: "#64748b",
           },
     });
 
@@ -91,14 +130,21 @@ export function MermaidRenderer() {
             .trim();
 
           const { svg } = await mermaid.render(uniqueId, rawCode);
+
+          // Clean up inline styles to allow CSS responsive scaling
+          const scaledSvg = svg
+            .replace(/style="[^"]*"/i, 'style="width: 100%; height: auto;"')
+            .replace(/width="[0-9.]+(px)?"/i, 'width="100%"');
+
           wrapper.innerHTML = `
             <div class="mermaid-diagram-header">
               <span class="mermaid-badge">ARCHITECTURAL DIAGRAM</span>
               <span class="mermaid-zoom-hint">🔍 点击可全屏放大</span>
             </div>
-            <div class="mermaid-svg-container">${svg}</div>
+            <div class="mermaid-svg-container">${scaledSvg}</div>
           `;
 
+          // Clicking wrapper opens original full SVG in zoom modal
           wrapper.addEventListener("click", () => {
             setModalContent({ type: "svg", content: svg });
           });

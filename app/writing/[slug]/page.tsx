@@ -89,20 +89,22 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
 
         <nav className="article-neighbors" aria-label="相邻文章">
-          {neighbors.newer ? (
-            <Link href={`/writing/${neighbors.newer.slug}`}>
-              <small>上一篇 / NEWER</small>
-              <span>{neighbors.newer.meta.title}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {neighbors.older ? (
-            <Link href={`/writing/${neighbors.older.slug}`}>
-              <small>下一篇 / OLDER</small>
-              <span>{neighbors.older.meta.title}</span>
-            </Link>
-          ) : null}
+          <div className="neighbor-cell">
+            {neighbors.newer ? (
+              <Link href={`/writing/${neighbors.newer.slug}`}>
+                <small>上一篇 / NEWER</small>
+                <span>{neighbors.newer.meta.title}</span>
+              </Link>
+            ) : null}
+          </div>
+          <div className="neighbor-cell">
+            {neighbors.older ? (
+              <Link href={`/writing/${neighbors.older.slug}`}>
+                <small>下一篇 / OLDER</small>
+                <span>{neighbors.older.meta.title}</span>
+              </Link>
+            ) : null}
+          </div>
         </nav>
 
         {related.length ? (
