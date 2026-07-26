@@ -256,29 +256,31 @@ graph TD
     style G2 fill:#1e293b,stroke:#22c55e,color:#fff
 ```
 
-### 3.2 切换流程与开销甘特图
+### 3.2 切换流程与开销对比图
 
 ```mermaid
-gantt
-    title 切换开销与流程对比 (单位：纳秒 ns)
-    dateFormat  X
-    axisFormat %s
+flowchart LR
+    subgraph P["进程切换 Process (~1000-2000ns)"]
+        direction TB
+        P1["1. Trap 陷入内核态 (Ring 3 -> Ring 0)"] --> P2["2. 覆写 CR3 页表 + TLB Invalidate"]
+        P2 --> P3["3. 全量寄存器 PUSH/POP 与内核栈置换"] --> P4["4. TLB Miss & Cache 污染 (隐性微秒级惩罚)"]
+    end
 
-    section 进程切换 (Process Switch)
-    Trap 到内核态 (Ring 3 -> Ring 0) :a1, 0, 20
-    CR3 页表重映射 + TLB 刷新        :a2, 20, 50
-    全量寄存器 PUSH/POP 与栈置换     :a3, 50, 80
-    TLB Miss & Cache 污染 (隐性成本)  :active, a4, 80, 200
+    subgraph T["线程切换 Thread (~300-800ns)"]
+        direction TB
+        T1["1. Trap 陷入内核态 (Ring 3 -> Ring 0)"] --> T2["2. 保留原 CR3 (共享地址空间)"]
+        T2 --> T3["3. 保存/恢复通用寄存器与 16KB 内核栈"]
+    end
 
-    section 线程切换 (Thread Switch)
-    Trap 到内核态 (Ring 3 -> Ring 0) :b1, 0, 20
-    保留 CR3 页表 (共享 mm_struct)   :b2, 20, 40
-    保存/恢复通用寄存器与内核栈       :b3, 40, 70
+    subgraph G["Go 协程切换 Goroutine (~10-30ns)"]
+        direction TB
+        G1["1. Go runtime 用户态 GMP 调度 (全程 Ring 3)"] --> G2["2. 仅保存 8 个 Callee-saved 寄存器"]
+        G2 --> G3["3. 2KB 动态栈切换 (0 系统调用)"]
+    end
 
-    section Go 协程切换 (Goroutine)
-    Go runtime 用户态 GMP 调度算法   :c1, 0, 5
-    仅保存 8 个非易失寄存器           :c2, 5, 12
-    0 系统调用 (全程留在 Ring 3)     :c3, 12, 15
+    style P fill:#1e293b,stroke:#ef4444,color:#fff
+    style T fill:#1e293b,stroke:#eab308,color:#fff
+    style G fill:#1e293b,stroke:#22c55e,color:#fff
 ```
 
 ### 3.3 精华对比矩阵
