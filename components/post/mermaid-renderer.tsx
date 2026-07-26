@@ -1,13 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import mermaid from "mermaid";
 
+const emptySubscribe = () => () => {};
+function useIsClient() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 export function MermaidRenderer() {
-  const [activeSvg, setActiveSvg] = useState<string | null>(null);
+  const [modalContent, setModalContent] = useState<{
+    type: "svg" | "image";
+    content: string;
+  } | null>(null);
+
+  const isClient = useIsClient();
 
   useEffect(() => {
-    // Detect theme attribute from document root
     const currentTheme =
       document.documentElement.getAttribute("data-theme") || "paper";
     const isMidnight = currentTheme === "midnight";
@@ -23,7 +37,7 @@ export function MermaidRenderer() {
             background: "#11172b",
             primaryColor: "#1e293b",
             primaryTextColor: "#f8fafc",
-            primaryBorderColor: "#38bdf8",
+            primaryBorderColor: "#0284c7",
             lineColor: "#38bdf8",
             secondaryColor: "#18213d",
             tertiaryColor: "#0f172a",
@@ -40,7 +54,8 @@ export function MermaidRenderer() {
           },
     });
 
-    const processMermaidNodes = async () => {
+    const processContent = async () => {
+      // 1. Process Mermaid code blocks
       const preNodes = Array.from(
         document.querySelectorAll<HTMLElement>(".article-prose pre"),
       );
@@ -52,7 +67,6 @@ export function MermaidRenderer() {
         const textContent = preEl.textContent || "";
         const trimmed = textContent.trim();
 
-        // Detect if pre block is mermaid diagram
         const isMermaid =
           preEl.classList.contains("language-mermaid") ||
           preEl.querySelector(".language-mermaid") !== null ||
@@ -66,7 +80,6 @@ export function MermaidRenderer() {
 
         const wrapper = document.createElement("div");
         wrapper.className = "mermaid-diagram-wrapper";
-        wrapper.title = "点击放大查看高清图表";
 
         const uniqueId = `mermaid-rendered-${Date.now()}-${i}`;
 
@@ -81,51 +94,89 @@ export function MermaidRenderer() {
           wrapper.innerHTML = `
             <div class="mermaid-diagram-header">
               <span class="mermaid-badge">ARCHITECTURAL DIAGRAM</span>
-              <span class="mermaid-zoom-hint">🔍 点击放大</span>
+              <span class="mermaid-zoom-hint">🔍 点击可全屏放大</span>
             </div>
             <div class="mermaid-svg-container">${svg}</div>
           `;
 
-          // Add click listener for modal zoom
           wrapper.addEventListener("click", () => {
-            setActiveSvg(svg);
+            setModalContent({ type: "svg", content: svg });
           });
 
           preEl.parentNode?.replaceChild(wrapper, preEl);
         } catch (error) {
-          console.warn("Mermaid rendering fallback:", error);
-          // Keep raw block if rendering fails so text is not lost
+          console.error("Mermaid diagram rendering error:", error);
+          const errDiv = document.createElement("div");
+          errDiv.className = "mermaid-render-error";
+          errDiv.innerHTML = `<small style="color: #ef4444; padding: 0.5rem; display: block;">⚠️ Diagram rendering error: ${
+            error instanceof Error ? error.message : "Syntax Error"
+          }</small>`;
+          preEl.appendChild(errDiv);
         }
       }
+
+      // 2. Process article images for click-to-zoom
+      const imgNodes = Array.from(
+        document.querySelectorAll<HTMLImageElement>(".article-prose img"),
+      );
+
+      imgNodes.forEach((img) => {
+        if (img.dataset.zoomConfigured === "true") return;
+        img.dataset.zoomConfigured = "true";
+        img.style.cursor = "zoom-in";
+        img.title = "点击全屏查看高清大图";
+        img.addEventListener("click", () => {
+          setModalContent({ type: "image", content: img.src });
+        });
+      });
     };
 
-    processMermaidNodes();
+    processContent();
   }, []);
+
+  if (!isClient) return null;
 
   return (
     <>
-      {activeSvg ? (
-        <div
-          className="mermaid-modal-backdrop"
-          onClick={() => setActiveSvg(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="mermaid-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="mermaid-modal-close"
-              onClick={() => setActiveSvg(null)}
-              aria-label="关闭放大预览"
-            >
-              ✕
-            </button>
+      {modalContent
+        ? createPortal(
             <div
-              className="mermaid-modal-svg"
-              dangerouslySetInnerHTML={{ __html: activeSvg }}
-            />
-          </div>
-        </div>
-      ) : null}
+              className="mermaid-modal-backdrop"
+              onClick={() => setModalContent(null)}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div
+                className="mermaid-modal-content"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="mermaid-modal-close"
+                  onClick={() => setModalContent(null)}
+                  aria-label="关闭预览"
+                >
+                  ✕
+                </button>
+                {modalContent.type === "svg" ? (
+                  <div
+                    className="mermaid-modal-svg"
+                    dangerouslySetInnerHTML={{ __html: modalContent.content }}
+                  />
+                ) : (
+                  <div className="mermaid-modal-image-wrapper">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={modalContent.content}
+                      alt="Full screen preview"
+                      className="mermaid-modal-image"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

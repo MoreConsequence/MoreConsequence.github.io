@@ -116,15 +116,15 @@ sequenceDiagram
 
     Prev->>Sched: 触发调度 (时钟中断 / 阻塞 syscall)
     Sched->>Sched: pick_next_task() 选出 next
-    Sched->>MM: 检查地址空间 (prev->mm vs next->mm)
-    alt 进程级切换 (prev->mm != next->mm)
+    Sched->>MM: 检查地址空间 (prev 与 next)
+    alt 进程级切换 (prev.mm 与 next.mm 不同)
         MM->>MM: 写入 CR3 寄存器 (更新页表 PGD 物理地址)
     else 线程级切换 (共享 mm_struct)
         MM->>MM: 保留原 CR3 映射 (0 页表重映射开销)
     end
     Sched->>ASM: 调用 switch_to(prev, next) 汇编入口
     ASM->>ASM: PUSH prev 的 Callee-saved 寄存器 (RBP, RBX, R12-R15) 到旧内核栈
-    ASM->>ASM: 【核心物理原子置换】: movq next->thread.sp, %rsp
+    ASM->>ASM: 核心物理原子置换: movq next_thread_sp, %rsp
     ASM->>ASM: POP next 的 Callee-saved 寄存器 (R15-R12, RBX, RBP)
     ASM->>ASM: jmp __switch_to 完成 TLS/FPU 更新，后续 ret
     ASM->>Next: 硬件恢复 next 的 RIP 与 RSP，控制权正式接管！
