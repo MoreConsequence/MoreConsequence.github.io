@@ -1,0 +1,52 @@
+import Link from "next/link";
+import { PostMeta } from "./post-meta";
+import type { CompiledPost, PostSource } from "@/lib/content/types";
+
+function estimateReadingMinutes(post: PostSource | CompiledPost) {
+  if ("readingTimeMinutes" in post) {
+    return post.readingTimeMinutes;
+  }
+  return Math.max(1, Math.ceil(post.body.length / 500));
+}
+
+export function PostCard({
+  post,
+  index,
+  featured = false,
+}: {
+  post: PostSource | CompiledPost;
+  index: number;
+  featured?: boolean;
+}) {
+  return (
+    <article className="post-card" data-featured={featured || undefined}>
+      <div className="post-card-number" aria-hidden="true">
+        {String(index).padStart(2, "0")}
+      </div>
+      <div className="post-card-content">
+        <PostMeta
+          meta={post.meta}
+          readingTimeMinutes={estimateReadingMinutes(post)}
+        />
+        <h2>
+          <Link href={`/writing/${post.slug}`}>{post.meta.title}</Link>
+        </h2>
+        <p>{post.meta.description}</p>
+        <ul className="tag-list" aria-label="文章标签">
+          {post.meta.tags.map((tag) => (
+            <li key={tag}>
+              <Link href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Link
+        className="post-card-arrow"
+        href={`/writing/${post.slug}`}
+        aria-label={`阅读《${post.meta.title}》`}
+      >
+        ↗
+      </Link>
+    </article>
+  );
+}
