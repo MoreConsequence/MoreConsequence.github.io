@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="880" height="360" rx="12" fill="#fafbff" stroke="#d7def0"/>
+
+  <text x="440" y="36" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">一次 8KB 页的写入被拆成多次物理 IO，断电发生在中间</text>
+
+  <text x="120" y="78" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">磁盘上物理页</text>
+  <text x="760" y="78" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">断电后读到的</text>
+
+  <rect x="40" y="92" width="160" height="220" rx="6" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="120" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">IO #1 已落盘</text>
+  <line x1="60" y1="140" x2="180" y2="140" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
+  <rect x="60" y="148" width="120" height="56" rx="4" fill="#dbeafe" stroke="#3b82f6"/>
+  <text x="120" y="170" text-anchor="middle" font-size="12" fill="#1e3a5f">新行内容 V2</text>
+  <text x="120" y="190" text-anchor="middle" font-size="12" fill="#1e3a5f">校验和 @ 偏移 4K</text>
+  <line x1="60" y1="212" x2="180" y2="212" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
+  <rect x="60" y="220" width="120" height="56" rx="4" fill="#fee2e2" stroke="#ef4444"/>
+  <text x="120" y="242" text-anchor="middle" font-size="12" fill="#7f1d1d">旧行内容 V1</text>
+  <text x="120" y="262" text-anchor="middle" font-size="12" fill="#7f1d1d">校验和 @ 偏移 8K</text>
+  <line x1="60" y1="284" x2="180" y2="284" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="120" y="300" text-anchor="middle" font-size="12" fill="#64748b">IO #2 未落盘 → 丢失</text>
+
+  <line x1="230" y1="110" x2="330" y2="110" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow-red)"/>
+  <text x="280" y="98" text-anchor="middle" font-size="13" font-weight="600" fill="#ef4444">断电</text>
+
+  <rect x="360" y="92" width="160" height="220" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="440" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">IO #1 已落盘</text>
+  <line x1="380" y1="140" x2="500" y2="140" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+  <rect x="380" y="148" width="120" height="56" rx="4" fill="#dbeafe" stroke="#3b82f6"/>
+  <text x="440" y="170" text-anchor="middle" font-size="12" fill="#1e3a5f">新行内容 V2</text>
+  <text x="440" y="190" text-anchor="middle" font-size="12" fill="#1e3a5f">校验和 @ 偏移 4K</text>
+  <line x1="380" y1="212" x2="500" y2="212" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+  <rect x="380" y="220" width="120" height="56" rx="4" fill="#fff1f2" stroke="#fb7185"/>
+  <text x="440" y="242" text-anchor="middle" font-size="12" fill="#881337">旧行内容 V1</text>
+  <text x="440" y="262" text-anchor="middle" font-size="12" fill="#881337">校验和 @ 偏移 8K</text>
+  <line x1="380" y1="284" x2="500" y2="284" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="440" y="300" text-anchor="middle" font-size="12" fill="#64748b">IO #2 未落盘 → 丢失</text>
+
+  <text x="600" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">页读回来长这样</text>
+  <rect x="580" y="140" width="260" height="132" rx="6" fill="#fff1f2" stroke="#ef4444" stroke-width="2"/>
+  <text x="710" y="170" text-anchor="middle" font-size="13" fill="#7f1d1d">半页：新旧混合</text>
+  <text x="710" y="196" text-anchor="middle" font-size="13" fill="#7f1d1d">行号对不上内容</text>
+  <text x="710" y="222" text-anchor="middle" font-size="13" fill="#7f1d1d">校验和必然失败</text>
+  <text x="710" y="248" text-anchor="middle" font-size="13" font-weight="600" fill="#ef4444">torn write</text>
+  <rect x="580" y="286" width="260" height="28" rx="6" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="710" y="305" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">对策：full_page_writes 整页镜像 / doublewrite</text>
+</svg>

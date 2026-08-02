@@ -65,6 +65,31 @@ function collectHtmlHeadings(toc: TocItem[]) {
   };
 }
 
+function rehypeMermaid() {
+  return (tree: MarkdownNode) => {
+    function walk(node: MarkdownNode, index: number | null, parent: MarkdownNode | null) {
+      if (node.type === "element" && node.tagName === "pre" && parent && index !== null) {
+        const codeEl = node.children?.[0];
+        const classes = (
+          Array.isArray(codeEl?.properties?.className) ? codeEl.properties.className : []
+        ) as string[];
+        if (codeEl?.type === "element" && codeEl.tagName === "code" && classes.includes("language-mermaid")) {
+          const text = (codeEl.children ?? []).map((c: MarkdownNode) => (c.value ?? "")).join("");
+          parent.children![index] = {
+            type: "element",
+            tagName: "div",
+            properties: { className: ["mermaid"], dataSrc: text },
+            children: [{ type: "text", value: text }],
+          };
+          return;
+        }
+      }
+      node.children?.forEach((child, i) => walk(child, i, node));
+    }
+    walk(tree, null, null);
+  };
+}
+
 export async function compileMarkdown(markdown: string) {
   const toc: TocItem[] = [];
   const highlighter = await createBlogHighlighter();
@@ -72,6 +97,7 @@ export async function compileMarkdown(markdown: string) {
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkRehype, { allowDangerousHtml: false })
+    .use(rehypeMermaid)
     .use(rehypeSlug)
     .use(collectHtmlHeadings(toc))
     .use(rehypeAutolinkHeadings, {

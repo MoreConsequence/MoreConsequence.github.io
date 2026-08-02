@@ -41,7 +41,17 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "clock-skew-distributed-systems",
+      "graceful-shutdown-in-go",
+      "idempotency-engineering",
+      "perf-flamegraph-sampling",
+      "replication-lag-read-paths",
+      "zero-copy-sendfile-io-uring",
+      "ai-backend-no-magic",
+      "cache-consistency",
+      "wal-crash-recovery",
       "building-a-markdown-blog",
+      "inside-my-markdown-blog-architecture",
       "understanding-context-switching-from-cpu-to-goroutines",
       "go-context-patterns",
       "understanding-event-loops",

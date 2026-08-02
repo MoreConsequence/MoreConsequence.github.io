@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>微任务风暴:长任务演示</title>
+<style>body{font-family:system-ui;padding:2rem}button{font-size:1rem;padding:.5rem 1rem}code{background:#f1f5f9;padding:2px 6px;border-radius:4px}</style>
+</head>
+<body>
+<h1>微任务风暴演示</h1>
+<p>点击按钮后,<code>queueMicrotask</code> 递归 100 万次,全部在<b>同一个微任务检查点</b>内执行完——页面在数秒内无法响应渲染,Chrome 会把这次阻塞报告为一条 &gt;50ms 的 Long Task。</p>
+<button id="storm">开始风暴</button>
+<p id="log"></p>
+<script>
+const log = document.getElementById("log");
+let count = 0;
+
+function runStorm(n) {
+  count++;
+  if (count >= n) return; // 到达上限,放行
+  queueMicrotask(() => runStorm(n));
+}
+
+if (typeof PerformanceObserver !== "undefined") {
+  const po = new PerformanceObserver((list) => {
+    for (const e of list.getEntries()) {
+      log.innerHTML += `<p>⚠️ Long Task:${(e.duration / 1000).toFixed(2)}s 开始于 ${e.startTime.toFixed(0)}ms</p>`;
+    }
+  });
+  po.observe({ type: "longtask", buffered: true });
+}
+
+document.getElementById("storm").addEventListener("click", () => {
+  const t0 = performance.now();
+  log.innerHTML = "";
+  runStorm(1_000_000);
+  const elapsed = performance.now() - t0;
+  log.innerHTML += `<p>风暴结束:100 万次微任务在检查点内执行,阻塞了 ${(elapsed / 1000).toFixed(2)}s(此期间页面无法渲染)</p>`;
+});
+</script>
+</body>
+</html>

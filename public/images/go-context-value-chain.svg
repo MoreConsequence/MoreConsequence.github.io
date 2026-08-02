@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="c-down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+    </marker>
+    <marker id="c-up" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="400" rx="12" fill="#fafbff" stroke="#d7def0"/>
+  <text x="450" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">ctx.Value(key) 是沿链向上的查找，不是全局容器</text>
+
+  <text x="120" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">调用栈（值向下传递）</text>
+  <text x="450" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">Context 链（valueCtx 层层包裹）</text>
+  <text x="780" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">查找方向（从下往上）</text>
+
+  <g font-size="13">
+    <rect x="40" y="86" width="160" height="46" rx="6" fill="#eef2ff" stroke="#6366f1"/>
+    <text x="120" y="106" text-anchor="middle" font-weight="600" fill="#3730a3">中间件</text>
+    <text x="120" y="124" text-anchor="middle" fill="#3730a3">WithValue(traceID)</text>
+
+    <rect x="40" y="152" width="160" height="46" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+    <text x="120" y="172" text-anchor="middle" font-weight="600" fill="#334155">Handler</text>
+    <text x="120" y="190" text-anchor="middle" fill="#64748b">转发同一 ctx</text>
+
+    <rect x="40" y="218" width="160" height="46" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+    <text x="120" y="238" text-anchor="middle" font-weight="600" fill="#334155">Service</text>
+    <text x="120" y="256" text-anchor="middle" fill="#64748b">ctx.Value(key)</text>
+
+    <rect x="40" y="284" width="160" height="46" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+    <text x="120" y="304" text-anchor="middle" font-weight="600" fill="#334155">Repository</text>
+    <text x="120" y="322" text-anchor="middle" fill="#64748b">查 traceID 写日志</text>
+  </g>
+
+  <g font-size="12.5">
+    <rect x="300" y="86" width="300" height="46" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
+    <text x="450" y="106" text-anchor="middle" font-weight="600" fill="#1e3a5f">valueCtx #1</text>
+    <text x="450" y="124" text-anchor="middle" fill="#1e3a5f">key=ctxKey("trace_id") · val="a1b2c3"</text>
+
+    <rect x="300" y="152" width="300" height="46" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="450" y="172" text-anchor="middle" font-weight="600" fill="#334155">valueCtx #2</text>
+    <text x="450" y="190" text-anchor="middle" fill="#475569">key=ctxKey("client_ip") · val="10.0.0.8"</text>
+
+    <rect x="300" y="218" width="300" height="46" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="450" y="238" text-anchor="middle" font-weight="600" fill="#334155">valueCtx #3</text>
+    <text x="450" y="256" text-anchor="middle" fill="#475569">key=ctxKey("request_id") · val="req-9f2a"</text>
+
+    <rect x="300" y="284" width="300" height="46" rx="6" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="450" y="304" text-anchor="middle" font-weight="600" fill="#334155">baseCtx</text>
+    <text x="450" y="322" text-anchor="middle" fill="#475569">emptyCtx 或 WithTimeout 的父级</text>
+  </g>
+
+  <path d="M 285 108 L 300 108" stroke="#6366f1" stroke-width="2" marker-end="url(#c-down)"/>
+  <path d="M 285 174 L 300 174" stroke="#6366f1" stroke-width="2" marker-end="url(#c-down)"/>
+  <path d="M 285 240 L 300 240" stroke="#6366f1" stroke-width="2" marker-end="url(#c-down)"/>
+  <path d="M 285 306 L 300 306" stroke="#6366f1" stroke-width="2" marker-end="url(#c-down)"/>
+  <text x="292" y="296" text-anchor="middle" font-size="11" fill="#6366f1">同链</text>
+
+  <path d="M 610 240 L 660 240 L 660 108 L 640 108" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-dasharray="7 5" marker-end="url(#c-up)"/>
+  <path d="M 610 306 L 700 306 L 700 108 L 705 108" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-dasharray="7 5" marker-end="url(#c-up)"/>
+  <text x="705" y="130" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">逐层向上比对 key</text>
+  <text x="705" y="148" text-anchor="middle" font-size="12" fill="#16a34a">找到即返回</text>
+
+  <rect x="40" y="352" width="820" height="32" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+  <text x="450" y="373" text-anchor="middle" font-size="12.5" font-weight="600" fill="#065f46">Value 只适合横跨进程边界的元数据（trace ID 等）；业务参数放进链里，等于给每个函数藏了一个隐式入参</text>
+</svg>

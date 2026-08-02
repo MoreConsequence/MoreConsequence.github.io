@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="a-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
+  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">重试放大:一次超时,层层翻倍</text>
+
+  <g font-size="13">
+    <rect x="50" y="180" width="150" height="60" rx="8" fill="#eef2ff" stroke="#6366f1"/>
+    <text x="125" y="206" text-anchor="middle" font-weight="700" fill="#3730a3">用户</text>
+    <text x="125" y="226" text-anchor="middle" font-size="12" fill="#475569">1 个请求</text>
+
+    <rect x="300" y="140" width="160" height="60" rx="8" fill="#fefce8" stroke="#facc15"/>
+    <text x="380" y="166" text-anchor="middle" font-weight="700" fill="#854d0e">网关</text>
+    <text x="380" y="186" text-anchor="middle" font-size="12" fill="#475569">超时重试 ×3</text>
+    <text x="380" y="204" text-anchor="middle" font-size="12" fill="#475569">= 3 个请求</text>
+
+    <rect x="560" y="90" width="160" height="60" rx="8" fill="#fefce8" stroke="#facc15"/>
+    <text x="640" y="116" text-anchor="middle" font-weight="700" fill="#854d0e">服务 A</text>
+    <text x="640" y="136" text-anchor="middle" font-size="12" fill="#475569">下游重试 ×3</text>
+    <text x="640" y="154" text-anchor="middle" font-size="12" fill="#475569">= 9 个请求</text>
+
+    <rect x="740" y="40" width="130" height="60" rx="8" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="805" y="66" text-anchor="middle" font-weight="700" fill="#991b1b">服务 B</text>
+    <text x="805" y="86" text-anchor="middle" font-size="12" fill="#475569">重试 ×3</text>
+    <text x="805" y="104" text-anchor="middle" font-size="12" fill="#475569">= 27 个请求</text>
+
+    <rect x="740" y="220" width="130" height="60" rx="8" fill="#fef2f2" stroke="#f87171"/>
+    <text x="805" y="246" text-anchor="middle" font-weight="700" fill="#991b1b">数据库</text>
+    <text x="805" y="266" text-anchor="middle" font-size="12" fill="#475569">扣款被执行 27 次</text>
+  </g>
+
+  <path d="M 200 195 L 296 180" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
+  <path d="M 460 175 L 556 150" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
+  <path d="M 720 130 L 736 100" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
+  <path d="M 720 150 L 800 216" stroke="#f87171" stroke-width="2" stroke-dasharray="5 4" fill="none" marker-end="url(#a-arrow)"/>
+
+  <g font-size="12" fill="#64748b">
+    <text x="238" y="170">timeout(3s)</text>
+    <text x="500" y="145">每层各等 3s</text>
+    <text x="700" y="110">叠加等待 ≥ 9s</text>
+    <text x="700" y="186">写路径非幂等 → 翻 27 倍</text>
+  </g>
+
+  <line x1="50" y1="310" x2="870" y2="310" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="450" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">幂等键出现之后:同一笔请求,服务端只认第一次</text>
+
+  <g font-size="12.5">
+    <rect x="60" y="352" width="240" height="40" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="180" y="376" text-anchor="middle" fill="#065f46">幂等表唯一键：27 次重试 → 1 次执行</text>
+    <rect x="330" y="352" width="240" height="40" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="450" y="376" text-anchor="middle" fill="#065f46">重复请求返回第一次的结果（重放）</text>
+    <rect x="600" y="352" width="300" height="40" rx="6" fill="#eef2ff" stroke="#6366f1"/>
+    <text x="750" y="376" text-anchor="middle" fill="#3730a3">状态机终态：SUCCESS 后的重试是查询，不是执行</text>
+  </g>
+</svg>

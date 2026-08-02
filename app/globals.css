@@ -1452,7 +1452,6 @@ a {
   border-radius: 14px;
   box-shadow: 0 8px 28px var(--shadow);
   border: 1px solid var(--border-soft);
-  cursor: zoom-in;
 }
 
 .article-prose figure {
@@ -1473,76 +1472,122 @@ a {
   text-align: center;
 }
 
-.mermaid-diagram-wrapper {
+.mermaid {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100% !important;
-  max-width: 100% !important;
+  max-width: 100%;
   margin: 2rem 0;
-  padding: 1.1rem 0.9rem 1.3rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 6px 24px var(--shadow);
-  cursor: zoom-in;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
-  box-sizing: border-box !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: box-shadow 250ms ease, border-color 250ms ease;
 }
 
-.mermaid-diagram-wrapper:hover {
+.mermaid:has(.mt-pv:hover) {
   border-color: var(--accent);
-  box-shadow: 0 12px 36px var(--glow-blue);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 18%, var(--shadow));
 }
 
-.mermaid-diagram-header {
+.mermaid .mt-bar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 0.85rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed var(--border-soft);
+  gap: 0;
+  padding: 0.5rem 0.9rem 0;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-strong) 60%, transparent);
 }
 
-.mermaid-badge {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  text-transform: uppercase;
-}
-
-.mermaid-zoom-hint {
-  font-size: 0.78rem;
+.mermaid .mt-tab {
+  position: relative;
+  padding: 0.35rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
   color: var(--muted);
-  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-bottom: -1px;
+  transition: color 200ms ease;
 }
 
-.mermaid-svg-container {
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  width: 100% !important;
-  max-width: 100% !important;
-  max-height: 60vh;
-  overflow: auto;
-  pointer-events: none;
-  box-sizing: border-box !important;
+.mermaid .mt-tab::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.mermaid-svg-container svg {
+.mermaid .mt-tab.active {
+  color: var(--accent);
+}
+
+.mermaid .mt-tab.active::after {
+  transform: scaleX(1);
+}
+
+.mermaid .mt-tab:not(.active):hover {
+  color: var(--foreground);
+}
+
+.mermaid .mt-pv {
+  padding: 1.1rem 0.9rem 1.3rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  cursor: zoom-in;
+  transition: background 200ms ease;
+}
+
+.mermaid .mt-pv:hover {
+  background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
+}
+
+.mermaid .mt-pv svg {
+  max-width: 100%;
   height: auto;
-  flex-shrink: 0;
+  display: block;
+  margin: 0 auto;
+  transition: opacity 200ms ease;
 }
 
-.mermaid-modal-backdrop {
+.mermaid .mt-pv:hover svg {
+  opacity: 0.88;
+}
+
+.mermaid .mt-cd {
+  padding: 0;
+}
+
+.mermaid .mt-cd pre {
+  margin: 0;
+  padding: 1rem 0.9rem;
+  background: var(--code-background) !important;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  border: 0;
+  border-radius: 0;
+}
+
+@keyframes mt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mt-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.mt-backdrop {
   position: fixed;
   inset: 0;
   z-index: 99999;
@@ -1552,9 +1597,10 @@ a {
   padding: 2rem;
   background: rgba(9, 13, 28, 0.88);
   backdrop-filter: blur(16px);
+  animation: mt-fade-in 200ms ease;
 }
 
-.mermaid-modal-content {
+.mt-modal {
   position: relative;
   width: min(1400px, 95vw);
   height: min(90vh, 900px);
@@ -1564,9 +1610,10 @@ a {
   border-radius: 20px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
   overflow: auto;
+  animation: mt-scale-in 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.mermaid-modal-close {
+.mt-close {
   position: absolute;
   top: 1rem;
   right: 1.2rem;
@@ -1581,38 +1628,35 @@ a {
   color: var(--foreground);
   font-size: 1.2rem;
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
-.mermaid-modal-close:hover {
+.mt-close:hover {
   background: var(--accent);
   color: var(--accent-contrast);
+  transform: rotate(90deg);
 }
 
-.mermaid-modal-svg {
+.mt-svg {
   display: flex;
   justify-content: center;
   width: 100%;
   min-height: 200px;
-  overflow: auto;
 }
 
-.mermaid-modal-svg svg {
+.mt-svg svg {
   flex-shrink: 0;
+  max-width: 100%;
+  height: auto;
 }
 
-.mermaid-modal-image-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-.mermaid-modal-image {
+.mt-img {
   max-width: 100%;
   max-height: 82vh;
   object-fit: contain;
   border-radius: 12px;
+  display: block;
+  margin: 0 auto;
 }
 
 .article-prose table {
