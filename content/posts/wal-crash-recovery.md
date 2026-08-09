@@ -9,7 +9,7 @@ featured: false
 series: "数据库原理手记"
 ---
 
-**TL;DR：**WAL 的纪律只有一条：先写日志，后改数据。崩溃恢复只有一件事：从上次 checkpoint 的位置把日志逐条重放到末尾。PostgreSQL、MySQL、LevelDB/RocksDB 对这条纪律的实现差异，全在 fsync 的时机与频率上，也就是持久性与吞吐的交换方式。默认档位是出厂安全承诺，压测没有证明 fsync 是瓶颈、业务没有确认能丢多久之前，不要动。
+**TL;DR：** WAL 的纪律只有一条：先写日志，后改数据。崩溃恢复只有一件事：从上次 checkpoint 的位置把日志逐条重放到末尾。PostgreSQL、MySQL、LevelDB/RocksDB 对这条纪律的实现差异，全在 fsync 的时机与频率上，也就是持久性与吞吐的交换方式。默认档位是出厂安全承诺，压测没有证明 fsync 是瓶颈、业务没有确认能丢多久之前，不要动。
 
 ## 一、 断电那一刻，数据库在赌什么
 
@@ -203,7 +203,7 @@ LOG:  database system is ready to accept connections
 
 归档的配置链是三个参数：`wal_level` 决定日志内容够不够用——`replica`（默认）已包含归档所需的信息，`minimal` 明确不够（某些操作在 minimal 下根本不记日志，官方文档直言 minimal 不支持 PITR）；`archive_mode=on` 打开归档；`archive_command` 是每写满一个 WAL 段文件就执行一次的 shell 命令：
 
-```conf
+```ini
 wal_level = replica
 archive_mode = on
 archive_command = 'test ! -f /mnt/wal_archive/%f && cp %p /mnt/wal_archive/%f'

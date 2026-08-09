@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="cc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
+  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">同一链路上，丢包驱动（Reno/CUBIC）与模型驱动（BBR）的拥塞窗口对比</text>
+
+  <g font-size="12">
+    <rect x="60" y="52" width="16" height="16" rx="3" fill="#6366f1"/>
+    <text x="84" y="65" fill="#334155">丢包驱动：涨到丢包 → 减半 → 锯齿爬升</text>
+    <rect x="450" y="52" width="16" height="16" rx="3" fill="#059669"/>
+    <text x="474" y="65" fill="#334155">BBR：用模型逼近 BDP，不靠丢包</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="1.5">
+    <line x1="70" y1="370" x2="860" y2="370"/>
+    <line x1="70" y1="80" x2="70" y2="370"/>
+  </g>
+  <text x="38" y="225" text-anchor="middle" font-size="12" fill="#64748b" transform="rotate(-90 38 225)">拥塞窗口 cwnd</text>
+  <text x="465" y="396" text-anchor="middle" font-size="12" fill="#64748b">时间 →</text>
+
+  <g font-size="11" fill="#94a3b8">
+    <line x1="70" y1="330" x2="860" y2="330" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+    <text x="760" y="324" text-anchor="end">ssthresh 慢启动阈值</text>
+    <line x1="70" y1="160" x2="860" y2="160" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+    <text x="760" y="154" text-anchor="end">BDP（带宽 × 时延积）</text>
+  </g>
+
+  <path d="M 80 365 C 130 355, 150 348, 175 336 C 200 322, 210 310, 225 295 C 240 278, 248 264, 255 252 C 262 240, 268 226, 272 210 C 276 196, 278 184, 280 170"
+        fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round"/>
+  <g font-size="10.5" fill="#3730a3">
+    <text x="118" y="352">慢启动：每收到一个 ACK</text>
+    <text x="118" y="365">窗口 ×2，指数探路</text>
+  </g>
+
+  <g stroke="#6366f1" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M 280 170 L 330 118 L 360 152 L 405 108 L 432 138 L 480 95 L 505 122 L 552 78 L 578 105 L 626 72 L 648 98 L 690 60"/>
+  </g>
+  <g font-size="10.5" fill="#3730a3">
+    <text x="318" y="112">丢包 → cwnd 减半</text>
+    <text x="318" y="126">（多丢包时 Reno 甚至减到 1）</text>
+    <text x="560" y="70">丢包 → 再减半</text>
+    <text x="560" y="84">拥塞避免：每 RTT 只 +1</text>
+    <text x="560" y="98">线性爬升，锯齿循环</text>
+  </g>
+
+  <path d="M 80 368 C 110 360, 140 348, 175 330 C 210 308, 240 282, 275 250 C 310 216, 345 190, 380 170 C 415 152, 450 142, 480 138 C 560 132, 640 130, 720 128"
+        fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="8 4" stroke-linecap="round"/>
+  <g font-size="10.5" fill="#065f46">
+    <text x="100" y="342">startup：指数但用模型判断何时停</text>
+    <text x="395" y="162">drain：缓冲排空</text>
+    <text x="470" y="128">probe：围绕 BDP 微调，</text>
+    <text x="470" y="141">吞吐 ≈ 带宽，延迟 ≈ minRTT，</text>
+    <text x="470" y="154">不制造排队，不吃缓冲区</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="1.2" fill="none" marker-end="url(#cc-arrow)">
+    <path d="M 330 96 L 330 128"/>
+    <path d="M 552 60 L 552 88"/>
+  </g>
+</svg>

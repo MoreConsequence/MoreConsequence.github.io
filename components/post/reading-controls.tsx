@@ -3,14 +3,25 @@
 import { useEffect, useSyncExternalStore } from "react";
 
 const fontScales = [0.94, 1, 1.08] as const;
+const widthMin = 680;
+const widthMax = 980;
+const widthStep = 20;
+const widthDefault = 860;
 const listeners = new Set<() => void>();
 
+function normalizeWidth(value: number) {
+  if (Number.isNaN(value)) return widthDefault;
+  return Math.min(widthMax, Math.max(widthMin, value));
+}
+
 function getSnapshot() {
-  if (typeof localStorage === "undefined") return "1:false";
+  if (typeof localStorage === "undefined") return "1:860";
   const storedFont = Number(localStorage.getItem("reading-font-index"));
   const fontIndex = fontScales[storedFont] ? storedFont : 1;
-  const wide = localStorage.getItem("reading-wide") === "true";
-  return `${fontIndex}:${wide}`;
+  const storedWidth = localStorage.getItem("reading-width");
+  const width =
+    storedWidth === null ? widthDefault : normalizeWidth(Number(storedWidth));
+  return `${fontIndex}:${width}`;
 }
 
 function subscribe(listener: () => void) {
@@ -23,30 +34,26 @@ function notify() {
 }
 
 export function ReadingControls() {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "1:false");
-  const [fontValue, wideValue] = snapshot.split(":");
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => "1:860");
+  const [fontValue, widthValue] = snapshot.split(":");
   const fontIndex = Number(fontValue);
-  const wide = wideValue === "true";
+  const width = Number(widthValue);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--article-font-scale",
       String(fontScales[fontIndex]),
     );
-    document.documentElement.style.setProperty(
-      "--reading-width",
-      wide ? "820px" : "720px",
-    );
-  }, [fontIndex, wide]);
+    document.documentElement.style.setProperty("--reading-width", `${width}px`);
+  }, [fontIndex, width]);
 
   const selectFont = (index: number) => {
     localStorage.setItem("reading-font-index", String(index));
     notify();
   };
 
-  const toggleWidth = () => {
-    const next = !wide;
-    localStorage.setItem("reading-wide", String(next));
+  const setWidth = (value: number) => {
+    localStorage.setItem("reading-width", String(value));
     notify();
   };
 
@@ -66,14 +73,19 @@ export function ReadingControls() {
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        aria-pressed={wide}
-        onClick={toggleWidth}
-        title="切换正文宽度"
-      >
-        {wide ? "窄栏" : "宽栏"}
-      </button>
+      <span>宽度</span>
+      <label className="reading-width-control">
+        <input
+          type="range"
+          min={widthMin}
+          max={widthMax}
+          step={widthStep}
+          value={width}
+          aria-label="正文宽度"
+          onChange={(event) => setWidth(Number(event.target.value))}
+        />
+        <output>{width}px</output>
+      </label>
     </div>
   );
 }

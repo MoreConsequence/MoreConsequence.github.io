@@ -8,7 +8,7 @@ featured: true
 series: "架构原则"
 ---
 
-**TL;DR：**这套博客系统由 `content/posts/` 目录下的 Markdown 文件驱动，经过 unified 编译管线转化为 HTML，由 Next.js 静态生成页面，最终通过 GitHub Actions 自动构建并部署到 GitHub Pages。全程无数据库、无 CMS、无运行时服务端。
+**TL;DR：** 这套博客系统由 `content/posts/` 目录下的 Markdown 文件驱动，经过 unified 编译管线转化为 HTML，由 Next.js 静态生成页面，最终通过 GitHub Actions 自动构建并部署到 GitHub Pages。全程无数据库、无 CMS、无运行时服务端。
 
 ## 一、 全链路总览
 

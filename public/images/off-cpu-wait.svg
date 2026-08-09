@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="o-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
+  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">off-CPU：线程不在 CPU 上时，它在等什么</text>
+
+  <text x="60" y="66" font-size="13" font-weight="700" fill="#0f172a">线程时间线（30 秒采样窗口）</text>
+  <text x="840" y="66" text-anchor="end" font-size="11" fill="#64748b">on-CPU 采样只看得见绿色段</text>
+
+  <g font-size="11">
+    <rect x="60" y="80" width="90" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="105" y="97" text-anchor="middle" fill="#065f46">运行 12%</text>
+    <rect x="170" y="80" width="150" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="245" y="97" text-anchor="middle" fill="#7f1d1d">等锁（futex）</text>
+    <rect x="340" y="80" width="80" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="380" y="97" text-anchor="middle" fill="#065f46">运行</text>
+    <rect x="440" y="80" width="130" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="505" y="97" text-anchor="middle" fill="#7f1d1d">磁盘 I/O（fsync）</text>
+    <rect x="590" y="80" width="90" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+    <text x="635" y="97" text-anchor="middle" fill="#065f46">运行</text>
+    <rect x="700" y="80" width="140" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="770" y="97" text-anchor="middle" fill="#7f1d1d">网络等待（recv）</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="1.5">
+    <line x1="60" y1="140" x2="860" y2="140"/>
+    <line x1="60" y1="140" x2="60" y2="300"/>
+  </g>
+  <text x="28" y="220" text-anchor="middle" font-size="12" fill="#64748b" transform="rotate(-90 28 220)">CPU 占用</text>
+
+  <g stroke="#94a3b8" stroke-width="1.2" fill="none" marker-end="url(#o-arrow)">
+    <path d="M 105 108 L 105 138"/>
+    <path d="M 380 108 L 380 138"/>
+    <path d="M 635 108 L 635 138"/>
+  </g>
+  <g font-size="11" fill="#059669">
+    <text x="112" y="126">on-CPU：采样器能命中</text>
+    <text x="387" y="126">on-CPU：能命中</text>
+    <text x="642" y="126">on-CPU：能命中</text>
+  </g>
+
+  <rect x="60" y="150" width="840" height="150" rx="8" fill="#fff" stroke="#d7def0"/>
+  <g font-size="11" fill="#7f1d1d">
+    <rect x="170" y="162" width="150" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="245" y="181" text-anchor="middle">等锁：futex_wait</text>
+    <rect x="440" y="162" width="130" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="505" y="181" text-anchor="middle">等磁盘：fsync</text>
+    <rect x="700" y="162" width="140" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="770" y="181" text-anchor="middle">等网络：recv</text>
+  </g>
+  <text x="450" y="230" text-anchor="middle" font-size="12.5" fill="#b91c1c">off-CPU：线程被换下 CPU，采样器采不到——火焰图里这里是空白</text>
+  <text x="450" y="252" text-anchor="middle" font-size="12" fill="#64748b">空白本身不是答案：要用 offcputime 记账"谁在等、等了多久、为什么"</text>
+  <text x="450" y="282" text-anchor="middle" font-size="12" fill="#64748b">每次被换下 CPU 记下调用栈 + 时间点，换回时结算阻塞时长，按调用栈聚合</text>
+
+  <rect x="60" y="322" width="280" height="34" rx="6" fill="#ecfdf5" stroke="#34d399"/>
+  <text x="200" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#065f46">on-CPU 火焰图<br/>回答"谁烧了 CPU"</text>
+  <rect x="310" y="322" width="280" height="34" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+  <text x="450" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7f1d1d">off-CPU 分析<br/>回答"谁在等、等什么"</text>
+  <rect x="620" y="322" width="280" height="34" rx="6" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="760" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#3730a3">两个视角合并<br/>才覆盖线程的全部时间</text>
+
+  <rect x="60" y="374" width="840" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="480" y="392" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">CPU 利用率只有 20%、p99 却好几秒时，热点在空白里——先跑 offcputime 再下结论</text>
+</svg>

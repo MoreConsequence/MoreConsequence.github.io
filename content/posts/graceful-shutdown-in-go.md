@@ -8,7 +8,7 @@ featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：**优雅停机不是"收到信号后随便等一等"，是一笔有时间上限的预算：关闸（停新）→ 排空（处理中请求完成）→ 收尾（后台任务结束）→ 兜底（关资源、刷缓冲），四步顺序固定，总时长不得超过 K8s 的 `terminationGracePeriodSeconds`（默认 30s）。用 `signal.NotifyContext` + `http.Server.Shutdown` + `errgroup` 把流程串成确定代码，每一步都有独立预算；窗口耗尽后 SIGKILL 兜底，所以**停机代码必须幂等**——SIGKILL 可能落在任何一步。
+**TL;DR：** 优雅停机不是"收到信号后随便等一等"，是一笔有时间上限的预算：关闸（停新）→ 排空（处理中请求完成）→ 收尾（后台任务结束）→ 兜底（关资源、刷缓冲），四步顺序固定，总时长不得超过 K8s 的 `terminationGracePeriodSeconds`（默认 30s）。用 `signal.NotifyContext` + `http.Server.Shutdown` + `errgroup` 把流程串成确定代码，每一步都有独立预算；窗口耗尽后 SIGKILL 兜底，所以**停机代码必须幂等**——SIGKILL 可能落在任何一步。
 
 ## 一、停机窗口：一次发布里的 30 秒
 
@@ -193,7 +193,7 @@ if err := g.Wait(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 
 `Shutdown` 的行为细节值得逐条说清：
 
-- 它**不中断**正在处理的请求，只等它们完成——这是"排空"语义；
+- 它**不中断** 正在处理的请求，只等它们完成——这是"排空"语义；
 - 空闲的 keep-alive 连接会被 Shutdown 轮询并主动关闭（该行为与 `IdleTimeout` 无关，Go 1.19 与 1.20 实现一致）；
 - 传入的 `drainCtx` 是排空预算：到期后 `Shutdown` 返回 `context.DeadlineExceeded`，此时**连接仍在**，必须调 `srv.Close()` 强制断开，否则进程永远不会退出，K8s 会在 30s 整点补一发 SIGKILL。
 
@@ -323,7 +323,7 @@ g.Go(func() error {
 })
 ```
 
-worker 的收尾契约：收到 `gctx.Done()` 后，停止拉取新任务，把**已拉取未完成**的任务处理完或交还（消息队列的 ack 语义决定选哪种），然后返回。这里有两个常见事故：
+worker 的收尾契约：收到 `gctx.Done()` 后，停止拉取新任务，把**已拉取未完成** 的任务处理完或交还（消息队列的 ack 语义决定选哪种），然后返回。这里有两个常见事故：
 
 - **worker 不监听取消**：信号来了它还在消费队列，进程被 SIGKILL 时消息半途而废，要么丢要么重复——取决于队列的 ack 时机；
 - **worker 监听取消但无限收尾**：比如等一个永远不来的 ack。给收尾也设 deadline，超时放弃，把工作交还给"重试"这条安全网。
@@ -400,7 +400,7 @@ kubectl logs pod/your-service-xxxx --tail=50 | grep -E "shutdown|draining"
 | 资源关闭顺序 | 日志显示 db → mq → cache → flusher 顺序无报错 |
 | 重复停机 | 连续 10 次演练零失败（幂等性） |
 
-生产可观测性上，把"停机结果"变成指标。除了第六节代码里的 `drainTimeouts` 计数器（每次 `Shutdown` 返回 `DeadlineExceeded` 就 +1，进程重启会清零，必须推到指标系统），还要看两个数字：**被 SIGKILL 的实例数**和**排空超时次数**。前者是 K8s 视角的"窗口爆了"，后者是应用视角的"预算不够"——两者长期大于零，说明要么慢请求分布超出了预期，要么预算分配（比如给了 preStop 太多、留给排空的太少）有问题，值得单独开一张故障复盘。**优雅停机的质量 = 被 SIGKILL 的实例比例**，这个数字长期不为零，就说明停机流程里还有说不清楚的部分。
+生产可观测性上，把"停机结果"变成指标。除了第六节代码里的 `drainTimeouts` 计数器（每次 `Shutdown` 返回 `DeadlineExceeded` 就 +1，进程重启会清零，必须推到指标系统），还要看两个数字：**被 SIGKILL 的实例数** 和**排空超时次数**。前者是 K8s 视角的"窗口爆了"，后者是应用视角的"预算不够"——两者长期大于零，说明要么慢请求分布超出了预期，要么预算分配（比如给了 preStop 太多、留给排空的太少）有问题，值得单独开一张故障复盘。**优雅停机的质量 = 被 SIGKILL 的实例比例**，这个数字长期不为零，就说明停机流程里还有说不清楚的部分。
 
 ## 十二、一个常见的误解：Shutdown 超时不会强制断开活跃请求
 

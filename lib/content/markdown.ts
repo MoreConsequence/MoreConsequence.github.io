@@ -118,6 +118,7 @@ export async function compileMarkdown(markdown: string) {
         dark: "github-dark",
       },
       defaultColor: false,
+      fallbackLanguage: "text",
     })
     .use(rehypeStringify)
     .process(markdown);

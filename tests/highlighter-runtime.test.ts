@@ -27,4 +27,38 @@ describe("Worker-compatible syntax highlighting", () => {
     expect(html).toContain("shiki");
     expect(html).toContain("answer");
   });
+
+  it("loads every language used by the blog", async () => {
+    const highlighter = await createBlogHighlighter();
+    const languages = [
+      "javascript",
+      "js",
+      "typescript",
+      "tsx",
+      "json",
+      "bash",
+      "go",
+      "sql",
+      "yaml",
+      "python",
+      "c",
+      "asm",
+      "nginx",
+      "dockerfile",
+      "ini",
+      "text",
+    ];
+
+    for (const lang of languages) {
+      const html = highlighter.codeToHtml("sample", {
+        lang,
+        themes: {
+          light: "github-light",
+          dark: "github-dark",
+        },
+        defaultColor: false,
+      });
+      expect(html, `language ${lang}`).toContain("shiki");
+    }
+  });
 });

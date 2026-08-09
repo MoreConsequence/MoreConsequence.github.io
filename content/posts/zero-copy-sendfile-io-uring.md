@@ -7,7 +7,7 @@ featured: false
 series: "硬核底层原理"
 ---
 
-**TL;DR：**传统 `read + write` 把一条数据搬 4 次（2 次 CPU 拷贝 + 2 次 DMA）；`sendfile` 一次 syscall 让 CPU 拷贝归零；`MSG_ZEROCOPY`/`io_uring` 用 pin 缓冲把拷贝成本前置成一次性投入。零拷贝省不掉 DMA，每一层都有自己的适用边界。**先量瓶颈，再选路径。**
+**TL;DR：** 传统 `read + write` 把一条数据搬 4 次（2 次 CPU 拷贝 + 2 次 DMA）；`sendfile` 一次 syscall 让 CPU 拷贝归零；`MSG_ZEROCOPY`/`io_uring` 用 pin 缓冲把拷贝成本前置成一次性投入。零拷贝省不掉 DMA，每一层都有自己的适用边界。**先量瓶颈，再选路径。**
 
 ## 一、四次搬运的账单：read + write 的每一笔都记在 CPU 上
 
@@ -38,6 +38,10 @@ sequenceDiagram
     Sock->>NIC: DMA 拷贝 ④
     Note over Buf: ①③ 之间的整段路径<br/>都在烧 CPU 周期
 ```
+
+三条路径的搬运次数放在一起看，差距一目了然——`sendfile` 让 CPU 拷贝归零，`MSG_ZEROCOPY` 把拷贝成本换成一次性的 pin 开销：
+
+![三种数据搬运路径对比：read+write 4 次拷贝（2 次 CPU + 2 次 DMA）、sendfile 2 次全 DMA、MSG_ZEROCOPY 用 pin 住缓冲直达网卡](/images/zero-copy-paths.svg)
 
 `read` 的两次"上下文切换"各是一次完整的内核陷阱：保存用户态寄存器 → 进入内核 → 拷贝 → 恢复寄存器返回。64KB 缓冲区循环发 1GB 文件，就是 16384 轮 × 2 次系统调用 × 2 次切换——**syscall 数量本身就是可观开销**。但比 syscall 更贵的是 CPU 拷贝 ②③：每一字节都要进 CPU，走一遍寄存器/高速缓存往返，这是纯 CPU 周期，且**驱逐缓存行**——拷贝 1GB 数据大约要触发同等量级的缓存行失效，把相邻热数据挤出 L2。
 
@@ -147,7 +151,7 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count, lo
 三段代码拼出完整结论：
 
 - **sendfile = “文件 → 进程私有管道 → socket” 的 splice 链**：`current->splice_pipe` 首次调用时分配、此后整个进程生命周期复用，省掉了每次 sendfile 的管道建拆成本；
-- **为什么没有用户态拷贝**：`vfs_splice_read` 从页缓存拿的是**页引用**而不是数据副本——页引用挂进 pipe 的 buf 数组，之后由 DMA 直接搬运，数据从头到尾不经过 CPU；
+- **为什么没有用户态拷贝**：`vfs_splice_read` 从页缓存拿的是**页引用** 而不是数据副本——页引用挂进 pipe 的 buf 数组，之后由 DMA 直接搬运，数据从头到尾不经过 CPU；
 - **为什么应用层别用两个 splice 替代 sendfile**：注释原话 “an extra system call（splice in + splice out，as compared to just sendfile()）”——手动拼接等于每次多付一次 syscall 与管道管理成本，这正是 sendfile 存在的理由。
 
 可运行对比：`cd experiments && go run ./zero-copy <文件>`，在自己机器上量 read+write 与 sendfile 的差距。
@@ -162,7 +166,7 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count, lo
 
 **“mmap + write 和 sendfile 一样零拷贝”是错的。** mmap 只省掉了“页缓存 → 用户缓冲”那一次 CPU 拷贝（read 干的活），`write` 时内核走的是普通写路径：页缓存 → socket 缓冲，仍是**一次实打实的 CPU 拷贝**——普通 write 不会做页引用传递，内核无法在发送期间保证用户视图与页缓存一致。sendfile 的零 CPU 拷贝来自 splice 的**页引用传递**（上面 `vfs_splice_read` 拿的是页引用），mmap 没有这层机制。所以表格里 mmap+write 是 1+2、sendfile 是 0+2，差的正是“普通 write 那一次 CPU 拷贝”。
 
-**splice**——把"页缓存 → pipe → socket"串起来，全部走 DMA，且可以处理**非文件**的数据源（两个 socket 之间、socket 与 pipe 之间）。Nginx 的 `aio + splice` 方案就是拿它读文件再发出去。边界：需要临时 pipe 作为中转（`pipe` + 两次 `splice` 调用），内存占用多一个 pipe 缓冲的页。
+**splice**——把"页缓存 → pipe → socket"串起来，全部走 DMA，且可以处理**非文件** 的数据源（两个 socket 之间、socket 与 pipe 之间）。Nginx 的 `aio + splice` 方案就是拿它读文件再发出去。边界：需要临时 pipe 作为中转（`pipe` + 两次 `splice` 调用），内存占用多一个 pipe 缓冲的页。
 
 ## 六、MSG_ZEROCOPY 与 io_uring：把"拷贝"换成"pin"
 
@@ -257,7 +261,7 @@ int zc_wait_notify(int sock, unsigned *lo, unsigned *hi, int *copied)
 
 **registered buffers 与 registered files**。`IORING_REGISTER_BUFFERS` 把用户缓冲提前注册进内核：内核一次性校验并 pin 住全部页，后续每次 I/O 不再逐请求做页表校验与锁页；`IORING_REGISTER_FILES` 同理，把 socket/fd 的表引用前置。对零拷贝发送而言，注册这一步就是把 pin 成本从"每请求一次"变成"启动时一次"。
 
-**IORING_OP_SEND_ZC（内核 6.1+）**补上了 io_uring 零拷贝的最后一环：普通 io_uring + MSG_ZEROCOPY 的完成通知仍然走 socket 的 error queue（第六节代码注释里说的就是这个），而 SEND_ZC 让完成语义完全并入 CQ。关键细节（LWN 900083 补丁集）：
+**IORING_OP_SEND_ZC（内核 6.1+）** 补上了 io_uring 零拷贝的最后一环：普通 io_uring + MSG_ZEROCOPY 的完成通知仍然走 socket 的 error queue（第六节代码注释里说的就是这个），而 SEND_ZC 让完成语义完全并入 CQ。关键细节（LWN 900083 补丁集）：
 
 - **buffer-free 通知与请求解耦**：内核在 CQ 里发"缓冲区可复用"通知，但"不是每个请求一条"——用户可以把多个请求显式绑到一个通知上，按自己的节奏合并；
 - **registered buffers 免页引用**：配合已注册的缓冲，内核直接跳过页引用计数，这是相对 MSG_ZEROCOPY 的净收益；

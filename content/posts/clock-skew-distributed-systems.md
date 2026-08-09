@@ -8,7 +8,7 @@ featured: false
 series: "硬核底层原理"
 ---
 
-**TL;DR：**服务器上 `time.Now()` 返回的不是"时间",而是"这台机器对时间的看法"——它由 NTP 校准，可能被瞬间拨快、拨慢甚至**拨回**。墙上时钟（wall clock）可回拨，单调时钟（monotonic）只前进。回拨发生时，雪花 ID 会重复或逆序、缓存和租约提前过期、审计日志顺序错乱——**一切依赖"时间戳单调递增"的假设全部失效**。工程上只有三条防线：能用单调钟就不碰墙上钟；必须用墙上钟时给回拨留预算（等待、哨兵、HLC）；最后把"时钟不可信"写进架构假设，而不是祈祷 NTP 完美。
+**TL;DR：** 服务器上 `time.Now()` 返回的不是"时间",而是"这台机器对时间的看法"——它由 NTP 校准，可能被瞬间拨快、拨慢甚至**拨回**。墙上时钟（wall clock）可回拨，单调时钟（monotonic）只前进。回拨发生时，雪花 ID 会重复或逆序、缓存和租约提前过期、审计日志顺序错乱——**一切依赖"时间戳单调递增"的假设全部失效**。工程上只有三条防线：能用单调钟就不碰墙上钟；必须用墙上钟时给回拨留预算（等待、哨兵、HLC）；最后把"时钟不可信"写进架构假设，而不是祈祷 NTP 完美。
 
 ## 一、两种时钟：一个会骗人，一个不会
 
@@ -34,8 +34,12 @@ elapsed := t2.Sub(t1)     // 用 mono 计算,永远正确
 
 NTP 客户端发现本机与服务器偏差时，有两种校准方式：
 
-- **step（步进）**：偏差超过阈值时（ntpd 默认偏差超过 128ms 即 step，panic 阈值 1000s），**直接跳变**系统时间——可能前进，也可能**倒退**。这是回拨的根源。
+- **step（步进）**：偏差超过阈值时（ntpd 默认偏差超过 128ms 即 step，panic 阈值 1000s），**直接跳变** 系统时间——可能前进，也可能**倒退**。这是回拨的根源。
 - **slew（平滑）**：偏差较小时，通过微调时钟频率逐步追上，时间连续前进，不回拨。chronyd 默认不 step、只做平滑调整，发行版常配置 `makestep 1 3` 允许启动初期 step。
+
+step 的瞬间画出来就是回拨本身——墙上时钟往回跳了一截，而单调时钟从头到尾没受影响：
+
+![NTP 步进校准瞬间：墙上时钟被直接拨回，单调时钟始终前进，回拨窗口内雪花 ID、缓存过期与审计日志的顺序假设全部失效](/images/clock-skew-npt.svg)
 
 用 `timedatectl` 可以查看本机当前策略与最近校准：
 
@@ -64,6 +68,18 @@ timedatectl show | grep -E "NTPSynchronized|NTPEnabled"
 状态机（§11.3 节选）规定：在 NSET（刚启动、无频率文件）状态下，偏移小于 STEPT 就 "adjust time"（slew），大于 STEPT 才 "step time"；进入 SYNC 稳定态后，偏移小于 STEPT 一律 "adjust freq, adjust time"（slew），大于 STEPT 还要看 stepout 窗口：
 
 > §11.3 状态转移表（节选）："| NSET | theta < STEP ->FREQ / adjust time | theta > STEP ->FREQ / step time | no frequency file |" "| SYNC | theta < STEP ->SYNC / adjust freq, adjust time | theta > STEP: if < 900 s ->SPIK else ->SYNC / step freq, step time | normal operation |"
+
+```mermaid
+stateDiagram-v2
+    [*] --> NSET: 启动，无频率文件
+    NSET --> FREQ: 偏移 < STEPT（125ms）→ 平滑调整
+    NSET --> FREQ: 偏移 > STEPT → step（可能回拨）
+    FREQ --> SYNC: 频率收敛
+    SYNC --> SYNC: 偏移 < STEPT → 微调频率，不回拨
+    SYNC --> SPIK: 偏移 > STEPT 且 < stepout（900s）
+    SPIK --> SYNC: 偏移回落 → 判为尖峰，继续收敛
+    SPIK --> SYNC: 偏移持续且过 stepout → step（最后手段）
+```
 
 step 是最后手段，而且有防抖约束：
 
@@ -138,7 +154,7 @@ Twitter 的 Snowflake 文档明确要求"回拨时要么等待要么报错"。�
 
 ## 五、更多破坏面：过期时间、证书与定时任务
 
-第四节讲的是"把时间戳当单调序列用"的系统。还有一类系统把墙上时钟当**绝对参照物**用——回拨让"参照物"本身动摇了，后果同样致命：
+第四节讲的是"把时间戳当单调序列用"的系统。还有一类系统把墙上时钟当**绝对参照物** 用——回拨让"参照物"本身动摇了，后果同样致命：
 
 | 系统 | 时钟怎么被读 | 回拨 5 秒的后果 |
 | :--- | :--- | :--- |
@@ -266,8 +282,8 @@ HLC 的立场是"不信任物理时间，用逻辑兜底"。Google Spanner 的 T
 TrueTime 的 API 只有三个调用：
 
 - `TT.now()`：返回 `[earliest, latest]`，真实时间一定在区间内，半宽即不确定度 `ε`；
-- `TT.after(t)`：`t` 是否**确定**在过去（`t < earliest`）；
-- `TT.before(t)`：`t` 是否**确定**在未来（`t > latest`）。
+- `TT.after(t)`：`t` 是否**确定** 在过去（`t < earliest`）；
+- `TT.before(t)`：`t` 是否**确定** 在未来（`t > latest`）。
 
 区间的不确定度来自时间源本身：Spanner 给每台机器配了**两套独立的时间源**——GPS 接收机与原子钟。GPS 信号可能被天线故障、干扰、闰秒处理打断；原子钟不会受信号影响，但会缓慢漂移。两套源互为冗余，`ε` 由二者的包络决定；论文报告的生产实测，典型 `ε` 在 1-7 毫秒量级。
 

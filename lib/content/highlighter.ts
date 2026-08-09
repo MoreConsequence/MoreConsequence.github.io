@@ -21,6 +21,11 @@ export function createBlogHighlighter() {
       "html",
       "css",
       "sql",
+      "c",
+      "asm",
+      "nginx",
+      "dockerfile",
+      "ini",
     ],
     engine: createJavaScriptRegexEngine(),
   });
