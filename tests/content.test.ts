@@ -41,6 +41,16 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "go-append-slice-growth",
+      "go-closure-escape",
+      "go-errors-is-unwrap-cost",
+      "go-benchmark-pitfalls",
+      "go-interface-boxing",
+      "go-sync-pool-design",
+      "go-atomic-vs-mutex",
+      "go-defer-panic-cost",
+      "go-goroutine-stack-growth",
+      "go-mallocgc-allocator",
       "go-map-hmap-cost",
       "go-string-byte-conversion",
       "go-channel-hchan-cost",
