@@ -41,6 +41,7 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "go-string-byte-conversion",
       "go-channel-hchan-cost",
       "go-select-selectgo-cost",
       "go-goroutine-leak-pprof",
