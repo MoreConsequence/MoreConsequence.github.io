@@ -42,6 +42,7 @@ describe("Markdown content pipeline", () => {
 
     expect(posts.map((post) => post.slug)).toEqual([
       "go-goroutine-leak-pprof",
+      "go-timeafter-hidden-cost",
       "btree-page-split-write-amplification",
       "buffer-pool-lru-dirty-pages",
       "connection-pool-math-timeout",
