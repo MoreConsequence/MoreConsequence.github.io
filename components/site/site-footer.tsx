@@ -16,10 +16,11 @@ export function SiteFooter() {
           <a href="#top">回到顶部 ↑</a>
         </div>
         <div className="footer-meta">
-          <span>© {new Date().getFullYear()} HaoYu</span>
-          <span>内容由 Markdown 驱动</span>
+          <span>© {new Date().getFullYear()} HaoYu · 技术札记</span>
+          <span>内容由 Markdown 驱动 · 静态导出</span>
         </div>
       </div>
     </footer>
   );
 }
+
