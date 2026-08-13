@@ -4,16 +4,11 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useSyncExternalStore,
 } from "react";
 import {
-  applyVars,
-  clearAppliedVars,
-  defaultCustomColors,
-  deriveThemeVars,
   isThemePreference,
-  loadCustomColors,
-  loadCustomVars,
   resolveTheme,
   type ThemePreference,
 } from "@/lib/themes";
@@ -28,18 +23,14 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const listeners = new Set<() => void>();
 
+function systemIsDark() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 function applyTheme(preference: ThemePreference) {
-  const theme = resolveTheme(preference);
+  const theme = resolveTheme(preference, systemIsDark());
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.themePreference = preference;
-  if (theme === "custom") {
-    const vars =
-      loadCustomVars() ??
-      deriveThemeVars(loadCustomColors() ?? defaultCustomColors);
-    applyVars(document.documentElement, vars);
-  } else {
-    clearAppliedVars(document.documentElement);
-  }
   return theme;
 }
 
@@ -65,6 +56,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     () => "system",
   );
 
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      if (preference === "system") {
+        applyTheme(preference);
+      }
+    };
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, [preference]);
 
   const setPreference = useCallback((next: ThemePreference) => {
     localStorage.setItem(storageKey, next);

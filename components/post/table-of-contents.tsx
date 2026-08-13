@@ -29,14 +29,11 @@ export function TableOfContents({ items }: { items: TocItem[] }) {
 
   return (
     <nav className="table-of-contents" aria-label="本文目录">
-      <p>
-        本文目录
-        <span className="toc-count">({String(items.length).padStart(2, "0")})</span>
-      </p>
+      <p>本文目录</p>
       <ol>
         {items.map((item) => (
           <li key={item.id} data-depth={item.depth}>
-            <a href={"#" + item.id} aria-current={activeId === item.id}>
+            <a href={`#${item.id}`} aria-current={activeId === item.id}>
               {item.title}
             </a>
           </li>
@@ -45,4 +42,3 @@ export function TableOfContents({ items }: { items: TocItem[] }) {
     </nav>
   );
 }
-
