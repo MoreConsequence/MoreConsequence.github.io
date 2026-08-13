@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/post/article-body";
 import { PostMeta } from "@/components/post/post-meta";
-import { ReadingControls } from "@/components/post/reading-controls";
 import { ReadingProgress } from "@/components/post/reading-progress";
 import { TableOfContents } from "@/components/post/table-of-contents";
 import { getAllPosts, getPostSources } from "@/lib/content/posts";
@@ -83,9 +82,6 @@ export default async function ArticlePage({ params }: PageProps) {
             <TableOfContents items={post.toc} />
           </aside>
           <ArticleBody html={post.html} />
-          <aside className="reading-aside">
-            <ReadingControls />
-          </aside>
         </div>
 
         <nav className="article-neighbors" aria-label="相邻文章">
@@ -128,3 +124,4 @@ export default async function ArticlePage({ params }: PageProps) {
     </>
   );
 }
+

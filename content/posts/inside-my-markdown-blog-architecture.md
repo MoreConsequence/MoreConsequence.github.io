@@ -344,9 +344,9 @@ sequenceDiagram
     Provider->>Script: 主题变化时更新 data-theme
 ```
 
-### 5.3 阅读控制
+### 5.3 阅读辅助
 
-`ReadingControls` 允许用户调整字号（3 档，通过 CSS 变量 `--article-font-scale`）和正文宽度（720px / 820px，通过 CSS 变量 `--reading-width`）。偏好持久化到 `localStorage`。
+文章排版为固定最优值（正文 1rem、行距 1.85、内容宽 960px），不做用户可调项——博客读者就是作者本人，调节功能是伪需求。
 
 `ReadingProgress` 监听 `scroll` 事件，在页面顶部显示渐变进度条。
 
