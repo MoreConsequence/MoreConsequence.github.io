@@ -203,6 +203,12 @@ const checks = [
     args: ["experiments/llm-tool-calling-contract/simulate.mjs"],
   },
   {
+    name: "LLM hallucination measurement demo",
+    cwd: ".",
+    executable: node,
+    args: ["experiments/llm-hallucination-measurable/measure.mjs"],
+  },
+  {
     name: "LLM judge stub demo",
     cwd: ".",
     executable: "python3",

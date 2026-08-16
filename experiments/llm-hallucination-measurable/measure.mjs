@@ -9,14 +9,23 @@
  *
  * 结论仅限模拟,不代表真实模型。
  */
-function makeQuestions(n, unverifiableRatio) {
+function makeRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+    return state / 2 ** 32;
+  };
+}
+
+function makeQuestions(n, unverifiableRatio, seed) {
+  const rand = makeRandom(seed);
   const qs = [];
   for (let i = 0; i < n; i++) {
     const base = Math.floor(i * 7.31) % 1000; // 确定性 ground truth
     qs.push({
       id: i,
       truth: base,
-      verifiable: Math.random() > unverifiableRatio, // 可判定与否
+      verifiable: rand() > unverifiableRatio, // 可判定与否
     });
   }
   return qs;
@@ -24,8 +33,7 @@ function makeQuestions(n, unverifiableRatio) {
 
 // 模拟模型:幻觉率 r 时,verifiable 题答错概率=r;不可判定题乱猜(错率 50%)
 function simulateModel(questions, r, seed) {
-  let s = seed;
-  const rand = () => ((s = (s * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+  const rand = makeRandom(seed);
   let verifiableWrong = 0;
   let verifiableTotal = 0;
   let allWrong = 0;
@@ -46,7 +54,7 @@ function run() {
   for (const n of [10, 30, 100, 300, 1000]) {
     const ests = [];
     for (let rep = 0; rep < 100; rep++) {
-      const qs = makeQuestions(n, 0.05);
+      const qs = makeQuestions(n, 0.05, 1000 + rep);
       const res = simulateModel(qs, 0.15, 42 + rep);
       // 正确评测:只统计可判定题(不可判定题单独报告,不计入幻觉率)
       ests.push(res.verifiableWrong / res.verifiableTotal);
@@ -61,7 +69,7 @@ function run() {
   for (const u of [0, 0.1, 0.3, 0.6]) {
     const ests = [];
     for (let rep = 0; rep < 100; rep++) {
-      const qs = makeQuestions(200, u);
+      const qs = makeQuestions(200, u, 2000 + rep);
       const res = simulateModel(qs, 0.1, 7 + rep);
       // 朴素评测:所有错都算幻觉
       ests.push(res.allWrong / res.total);
@@ -79,7 +87,7 @@ function run() {
     { name: "计算错误", r: 0.30 },
   ];
   for (const t of types) {
-    const qs = makeQuestions(200, 0.05);
+    const qs = makeQuestions(200, 0.05, 5000);
     const res = simulateModel(qs, t.r, 99);
     console.log(`${t.name.padEnd(6)} 真实误率=${t.r.toFixed(2)} 评测误率=${(res.verifiableWrong / res.verifiableTotal).toFixed(2)}`);
   }

@@ -954,6 +954,7 @@ evidence/<slug>/<run-date>/
 | 文章/主题 | 本次修订 | 当前证据与边界 |
 | --- | --- | --- |
 | `llm-embedding-retrieval` | 增加规范参考资料；用 bundled Python/NumPy 运行固定 seed 的高维余弦、归一化排序和分块模拟；修正 NumPy 版本 | `evidence/llm-embedding-retrieval/2026-08-16-local/`；只证明合成向量，不证明真实 embedding 模型或向量库召回 |
+| `llm-hallucination-measurable` | 修复实验中 `Math.random()` 与“确定性可复现”冲突；按新 raw 输出修正 1σ、不可判定题污染和分栏数字；增加样本量公式、评测合同、发布门槛、FActScore/NIST 参考资料 | `evidence/llm-hallucination-measurable/2026-08-17-local/`；只证明确定性统计模拟，不证明真实模型幻觉率、人工标注一致性或线上评测收益 |
 | `llm-sampling-reproducibility` | 增加官方参考资料；修正 NumPy 版本；保存 temperature/top-p/seed/T=0 模拟输出 | `evidence/llm-sampling-reproducibility/2026-08-16-local/`；不证明供应商 API 跨硬件、跨版本的确定性 |
 | `llm-token-economics` | 修正缓存输入的成本公式、总量/未缓存/缓存列和当前官方价格快照；补 tokenizer/cost raw | `evidence/llm-token-economics/2026-08-16-local/`；价格随供应商调整，真实账单和配额仍未取得 |
 | `llm-tool-calling-contract` | 增加 RFC 9457/9110 与本机模拟证据；明确 0%/100% 只属于确定性启发式，不外推真实模型成功率 | `evidence/llm-tool-calling-contract/2026-08-16-local/` |
@@ -966,14 +967,34 @@ evidence/<slug>/<run-date>/
 
 - 统一清除了文章正文中的 `本机实测待补`、`待回填`、`数字待回填` 和 `待补 evidence`。缺少真实依赖的文章现在直接说明“当前未取得运行快照”并继续保持 `draft: true`，不会用空表或占位数字伪装成终稿。
 - `scripts/content-quality-audit.mjs` 已把上述中文占位标记纳入 `placeholder` 规则；结构审计仍覆盖 frontmatter、TL;DR、参考资料、弱标题、重复编号和内部链接。
-- 草稿单独以 `readPostSources(directory, "development")` 加 `compileMarkdown` 验证，当前 21 篇草稿均产生非空 HTML 与 TOC；临时验证文件已删除。
+- 草稿单独以 `readPostSources(directory, "development")` 加 `compileMarkdown` 验证，当前 20 篇草稿均产生非空 HTML 与 TOC；临时验证文件已删除。
 
 ### 21.3 当前验证快照
 
 | 范围 | 命令/事实 | 结果 |
 | --- | --- | --- |
-| 内容结构 | `npm run audit:content` | 124 篇源文件（103 发布态、21 草稿），`Issues: {}` |
-| 实验闸门 | `npm run verify:experiments` | 通过；新增覆盖 tool-calling、LLM judge stub、continuous batching、mini-LSM sweep、Go netpoll benchmark；既有 service/TS/Go gate 仍通过 |
+| 内容结构 | `npm run audit:content` | 125 篇源文件（105 发布态、20 草稿），`Issues: {}` |
+| 实验闸门 | `npm run verify:experiments` | 通过；新增覆盖 tool-calling、幻觉测量、LLM judge stub、continuous batching、mini-LSM sweep、Go netpoll benchmark；既有 service/TS/Go gate 仍通过 |
 | 站点内容合同 | `npm test -- --run` | 11 个 test files、41 个 tests 通过；`tests/content.test.ts` 已纳入 `llm-tool-calling-contract` |
 
 当前仍不能把这些本地证据写成生产闭环：真实 PostgreSQL/多实例幂等、真实 Redis/Kafka/MySQL/Kubernetes 运行、GitHub Actions/deploy/staging、生产 SLI/SLO、真实供应商账单/GPU benchmark 和历史事故 raw 仍缺。它们继续按第 16 节验收矩阵保持未完成状态。
+
+## 二十二、2026-08-17 逐篇终审继续：修正 service ADR 源工件并扩充 CI/选型文章
+
+本节登记一次针对短 production 文章的内容终审。结构审计虽然已经通过，但逐篇检查发现 `service-design-adr` 正文已经声明旧性能数字没有 raw，而它引用的 `experiments/service/docs/adr/0001-framework.md` 仍保留 `44.7k/41.6k req/s`、冷启动和 `220KB` 等无法由当前 checkout 重算的数字。该矛盾先修源工件，再扩文章，不能只改博客表述。
+
+### 22.1 本次修订
+
+| 文章/工件 | 修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `experiments/service/docs/adr/0001-framework.md` | 删除没有 raw/commit 的吞吐、冷启动和依赖体积数字；补状态、背景、错误合同、选项矩阵、正负后果、证据清单和推翻条件 | `evidence/service-design-adr/2026-08-17-local/`；只保留 Node 24 本地 typecheck/build、18 tests、错误/幂等测试证据；不证明框架性能或生产兼容 |
+| `service-design-adr` | 增加 Hono/Fastify/裸 `node:http` 的语义矩阵、Agent 错误传播时序图、ADR 判断 → 代码/测试/后续实验映射表 | 选型理由落到 `src/app.ts`、`src/app.test.ts`、`src/store.ts`；未取得性能 raw 仍明确不写性能排名 |
+| `service-ci-cd` | 增加 `paths` 触发边界、job → 证明/不能证明矩阵、五层发布证据梯度和 artifact/Actions/staging/production 区分 | `evidence/service-ci-cd/2026-08-17-local/`；当前 workflow 只有本地可验证配置；没有真实 Actions run、artifact digest、staging URL 或部署/回滚记录 |
+
+### 22.2 逐篇终审的当前结论
+
+- 当前 production 文章中，正文最短的两篇不再只靠增加字数掩盖缺口：`service-design-adr` 约 4.3k 字符，`service-ci-cd` 约 4.7k 字符，并且每篇都有信息型章节、表格、Mermaid 或代码、参考资料和明确证据边界。
+- `service-design-adr` 的博客正文、ADR 源工件和服务测试现在对“没有性能证据”使用同一口径；不存在文章说没有 raw、artifact 却继续声称实测数字的冲突。
+- “CI 通过”“artifact 存在”“staging 可回显”“production 可回滚”继续作为四个不同命题，不能由同一个绿色 job 代替。
+
+本节不把 service 系列标成生产闭环。真实 PostgreSQL、多实例幂等、GitHub Actions run、staging/deploy、生产 SLI/SLO 和真实回滚证据仍按第 16 节保持未完成。

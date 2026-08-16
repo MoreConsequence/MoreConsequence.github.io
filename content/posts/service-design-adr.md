@@ -2,7 +2,7 @@
 title: "第一行代码之前：先定义选型问题，再写 ADR"
 description: "订单服务开篇不再把找不回 raw wrk 输出的吞吐和冷启动数字当成当前事实，而是展示一份可复用的选型合同：同语义基准、错误形状、路由规模、运行时适配和没选什么都要写进 ADR。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["选型", "Fastify", "Hono", "ADR"]
 draft: false
 featured: false
@@ -30,6 +30,38 @@ series: "把原理变成服务"
 仓库里的 `experiments/service/` 使用 Hono、`@hono/node-server` 和 Zod。决策重点是错误路径：订单服务的调用方包含 Agent，校验错误需要被程序化读取并回传给模型；Zod 的 issues 有字段路径和错误码，服务再包成自己的 `{ error: { code, message, details } }` 合同。
 
 这不是说 Hono 在所有场景都更快，也不是说 Fastify 的错误无法包装。它只说明在当前需求里，结构化错误是第一决策因子；框架吞吐只有在同语义 benchmark 和真实瓶颈证据存在时才进入排序。
+
+### 2.1 选项矩阵：比较“能交付的语义”，不是比较品牌
+
+| 选项 | 直接收益 | 新增责任 | 当前证据等级 |
+| --- | --- | --- | --- |
+| Hono + `@hono/node-server` | 当前 handler、Zod validator 和 `app.request()` 测试已经连通 | 维护 Node adapter；迁移其他运行时要重新做兼容验证 | 本地代码、18 个测试、typecheck/build |
+| Fastify | 路由、schema 和序列化能力完整 | 把校验结果映射成当前 `code/message/details` 合同，并重跑所有失败路径 | 仓库有候选脚本，无当前同语义 raw |
+| 裸 `node:http` | 依赖面小，控制权直接 | 自己维护路由、body 限制、校验、错误和观测 | 只有候选实现，未形成当前服务合同 |
+
+这个矩阵不产生“谁更快”的结论。它回答的是另一个更接近交付的问题：**哪一种方案能在本次服务的错误、测试和迁移合同下少欠一层债？** 没有保存完整 raw 的基准，就不能把旧文档里的吞吐、冷启动或依赖体积数字重新写回来。
+
+### 2.2 结构化错误为什么会改变框架选型
+
+订单服务的失败路径不是一个统一的 500：
+
+```mermaid
+sequenceDiagram
+  participant A as Agent
+  participant H as HTTP handler
+  participant V as Zod validator
+  participant S as Store
+  A->>H: POST /orders
+  H->>V: 校验 body
+  V-->>H: issues[path, code, message]
+  H-->>A: 400 INVALID_BODY + details
+  A->>H: 重试修正后的 body
+  H->>S: claim idempotency key
+  S-->>H: created / replay / conflict
+  H-->>A: 201 / 200 / 409
+```
+
+如果框架只让 handler 得到一段人类可读的错误文本，服务仍然可以工作，但 Agent 必须再解析文本，错误合同就从类型边界退化成提示词约定。这个代价不是 benchmark 的 ns/op 能覆盖的，所以它必须出现在 ADR 的“决策因子”里。
 
 ## 三、ADR 必须记录没选什么，以及以后如何推翻
 
@@ -69,7 +101,20 @@ flowchart LR
 
 如果 `evidence` 只有博客文章或一次未经保存的手工输出，结论应停在“候选决策”；只有命令、环境、原始结果和可接受阈值都落盘，ADR 才值得被后续发布复用。
 
-## 四、当前工件的验证边界
+## 四、让 ADR 的每句话都能找到消费方
+
+高级 ADR 不是把理由写得更长，而是让每个判断都能落到代码、测试或后续实验：
+
+| ADR 判断 | 当前工件 | 失败时该改什么 |
+| --- | --- | --- |
+| 输入失败必须带字段路径 | `experiments/service/src/app.ts` 的 `zodHook`、`src/app.test.ts` 的非法 body 测试 | 先修 API error contract，再讨论框架替换 |
+| 同 key 重试必须重放权威订单 | `src/store.ts`、100 并发集成测试 | 若引入数据库，补唯一约束、重启和双实例测试 |
+| handler 不依赖端口才能测试 | `createApp(store, metrics)` + `app.request()` | 若改成端口级测试，保留同一组语义断言 |
+| 框架性能尚无可审计证据 | 当前 ADR 明确不写旧数字 | 以同一输入、版本、预热、重复次数重做 benchmark |
+
+这个表把 ADR 从“意见记录”变成“变更导航”：读者知道下一次修改应该先改哪份代码、补哪类测试，以及哪一种结果会推翻当前选择。
+
+## 五、当前工件的验证边界
 
 现在可以直接验证：
 
@@ -77,6 +122,8 @@ flowchart LR
 - Hono validator 的 400 错误转换；
 - 100 并发同 key 的单进程 claim；
 - 本地 handler 的路由与 store 组合。
+
+本次本地 gate 的环境、完整命令和原始输出保存在 `evidence/service-design-adr/2026-08-17-local/`。这份快照只支持“当前本地原型能通过这些检查”，不支持框架性能排名。
 
 当前不能由本篇验证：
 
@@ -87,13 +134,15 @@ flowchart LR
 
 这份边界比一张没有 raw 输出的性能表更有用，因为读者知道下一次实验应保存什么。
 
-## 五、结论：先把决策写成合同，数字等证据回来再进入 ADR
+## 六、结论：先把决策写成合同，数字等证据回来再进入 ADR
 
 选型文章的质量不由数字位数决定，而由数字能否重算决定。当前版本保留 Hono + Zod 的需求理由，撤掉未绑定 commit 与 raw 的性能承诺，并把“没选什么”和“何时推翻”写进决策结构。
 
-读者可以从 `experiments/service/docs/adr/0001-framework.md` 开始，按同一输入、同一环境和同一变量补 benchmark；结果不佳也应更新 ADR，而不是删掉失败结果。
+读者可以从 `experiments/service/docs/adr/0001-framework.md` 开始，按同一输入、同一环境和同一变量补 benchmark；结果不佳也应更新 ADR，而不是删掉失败结果。当前 artifact 已明确删除无法由 checkout 重算的性能数字，文章和工件的证据边界保持一致。
 
 ## 参考资料
 
 - [Hono：Testing](https://hono.dev/docs/guides/testing)
+- [Fastify：Validation and Serialization](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/)
+- [Node.js：HTTP](https://nodejs.org/api/http.html)
 - [Zod API documentation](https://zod.dev/api)
