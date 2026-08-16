@@ -6,6 +6,7 @@ import { PostMeta } from "@/components/post/post-meta";
 import { ReadingProgress } from "@/components/post/reading-progress";
 import { TableOfContents } from "@/components/post/table-of-contents";
 import { getAllPosts, getPostSources } from "@/lib/content/posts";
+import { getPostsForSeries } from "@/lib/content/series";
 import {
   getArticleNeighbors,
   getRelatedPosts,
@@ -53,6 +54,9 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const neighbors = getArticleNeighbors(posts, slug);
   const related = getRelatedPosts(posts, post, 2);
+  const seriesPosts = post.meta.series
+    ? getPostsForSeries(posts, post.meta.series)
+    : [];
 
   return (
     <>
@@ -62,6 +66,14 @@ export default async function ArticlePage({ params }: PageProps) {
           <div className="article-kicker">
             <Link href="/writing">文章</Link>
             <span>/</span>
+            {post.meta.series ? (
+              <>
+                <Link href={`/series/${encodeURIComponent(post.meta.series)}`}>
+                  {post.meta.series}
+                </Link>
+                <span>/</span>
+              </>
+            ) : null}
             <span>{post.meta.tags[0]}</span>
           </div>
           <h1>{post.meta.title}</h1>
@@ -80,6 +92,34 @@ export default async function ArticlePage({ params }: PageProps) {
         <div className="article-layout">
           <aside className="article-aside">
             <TableOfContents items={post.toc} />
+            {seriesPosts.length > 1 ? (
+              <div className="article-fact">
+                <p>
+                  <Link href={`/series/${encodeURIComponent(post.meta.series!)}`}>
+                    系列：{post.meta.series}
+                  </Link>
+                </p>
+                <ol>
+                  {seriesPosts.map((item, index) => (
+                    <li
+                      key={item.slug}
+                      data-active={item.slug === post.slug || undefined}
+                    >
+                      <span className="af-index">
+                        {String(seriesPosts.length - index).padStart(2, "0")}
+                      </span>
+                      {item.slug === post.slug ? (
+                        <span className="af-title">{item.meta.title}</span>
+                      ) : (
+                        <a className="af-title" href={`/writing/${item.slug}`}>
+                          {item.meta.title}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
           </aside>
           <ArticleBody html={post.html} />
         </div>
@@ -114,7 +154,6 @@ export default async function ArticlePage({ params }: PageProps) {
                   <strong>{item.meta.title}</strong>
                   <p>{item.meta.description}</p>
                   <time>{item.meta.publishedAt.replaceAll("-", ".")}</time>
-                  <span className="related-arrow" aria-hidden="true">↗</span>
                 </Link>
               ))}
             </div>

@@ -78,7 +78,7 @@ sudo tc qdisc del dev lo root
 - 用 Chrome DevTools Network 面板"协议"列确认握手是否走 h2。
 - 双环境对比：把同一批静态资源放到 HTTP/1.1 服务器（没有 ALPN 提示、迫降 http/1）与 h2，看 `navigator.connection.effectiveType` 弱网模拟下的慢资源时间。
 
-## 七、结论
+## 七、结论：HTTP/2 消除了流级 HOL，却保留 TCP 级 HOL
 
 HTTP/2 的队头阻塞账本分两栏：**应用层已清账**（流交错）、**TCP 层原封不动**（字节序）。叠加 65,535B 初始流控窗口与连接级窗口共享，HTTP/2 "解决 HOL"的说法只在无丢包的顺滑网络上成立。丢包率是唯一的判定指标：
 

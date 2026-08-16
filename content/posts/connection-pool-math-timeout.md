@@ -86,7 +86,7 @@ Go 的标准库连接池与 HikariCP 语义完全不是一回事：`database/sql
 
 落地口径（对应 §四 的参数）：`db.SetMaxOpenConns(λW×2.5)`、`db.SetMaxIdleConns(同 max open)`、`db.SetConnMaxLifetime(短于服务端空闲断连时限)`、`db.SetConnMaxIdleTime(10min)`。ConnMaxLifetime 对应 maxLifetime（寿数）、ConnMaxIdleTime 对应 idleTimeout（清洁工），两对参数各管一件事，别互相替代。
 
-## 结论
+## 结论：池容量先算 λW，再受 max_connections 约束
 
 连接池容量是计算出来的结果，不是感觉：**下界 λW，甜点位 λW×2.5，上界留给服务端 max_connections 的剩余**。超时参数各有分工——connectionTimeout 管"等待"，validationTimeout 管"生死"，maxLifetime 管"寿数"，idleTimeout 管"闲置"；真正的功夫在**总池量 < 服务端上限**。连接只是闸门，闸门后面的数据库 `max_connections` 才是鲁棒性的天花板。
 

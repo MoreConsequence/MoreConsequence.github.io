@@ -1,0 +1,98 @@
+<style>
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .row > div h3 { margin: 0 0 8px; font-size: .98rem; }
+  .row > div > p { margin: 0 0 10px; color: #555; font-size: .8rem; line-height: 1.55; }
+  .stage { display: grid; grid-template-columns: repeat(3, minmax(280px, 1fr)); gap: 18px; margin-top: 18px; }
+  .opt { border: 1px solid rgba(127,127,127,.22); border-radius: 14px; padding: 12px; background: #fff; cursor: pointer; transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease; }
+  .opt:hover { border-color: rgba(200,59,126,.5); box-shadow: 0 10px 28px rgba(40,25,35,.14); transform: translateY(-2px); }
+  .opt.selected { border-color: #c83b7e; box-shadow: 0 0 0 2px rgba(200,59,126,.35); }
+  .opt h3 { margin: 10px 0 2px; font-size: 1rem; }
+  .opt .tag { font-family: ui-monospace, monospace; font-size: .66rem; color: #8a6; letter-spacing: .08em; text-transform: uppercase; }
+  .opt p { margin: 4px 0 0; color: #555; font-size: .79rem; line-height: 1.55; }
+
+  /* 背景画布（丰富版）：aurora 色块 + 花纹 */
+  .bg-rich { position: relative; border-radius: 12px; background: linear-gradient(150deg, #f8f1ea, #f3ecf6 45%, #eaf1f5); overflow: hidden; }
+  .bg-rich::before { content:""; position:absolute; inset:0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%23c83b7e'%3E%3Cg transform='translate(28 30)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(0) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(72) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(144) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(216) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(288) translate(0 -4.2)'/%3E%3C/g%3E%3Cg transform='translate(88 90) scale(0.75)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(30) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(102) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(174) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(246) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(318) translate(0 -4.2)'/%3E%3C/g%3E%3Cellipse transform='translate(14 76) rotate(32)' rx='3' ry='1.2'/%3E%3C/g%3E%3C/svg%3E"); background-size: 64px 64px; opacity: .13; }
+  .bg-rich .blob { position:absolute; border-radius: 50%; filter: blur(50px); opacity: .5; }
+  .b1 { width: 300px; height: 300px; left: -80px; top: -60px; background: #f2a9c3; }
+  .b2 { width: 340px; height: 340px; right: -110px; top: 40px; background: #a5b6e8; }
+  .b3 { width: 240px; height: 240px; left: 30%; bottom: -90px; background: #f4c9a8; }
+
+  .bg-flat { position: relative; border-radius: 12px; background: #f8f5f1; overflow: hidden; }
+
+  /* 玻璃面板 */
+  .glass { position: relative; width: 74%; margin: 26px auto; padding: 14px 16px; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: rgba(255,255,255,.55); box-shadow: 0 16px 38px rgba(40,25,35,.14), inset 0 1px 0 rgba(255,255,255,.8); }
+  .glass::before { content:""; position:absolute; inset:0; border-radius: 16px; background: linear-gradient(135deg, rgba(255,255,255,.5), transparent 45%); pointer-events:none; }
+  .glass .t { font-family: ui-monospace,monospace; font-size: .62rem; font-weight: 700; letter-spacing: .14em; color: #c83b7e; }
+  .glass p { margin: 6px 0 0; font-size: .74rem; line-height: 1.6; color: #2b2624; }
+  .glass small { display:block; margin-top: 6px; color: #847970; font-size: .62rem; }
+
+  .fx-s { backdrop-filter: blur(6px) saturate(1.2); -webkit-backdrop-filter: blur(6px) saturate(1.2); }
+  .fx-m { backdrop-filter: blur(14px) saturate(1.45); -webkit-backdrop-filter: blur(14px) saturate(1.45); }
+  .fx-h { backdrop-filter: blur(24px) saturate(1.7); -webkit-backdrop-filter: blur(24px) saturate(1.7); }
+</style>
+
+<h2>为什么毛玻璃「看不见」？— 背景决定一切</h2>
+<p class="subtitle">左：当前博客平涂背景上放玻璃 → 模糊前后几乎一样（你现在看到的困惑）。右：同样是三档玻璃，但背景加了彩晕色块 → 磨砂立刻可见。结论：要做毛玻璃，先给背景「加料」。</p>
+
+<div class="row">
+  <div>
+    <h3>现状背景（平涂浅色）</h3>
+    <p>玻璃面板贴上去，模糊没有素材可吃，看起来就是一块半透明白板。</p>
+    <div class="bg-flat" style="height:260px">
+      <div class="glass fx-m"><span class="t">01 · CHANNEL 账本</span><p>快路径 35ns，慢路径 304ns——模糊看不到效果。</p></div>
+    </div>
+  </div>
+  <div>
+    <h3>加料背景（彩晕 + 花纹）</h3>
+    <p>背景有了色块与明暗变化，玻璃板把背后颜色晕开，磨砂感立刻成立。</p>
+    <div class="bg-rich" style="height:260px">
+      <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+      <div class="glass fx-m"><span class="t">01 · CHANNEL 账本</span><p>快路径 35ns，慢路径 304ns——背景色晕被磨开成柔和雾。</p></div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:26px">加料背景下，三档强度差异就出来了：</h3>
+<div class="options" data-multiselect>
+  <div class="opt" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="bg-rich" style="height:200px">
+        <div class="blob b1" style="opacity:.6"></div><div class="blob b2" style="opacity:.6"></div>
+        <div class="glass fx-s" style="width:70%"><span class="t">轻雾 6px</span><p>色晕还带着形状，透感最强。</p></div>
+      </div>
+    </div>
+    <div class="card-body"><span class="tag">blur 6px</span><h3>A · 轻雾</h3><p>透度高，能隐约看到色块轮廓，最「活」但文字与色块交汇处略吵。</p></div>
+  </div>
+  <div class="opt" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="bg-rich" style="height:200px">
+        <div class="blob b1" style="opacity:.6"></div><div class="blob b2" style="opacity:.6"></div>
+        <div class="glass fx-m" style="width:70%"><span class="t">标准雾 14px</span><p>色晕被磨成柔和渐变，干净又有层次。</p></div>
+      </div>
+    </div>
+    <div class="card-body"><span class="tag">blur 14px</span><h3>B · 标准雾</h3><p>磨砂感明显、文字底下干净。可读性与科技感平衡（推荐）。</p></div>
+  </div>
+  <div class="opt" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="bg-rich" style="height:200px">
+        <div class="blob b1" style="opacity:.6"></div><div class="blob b2" style="opacity:.6"></div>
+        <div class="glass fx-h" style="width:70%"><span class="t">厚磨砂 24px</span><p>背后只剩颜色氛围，完全雾化。</p></div>
+      </div>
+    </div>
+    <div class="card-body"><span class="tag">blur 24px</span><h3>C · 厚磨砂</h3><p>最净最均匀的白雾，代价是玻璃「存在感」反而降低，颜色也更闷。</p></div>
+  </div>
+</div>
+
+<h3 style="margin-top:26px">配套问题：背景加料 → 全站视觉震动。请一并选：</h3>
+<div class="options" data-multiselect>
+  <div class="opt" data-choice="bg-a" onclick="toggleSelect(this)">
+    <div class="card-body"><span class="tag">背景方案</span><h3>① 每张卡片身后挂彩晕（局部加料）</h3><p>只在卡片/面板区域加色块，页面其余保持素净。改动小、玻璃感成立，但色块位置对布局敏感。</p></div>
+  </div>
+  <div class="opt" data-choice="bg-b" onclick="toggleSelect(this)">
+    <div class="card-body"><span class="tag">背景方案</span><h3>② 整页彩晕背景（全局加料）</h3><p>顶部导航、Hero 区域铺大色晕，滚动内容穿过半透明面板时玻璃最明显。科技感最强，但 12 套主题色都要重配。</p></div>
+  </div>
+  <div class="opt" data-choice="bg-c" onclick="toggleSelect(this)">
+    <div class="card-body"><span class="tag">背景方案</span><h3>③ 只做局部真玻璃（导航/搜索/弹层）</h3><p>毛玻璃只用在滚动态元素上（sticky 导航、搜索弹窗、主题菜单），静态卡片维持柔和悬浮风。务实，风险最低。</p></div>
+  </div>
+</div>

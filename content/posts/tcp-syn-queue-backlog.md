@@ -124,11 +124,11 @@ TimeoutError: 4 个
 3. **TIME_WAIT**：关闭侧积累的 2MSL 残留别混入排队观察（见 [TIME_WAIT 与连接复用](/writing/time-wait-connection-reuse)）；
 4. **backlog 与高并发框架**：Node 默认 listen 511 往往够——真的堵在 accept 队列，`ss` 立刻见分晓，别盲调。
 
-## 七、结论
+## 七、结论：SYN 与 accept 队列要沿握手和接收两段排查
 
 TCP 连接质量的方程**就是队列的排队问题**：SYN 队列管半连接，accept 队列管完整连接，两个上限由 `listen(backlog)` 与内核参数取小决定。队列满时系统**不拒绝、默默丢包**，应用侧症状表现为握手超时。排查的第一动作：先看 `ss -lnt` 的两列，再决定是调 backlog 还是加速 accept。
 
-## 八、下一步
+## 八、下一步：用 backlog 与 accept 速度复现队列溢出
 
 ```bash
 # 复现：起服务（不 accept），再 6 线程并发 connect，观察超时数

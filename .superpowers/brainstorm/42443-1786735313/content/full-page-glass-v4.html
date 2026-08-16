@@ -1,0 +1,149 @@
+<style>
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .opt { border: 1px solid rgba(127,127,127,.22); border-radius: 14px; padding: 12px; background: #fff; cursor: pointer; transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease; }
+  .opt:hover { border-color: rgba(200,59,126,.5); box-shadow: 0 10px 28px rgba(40,25,35,.14); transform: translateY(-2px); }
+  .opt.selected { border-color: #c83b7e; box-shadow: 0 0 0 2px rgba(200,59,126,.35); }
+  .opt h3 { margin: 10px 0 2px; font-size: 1rem; }
+  .opt .tag { font-family: ui-monospace, monospace; font-size: .66rem; color: #8a6; letter-spacing: .08em; text-transform: uppercase; }
+  .opt p { margin: 4px 0 0; color: #555; font-size: .79rem; line-height: 1.55; }
+
+  /* ---------- 完整首页 mockup：浅色 ---------- */
+  .home { position: relative; border-radius: 12px; overflow: hidden; background: #f5f0ea; border: 1px solid rgba(127,127,127,.18); }
+  .home::before { content:""; position:absolute; inset:0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%23c83b7e'%3E%3Cg transform='translate(28 30)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(0) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(72) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(144) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(216) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(288) translate(0 -4.2)'/%3E%3C/g%3E%3Cg transform='translate(88 90) scale(0.75)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(30) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(102) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(174) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(246) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(318) translate(0 -4.2)'/%3E%3C/g%3E%3Cellipse transform='translate(14 76) rotate(32)' rx='3' ry='1.2'/%3E%3C/g%3E%3C/svg%3E"); background-size: 72px 72px; opacity: .1; pointer-events:none; }
+  /* 固定彩晕层（fixed，滚动内容穿行于其下） */
+  .aurora { position: absolute; inset: 0; pointer-events: none; }
+  .aurora span { position: absolute; border-radius: 50%; filter: blur(58px); }
+  .au-1 { width: 420px; height: 420px; left: -120px; top: -100px; background: rgba(242,108,161,.5); }
+  .au-2 { width: 460px; height: 460px; right: -160px; top: -60px; background: rgba(110,146,233,.42); }
+  .au-3 { width: 380px; height: 380px; left: 22%; top: 46%; background: rgba(246,178,120,.42); }
+  .au-4 { width: 420px; height: 420px; right: -120px; bottom: -160px; background: rgba(189,140,238,.38); }
+  .au-5 { width: 360px; height: 360px; left: -140px; bottom: -80px; background: rgba(118,206,190,.4); }
+
+  /* 玻璃头 */
+  .gh { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 11px 18px; backdrop-filter: blur(14px) saturate(1.45); -webkit-backdrop-filter: blur(14px) saturate(1.45); background: rgba(255,255,255,.55); border-bottom: 1px solid rgba(255,255,255,.55); }
+  .gh .logo { font-family: ui-monospace,monospace; font-size:.7rem; font-weight:700; letter-spacing:.16em; color:#c83b7e; }
+  .gh nav { display: flex; gap: 14px; }
+  .gh a { font-size:.62rem; color:#7d7268; text-decoration:none; letter-spacing:.08em; }
+  .gh .pill { font-size:.6rem; color:#847970; padding: 4px 10px; border: 1px solid rgba(255,255,255,.7); border-radius: 8px; background: rgba(255,255,255,.4); }
+
+  .hc { position: relative; padding: 30px 24px 8px; }
+  .hc .eyebrow { font-family: ui-monospace,monospace; font-size:.62rem; letter-spacing:.2em; color:#c83b7e; }
+  .hc h1 { margin: 10px 0 8px; font-family: "Hiragino Mincho ProN","Songti SC",serif; font-size: 2.1rem; line-height: 1.2; color:#2b2624; }
+  .hc h1 i { font-style: normal; color: #c83b7e; text-shadow: 0 0 16px rgba(200,59,126,.35); }
+  .hc > p { margin: 0 0 14px; color: #7d7268; font-size: .74rem; line-height: 1.7; max-width: 66%; }
+  .hc .cta { display: inline-flex; align-items: center; gap: 14px; padding: 9px 16px; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #c83b7e, #a92165); font-family: ui-monospace,monospace; font-size: .66rem; font-weight: 700; letter-spacing: .08em; box-shadow: 0 10px 26px rgba(200,59,126,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+
+  /* 玻璃卡片 */
+  .cards { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 24px 26px; }
+  .card { position: relative; padding: 14px 16px; border-radius: 16px; backdrop-filter: blur(14px) saturate(1.45); -webkit-backdrop-filter: blur(14px) saturate(1.45); background: rgba(255,255,255,.56); border: 1px solid rgba(255,255,255,.6); box-shadow: 0 16px 36px rgba(40,25,35,.12), inset 0 1px 0 rgba(255,255,255,.8); }
+  .card::before { content:""; position:absolute; inset:0; border-radius: 16px; background: linear-gradient(140deg, rgba(255,255,255,.55), transparent 50%); pointer-events:none; }
+  .card .n { font-family: ui-monospace,monospace; font-size: .6rem; font-weight: 700; letter-spacing: .14em; color: #c83b7e; }
+  .card .m { margin-top: 5px; font-family: ui-monospace,monospace; font-size: .56rem; color: #847970; letter-spacing: .06em; }
+  .card h3 { margin: 7px 0 5px; font-size: .92rem; line-height: 1.42; color: #2b2624; }
+  .card p { margin: 0; font-size: .64rem; line-height: 1.62; color: #6f655c; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .card .tags { display:flex; gap:5px; margin-top:8px; }
+  .card .tags span { padding: 2px 8px; border-radius: 6px; font-family: ui-monospace,monospace; font-size: .54rem; color: #a04772; background: rgba(200,59,126,.11); border: 1px solid rgba(255,255,255,.55); }
+
+  /* ---------- 暗色版（夜一 · 玄黑金雷） ---------- */
+  .home.dark { background: #0d0a04; border-color: rgba(255,255,255,.12); }
+  .home.dark::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg%3E%3Cpath d='M66 10L42 54L56 54L38 96L66 50L52 50L66 10Z' fill='%23e6a917'/%3E%3Cpath d='M112 52L102 72L108 72L97 92L112 72L105 72L112 52Z' fill='none' stroke='%23e6a917' stroke-width='2.5'/%3E%3C/g%3E%3C/svg%3E"); background-size: 72px 72px; opacity: .07; }
+  .home.dark .au-1 { background: rgba(230,169,23,.32); }
+  .home.dark .au-2 { background: rgba(139,92,246,.28); }
+  .home.dark .au-3 { background: rgba(245,158,11,.22); }
+  .home.dark .au-5 { background: rgba(255,209,102,.16); }
+  .home.dark .gh { background: rgba(21,17,6,.5); border-bottom-color: rgba(230,169,23,.22); }
+  .home.dark .gh .logo { color: #e6a917; }
+  .home.dark .gh a { color: #a89a72; }
+  .home.dark .gh .pill { border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #a89a72; }
+  .home.dark .hc h1 { color: #f7f1dc; }
+  .home.dark .hc h1 i { color: #e6a917; text-shadow: 0 0 16px rgba(230,169,23,.3); }
+  .home.dark .hc .eyebrow { color: #e6a917; }
+  .home.dark .hc > p { color: #a89a72; }
+  .home.dark .hc .cta { background: linear-gradient(135deg, #e6a917, #a86e08); color: #201400; box-shadow: 0 10px 26px rgba(230,169,23,.3), inset 0 1px 0 rgba(255,255,255,.25); }
+  .home.dark .card { background: rgba(21,17,6,.52); border-color: rgba(255,255,255,.14); box-shadow: 0 16px 36px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07); }
+  .home.dark .card::before { background: linear-gradient(140deg, rgba(255,255,255,.08), transparent 50%); }
+  .home.dark .card .n { color: #e6a917; }
+  .home.dark .card .m { color: #a89a72; }
+  .home.dark .card h3 { color: #f7f1dc; }
+  .home.dark .card p { color: #a89a72; }
+  .home.dark .card .tags span { color: #e6c76b; background: rgba(230,169,23,.12); border-color: rgba(230,169,23,.25); }
+</style>
+
+<h2>整页彩晕 + 标准雾玻璃 — 完整首页气质预览</h2>
+<p class="subtitle">左：浅色主站；右：暗色主题（夜一·玄黑金雷）。彩晕是固定层，滚动时内容穿过半透明的玻璃导航/卡片——这就是「滚动穿玻璃」的科技感来源。</p>
+
+<div class="stage">
+  <div class="opt" data-choice="light-ok" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="home" style="min-height:520px">
+        <div class="aurora"><span class="au-1"></span><span class="au-2"></span><span class="au-3"></span><span class="au-4"></span><span class="au-5"></span></div>
+        <div class="gh">
+          <span class="logo">HY//BLOG</span>
+          <nav><a>Writing</a><a>Tags</a><a>About</a></nav>
+          <span class="pill">⌕ 搜索</span>
+        </div>
+        <div class="hc">
+          <div class="eyebrow">TECH NOTES · EST. 2024</div>
+          <h1>技术札记：<br><i>将复杂系统</i>翻个底朝天</h1>
+          <p>49 篇深度文章，从 Go 运行时、数据库协议到编辑器实现。每一篇都在回答「为什么是这样」，而不是「怎么用」。</p>
+          <span class="cta">开始阅读 →</span>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="n">FEATURED · 01</div><div class="m">◆ 2026-08-06 · 12 min</div><h3>channel 的账本：快路径 35ns，慢路径 304ns</h3><p>Go 并发原语的每一次收发都在记账：缓冲、信号量、锁与调度器四本账如何摊牌成本。</p><div class="tags"><span>Go</span><span>并发</span><span>性能</span></div></div>
+          <div class="card"><div class="n">FEATURED · 02</div><div class="m">◆ 2026-08-06 · 9 min</div><h3>string ↔ []byte：零拷贝的边界</h3><p>一次转换的代价到底是多少？unsafe 视角下，零拷贝的收益与生命周期风险如何权衡。</p><div class="tags"><span>Go</span><span>内存</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="tag">方案 ② 全站</span>
+      <h3>浅色主站 · 标准雾</h3>
+      <p>樱花纹路弱化为 10% 透明度沉底，彩晕色块在卡片/导航身后提供可模糊的「料」，玻璃感成立。</p>
+    </div>
+  </div>
+
+  <div class="opt" data-choice="dark-ok" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="home dark" style="min-height:520px">
+        <div class="aurora"><span class="au-1"></span><span class="au-2"></span><span class="au-3"></span><span class="au-5"></span></div>
+        <div class="gh">
+          <span class="logo">HY//BLOG</span>
+          <nav><a>Writing</a><a>Tags</a><a>About</a></nav>
+          <span class="pill">⌕ 搜索</span>
+        </div>
+        <div class="hc">
+          <div class="eyebrow">TECH NOTES · EST. 2024</div>
+          <h1>技术札记：<br><i>将复杂系统</i>翻个底朝天</h1>
+          <p>49 篇深度文章，从 Go 运行时、数据库协议到编辑器实现。每一篇都在回答「为什么是这样」，而不是「怎么用」。</p>
+          <span class="cta">开始阅读 →</span>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="n">FEATURED · 01</div><div class="m">◆ 2026-08-06 · 12 min</div><h3>channel 的账本：快路径 35ns，慢路径 304ns</h3><p>Go 并发原语的每一次收发都在记账：缓冲、信号量、锁与调度器四本账如何摊牌成本。</p><div class="tags"><span>Go</span><span>并发</span><span>性能</span></div></div>
+          <div class="card"><div class="n">FEATURED · 02</div><div class="m">◆ 2026-08-06 · 9 min</div><h3>string ↔ []byte：零拷贝的边界</h3><p>一次转换的代价到底是多少？unsafe 视角下，零拷贝的收益与生命周期风险如何权衡。</p><div class="tags"><span>Go</span><span>内存</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="tag">方案 ② 全站</span>
+      <h3>暗色主题 · 金色雷光</h3>
+      <p>暗底彩晕天然克制，金色光斑 + 玻璃面板，夜间科技感最强。注意文字对比度需逐套验证。</p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:22px">补充决策（可多选）：</h3>
+<div class="options">
+  <div class="opt" data-choice="scope-all" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <span class="tag">范围</span>
+      <h3>全站统一玻璃（导航/卡片/面板/搜索/主题菜单）</h3>
+      <p>视觉语言一致，改动面大（12 套主题 + 10+ 组件），回退成本高。</p>
+    </div>
+  </div>
+  <div class="opt" data-choice="scope-key" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <span class="tag">范围</span>
+      <h3>关键面玻璃 + 文章页保持纸面质感（推荐）</h3>
+      <p>首页/归档/标签/关于用全玻璃；文章正文与代码块保留纸张感——读文章时环境安静，逛首页时科技感拉满。这也是多数玻璃化网站的取舍。</p>
+    </div>
+  </div>
+</div>

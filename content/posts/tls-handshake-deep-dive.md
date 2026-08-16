@@ -130,3 +130,10 @@ $ openssl s_client -connect example.com:443 -servername example.com \
 一句话总结：TLS 是"非对称换密钥、对称传数据、证书验身份、AEAD 保完整"的流水线。新连接的延迟大头是 RTT 而不是计算，所以性能优化的头号抓手永远是连接复用；而可靠性优化的头号抓手永远是证书生命周期管理——两者都比改密码套件重要得多[^1]。
 
 [^1]: 延伸阅读：RFC 8446（TLS 1.3）的开头部分比任何二手资料都清晰；《Bulletproof TLS and PKI》是证书体系最完整的参考；`ssl_session_cache` 与 `session_ticket` 的 nginx 配置文档能直接对应到本文的会话复用部分。
+
+## 六、参考资料：握手、重放与记录层
+
+- [RFC 8446：The Transport Layer Security Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446/)：TLS 1.3 握手、0-RTT、密钥派生与记录保护。
+- [RFC 8446 §4.2.10：Early Data](https://www.rfc-editor.org/rfc/rfc8446.html#section-4.2.10)：0-RTT 重放风险与应用层限制。
+- [RFC 5246：TLS 1.2](https://www.rfc-editor.org/rfc/rfc5246)：TLS 1.2 握手与记录层基线。
+- [OpenSSL `s_client`](https://docs.openssl.org/3.4/man1/openssl-s_client/)：证书链、协议版本与握手排障命令。

@@ -108,7 +108,7 @@ goroutine 泄漏的生产模式就那么几类，栈一眼能认：
 
 常驻 goroutine 是正常噪音（HTTP server 的 `Accept`、pprof 自身、`runtime` 内部），`-base` 增量法自动把它们滤掉——这是为什么一定要用两帧对比，而不是看单帧总数。
 
-## 结论
+## 结论：goroutine 泄漏要用 profile 和可结束性定位
 
 goroutine 泄漏与内存泄漏是两种病，尺子不能混用：内存正常不代表没有 goroutine 泄漏（实测 3531 个泄漏 goroutine 在 heap 差值视图里是 0%）。排查路径固定为"两帧增量 + goroutine 视图"：`-top` 定位分组、`-traces` 读栈、`debug=1` 在线看行号，然后按四种生产模式对号修。写代码时的防线只有一句话：**每个 goroutine 都要能被结束**——消费者、超时、context，至少有一个。
 

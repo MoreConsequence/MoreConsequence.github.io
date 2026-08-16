@@ -37,8 +37,15 @@
   --page-width: 1480px;
   --gutter: clamp(20px, 3vw, 44px);
   --reading-width: 1020px;
-  --radius: 3px;
-  --radius-lg: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  /* 玻璃令牌：全部由主题变量派生，明暗主题自适应，零维护 */
+  --glass-bg: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--surface) 84%, transparent);
+  --glass-bg-soft: color-mix(in srgb, var(--surface) 46%, transparent);
+  --glass-border: color-mix(in srgb, var(--foreground) 6%, transparent);
+  --glass-hi: color-mix(in srgb, #ffffff 30%, transparent);
+  --glass-blur: 16px;
   --bg-motif: var(--tex-manji);
   --tex-manji: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%236b7280' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M60 34V60M60 34H40'/%3E%3Cpath d='M60 86V60M60 86H80'/%3E%3Cpath d='M34 60H60M34 60V40'/%3E%3Cpath d='M86 60H60M86 60V80'/%3E%3C/g%3E%3C/svg%3E");
   --tex-sakura: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%23c83b7e'%3E%3Cg transform='translate(28 30)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(0) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(72) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(144) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(216) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(288) translate(0 -4.2)'/%3E%3C/g%3E%3Cg transform='translate(88 90) scale(0.75)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(30) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(102) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(174) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(246) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(318) translate(0 -4.2)'/%3E%3C/g%3E%3Cellipse transform='translate(14 76) rotate(32)' rx='3' ry='1.2'/%3E%3Cellipse transform='translate(50 10) rotate(112)' rx='2.8' ry='1.1'/%3E%3Cellipse transform='translate(108 26) rotate(198)' rx='2.6' ry='1'/%3E%3Cellipse transform='translate(44 106) rotate(84)' rx='3' ry='1.2'/%3E%3Cellipse transform='translate(98 62) rotate(252)' rx='2.6' ry='1'/%3E%3Cellipse transform='translate(18 108) rotate(142)' rx='2.4' ry='0.9'/%3E%3Cellipse transform='translate(112 96) rotate(304)' rx='2.6' ry='1'/%3E%3C/g%3E%3C/svg%3E");
@@ -356,8 +363,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(900px 480px at 88% -10%, var(--glow), transparent 62%),
-    radial-gradient(760px 460px at -8% 4%, color-mix(in srgb, var(--accent-secondary) 7%, transparent), transparent 60%),
+    radial-gradient(900px 480px at 88% -10%, color-mix(in srgb, var(--glow) 70%, transparent), transparent 62%),
+    radial-gradient(760px 460px at -8% 4%, color-mix(in srgb, var(--accent-secondary) 4%, transparent), transparent 60%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
@@ -374,9 +381,25 @@ body::before {
   inset: 0;
   z-index: -1;
   background-image: var(--bg-motif);
-  background-size: 96px 96px;
-  opacity: 0.2;
+  background-size: 132px 132px;
+  opacity: 0.07;
   color: var(--accent);
+  content: "";
+  pointer-events: none;
+}
+
+/* 固定色晕层：给玻璃提供可磨的「料」。
+   三团同色系大光晕 = 主题色低浓度，克制不艳。
+   backdrop-filter 正是因为这一层存在才有磨砂感，
+   滚动时内容从玻璃面板下穿过，光晕会在玻璃里流动。 */
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(880px 560px at 82% -8%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 66%),
+    radial-gradient(760px 480px at -6% 10%, color-mix(in srgb, var(--accent-secondary) 8%, transparent), transparent 62%),
+    radial-gradient(840px 520px at 96% 108%, color-mix(in srgb, var(--accent-warm) 7%, transparent), transparent 62%);
   content: "";
   pointer-events: none;
 }
@@ -463,8 +486,8 @@ a {
   top: 0;
   z-index: 20;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--background) 86%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--surface);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow) 22%, transparent);
 }
 
 .site-header::after {
@@ -475,7 +498,7 @@ a {
   height: 2px;
   background: linear-gradient(90deg, var(--accent), transparent 68%);
   content: "";
-  opacity: 0.85;
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -502,10 +525,12 @@ a {
   width: 30px;
   aspect-ratio: 1;
   place-items: center;
-  border: 1.5px solid var(--accent);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--accent);
   font-family: var(--font-mono);
   font-size: 0.6rem;
@@ -544,7 +569,7 @@ a {
   align-items: center;
   gap: 0.45rem;
   padding: 0.45rem 0.7rem;
-  border-radius: 6px;
+  border-radius: 10px;
   color: var(--muted);
   font-size: 0.85rem;
   text-decoration: none;
@@ -599,13 +624,16 @@ a {
 
 .command-trigger {
   display: flex;
-  min-height: 34px;
+  min-height: 36px;
   align-items: center;
   gap: 0.7rem;
-  padding: 0 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  padding: 0 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg-soft);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 6px 18px color-mix(in srgb, var(--shadow) 42%, transparent);
   cursor: pointer;
   transition:
     border-color 140ms ease,
@@ -613,8 +641,11 @@ a {
 }
 
 .command-trigger:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 8px 22px color-mix(in srgb, var(--shadow) 52%, transparent);
 }
 
 .command-trigger kbd {
@@ -629,13 +660,16 @@ a {
 
 .theme-switcher-trigger {
   display: flex;
-  min-height: 34px;
+  min-height: 36px;
   align-items: center;
   gap: 0.55rem;
-  padding: 0 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  padding: 0 0.7rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg-soft);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 6px 18px color-mix(in srgb, var(--shadow) 42%, transparent);
   color: var(--muted);
   cursor: pointer;
   font-family: var(--font-mono);
@@ -646,8 +680,11 @@ a {
 }
 
 .theme-switcher-trigger:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 8px 22px color-mix(in srgb, var(--shadow) 52%, transparent);
 }
 
 .theme-caret {
@@ -667,12 +704,15 @@ a {
   gap: 2px;
   padding: 6px;
   overflow-y: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-top: 2px solid var(--accent);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: 0 18px 44px color-mix(in srgb, var(--shadow) 80%, transparent);
-  backdrop-filter: blur(16px);
+  background: var(--glass-bg-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 22px 56px color-mix(in srgb, var(--shadow) 64%, transparent);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
   scrollbar-width: none;
 }
 
@@ -687,7 +727,7 @@ a {
   gap: 0.6rem;
   padding: 0.52rem 0.65rem;
   border: 0;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: var(--foreground);
   cursor: pointer;
@@ -741,7 +781,7 @@ a {
   gap: 0.45rem;
   margin-top: 4px;
   padding: 0.7rem 0.65rem 0.65rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
 }
 
 .theme-editor .te-preview {
@@ -749,8 +789,8 @@ a {
   height: 14px;
   margin-bottom: 0.15rem;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
 }
 
 .theme-editor .te-preview span {
@@ -775,8 +815,8 @@ a {
   width: 100%;
   height: 22px;
   padding: 1px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
   background: var(--surface);
   cursor: pointer;
 }
@@ -804,8 +844,8 @@ a {
 
 .theme-editor .te-actions button {
   padding: 0.4rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0.6rem;
@@ -839,21 +879,23 @@ a {
   position: relative;
   margin-top: clamp(1.2rem, 2.5vw, 2.2rem);
   overflow: hidden;
-  border-block: 1px solid var(--border);
+  border-block: 1px solid var(--glass-border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 40%),
-    color-mix(in srgb, var(--surface) 78%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 4%, transparent), transparent 40%),
+    var(--glass-bg-soft);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
 }
 
 .home-hero::after {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--border) 40%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--border) 40%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px);
   background-size: 48px 48px;
   content: "";
-  opacity: 0.4;
+  opacity: 0.34;
   pointer-events: none;
 }
 
@@ -955,10 +997,13 @@ a {
   align-items: center;
   gap: 1.6rem;
   padding: 0 1.2rem;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: var(--accent);
-  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 75%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(160deg, var(--accent), color-mix(in srgb, var(--accent) 82%, var(--accent-warm)));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent),
+    0 0 22px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 26%, transparent);
   color: var(--accent-contrast);
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -971,7 +1016,10 @@ a {
 }
 
 .button-primary:hover {
-  box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 30%, transparent),
+    0 0 34px color-mix(in srgb, var(--accent) 42%, transparent),
+    0 14px 32px color-mix(in srgb, var(--accent) 34%, transparent);
   color: var(--accent-contrast);
   transform: translateY(-1px);
 }
@@ -997,35 +1045,16 @@ a {
   grid-column: 2;
   gap: 1.2rem;
   padding: 1.5rem 1.5rem 1.3rem;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: 0 18px 44px color-mix(in srgb, var(--shadow) 80%, transparent);
-}
-
-.hero-panel::before,
-.hero-panel::after {
-  position: absolute;
-  width: 15px;
-  height: 15px;
-  border: 2px solid var(--accent);
-  content: "";
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-.hero-panel::before {
-  top: -1px;
-  left: -1px;
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.hero-panel::after {
-  right: -1px;
-  bottom: -1px;
-  border-top: 0;
-  border-left: 0;
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 44%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 2px 6px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 24px 56px color-mix(in srgb, var(--shadow) 48%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
 }
 
 .hero-panel-head {
@@ -1033,7 +1062,7 @@ a {
   align-items: center;
   gap: 0.6rem;
   padding-bottom: 0.9rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -1062,9 +1091,10 @@ a {
 
 .panel-stats > div {
   padding: 0.85rem 1rem;
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--surface-strong) 55%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
 }
 
 .panel-stats dt {
@@ -1086,7 +1116,7 @@ a {
 
 .panel-note {
   padding-top: 0.9rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
 }
 
 .panel-note strong {
@@ -1145,8 +1175,8 @@ a {
   gap: clamp(1rem, 3vw, 2.5rem);
   flex-wrap: wrap;
   padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-strong) 42%, transparent);
+  border-top: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -1250,25 +1280,25 @@ a {
   position: relative;
   display: grid;
   min-height: 320px;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   gap: 1rem;
   overflow: hidden;
   padding: clamp(1.5rem, 2.2vw, 2rem);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface) 100%, transparent),
-    color-mix(in srgb, var(--surface) 90%, transparent)
-  );
+  background: var(--glass-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 22px 52px color-mix(in srgb, var(--shadow) 78%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 46%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 2px 6px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 26px 60px color-mix(in srgb, var(--shadow) 48%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .featured-grid .post-card::before {
@@ -1280,37 +1310,41 @@ a {
   background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
   content: "";
   opacity: 0;
-  transition: opacity 180ms ease;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.featured-grid .post-card::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, #ffffff 16%, transparent) 0%, transparent 38%),
+    radial-gradient(130% 90% at 88% -6%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .featured-grid .post-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
-    0 26px 60px color-mix(in srgb, var(--shadow) 88%, transparent);
-  transform: translateY(-3px);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 62%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 7%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 32%, transparent),
+    0 22px 48px color-mix(in srgb, var(--shadow) 48%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-3px) scale(1.004);
 }
 
 .featured-grid .post-card:hover::before {
   opacity: 1;
 }
 
-.featured-grid .post-card::after {
-  position: absolute;
-  top: 1.2rem;
-  right: 1.3rem;
-  width: 7px;
-  height: 7px;
-  border-top: 2px solid var(--accent);
-  border-right: 2px solid var(--accent);
-  content: "";
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
 .featured-grid .post-card:hover::after {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .featured-grid .post-card-number {
@@ -1364,13 +1398,6 @@ a {
   -webkit-line-clamp: 2;
 }
 
-.featured-grid .post-card-arrow {
-  grid-column: 2;
-  grid-row: 3;
-  align-self: end;
-  justify-self: end;
-}
-
 .post-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1419,8 +1446,8 @@ a {
 
 .tag-list a {
   padding: 0.24rem 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--tc) 46%, var(--border));
-  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--tc) 42%, transparent);
+  border-radius: 8px;
   background: color-mix(in srgb, var(--tc) 7%, transparent);
   color: color-mix(in srgb, var(--tc) 74%, var(--foreground));
   font-family: var(--font-mono);
@@ -1440,30 +1467,6 @@ a {
   color: var(--tag-over);
 }
 
-.post-card-arrow {
-  display: inline-grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--surface) 80%, transparent);
-  color: var(--muted);
-  font-size: 0.95rem;
-  text-decoration: none;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
-}
-
-.post-card:hover .post-card-arrow,
-.post-card-arrow:hover {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-contrast);
-}
-
 /* 最近发布：三列卡片 */
 .latest-list {
   display: grid;
@@ -1475,25 +1478,25 @@ a {
   position: relative;
   display: grid;
   min-height: 270px;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   gap: 0.85rem;
   overflow: hidden;
   padding: clamp(1.3rem, 2vw, 1.6rem);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface) 100%, transparent),
-    color-mix(in srgb, var(--surface) 90%, transparent)
-  );
+  background: var(--glass-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 16px 40px color-mix(in srgb, var(--shadow) 64%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 44%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 6px color-mix(in srgb, var(--shadow) 28%, transparent),
+    0 20px 48px color-mix(in srgb, var(--shadow) 42%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .latest-list .post-card::before {
@@ -1505,37 +1508,41 @@ a {
   background: linear-gradient(90deg, var(--accent-secondary), var(--accent));
   content: "";
   opacity: 0;
-  transition: opacity 180ms ease;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.latest-list .post-card::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, #ffffff 16%, transparent) 0%, transparent 38%),
+    radial-gradient(130% 90% at 88% -6%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .latest-list .post-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
-    0 20px 48px color-mix(in srgb, var(--shadow) 78%, transparent);
-  transform: translateY(-3px);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 60%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 20px 44px color-mix(in srgb, var(--shadow) 46%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 13%, transparent);
+  transform: translateY(-3px) scale(1.003);
 }
 
 .latest-list .post-card:hover::before {
   opacity: 1;
 }
 
-.latest-list .post-card::after {
-  position: absolute;
-  top: 1.2rem;
-  right: 1.3rem;
-  width: 6px;
-  height: 6px;
-  border-top: 2px solid var(--accent-secondary);
-  border-right: 2px solid var(--accent-secondary);
-  content: "";
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
 .latest-list .post-card:hover::after {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .latest-list .post-card-number {
@@ -1579,33 +1586,26 @@ a {
   -webkit-line-clamp: 2;
 }
 
-.latest-list .post-card-arrow {
-  grid-column: 2;
-  grid-row: 3;
-  align-self: end;
-  justify-self: end;
-}
-
 /* 主题条带：通栏能量带 */
 .topic-band {
   position: relative;
   margin-top: clamp(5rem, 9vw, 8rem);
   overflow: hidden;
-  border-block: 1px solid var(--border);
+  border-block: 1px solid var(--glass-border);
   background:
-    radial-gradient(700px 360px at 84% 10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 68%),
-    linear-gradient(120deg, color-mix(in srgb, var(--surface) 60%, transparent), color-mix(in srgb, var(--accent) 9%, var(--surface)));
+    radial-gradient(700px 360px at 84% 10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 68%),
+    linear-gradient(120deg, var(--glass-bg-soft), color-mix(in srgb, var(--accent) 7%, var(--glass-bg)));
 }
 
 .topic-band::before {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--border) 40%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--border) 40%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px);
   background-size: 48px 48px;
   content: "";
-  opacity: 0.5;
+  opacity: 0.38;
   pointer-events: none;
 }
 
@@ -1635,9 +1635,10 @@ a {
   gap: 0.9rem;
   align-items: center;
   padding: 0.62rem 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--surface) 66%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg-soft);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
   text-decoration: none;
   transition:
     border-color 160ms ease,
@@ -1646,8 +1647,8 @@ a {
 }
 
 .topic-links a:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--glass-bg);
   transform: translateX(3px);
 }
 
@@ -1662,8 +1663,8 @@ a {
 
 .site-footer {
   margin-top: clamp(5rem, 9vw, 8rem);
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-strong) 34%, transparent);
+  border-top: 1px solid var(--glass-border);
+  background: var(--glass-bg-soft);
 }
 
 .site-footer-inner {
@@ -1707,7 +1708,7 @@ a {
   justify-content: space-between;
   margin-top: clamp(2.4rem, 4vw, 3.2rem);
   padding-top: 1.3rem;
-  border-top: 1px solid var(--border-soft);
+  border-top: 1px solid var(--glass-border);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -1785,25 +1786,25 @@ a {
   position: relative;
   display: grid;
   min-height: 230px;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   gap: 0.8rem;
   overflow: hidden;
   padding: clamp(1.2rem, 1.8vw, 1.5rem);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface) 100%, transparent),
-    color-mix(in srgb, var(--surface) 90%, transparent)
-  );
+  background: var(--glass-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 12px 32px color-mix(in srgb, var(--shadow) 55%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 26%, transparent),
+    0 16px 40px color-mix(in srgb, var(--shadow) 38%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
   transition:
-    border-color 170ms ease,
-    box-shadow 170ms ease,
-    transform 170ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .archive-posts .post-card::before {
@@ -1815,37 +1816,41 @@ a {
   background: linear-gradient(90deg, var(--accent-warm), var(--accent));
   content: "";
   opacity: 0;
-  transition: opacity 170ms ease;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.archive-posts .post-card::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, #ffffff 15%, transparent) 0%, transparent 38%),
+    radial-gradient(130% 90% at 88% -6%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 55%);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .archive-posts .post-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
-    0 16px 40px color-mix(in srgb, var(--shadow) 68%, transparent);
-  transform: translateY(-2px);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 58%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 20px 44px color-mix(in srgb, var(--shadow) 46%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 13%, transparent);
+  transform: translateY(-3px) scale(1.003);
 }
 
 .archive-posts .post-card:hover::before {
   opacity: 1;
 }
 
-.archive-posts .post-card::after {
-  position: absolute;
-  top: 1rem;
-  right: 1.1rem;
-  width: 6px;
-  height: 6px;
-  border-top: 2px solid var(--accent-warm);
-  border-right: 2px solid var(--accent-warm);
-  content: "";
-  opacity: 0;
-  transition: opacity 170ms ease;
-}
-
 .archive-posts .post-card:hover::after {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .archive-posts .post-card-number {
@@ -1883,16 +1888,9 @@ a {
   line-height: 1.75;
 }
 
-.archive-posts .post-card-arrow {
-  grid-column: 2;
-  grid-row: 3;
-  align-self: end;
-  justify-self: end;
-}
-
 .empty-state {
   padding: 6rem 1rem;
-  border-block: 1px solid var(--border);
+  border-block: 1px solid var(--glass-border);
   text-align: center;
 }
 
@@ -1921,26 +1919,26 @@ a {
   position: relative;
   display: grid;
   min-height: 150px;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: 42px 1fr;
   grid-template-rows: auto auto 1fr;
   gap: 0.7rem;
   overflow: hidden;
   padding: clamp(1.2rem, 1.8vw, 1.5rem);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface) 100%, transparent),
-    color-mix(in srgb, var(--surface) 90%, transparent)
-  );
+  background: var(--glass-bg);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 12px 32px color-mix(in srgb, var(--shadow) 55%, transparent);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 26%, transparent),
+    0 16px 40px color-mix(in srgb, var(--shadow) 38%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
   text-decoration: none;
   transition:
-    border-color 170ms ease,
-    box-shadow 170ms ease,
-    transform 170ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .tag-index > a::before {
@@ -1952,37 +1950,41 @@ a {
   background: linear-gradient(90deg, var(--accent-secondary), var(--accent-cyan, var(--accent)));
   content: "";
   opacity: 0;
-  transition: opacity 170ms ease;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tag-index > a::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, #ffffff 15%, transparent) 0%, transparent 38%),
+    radial-gradient(130% 90% at 88% -6%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 55%);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tag-index > a:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
-    0 16px 40px color-mix(in srgb, var(--shadow) 68%, transparent);
-  transform: translateY(-2px);
+    inset 0 1px 0 color-mix(in srgb, #ffffff 58%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 20px 44px color-mix(in srgb, var(--shadow) 46%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 13%, transparent);
+  transform: translateY(-3px) scale(1.003);
 }
 
 .tag-index > a:hover::before {
   opacity: 1;
 }
 
-.tag-index > a::after {
-  position: absolute;
-  top: 1rem;
-  right: 1.1rem;
-  width: 6px;
-  height: 6px;
-  border-top: 2px solid var(--accent-secondary);
-  border-right: 2px solid var(--accent-secondary);
-  content: "";
-  opacity: 0;
-  transition: opacity 170ms ease;
-}
-
 .tag-index > a:hover::after {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .tag-index-number,
@@ -2007,22 +2009,6 @@ a {
 
 .tag-index time {
   grid-column: 2;
-}
-
-.tag-index i {
-  grid-column: 3;
-  justify-self: end;
-  color: var(--muted);
-  font-size: 1rem;
-  font-style: normal;
-  transition:
-    color 170ms ease,
-    transform 170ms ease;
-}
-
-.tag-index > a:hover i {
-  color: var(--accent);
-  transform: translate(2px, -2px);
 }
 
 .tag-page-header {
@@ -2066,7 +2052,7 @@ a {
   gap: 3rem;
   align-items: end;
   padding-bottom: clamp(3rem, 5.5vw, 4.6rem);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .about-hero .eyebrow {
@@ -2115,7 +2101,7 @@ a {
 
 .about-grid li {
   padding: 0.8rem 0;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--glass-border);
   color: var(--muted);
 }
 
@@ -2242,7 +2228,7 @@ a {
   justify-content: center;
   margin-top: 1.8rem;
   padding-top: 1.4rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -2258,7 +2244,7 @@ a {
   max-width: 1360px;
   margin-inline: auto;
   padding-top: clamp(2.2rem, 4vw, 3.4rem);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
 }
 
 .article-aside {
@@ -2282,10 +2268,18 @@ a {
 
 /* 目录控制台 */
 .table-of-contents {
-  border: 1px solid var(--border);
+  border: 0;
   border-top: 2px solid var(--accent);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 24%, transparent),
+    0 16px 40px color-mix(in srgb, var(--shadow) 36%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  overflow: hidden;
 }
 
 .table-of-contents > p {
@@ -2294,7 +2288,7 @@ a {
   justify-content: space-between;
   margin: 0;
   padding: 0.75rem 0.9rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.62rem;
@@ -2310,10 +2304,18 @@ a {
 
 /* 侧栏信息卡：标签 + 系列 */
 .article-fact {
-  border: 1px solid var(--border);
+  border: 0;
   border-top: 2px solid var(--accent);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 24%, transparent),
+    0 16px 40px color-mix(in srgb, var(--shadow) 36%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  overflow: hidden;
 }
 
 .article-fact > p:first-child {
@@ -2336,8 +2338,9 @@ a {
 
 .article-fact-tags a {
   padding: 0.24em 0.6em;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg-soft);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.6rem;
@@ -2496,7 +2499,7 @@ a {
 .article-prose h2 {
   margin: 2.6em 0 1em;
   padding-top: 0.85em;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   font-size: 1.55em;
   font-weight: 700;
 }
@@ -2541,17 +2544,18 @@ a {
 
 .article-prose blockquote {
   margin: 2em 0;
-  padding: 0.9em 1.1em 0.9em 1.3em;
+  padding: 1em 1.2em 1em 1.4em;
   border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: var(--radius);
+  background: var(--glass-bg-soft);
   color: var(--muted);
   font-size: 1.03em;
 }
 
 .article-prose code:not(pre code) {
   padding: 0.12em 0.34em;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
   background: var(--code-background);
   color: var(--accent-secondary);
   font-family: var(--font-mono);
@@ -2563,7 +2567,7 @@ a {
   overflow-x: auto;
   margin: 2em 0;
   padding: 1.4rem 1.4rem 1.4rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   background: var(--code-background) !important;
   font-family: var(--font-mono);
@@ -2593,9 +2597,9 @@ a {
   top: 0.7rem;
   right: 0.7rem;
   padding: 0.28rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--background);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg-strong);
   color: var(--muted);
   cursor: pointer;
   font-family: var(--font-mono);
@@ -2617,9 +2621,9 @@ a {
   height: auto;
   max-width: 100%;
   margin: 2rem auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  box-shadow: 0 12px 32px var(--shadow);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--shadow) 62%, transparent);
 }
 
 .article-prose figure {
@@ -2643,22 +2647,35 @@ a {
   display: table;
   width: 100%;
   margin: 2rem 0;
-  border-collapse: collapse;
-  border: 1px solid var(--border);
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
   font-size: 0.86rem;
 }
 
 .article-prose th,
 .article-prose td {
   padding: 0.68rem 0.8rem;
-  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
   overflow-wrap: anywhere;
   text-align: left;
   vertical-align: top;
 }
 
+.article-prose th:last-child,
+.article-prose td:last-child {
+  border-right: 0;
+}
+
+.article-prose tr:last-child td {
+  border-bottom: 0;
+}
+
 .article-prose th {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: var(--glass-bg-soft);
   font-weight: 700;
 }
 
@@ -2681,10 +2698,12 @@ a {
   max-width: 100%;
   margin: 2rem 0;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: 0 10px 30px var(--shadow);
+  background: var(--glass-bg-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 12px 34px color-mix(in srgb, var(--shadow) 46%, transparent);
   box-sizing: border-box;
   transition:
     box-shadow 200ms ease,
@@ -2692,8 +2711,11 @@ a {
 }
 
 .mermaid:has(.mt-pv:hover) {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 12px 34px var(--shadow);
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 14px 38px color-mix(in srgb, var(--shadow) 56%, transparent);
 }
 
 .mermaid .mt-bar {
@@ -2807,10 +2829,12 @@ a {
   height: min(90vh, 900px);
   padding: 2.5rem 2rem 2rem;
   overflow: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
   animation: mt-scale-in 200ms ease;
 }
 
@@ -2823,9 +2847,9 @@ a {
   height: 36px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass-bg-soft);
   color: var(--foreground);
   font-size: 1.1rem;
   cursor: pointer;
@@ -2879,21 +2903,32 @@ a {
   display: block;
   min-height: 130px;
   padding: 1.4rem;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 24%, transparent),
+    0 16px 38px color-mix(in srgb, var(--shadow) 36%, transparent);
+  backdrop-filter: blur(14px) saturate(1.35);
+  -webkit-backdrop-filter: blur(14px) saturate(1.35);
   text-decoration: none;
   box-sizing: border-box;
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .neighbor-cell > a:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
-  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 28%, transparent),
+    0 18px 40px color-mix(in srgb, var(--shadow) 44%, transparent),
+    0 8px 22px color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateY(-2px) scale(1.002);
 }
 
 .neighbor-cell:last-child > a {
@@ -2931,40 +2966,31 @@ a {
   grid-template-rows: auto auto 1fr auto;
   gap: 0.5rem;
   padding: 1.5rem 2.4rem 1.5rem 1.5rem;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: 0 14px 36px color-mix(in srgb, var(--shadow) 72%, transparent);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 5%, transparent),
+    0 2px 5px color-mix(in srgb, var(--shadow) 26%, transparent),
+    0 18px 44px color-mix(in srgb, var(--shadow) 40%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
   text-decoration: none;
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .related-posts > div a:hover {
-  border-color: var(--accent);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
-    0 18px 42px color-mix(in srgb, var(--shadow) 82%, transparent);
-  transform: translateY(-2px);
-}
-
-.related-posts > div a::after {
-  position: absolute;
-  top: 1.2rem;
-  right: 1.3rem;
-  width: 6px;
-  height: 6px;
-  border-top: 2px solid var(--accent-secondary);
-  border-right: 2px solid var(--accent-secondary);
-  content: "";
-  opacity: 0;
-  transition: opacity 160ms ease;
-}
-
-.related-posts > div a:hover::after {
-  opacity: 1;
+    inset 0 1px 0 color-mix(in srgb, #ffffff 58%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 6%, transparent),
+    0 3px 8px color-mix(in srgb, var(--shadow) 30%, transparent),
+    0 20px 44px color-mix(in srgb, var(--shadow) 46%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 13%, transparent);
+  transform: translateY(-3px) scale(1.003);
 }
 
 .related-posts .related-tag {
@@ -2998,22 +3024,6 @@ a {
   font-size: 0.6rem;
 }
 
-.related-arrow {
-  position: absolute;
-  right: 1.3rem;
-  bottom: 1.3rem;
-  color: var(--muted);
-  font-size: 1rem;
-  transition:
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.related-posts > div a:hover .related-arrow {
-  color: var(--accent);
-  transform: translate(2px, -2px);
-}
-
 .reading-progress {
   position: fixed;
   top: 0;
@@ -3039,11 +3049,15 @@ a {
   max-height: min(76vh, 700px);
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--glass-bg-strong);
   color: var(--foreground);
-  box-shadow: 0 24px 80px var(--shadow);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 28px 88px color-mix(in srgb, var(--shadow) 64%, transparent);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
 
 .search-dialog::backdrop {
@@ -3063,7 +3077,7 @@ a {
   gap: 0.8rem;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .search-input-row > span {
@@ -3102,7 +3116,7 @@ a {
   gap: 1rem;
   align-items: start;
   padding: 1.05rem 0;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--glass-border);
   text-decoration: none;
 }
 
@@ -3111,7 +3125,7 @@ a {
 }
 
 .search-results > a.is-selected {
-  border-radius: 8px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   outline: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   outline-offset: -1px;
@@ -3155,7 +3169,7 @@ a {
   display: flex;
   gap: 1rem;
   padding: 0.7rem 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-border);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.58rem;
@@ -3345,11 +3359,6 @@ a {
 
   .home-section {
     padding-top: 4.5rem;
-  }
-
-  .post-card-arrow {
-    width: 34px;
-    height: 34px;
   }
 
   .featured-grid .post-card,

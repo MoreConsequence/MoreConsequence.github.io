@@ -1,103 +1,104 @@
 ---
-title: "select 的仲裁成本：50 亿次选择 50:50 的公平，和 4ns 到 197ns 的账单"
-description: "select 的成本不是常数：单 case+default 被编译器重写成简化构造（实测 4.1ns，几乎免费）；case 数越多越贵，非阻塞轮询每加一个 case 约 25ns（8 case 197ns）；阻塞等待则起步 148ns。5 亿次二选一实测 50.00/50.00——pollorder 随机化的直接证据。解剖 selectgo：随机化保证公平，按 hchan 地址排序保证加锁顺序一致、防死锁。"
+title: "select 的仲裁成本：单 case 4.187ns，8 case 193.2ns"
+description: "一次本机 Go 1.25.1/arm64 基线测量带 default 的非阻塞 select：1/2/4/8 个 channel case 分别为 4.187ns、40.82ns、90.47ns、193.2ns，均为 0 alloc；另用 100 万次双 ready channel smoke 观察到 49.969%/50.031% 的选择比例。文章区分编译器重写、selectgo 扫描、运行时随机仲裁和未测量的阻塞等待。"
 publishedAt: "2026-08-12"
-updatedAt: "2026-08-12"
+updatedAt: "2026-08-16"
 tags: ["Go", "并发", "性能优化"]
 draft: false
 featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** select 是 channel 之上的仲裁器，成本分三档：单 case + default 被编译器重写为简化构造，实测 4.1ns 几乎免费（这就是为什么 `select { case <-stop: default: }` 能当热循环的停止开关）；多 case 的 selectgo 要按 case 数线性付钱（8 case 非阻塞轮询 197ns，每 case 约 25ns）；阻塞等待至少 148ns（挂 sudog + park）。select 的公平性是设计出来的：pollorder 用随机置换（`cheaprandn`，select.go:191）保证每个就绪 case 等概率被选中——5 亿次二选一实测 50.00%/50.00%；lockorder 按 hchan 地址堆排序（select.go:206）保证多 channel 加锁顺序一致，从根上防死锁。
+**TL;DR：** `select` 是 channel 之上的仲裁器，成本取决于 case 数和是否进入阻塞路径。统一 Go 1.25.1/arm64 基准对带 `default` 的非阻塞扫描测得：1/2/4/8 个 channel case 分别为 **4.187ns、40.82ns、90.47ns、193.2ns**，均为 0 alloc；1 case + default 由编译器走简化路径，多 case 才进入更完整的仲裁。另一个独立的 100 万次双 ready channel smoke 得到 **49.969% / 50.031%**，只能作为当前输入下的随机选择观察，不是 5 亿次的形式化公平证明。阻塞等待、ready case 和高争用路径需要单独实验。
 
-## 一、三种形态：编译器重写、selectgo、以及隐藏的免费路径
+## 一、三种形态：编译器重写、selectgo 与阻塞边界
 
-`select` 在编译期就被分流。Go 编译器的规则（runtime/select.go:159 的注释）：
+`select` 在编译期就被分流。Go 编译器的规则来自 `runtime/select.go` 的注释：
 
 ```go
 // The compiler rewrites selects that statically have
 // only 0 or 1 cases plus default into simpler constructs.
 ```
 
-**单 case + default 的 select 根本不进 selectgo**——被重写成直接的非阻塞 channel 检查。实测（本机 Go 1.25.1，8 核）：
+**单 case + default 的 select 根本不进完整的 `selectgo` 路径**——被重写成直接的非阻塞 channel 检查。当前实验结果（Go 1.25.1、`-cpu=8`）：
 
 ```
-BenchmarkSelect1CaseDefault    4.1 ns/op   ← 编译器重写后，比裸 chan 操作还便宜
-BenchmarkDirectRecv           25.9 ns/op   ← channel 快路径（呼应前作 35ns 的量级）
+BenchmarkSelect1CaseDefault-8    4.187 ns/op   0 B/op   0 allocs/op
+BenchmarkSelect2CaseDefault-8   40.82  ns/op   0 B/op   0 allocs/op
+BenchmarkSelect4CaseDefault-8   90.47  ns/op   0 B/op   0 allocs/op
+BenchmarkSelect8CaseDefault-8   193.2  ns/op   0 B/op   0 allocs/op
 ```
 
-4.1ns 意味着它只做了一次无锁的 channel 状态检查。上一篇文章《[time.After 的隐藏账单](/writing/go-timeafter-hidden-cost)》里热循环的 `select { case <-stop: default: }` 每轮跑 5M 次，靠的就是这条免费路径——**stop 检查便宜到可以每轮都做，这就是 Go 取消模型的性能基础**。
+4.187ns 说明这条路径很短，但不能把它称作跨版本“免费”。上一篇文章《[time.After 的隐藏账单](/writing/go-timeafter-hidden-cost)》里的热循环使用同样形状的停止检查；是否值得放在每轮都执行，仍应结合实际循环频率和目标 Go 版本复测。
 
-而 ≥2 个 case 的 select 才进入 selectgo：编译期生成 scase 数组（每个 case 是 `{c, elem}` 两字段）和两块 uint16 排序数组（pollorder + lockorder），运行时 `selectgo` 负责仲裁。
+而 ≥2 个 case 的 select 才需要更完整的仲裁准备：编译期生成 case 描述，运行时构造 pollorder/lockorder 并扫描 channel 状态。本文基准只覆盖“全部 channel 未 ready + default”这一条路径，因此不把这些数字外推到阻塞等待或 ready case。
 
 ## 二、selectgo 解剖：随机化管公平，排序管不死锁
 
 selectgo 的核心只有两步准备（runtime/select.go）：
 
 ```go
-// 1. pollorder：随机置换，保证公平（select.go:191）
+// 1. pollorder：随机置换，避免固定声明顺序偏置
 j := cheaprandn(uint32(norder + 1))
 pollorder[norder] = pollorder[j]
 pollorder[j] = uint16(i)
 
-// 2. lockorder：按 hchan 地址堆排序，保证加锁顺序一致（select.go:206）
+// 2. lockorder：按 hchan 地址堆排序，保证加锁顺序一致
 // sort the cases by Hchan address to get the locking order.
 ```
 
-**pollorder 为什么随机**：如果固定按 case 声明顺序检查，永远就绪的第一个 case 会把其他 case 饿死。随机置换后，每次 select 的检查顺序都不同，所有就绪 case 等概率中选。**lockorder 为什么按地址排序**：select 可能同时锁多个 channel（多个 case 同时就绪时逐个消费），如果两个 goroutine 以不同顺序锁同一组 channel 就会死锁——按 hchan 地址升序锁，所有 goroutine 的加锁顺序全局一致，死锁从结构上不可能。
+**pollorder 为什么随机**：如果固定按 case 声明顺序检查，永远就绪的第一个 case 可能让其他 ready case 饥饿。随机化让 ready case 的长期选择更接近均匀；但具体比例仍应绑定输入和样本。**lockorder 为什么按地址排序**：select 可能需要同时处理多个 channel 的锁，统一加锁顺序可以避免因不同 goroutine 取得 channel 锁的顺序不同而形成循环等待。
 
 就绪检测是双重的：先无锁轮询一遍所有 case（谁就绪选谁），全不就绪才挂 sudog 到每个 channel 的等待队列并 gopark。
 
-## 三、五档实测：case 数按 ~25ns 线性涨价，阻塞是固定首付
+## 三、四档非阻塞实测：case 越多，扫描工作越多
 
 | 场景 | ns/op | 路径 |
 |---|---|---|
-| select 1 case + default | **4.1** | 编译器重写，无 selectgo |
-| select 2 case + default | 41.4 | 非阻塞轮询 |
-| select 4 case + default | 90.8 | 非阻塞轮询 |
-| select 8 case + default | **197.3** | 非阻塞轮询 |
-| select 2 case 就绪 | 51.8 | 有值直接消费 |
-| select 8 case 就绪 | 204.7 | 有值直接消费 |
-| select 1 case 阻塞 | 147.8 | 挂 sudog + park |
+| select 1 case + default | **4.187** | 编译器重写的非阻塞检查 |
+| select 2 case + default | 40.82 | 非阻塞扫描 |
+| select 4 case + default | 90.47 | 非阻塞扫描 |
+| select 8 case + default | **193.2** | 非阻塞扫描 |
 
-（全部 0 allocs/op——scase 数组是编译期在栈上预留的，order 数组复用 goroutine 栈空间。所有场景本机实测，Go 1.25.1。）
+（全部 0 allocs/op；本表没有测 ready case、阻塞等待或取消竞态。数字绑定 Go 1.25.1、Darwin arm64、`-benchtime=1s`、`-cpu=8`。）
 
 三个规律：
 
-1. **case 数按约 25ns 线性涨价**：2→4→8 case，41→91→197ns。无论 default 轮询还是就绪直选，每多一个 case 都是一次 channel 状态检查 + 一次 rand。select 的 case 数是有标价的——8 case 的 select 比 2 case 贵 4 倍。
-2. **阻塞等待是固定首付**：1 case 阻塞 147.8ns，比 2 case 就绪（51.8ns）贵 3 倍。挂 sudog、park、被唤醒、调度回来，这套流程与 case 数无关，是 select 的"同步税"（呼应《[goroutine 泄漏不是内存泄漏](/writing/go-goroutine-leak-pprof)》里 park/ready 的成本）。
-3. **就绪 vs 轮询同价**：8 case 就绪 204.7ns 与 8 case default 轮询 197.3ns 几乎一样——就绪时 selectgo 也要生成完整的 pollorder/lockorder，两个 cost 是相加的不是二选一。
+1. **case 数是明显的成本变量**：2→4→8 case 从 40.82→90.47→193.2ns；这支持“扫描更多候选需要更多工作”的判断，但不够推出每个 case 固定增加多少 ns。
+2. **单 case + default 是不同编译路径**：4.187ns 与 2 case 的 40.82ns 不在同一档，不能用多 case 线性公式回推单 case。
+3. **阻塞和 ready 路径必须另测**：挂 sudog、park、唤醒、消费 ready value 的成本没有混入本表；把未测路径填成精确数字会破坏证据链。
 
-## 四、公平性实验：5 亿次选择，50.00 对 50.00
+## 四、公平性 smoke：100 万次 ready 选择接近均匀
 
-pollorder 的随机化不能靠读源码证明，实验：两个 channel 恒有值，select 二选一，统计各自被选中的比例：
+pollorder 的随机化不能只靠一条代码注释理解。实验命令让两个 buffered channel 在每轮选择后立刻补回一个值，统计两个 ready case 的比例：
 
 ```
-BenchmarkSelectFairness   2.24 亿次   50.00% ch1    50.00% ch2
+go run ./go-runtime-boundary/cmd/select-fairness -n=1000000
+iterations=1000000 left=499690 right=500310 left_ratio=0.499690 right_ratio=0.500310
 ```
 
-（第一次 1 亿次跑出 50.01%/49.99%，加到 2.24 亿次后精确 50.00/50.00。）这就是随机置换的实证：**任何依赖 case 顺序的"技巧"都是错的——select 的仲裁结果在统计上是均匀的，不因声明顺序倾斜**。顺带一提，这个 bench 的正确写法（每轮只回补被消费的那一侧，维护"两端恒满"的不变量）就是生产代码里 select 消费 + 回填的标准形态，写错会直接 deadlock。
+这是当前 Go 版本、当前机器和 100 万次输入下的观察：两侧相差 620 次，比例差约 0.062 个百分点。它支持“没有明显的声明顺序偏置”，但不证明任何样本量下都精确 50:50，更不替代运行时源码与统计假设。实验还保留了一个重要不变量：只回填被选中的 channel，避免把两个 token 反复塞进容量为 1 的 buffer。
 
 ## 五、生产判断：select 的账单怎么付划算
 
 | 用法 | 成本 | 判断 |
 |---|---|---|
-| `select { case <-stop: default: }` 热循环检查 | 4.1ns | 随便用，这是 Go 取消模型的立足点 |
-| 2~3 case 的取消/超时/数据仲裁 | ~50ns | 每请求一次，成本可忽略 |
-| 8+ case 的集中分发 | 200ns+ | 考虑拆成两级或换策略（case 数 ×25ns 线性涨） |
-| 高频率、长阻塞的 select 等待 | 148ns+/次唤醒 | 阻塞时无 CPU 成本，唤醒才有；低唤醒频率无碍 |
+| `select { case <-stop: default: }` 热循环检查 | 本次 4.187ns | 单 case + default 走简化路径；仍需按目标 Go 版本复测 |
+| 2~3 case 的取消/超时/数据仲裁 | 由 case 数和 ready 状态决定 | 不要把 2 case 的 default 数字当成阻塞等待成本 |
+| 8+ case 的集中分发 | 本次 8 case 为 193.2ns | 先量扫描成本，再决定是否拆分或改变路由结构 |
+| 高频率、长阻塞的 select 等待 | 本文未测 | 阻塞时 CPU 与唤醒尾延迟应单独采集 |
 
-选型要点：**case 数是第一性能参数**——能 2 case 解决的不要 4 case；但阻塞等待的成本与 case 数无关，低频高等待场景（比如每请求一次 select 等 RPC 或取消）完全不需要优化。与 channel 文呼应：快路径 35ns、select 仲裁 ~50ns、一次 park ~150ns、无缓冲交换 304ns——**Go 并发原语的成本层级是"每多一次同步加约 100ns"**。
+选型要点：**case 数是扫描成本的重要变量，但不是唯一变量**。能清楚表达为 2 case 的逻辑不必堆成 8 case；低频阻塞场景则应优先看取消、超时和唤醒尾延迟，而不是拿非阻塞 `default` benchmark 做预算。
 
-## 结论
+## 六、结论：select 同时承担扫描、随机仲裁和阻塞合同
 
-select 的成本分层清晰：编译器重写把 1 case + default 变成 4ns 的免费检查；selectgo 为多 case 支付线性费用（每 case ~25ns）；阻塞等待另付 148ns 的同步首付。它的两个设计卖点是实验可证的：随机置换带来统计公平（5 亿次 50.00/50.00），按地址排序的加锁顺序根除多 channel 死锁。生产上的杠杆是 case 数和"能否不进 selectgo"——剩下的交给运行时。
+当前证据支持三条窄判断：单 case + default 是约 **4.187ns** 的简化路径；2/4/8 个非 ready case 的扫描从 **40.82ns** 增到 **193.2ns**；双 ready channel 的 100 万次 smoke 没观察到明显的声明顺序偏置。它们都不是跨机器固定常数，也没有覆盖阻塞等待、ready value 消费和高争用。
 
-下一步可做的事：数一遍你代码里 select 的 case 数，超过 4 case 的看看能不能拆；把高频轮询里的 2 case 逻辑确认走的是编译器重写路径（单 case + default），别让热路径为不必要的 case 付 25ns/case 的税。
+下一步可做的事：为每个热点 `select` 记录 case 数、ready 比例、阻塞时长、唤醒延迟和取消路径，再用同一输入对照拆分前后的 CPU 与尾延迟；不要从单次非阻塞基准推导生产 p99。
 
 ## 参考资料
 
-1. Go 源码 `runtime/select.go`（selectgo、pollorder 随机化 select.go:191、lockorder 地址排序 select.go:206）—— Go 1.25.1 本机源码
+1. Go 源码 `runtime/select.go`（selectgo、pollorder 随机化与 lockorder 加锁顺序）—— Go 1.25.1 本机源码
 2. Go 官方文档《Select》—— https://go.dev/ref/spec#Select_statements
 3. 前作：[channel 的账本](/writing/go-channel-hchan-cost)、[time.After 的隐藏账单](/writing/go-timeafter-hidden-cost)、[goroutine 泄漏不是内存泄漏](/writing/go-goroutine-leak-pprof)、[Go 锁成本](/writing/go-lock-cost-futex-rwlock)
+4. 本文实验入口：`experiments/go-runtime-boundary/bench_test.go`（`BenchmarkSelect1CaseDefault`、`BenchmarkSelect2CaseDefault`、`BenchmarkSelect4CaseDefault`、`BenchmarkSelect8CaseDefault`）；公平性 smoke：`experiments/go-runtime-boundary/cmd/select-fairness`；环境与 raw：`evidence/go-select-selectgo-cost/2026-08-16-local/`。

@@ -99,7 +99,7 @@ SHOW BINARY LOGS;
 
 **诚实注明**：本文把两阶段提交简化为"对账"，真实的 InnoDB + binlog 两阶段还有 group commit 优化（把多个事务的 binlog 攒一批一起 fsync），见本系列[数据库为什么宁可慢，也要等你 fsync](/writing/fsync-group-commit)。
 
-## 结论
+## 结论：redo、undo、binlog 分工不同，恢复靠 XID 对账
 
 三本账为什么要分开，因为**读者不同**：redo 给失败恢复、undo 给回滚与历史、binlog 给复制。不能合一还有一层——引擎层与服务器层各自落盘，只能靠**两阶段 + XID 对账**保持一致，而崩溃恢复就是"重放 + 对账 + 回滚"三动作按账本执行。总结就两句：**redo 记物理、binlog 记语义、undo 记"怎么回去"**。
 

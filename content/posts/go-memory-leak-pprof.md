@@ -132,7 +132,7 @@ demo 的 goroutine 数 10 秒从 1680 涨到 9929——G 层在漏；堆采样�
 
 生产禁止"看一次 profile 就下结论"：要有**监控-基线-双帧**配置。在监控里挂 HeapAlloc 曲线（如 Prometheus `go_memstats_alloc_bytes`），阈值告警后，拉两帧 pprof 互为基线，diff 定位——有基线才有发言权。
 
-## 结论
+## 结论：内存泄漏排查要把 RSS、heap 和 profile 放在同一时间线上
 
 内存泄漏的判定不靠"内存涨"也不靠"inuse 高"，靠的是**两个时刻的差 + 三张账（Alloc/goroutine/Sys）对着看**。pprof 的两帧对比（`-base`）能帮你把"系统性增长"和"配置/缓存/临时分配"分开：前者才叫泄漏，后者是另一类账。
 

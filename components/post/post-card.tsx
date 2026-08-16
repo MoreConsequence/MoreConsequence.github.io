@@ -40,13 +40,6 @@ export function PostCard({
           ))}
         </ul>
       </div>
-      <Link
-        className="post-card-arrow"
-        href={`/writing/${post.slug}`}
-        aria-label={`阅读《${post.meta.title}》`}
-      >
-        ↗
-      </Link>
     </article>
   );
 }

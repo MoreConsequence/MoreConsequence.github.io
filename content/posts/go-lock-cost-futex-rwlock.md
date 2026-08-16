@@ -1,33 +1,32 @@
 ---
-title: "锁的成本是排队不是加锁：futex、自旋与内核唤醒的三档价目"
-description: "无争用锁 14ns，八线程争用涨到 120ns，再往上走内核唤醒。用 M1 Pro 实测拆开一把锁的三档价目：原子 CAS、用户态自旋、futex 内核睡眠唤醒，并落到 Go sync.Mutex 的源码参数与 RWMutex 的适用边界。"
+title: "锁的成本是排队不是加锁：Mutex、atomic 与自旋的争用曲线"
+description: "一次本机 Go 1.25.1/arm64 基线显示，8 个并发 worker 下 atomic 为 39.65ns、Mutex 为 99.26ns、纯自旋锁为 250.1ns；16 个 worker 下纯自旋升到 572.8ns。文章从 Go runtime 的 fast/slow path 解释排队、自旋与 OS semaphore 的边界，并明确当前 Darwin 证据不能冒充 Linux futex 实测。"
 publishedAt: "2026-08-08"
-updatedAt: "2026-08-08"
+updatedAt: "2026-08-16"
 tags: ["Go", "并发", "性能"]
 draft: false
 featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** 锁的开销大头不在 `Lock()` 那一行，而在没人能立刻拿到锁之后的排队机制。三档价目：无争用快路径只是原子 CAS（本机实测 `sync.Mutex` 单线程 14ns/次）；争用发生时先自旋（Go 限制最多 4 轮）再进内核睡眠/唤醒（futex 系统调用 + 唤醒，微秒级起步）；`GOMAXPROCS` 每翻一倍，排队的代价就涨一截（1 核 13.6ns → 16 核 128.9ns）。RWMutex 只在"读者远多于写者"时划算，但"读锁免费"是错觉——代价只是换了一种形态。选锁之前，先量临界区。
+**TL;DR：** 锁的开销大头不在 `Lock()` 这一行，而在竞争后如何排队。本机统一基准（Go 1.25.1、Darwin arm64、`-cpu=2,4,8,16`）中，8 个并发 worker 下 `atomic.AddInt64` 为 **39.65ns/op**，`sync.Mutex` 为 **99.26ns/op**，故意持续占 CPU 的自旋锁为 **250.1ns/op**；16 个 worker 下自旋锁升到 **572.8ns/op**。这些数字只证明当前实现、机器和临界区形状下的争用曲线；Go runtime 的 semaphore 路径在 Linux 上可能落到 futex，但本次没有 Linux 运行证据。`RWMutex` 也不能凭“读锁免费”或固定读写比例选型，必须用同语义 workload 重测。
 
 ## 一、直觉错在哪里：锁的账单按"有没有人抢"计价
 
 一个常见的直觉：加锁、解锁都是几条固定的指令，贵不到哪去。这个直觉只在"没人抢"时成立。
 
-用 `go test -bench` 在 M1 Pro（8 性能核，Go 1.25，`lockdemo` 模块）实测同一段"拿锁 + 计数 + 放锁"：
+用统一入口 `experiments/go-runtime-boundary/bench_test.go` 在 M1 Pro（Go 1.25.1）实测同一段“并发读改写 + 极短临界区”。表中不是按“越多 worker 必然越慢”的排序，而是保留完整观测：CPU 频率、调度和 benchmark 时长会让相邻点波动。
 
-| goroutine 数 | 本机实测 ns/op | 处于哪一档 |
-| --- | --- | --- |
-| 1 | 13.6 | CAS 快路径 |
-| 2 | 21.4 | 偶发自旋 |
-| 4 | 93.0 | 自旋为主，少量睡眠 |
-| 8 | 110.8 | 自旋 + futex 混合 |
-| 16 | 128.9 | 大量 futex 唤醒 |
+| 并发 worker | atomic | `sync.Mutex` | 纯自旋锁 |
+| --- | --- | --- | --- |
+| 2 | 22.93ns | 28.08ns | 39.30ns |
+| 4 | 46.69ns | 94.71ns | 137.8ns |
+| 8 | 39.65ns | 99.26ns | 250.1ns |
+| 16 | 50.89ns | 127.8ns | **572.8ns** |
 
-16 个 goroutine 抢同一把锁，代价是 13.6 → 128.9ns，约 9.5 倍。**一把锁的价格不是它自己的，是"新进来的人"与"已经睡着的人"之间的竞争**。要理解这个放大过程，把 `internal/sync/mutex.go` 的 `lockSlow` 走完一遍。
+在这组输入里，16 个 worker 的 `sync.Mutex` 是 127.8ns，而纯自旋锁是 572.8ns；**一把锁的价格不是它自己的，是“新进来的人”与“已经在等待的人”之间的竞争**。atomic 的 8 worker 点低于 4 worker，也提醒我们不要把一台机器的一次运行画成单调增长定律。要理解差异，应把 `sync.Mutex` 的 `lockSlow`、runtime semaphore 和自旋实现一起看。
 
-## 二、三档价目：CAS、自旋、futex
+## 二、三条路径：fast path、自旋与等待者队列
 
 Go 的 Mutex（1.20+ 起在 `internal/sync` 下）拆成 fast path 和 slow loop 两段。先看快路径：
 
@@ -38,7 +37,7 @@ if atomic.CompareAndSwapInt32(&m.state, 0, mutexLocked) {
 }
 ```
 
-**第一档：原子 CAS（无争用，~14ns）**。`state` 是 32 位字，0 → locked，一条 `LOCK CMPXCHG` 指令解决。没有任何队列机制；对比纯原子加计数（~7ns），多出来的部分是 CAS 的读-改-写与内存序约束。
+**第一档：fast path。** `state` 处于可获取状态时，`Lock` 会尝试一次原子状态转换；它没有经过等待者队列。具体 ns/op 取决于架构、编译器和 benchmark 外围，不应把某个旧版本的 14ns 当成固定价格。
 
 **第二档：自旋。** CAS 失败说明已经有人持锁（`mutexLocked` 位为 1）。此时 Go 不会立刻睡着，而是在 CPU 上原地转——循环里做 `runtime_doSpin()`：
 
@@ -50,14 +49,16 @@ const active_spin_cnt = 30 // 每轮约 30 条 PAUSE 指令
 
 自旋的代价是几十个 CPU 周期，好处是**如果持锁者恰好在这几十周期内释放，就能原地接住**，省掉"睡下去再醒来"的全部成本。代价是自旋期间占用一个核空转。Go 只在 `GOMAXPROCS > 1` 且当前 P 的运行队列为空时才允许自旋，免得自己空转还把别的任务挤掉。
 
-**第三档：内核睡眠与唤醒（futex）**。自旋 4 轮还没抢到，Go 才调用 `runtime_SemacquireMutex` → 到操作系统挂起（Linux 上是 futex）。真正昂贵的是两个部分：
+**第三档：等待与唤醒。** 自旋仍拿不到锁后，Go 会进入 `runtime_SemacquireMutex` 等待；具体由操作系统的 semaphore 实现承接，Linux 常见底层是 futex，但 Darwin 本次没有用 futex 证据。真正昂贵的是两个部分：
 
-1. **系统调用本身**：一次 `futex(FUTEX_WAIT)` 进入内核，约 0.5-1µs，纯开销；
-2. **唤醒**：持锁者 `Unlock` 时 `runtime_Semrelease` → `FUTEX_WAKE`，被唤醒的 goroutine 还要经过调度、重新竞争——唤醒-切换合计可达微秒到几十微秒。
+1. **等待交接**：调用方可能离开用户态并等待 runtime/OS 的唤醒；平台和系统负载决定具体延迟；
+2. **唤醒后重新竞争**：被唤醒的 goroutine 还要经过调度并重新争抢状态，尾延迟可能远高于无争用 fast path。
 
-三档的结构非常连贯：**自旋解决"临界区极短"的常态，futex 是兜底**。合理设计下，绝大多数争用应该被前两档接住；一旦常态化落入第三档，就是锁的病。
+三条路径的结构非常连贯：**自旋试图解决“临界区极短”的常态，等待队列负责把无法立即获得锁的 goroutine 暂停下来**。当前 Darwin 基准只观察到最终 ns/op，不能反推出每个样本是否进入了某个 OS 等待原语。
 
-## 三、可复现实验：把三档都走一遍
+## 三、可复现实验：最小示例与完整争用矩阵
+
+下面是帮助读者理解 `RunParallel` 形状的最小示例；它不是当前统一基准的完整实现，完整的 atomic、Mutex、自旋和 worker 矩阵见下方实验入口与 raw 输出。
 
 ```go
 package lockdemo
@@ -83,62 +84,63 @@ func BenchmarkMutex(b *testing.B) {
 }
 ```
 
-`RunParallel` 会自动按 `GOMAXPROCS` 开等量 goroutine，所以上面的数字就是这台机器的完整价目。换 `sync.RWMutex` 的 `RLock/RUnlock` 就是读锁档：
+`RunParallel` 会按 benchmark 的 `-cpu` 设置提供并发 worker。统一入口实际运行的是 atomic、Mutex 和故意持续占 CPU 的自旋锁三条路径：
 
 ```text
-BenchmarkMutex-8              117.6  ns/op   （8 线程争用）
-BenchmarkRWMutexRead-8        106.3  ns/op   （读锁，几乎没差）
-BenchmarkAtomic-8              45.9  ns/op   （原子计数对照）
-BenchmarkMutexUncontended-8    14.0   ns/op   （快路径基线）
+BenchmarkAtomicParallel-8       39.65 ns/op   0 B/op  0 allocs/op
+BenchmarkMutexParallel-8       99.26 ns/op   0 B/op  0 allocs/op
+BenchmarkSpinParallel-8       250.1  ns/op   0 B/op  0 allocs/op
+BenchmarkMutexParallel-16     127.8  ns/op   0 B/op  0 allocs/op
+BenchmarkSpinParallel-16      572.8  ns/op   0 B/op  0 allocs/op
 ```
 
-**另外很重要的一条：对称翻转。** 临界区里干活一旦超过 1µs，任何档位都会被拉平——因为睡眠唤醒本身就把量级摆在那。所以对锁优化的第一反应永远是**缩短临界区**，第二才是换锁。
+复现命令和原始输出绑定在文末 evidence。**另外很重要的一条：不要只换锁。** 如果临界区中混入 I/O、序列化或长计算，等待和尾延迟会淹没这些微基准差异；锁优化的第一反应仍应是缩短临界区，第二才是换原语。
 
 ## 四、再往前一步：原子不是锁，是隧道的偷渡客
 
 严格说原子操作没有锁队列，但它是最便宜的"伪锁"：原子加法没有 CAS 失败绕、没有自旋、没有唤醒，只有同一缓存行的独占弹跳（见[MESI 伪共享的文章](/writing/mesi-cache-coherence-false-sharing)）。
 
-| 手段 | 无争用 | 8 线程争用 | 尾部风险 |
+| 手段 | 4 worker | 8 worker | 16 worker |
 | --- | --- | --- | --- |
-| `atomic.AddInt64` | 7ns | 46ns | 伪共享弹跳 |
-| `sync.Mutex` | 14ns | 118ns | futex 唤醒 µs 级 |
-| `sync.RWMutex` 读锁 | 14ns | 106ns | 写者拿到后全部读者排队 |
+| `atomic.AddInt64` | 46.69ns | 39.65ns | 50.89ns |
+| `sync.Mutex` | 94.71ns | 99.26ns | 127.8ns |
+| 纯自旋锁 | 137.8ns | 250.1ns | **572.8ns** |
 
-结论分两层：**原子在无争用时比 Mutex 快约 2 倍**（7 vs 14ns），八线程争用时快约 2.5 倍（46 vs 118ns）——但远没有"原子 = 免费"那种想象。**真正让原子无法替代锁的场景是"写者稀少"**：Mutex 的排队会让每个写者等一轮唤醒，原子的计数器根本不需要排队。反过来，"原子永远更优"也是错的：一旦有大量线程在同一个计数上做读改写，冲突率直线上升，此时反而该回归 Mutex——让写者排队，而不是所有线程同时忙等。
+结论分两层：**原子在这组短计数临界区中通常低于 Mutex**，但它不提供互斥、不保护复合不变量，也不能从这张表推导“原子永远更优”。纯自旋锁在 worker 增加时明显恶化，说明它把等待成本直接转成 CPU 消耗；如果临界区稍长，系统吞吐和功耗会先付出代价。
 
 ## 五、RWMutex：读者的优惠券，写成本转移给写者
 
 RWMutex 的账是做一笔交易：读者之间不加互斥（RLock 并发），**代价是写者一旦排队，新读者全部被挡在门外**（Go 与 C++ 皆如此，防写者饥饿）。它只在两个条件同时成立时值：
 
-1. **读多写少**（写 <5%）；
-2. **临界区足够大**，大到读者的并发收益超过写者的排队税。
+1. **读写访问存在真实的并发重叠**；
+2. **临界区足够长或读者足够多**，读者并发收益能够超过 `RLock`/写者排队的额外状态维护。
 
-从前面的实验看，纯计数锁下 RWMutex 读锁和 Mutex 没什么差别（30ns 左右差距）——**读锁便宜是幻觉**：RWMutex 的 RLock 走的是与 Lock 相同的自旋+futex pipeline。真正的收益来自**写锁次数减少**：写者少，futex 唤醒次数少，读者之间又互不挡，才把均摊成本压下去。
+本轮没有把 `RWMutex` 读锁纳入统一 raw，因此不为它填一条“106ns”或“写 <5%”的经验常数。真正的收益来自读者之间不互斥，但写者到来时新读者会被挡住；必须在实际读写比、临界区和快照语义下补测。
 
-选型逻辑一句话：**测了再说**。临界区 200ns 的计数锁，换 RWMutex 可能是负优化；临界区 50µs 的配置表，读 999 写 1，RWMutex 才显身手。
+选型逻辑一句话：**测了再说**。小计数临界区先比较 atomic/Mutex；需要保护复合状态时再考虑 Mutex/RWMutex；配置表等读多写少场景要把写者排队、快照和更新频率一起放进 benchmark。
 
 ## 六、选型表：什么时候买哪一档
 
 | 临界区特征 | 该用 | 理由 |
 | --- | --- | --- |
-| 计数器/状态位，读改写 | atomic | 无唤醒无队列，最廉价 |
-| 配置表：读极多、写极稀有、临界区大 | RWMutex | 读者并发、写者极少 |
-| 既有读写混频、临界区小 | Mutex | RWMutex 收益被 pipeline 成本吃掉 |
-| 临界区 > 几十 µs | 加锁前先重设计 | 任何锁都救不了排队 |
+| 单个计数器，读改写不涉及其他状态 | atomic | 不需要互斥，当前短临界区对照更低 |
+| 需要保护多个字段或复合不变量 | Mutex | 语义直接，等待者不会持续烧 CPU |
+| 读远多于写、且读者可并发 | RWMutex | 让多个读者同时进入，但必须测写者排队 |
+| 临界区包含 I/O/长计算 | 先重设计临界区 | 任何锁都不能消除把慢工作放在锁内的代价 |
 
-要点：**锁的选择首先是临界区长度，其次才是读/写比例**。临界区长，首选 RWMutex（读者不走唤醒）；临界区短，一律 Mutex + 原子，RWMutex 反而多一层外支付。
+要点：**锁的选择首先是保护的语义，其次才是微基准**。不能用 atomic 的速度替代复合状态的互斥，也不能因为 RWMutex 有读并发就跳过写者排队和快照一致性分析。
 
-## 结论
+## 七、结论：先固定临界区语义，再看竞争曲线
 
-锁的定价只有三档：无争用原子 CAS（~14ns）→ 用户态自旋（~110ns 档）→ futex 内核睡眠唤醒（µs 级）。绝大多数"锁很贵"的直觉是把第三档当常态；而多数"锁加多了"的痛则是躺在了第二档却以为免费。
+当前证据支持的判断是：8 worker 下 atomic **39.65ns**、Mutex **99.26ns**、纯自旋 **250.1ns**；16 worker 下纯自旋到 **572.8ns**。这是一条当前 Darwin arm64、短临界区、`-cpu=2,4,8,16` 的争用观察，不是锁的固定价目，也没有证明每个样本都进入了某个 Linux futex syscall。
 
-工程顺序：**先量临界区**（火焰图上的 Mutex 宽度，见[先采样再优化：perf 火焰图与 CPU 时间到底去哪了](/writing/perf-flamegraph-sampling)）→ 再按上面的表选档。真正的架构优化，是不让"三档"常态化：把锁内的工作丢出临界区，或者换消息队列。
+工程顺序：**先量临界区**（火焰图上的 Mutex 宽度，见[先采样再优化：perf 火焰图与 CPU 时间到底去哪了](/writing/perf-flamegraph-sampling)）→ 再确认是单值原子、复合状态 Mutex，还是读写分离 RWMutex → 最后用实际竞争曲线验证。真正的架构优化，是不让锁内工作包含 I/O、远程调用或不可控计算。
 
-下一步实测（本机、10 秒内）:
+本机复现实验：
 
 ```bash
-$ go test -bench=. -benchtime=2s -run=^$    # 量出你机器三档价目
-$ perf record -g ./app                      # 找到谁的临界区在排队
+cd experiments
+go test ./go-runtime-boundary -run '^$' -bench '^(BenchmarkAtomicParallel|BenchmarkMutexParallel|BenchmarkSpinParallel)$' -benchmem -benchtime=1s -cpu=2,4,8,16
 ```
 
 ## 参考资料
@@ -147,5 +149,6 @@ $ perf record -g ./app                      # 找到谁的临界区在排队
 2. Go 源码 `runtime/proc.go`（runtime_doSpin 与 GOMAXPROCS 约束）—— https://github.com/golang/go/blob/master/src/runtime/proc.go
 3. Linux futex(2) 手册（FUTEX_WAIT / FUTEX_WAKE）—— https://man7.org/linux/man-pages/man2/futex.2.html
 4. Go: benchmarking 文档 —— https://go.dev/pkg/testing/#hdr-Examples
+5. 本文实验入口：`experiments/go-runtime-boundary/bench_test.go`（`BenchmarkAtomicParallel`、`BenchmarkMutexParallel`、`BenchmarkSpinParallel`）；环境与原始输出：`evidence/go-runtime-boundary/2026-08-16-local/`。
 
 > 延伸阅读：锁的底层是原子，而原子的敌人是伪共享，见[多核的假象：缓存一致性（MESI）与伪共享这笔税](/writing/mesi-cache-coherence-false-sharing)；锁买卖的是"看不到的先后"，先有 happens-before 才知道排队为什么成立，见[Go 并发里没有先来后到：happens-before 才是唯一的裁判](/writing/go-happens-before)。

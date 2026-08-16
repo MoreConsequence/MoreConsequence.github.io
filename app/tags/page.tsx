@@ -30,7 +30,6 @@ export default async function TagsPage() {
             <strong>{tag.name}</strong>
             <span>{tag.count} 篇文章</span>
             <time>{tag.latestPublishedAt.replaceAll("-", ".")}</time>
-            <i aria-hidden="true">↗</i>
           </Link>
         ))}
       </div>

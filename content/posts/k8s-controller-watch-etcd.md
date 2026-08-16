@@ -89,7 +89,7 @@ kubectl --raw "/api/v1/pods?watch=true&resourceVersion=0"
 2. **断线 ≠ 状态可猜**：watch 断了该重新 `list` 全量再续增量，绝不能自己拼一个"看起来对"的状态继续——漏更新比拉全量更危险。
 3. **别把 etcd 当业务库**：往里塞高频变化的业务数据，会产生海量 revision 垃圾与频繁 compaction，让所有 watcher 不断 410 重建，控制面反而先崩。
 
-## 结论
+## 结论：控制面以 resourceVersion 把写入变成增量广播
 
 K8s 的控制面是"apiserver 写、etcd 存、watch 拉、resourceVersion 当游标"的**增量广播系统**。这笔交易的清晰之处：**只有一个权威，一次只能改一笔，其他全走增量跟随**。读对齐的代价是断线→快照重建；写对齐的代价是全部写必须穿过 apiserver 这个单点针眼，不能旁路。所有组件都靠 watch 增量才"看见"变化，所以你的控制器对变化的响应速度，不可能快过 apiserver 推拉增量这一跳。
 

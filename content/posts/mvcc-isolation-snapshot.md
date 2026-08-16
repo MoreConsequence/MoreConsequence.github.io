@@ -108,7 +108,7 @@ SELECT balance FROM acc WHERE id=1 LOCK IN SHARE MODE; -- 又读到 200 —— �
 
 关键配套观测：执行 `SHOW ENGINE INNODB STATUS`，在 `TRANSACTIONS` 段能看到两个事务的详情——其中一个事务的 `READ VIEW` 会列出 `m_ids` 的集合，这就是它"定格"的世界；执行 `SELECT * FROM performance_schema.data_locks\G` 可以看到当前读持有的锁（X 锁 / 间隙锁）。配合两次 SELECT 之间手动停顿几秒、给会话 2 一个提交窗口，就是 MVCC"账本"最直观的物理演示。
 
-## 结论
+## 结论：MVCC 用快照隔离读，当前读仍会进入锁竞争
 
 MVCC 把"隔离"从"用锁冻住数据"的直觉，换成了"**每个读者一本书，翻到哪一页由快照决定**"——读不用等写、写不用等读，靠的是两样东西：**版本链**（行的历史）和**快照**（启动时刻的可见事务集合）。隔离级别的表不值得背，值得背的是那条验证线：**快照读不破功，当前读能越过账本**。
 

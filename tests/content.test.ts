@@ -7,6 +7,11 @@ import {
   parsePostSource,
   sortPosts,
 } from "@/lib/content/posts";
+import {
+  collectSeries,
+  decodeSeries,
+  getPostsForSeries,
+} from "@/lib/content/series";
 import { compileMarkdown } from "@/lib/content/markdown";
 
 const article = `---
@@ -44,13 +49,39 @@ describe("Markdown content pipeline", () => {
       "go-append-slice-growth",
       "go-closure-escape",
       "go-errors-is-unwrap-cost",
+      "llm-embedding-retrieval",
+      "llm-hallucination-measurable",
+      "llm-sampling-reproducibility",
+      "llm-token-economics",
+      "llm-tool-calling-contract",
+      "service-api-shape",
+      "service-ci-cd",
+      "service-design-adr",
+      "service-incident-drama",
+      "service-observability-slo",
+      "service-release-checklist",
+      "service-testing-strategy",
+      "typescript-agent-production",
+      "typescript-agent-state-machine",
+      "typescript-dto-boundary",
+      "typescript-errors-result-throw",
+      "typescript-event-loop-vs-gmp",
+      "typescript-interface-schema-zod",
+      "typescript-streams-backpressure",
+      "typescript-toolchain-rules",
+      "typescript-type-gymnastics",
       "go-benchmark-pitfalls",
       "go-interface-boxing",
+      "go-slice-subslice-hold",
+      "go-sync-map-boundary",
       "go-sync-pool-design",
+      "tcp-nagle-delayed-ack",
+      "typescript-llm-tool-loop",
       "go-atomic-vs-mutex",
       "go-defer-panic-cost",
       "go-goroutine-stack-growth",
       "go-mallocgc-allocator",
+      "typescript-pitfalls-for-go-backend-developers",
       "go-map-hmap-cost",
       "go-string-byte-conversion",
       "go-channel-hchan-cost",
@@ -216,5 +247,39 @@ tags: ["测试"]
     ]);
     expect(result.html).toContain('class="sr-only"');
     expect(result.html).not.toContain('href="#footnote-label"');
+  });
+
+  it("groups posts into series and filters by name", () => {
+    const withSeries = article.replace(
+      "featured: true",
+      'featured: true\nseries: "Go 系列"',
+    );
+    const first = parsePostSource("first.md", withSeries);
+    const second = parsePostSource(
+      "second.md",
+      withSeries
+        .replace("2026-07-20", "2026-07-25")
+        .replace("featured: true", "featured: false"),
+    );
+    const standalone = parsePostSource(
+      "standalone.md",
+      article.replace("2026-07-20", "2026-07-30"),
+    );
+
+    const series = collectSeries([first, second, standalone]);
+
+    expect(series).toEqual([
+      {
+        name: "Go 系列",
+        count: 2,
+        latestPublishedAt: "2026-07-25",
+      },
+    ]);
+    expect(getPostsForSeries([first, second], "Go 系列").map((p) => p.slug)).toEqual([
+      "first",
+      "second",
+    ]);
+    expect(getPostsForSeries([first, second], decodeSeries("Go%20%E7%B3%BB%E5%88%97"))).toHaveLength(2);
+    expect(getPostsForSeries([first, second], "不存在")).toHaveLength(0);
   });
 });

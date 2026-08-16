@@ -108,3 +108,10 @@ ESTAB   0      0       10.0.0.2:52310     203.0.113.7:443    cubic wscale:7,rto:
 **4. 改算法的姿势。** Linux 上用 `sysctl net.ipv4.tcp_congestion_control=bbr`（内核 4.9+）或 per-socket 的 `TCP_CONGESTION` 选项切换。对大多数公网服务，CUBIC 依然是最稳的默认值；BDP 大、随机丢包率高的链路（跨洋、卫星、5G 边缘）才是 BBR 的主场；内网 RTT 极低的链路两者差别不大。别在生产环境一股脑全换——先在一个区域灰度，对比 P95 吞吐与 RTT 再决定[^1]。
 
 [^1]: 延伸阅读：Van Jacobson 1988 年论文《Congestion Avoidance and Control》是全部现代拥塞控制的地基；Google 的 BBR 论文（ACM Queue 2016）给出了四个相位的完整伪代码；`ss -i` 与 `tc` 是观察 cwnd 与队列的两个利器。
+
+## 六、参考资料：不要把论文数字当成本机承诺
+
+- [Google Research：BBR Congestion-Based Congestion Control](https://research.google/pubs/bbr-congestion-based-congestion-control/)：BBR 的测量模型、实验背景与论文入口。本文引用的跨洋吞吐数字应回到该论文的实验条件理解，不能外推到任意链路。
+- [Linux kernel：TCP BBR](https://android.googlesource.com/kernel/common/+/android-mainline/net/ipv4/tcp_bbr.c)：当前内核实现中的状态、增益和采样字段。
+- [RFC 5681：TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681)：慢启动、拥塞避免、快速重传和快速恢复的标准语义。
+- [Linux `ss` manual](https://man7.org/linux/man-pages/man8/ss.8.html)：查看连接状态、RTT、拥塞窗口等观测字段。

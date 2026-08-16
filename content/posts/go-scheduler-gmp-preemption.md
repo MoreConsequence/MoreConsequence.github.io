@@ -132,7 +132,7 @@ SCHED 1020ms: gomaxprocs=2 idleprocs=0 threads=5 spinningthreads=1 needspinning=
 
 关键区分：**441ns 和 171ns 是"稳态成本"，10ms 是"最坏延迟"**。业务变卡时先看 pprof 时间线哪一段占最多，调度器只是其中一层。如果创建为主，用池；如果偶发延迟，先确认是"时间片被抢"还是"锁等待"（见[锁的成本](/writing/go-lock-cost-futex-rwlock)）。
 
-## 六、结论
+## 六、结论：调度器优化先看抢占、阻塞与队列迁移
 
 Go 调度器安全的工程三线：
 

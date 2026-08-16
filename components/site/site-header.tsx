@@ -8,6 +8,7 @@ import { SiteLogo } from "./site-logo";
 
 const navigation = [
   { href: "/writing", label: "文章" },
+  { href: "/series", label: "系列" },
   { href: "/tags", label: "标签" },
   { href: "/about", label: "关于" },
 ];

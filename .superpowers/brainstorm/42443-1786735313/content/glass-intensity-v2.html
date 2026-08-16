@@ -1,0 +1,132 @@
+<style>
+  .stage { display: grid; grid-template-columns: repeat(3, minmax(300px, 1fr)); gap: 18px; margin-top: 18px; }
+  .opt { border: 1px solid rgba(127,127,127,.22); border-radius: 14px; padding: 12px; background: #fff; cursor: pointer; transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease; }
+  .opt:hover { border-color: rgba(200,59,126,.5); box-shadow: 0 10px 28px rgba(40,25,35,.14); transform: translateY(-2px); }
+  .opt.selected { border-color: #c83b7e; box-shadow: 0 0 0 2px rgba(200,59,126,.35); }
+  .opt h3 { margin: 10px 0 2px; font-size: 1rem; }
+  .opt .tag { font-family: ui-monospace, monospace; font-size: .66rem; color: #8a6; letter-spacing: .08em; text-transform: uppercase; }
+  .opt p { margin: 4px 0 0; color: #555; font-size: .79rem; line-height: 1.55; }
+
+  /* ---------- 整页毛玻璃 mockup ---------- */
+  .page { position: relative; background: #f5f0ea; overflow: hidden; border-radius: 12px; border: 1px solid rgba(127,127,127,.18); }
+  .page::before { content:""; position:absolute; inset:0; background: radial-gradient(280px 140px at 85% -10%, rgba(200,59,126,.14), transparent 60%), radial-gradient(240px 140px at -5% 15%, rgba(30,58,138,.09), transparent 55%); pointer-events:none; }
+  .page::after { content:""; position:absolute; width:48px; height:48px; top: 40px; right: 48px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='%23c83b7e'%3E%3Cg transform='translate(28 30)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(0) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(72) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(144) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(216) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(288) translate(0 -4.2)'/%3E%3C/g%3E%3Cg transform='translate(88 90) scale(0.75)'%3E%3Ccircle r='2.6'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(30) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(102) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(174) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(246) translate(0 -4.2)'/%3E%3Cellipse rx='4.8' ry='2.1' transform='rotate(318) translate(0 -4.2)'/%3E%3C/g%3E%3Cellipse transform='translate(14 76) rotate(32)' rx='3' ry='1.2'/%3E%3Cellipse transform='translate(50 10) rotate(112)' rx='2.8' ry='1.1'/%3E%3Cellipse transform='translate(108 26) rotate(198)' rx='2.6' ry='1'/%3E%3Cellipse transform='translate(44 106) rotate(84)' rx='3' ry='1.2'/%3E%3Cellipse transform='translate(98 62) rotate(252)' rx='2.6' ry='1'/%3E%3Cellipse transform='translate(18 108) rotate(142)' rx='2.4' ry='0.9'/%3E%3C/ g%3E%3C/svg%3E"); background-size: contain; opacity:.09; pointer-events:none; }
+
+  .pg-head { position: relative; z-index:2; display:flex; align-items:center; justify-content:space-between; padding: 10px 16px; font-family: ui-monospace, monospace; font-size:.62rem; letter-spacing:.12em; color:#7d7268; }
+  .pg-head .logo { font-size:.7rem; color:#c83b7e; font-weight:700; }
+  .pg-head nav { display:flex; gap:12px; }
+  .pg-head .pill { font-size:.6rem; color:#847970; }
+  .pg-hero { position:relative; z-index:2; padding: 26px 20px 20px; }
+  .pg-hero h1 { margin:0 0 6px; font-family: "Hiragino Mincho ProN","Songti SC",serif; font-size:1.55rem; font-weight:700; color:#2b2624; line-height:1.2; }
+  .pg-hero h1 i { font-style:normal; color:#c83b7e; }
+  .pg-hero p { margin:0 0 12px; color:#7d7268; font-size:.72rem; line-height:1.6; max-width:70%; }
+  .pg-cta { display:inline-flex; gap:14px; align-items:center; padding: 8px 14px; font-family: ui-monospace, monospace; font-size:.66rem; font-weight:700; letter-spacing:.06em; color:#fff; background:#c83b7e; border-radius: 10px; }
+  .pg-cards { position:relative; z-index:2; display:grid; grid-template-columns: repeat(2,1fr); gap: 10px; padding: 4px 20px 8px; }
+  .pg-card { padding: 12px 14px; }
+  .pg-card .n { font-family: ui-monospace, monospace; font-size:.58rem; font-weight:700; letter-spacing:.12em; color:#c83b7e; }
+  .pg-card h3 { margin: 8px 0 5px; font-size:.86rem; line-height:1.4; color:#2b2624; }
+  .pg-card p { margin:0; font-size:.66rem; line-height:1.6; color:#7d7268; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .pg-side { position:absolute; z-index:2; top: 8px; right: 16px; width: 88px; padding: 12px; }
+  .pg-side .lbl { font-family: ui-monospace,monospace; font-size:.55rem; letter-spacing:.16em; color:#7d7268; }
+  .pg-side .big { font-family: ui-monospace,monospace; font-size:1.2rem; font-weight:700; color:#c83b7e; margin-top:8px; }
+  .pg-side .sub { font-size:.55rem; color:#847970; margin-top:2px; }
+
+  /* 玻璃参数：三档模糊 + 透明度 */
+  .v1 .pg-head { backdrop-filter: blur(6px) saturate(1.15); -webkit-backdrop-filter: blur(6px) saturate(1.15); background: rgba(255,255,255,.42); border-bottom:1px solid rgba(255,255,255,.35); }
+  .v1 .pg-card { backdrop-filter: blur(6px) saturate(1.15); -webkit-backdrop-filter: blur(6px) saturate(1.15); background: rgba(255,255,255,.42); border:1px solid rgba(255,255,255,.5); border-radius: 12px; box-shadow: 0 10px 26px rgba(40,25,35,.10), inset 0 1px 0 rgba(255,255,255,.6); }
+  .v1 .pg-side { backdrop-filter: blur(6px) saturate(1.15); -webkit-backdrop-filter: blur(6px) saturate(1.15); background: rgba(255,255,255,.42); border:1px solid rgba(255,255,255,.5); border-radius: 12px; }
+
+  .v2 .pg-head { backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); background: rgba(255,255,255,.62); border-bottom:1px solid rgba(255,255,255,.5); }
+  .v2 .pg-card { backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); background: rgba(255,255,255,.58); border:1px solid rgba(255,255,255,.6); border-radius: 16px; box-shadow: 0 14px 34px rgba(40,25,35,.12), inset 0 1px 0 rgba(255,255,255,.75); }
+  .v2 .pg-side { backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); background: rgba(255,255,255,.58); border:1px solid rgba(255,255,255,.6); border-radius: 16px; }
+
+  .v3 .pg-head { backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); background: rgba(255,255,255,.74); border-bottom:1px solid rgba(255,255,255,.65); box-shadow: 0 4px 18px rgba(200,59,126,.10); }
+  .v3 .pg-card { backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); background: rgba(255,255,255,.70); border:1px solid rgba(255,255,255,.75); border-radius: 18px; box-shadow: 0 16px 40px rgba(40,25,35,.14), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(200,59,126,.06); }
+  .v3 .pg-side { backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); background: rgba(255,255,255,.70); border:1px solid rgba(255,255,255,.75); border-radius: 18px; }
+</style>
+
+<h2>毛玻璃整页效果 — 模糊强度三档</h2>
+<p class="subtitle">同一版首页（顶部导航 + 大标题 + 文章卡 + 侧栏状态卡）换成毛玻璃。浅色背景下拖背景色块看透度差异——注意对比 A 与 C 的「磨砂感」与白色噪度的平衡。</p>
+
+<div class="options" data-multiselect>
+  <div class="opt" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="page v1">
+        <div class="pg-head">
+          <span class="logo">HY//BLOG</span>
+          <nav><span class="pill">Writing</span><span class="pill">Tags</span><span class="pill">About</span></nav>
+          <span class="pill">⌕ 搜索</span>
+        </div>
+        <div class="pg-hero">
+          <h1>技术札记：<br><i>将复杂系统</i>翻个底朝天</h1>
+          <p>49 篇深度文章，从 Go 运行时到数据库底层，每一篇都在回答「为什么是这样」。</p>
+          <span class="pg-cta">开始阅读 →</span>
+        </div>
+        <div class="pg-side"><div class="lbl">SYS.ONLINE</div><div class="big">49</div><div class="sub">文章 · 活跃</div></div>
+        <div class="pg-cards">
+          <div class="pg-card"><div class="n">01</div><h3>channel 的账本：快路径 35ns</h3><p>Go 并发原语的每一次收发都在记账：缓冲、信号量、锁与调度器四本账如何摊牌成本。</p></div>
+          <div class="pg-card"><div class="n">02</div><h3>string ↔ []byte：零拷贝的边界</h3><p>一次转换的代价到底是多少？unsafe 视角下颜值与风险如何权衡。</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="tag">轻雾 blur 6px</span>
+      <h3>A · 轻薄透</h3>
+      <p>模糊最浅，透度最高，几分「雾里看花」。噪声底纹若隐若现，代价是文字与底色交汇处略「脏」。</p>
+    </div>
+  </div>
+
+  <div class="opt" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="page v2">
+        <div class="pg-head">
+          <span class="logo">HY//BLOG</span>
+          <nav><span class="pill">Writing</span><span class="pill">Tags</span><span class="pill">About</span></nav>
+          <span class="pill">⌕ 搜索</span>
+        </div>
+        <div class="pg-hero">
+          <h1>技术札记：<br><i>将复杂系统</i>翻个底朝天</h1>
+          <p>49 篇深度文章，从 Go 运行时到数据库底层，每一篇都在回答「为什么是这样」。</p>
+          <span class="pg-cta">开始阅读 →</span>
+        </div>
+        <div class="pg-side"><div class="lbl">SYS.ONLINE</div><div class="big">49</div><div class="sub">文章 · 活跃</div></div>
+        <div class="pg-cards">
+          <div class="pg-card"><div class="n">01</div><h3>channel 的账本：快路径 35ns</h3><p>Go 并发原语的每一次收发都在记账：缓冲、信号量、锁与调度器四本账如何摊牌成本。</p></div>
+          <div class="pg-card"><div class="n">02</div><h3>string ↔ []byte：零拷贝的边界</h3><p>一次转换的代价到底是多少？unsafe 视角下颜值与风险如何权衡。</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="tag">中雾 blur 14px</span>
+      <h3>B · 标准雾</h3>
+      <p>磨砂感清晰、文字底下干净。白色噪度适中，科技感与可读性的平衡点。推荐。</p>
+    </div>
+  </div>
+
+  <div class="opt" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="page v3">
+        <div class="pg-head">
+          <span class="logo">HY//BLOG</span>
+          <nav><span class="pill">Writing</span><span class="pill">Tags</span><span class="pill">About</span></nav>
+          <span class="pill">⌕ 搜索</span>
+        </div>
+        <div class="pg-hero">
+          <h1>技术札记：<br><i>将复杂系统</i>翻个底朝天</h1>
+          <p>49 篇深度文章，从 Go 运行时到数据库底层，每一篇都在回答「为什么是这样」。</p>
+          <span class="pg-cta">开始阅读 →</span>
+        </div>
+        <div class="pg-side"><div class="lbl">SYS.ONLINE</div><div class="big">49</div><div class="sub">文章 · 活跃</div></div>
+        <div class="pg-cards">
+          <div class="pg-card"><div class="n">01</div><h3>channel 的账本：快路径 35ns</h3><p>Go 并发原语的每一次收发都在记账：缓冲、信号量、锁与调度器四本账如何摊牌成本。</p></div>
+          <div class="pg-card"><div class="n">02</div><h3>string ↔ []byte：零拷贝的边界</h3><p>一次转换的代价到底是多少？unsafe 视角下颜值与风险如何权衡。</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="tag">重雾 blur 22px</span>
+      <h3>C · 厚磨砂</h3>
+      <p>模糊最重、白度最高，最「干净」也最像 Studio 质感的玻璃板。密度大的页面里可能略闷、少通透感。</p>
+    </div>
+  </div>
+</div>

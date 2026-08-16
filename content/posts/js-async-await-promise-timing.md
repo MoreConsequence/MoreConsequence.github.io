@@ -188,7 +188,7 @@ queueMicrotask(() => n++);
 
 await 的协议是"**调用对方的 then，把 resolve 交出去**"。对真实 promise 这是 1 个微任务；对 thenable，微任务排队的"挂钟时间"由对方决定——这是老库（jQuery Deferred、Bluebird）与 Promise 互操作的地基，也是"await 一定等当前宏任务结束"这句话的例外。
 
-## 结论
+## 结论：await 的成本来自微任务时序，不是语法糖本身
 
 Promise/async/await 的完整心智模型是一张图：**同步代码 → 微任务检查点（清空微任务队列）→ 宏任务 → 微任务检查点 → ……**。Promise 是状态机，then/await 是微任务队列的投递器，async 是"同步跑到第一个 await"。本机实测的四个反直觉结论：① await 恢复与显式 `.then` 都是恰好 1 个微任务，行为等价（网上"少烧一个微任务"是误读 V8 优化传闻）；② async 函数体同步执行到第一个 await；③ 未处理的 rejected promise 在 Node v24 直接崩溃；④ 无依赖任务并行用 all，串行 await 是白付 2 倍耗时。
 

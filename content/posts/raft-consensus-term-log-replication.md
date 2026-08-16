@@ -108,7 +108,7 @@ etcdctl endpoint status --cluster
 | 读也要线性一致 | 避免读到旧数据，leader 需 ReadIndex / lease | leader lease |
 | 恢复靠快照 | 日志太长，定期把状态固化成快照 | compact + snapshot |
 
-## 结论
+## 结论：Raft 的安全性来自任期、日志匹配与多数派交集
 
 Raft = 三根脊柱：**多数派的集合交集**（新老 leader 的记忆不断线）、**任期**（同一时刻唯一的 leader）、**日志匹配**（只有一条线，leader 只能追加，选票要求日志不短）。三者合起来给出：**安全（Safety）**——已提交日志绝不被回退；**活性（Liveness）**——多数活着必能选出新 leader。脑裂不是"防不住"，是"被任期 + 日志匹配挡在门外"。
 

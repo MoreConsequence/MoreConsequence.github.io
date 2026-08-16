@@ -1,0 +1,36 @@
+# 单节点 KRaft Kafka，钉住 classic 再平衡协议，用于复现 eager 再平衡的 stop-the-world 空窗。
+# 所有 CLI（建 topic / producer / 消费者 / 查组状态）都通过 `docker compose exec/run` 在本 compose 网络内执行，
+# 因此 broker 的 advertised listener 用 compose 服务名 kafka，而不是 localhost（否则容器内客户端拿到 localhost
+# 会连到自己）。如需从宿主机直连 9092，把 KAFKA_ADVERTISED_LISTENERS 改为 PLAINTEXT://localhost:9092。
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka-rebalance-broker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # 单 broker 集群：offsets/事务 topic 复制因子必须降到 1，否则 __consumer_offsets 无法创建、组操作报错
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # 启动时立即允许组形成，不延迟首轮 rebalance，采样窗口更干净
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # 钉住 classic 协议：本文复现的就是 eager 再平衡的 stop-the-world；
+      # 想对照 KIP-848 增量协议，改成 consumer 并换 KRaft 支持版本
+      KAFKA_GROUP_COORDINATOR_REBALANCE_PROTOCOLS: classic
+    # apache/kafka 镜像需要手动 format KRaft 存储再启动；format 对已格式化目录会报错退出，
+    # 用 || true 兜住容器 restart 场景（docker compose restart 会重跑 command）
+    command: >-
+      bash -c '
+      CLUSTER_ID=$$(/opt/kafka/bin/kafka-storage.sh random-uuid) &&
+      (/opt/kafka/bin/kafka-storage.sh format -t $$CLUSTER_ID -c /opt/kafka/config/kraft/server.properties || true) &&
+      /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/kraft/server.properties'

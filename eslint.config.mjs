@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 编译产物不入库
+    "experiments/**/*.js",
+    // 实验代码：常含故意未使用的演示变量
+    "experiments/**/*.ts",
   ]),
 ]);
 

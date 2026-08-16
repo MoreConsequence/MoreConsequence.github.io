@@ -127,7 +127,7 @@ kubectl logs -n kube-system kube-scheduler-xxx --v=5     # 调度日志明细
 2. **想达成什么形态？** 论分布（least）、论装箱（most）、论匀称（balanced）。默认 least。
 3. **同分抽签你介意吗？** 介意就加 `PodTopologySpread` 权重或 `nodeAffinity` 硬约束，把"唯一峰值"变成明确偏好，而不是赌随机。
 
-## 结论
+## 结论：filter 决定能不能调，score 决定偏好
 
 调度器把"一人一台"改成"两轮筛选 + 加权偏好"后，行为就可预测了：**filter 决定能不能调，score 决定调在哪**。摸清三件事就够用：
 

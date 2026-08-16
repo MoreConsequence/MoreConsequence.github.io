@@ -1,0 +1,24 @@
+# 2026-08-16 local run — macOS 26.5.1 (arm64, Darwin 25.5), Node v24.19.0
+## bench.mjs (events=100000, data-bytes=32)
+
+=== 每事件开销与吞吐（events=100000, data=32B, 本机一轮）===
+
+              SSE               WebSocket
+收到事件数         100000            100000
+到达首事件         8.63 ms           1.91 ms
+总耗时           117.1 ms          453.5 ms
+事件/秒          853894            220488
+线上字节(含帧头)     4988918           4288897
+每事件字节         49.9 B            42.9 B
+
+说明：SSE 每事件是 `id:N` + `data:` + 空行 的文本块；WS 每事件是 `id:N|payload` 文本帧 + 2B 帧头。
+
+## reconnect.mjs (events=50, drop-at=20, interval-ms=2)
+
+=== 断线重连：服务端在第 20 条后掐断连接（expected=50）===
+
+SSE               重连次数=1  收到=50/50  缺口=[无]  (Last-Event-ID 自动续传)
+WebSocket(续传)   重连次数=1  收到=50/50  缺口=[无]  (query 里带 resume 游标)
+WebSocket(仅重连) 重连次数=1  收到=69/50  重复=19  (服务端从头重推)
+
+要点：SSE 的重连语义是协议内置的（Last-Event-ID + retry）；WS 必须自己实现重连，续传游标也要靠应用层约定。

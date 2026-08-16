@@ -91,3 +91,10 @@ trace 单独用价值有限，与日志、指标联动才有意义：
 最后回到开头的问题：三秒慢请求，日志给了一堆碎片，指标说库存服务 P99 涨了——但只有 trace 能告诉你，那一次请求在 `inventory.check` 的 820ms 里，有 780ms 是在等一把跨服务的锁。可观测性的终极形态不是工具多，而是**任何一个"为什么慢"的问题都能在十分钟内从 trace 里找到答案**[^1]。
 
 [^1]: 延伸阅读：W3C Trace Context 规范（traceparent 头）一页能读完；OpenTelemetry 文档里 Concepts → Traces 章节是模型定义的标准答案；《分布式系统模式》里"跨进程追踪"一章把 span 树的拼装讲得很清楚。
+
+## 七、参考资料：传播、采样与 SDK 语义
+
+- [W3C Trace Context](https://www.w3.org/TR/trace-context/)：`traceparent` 与 `tracestate` 的跨进程传播规范。
+- [OpenTelemetry：Traces](https://opentelemetry.io/docs/concepts/signals/traces/)：trace、span、上下文与链接的概念模型。
+- [OpenTelemetry：Sampling](https://opentelemetry.io/docs/concepts/sampling/)：head sampling、tail sampling 与采样决策的边界。
+- [OpenTelemetry Trace SDK Specification](https://opentelemetry.io/docs/specs/otel/trace/sdk/)：TracerProvider、SpanProcessor 与导出管线的职责。

@@ -130,3 +130,11 @@ COW 有两个经典坑。其一：fork 一个占 50GB 内存的进程，之后�
 判断方法就一句话：先看 `/proc/<pid>/status` 的 `VmRSS` 与 `Swap`，再看 `vmstat` 的 `si`/`so` 是否非零，最后才轮到 heap profile。绝大多数"内存泄漏"排查的最后一步，都是回到缺页与 RSS 的分解上——虚拟内存的五个零件（地址空间、多级页表、页缓存、COW、overcommit）逐个排除，答案自然浮现[^1]。
 
 [^1]: 延伸阅读：内核文档 `Documentation/mm/` 下的 `demand_paging` 与 `oom` 部分；《CSAPP》第 9 章对虚拟内存与缺页的图解比任何博客都清楚；`man 2 mmap` 的 man page 值得逐行读一遍。
+
+## 八、参考资料：Linux 内核对地址空间的定义
+
+- [Linux kernel：Process Address Space](https://docs.kernel.org/mm/process_addrs.html)：VMA、进程地址空间与映射关系。
+- [Linux kernel：Overcommit Accounting](https://docs.kernel.org/mm/overcommit-accounting.html)：提交限制与 overcommit 策略。
+- [Linux kernel：Transparent Hugepage Support](https://docs.kernel.org/admin-guide/mm/transhuge.html)：THP 的模式、收益与限制。
+- [`mmap(2)` manual](https://man7.org/linux/man-pages/man2/mmap.2.html)：匿名映射、文件映射和保护属性。
+- [`proc_pid_status(5)` manual](https://man7.org/linux/man-pages/man5/proc_pid_status.5.html)：`VmSize`、`VmRSS` 等进程内存统计字段。
