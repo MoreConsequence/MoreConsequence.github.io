@@ -28,7 +28,11 @@ services:
       # 想对照 KIP-848 增量协议，改成 consumer 并换 KRaft 支持版本
       KAFKA_GROUP_COORDINATOR_REBALANCE_PROTOCOLS: classic
     # apache/kafka 镜像需要手动 format KRaft 存储再启动；format 对已格式化目录会报错退出，
-    # 用 || true 兜住容器 restart 场景（docker compose restart 会重跑 command）
+    # 用 || true 兜住容器 restart 场景（docker compose restart 会重跑 command）。
+    # 镜像自身模板把 advertised.listeners 硬编码为 localhost（KAFKA_ADVERTISED_LISTENERS 环境变量不生效），
+    # 必须挂载覆盖配置，否则容器内客户端会拿 localhost 地址连自己、组永远起不来。
+    volumes:
+      - ./kraft-server.properties:/opt/kafka/config/kraft/server.properties:ro
     command: >-
       bash -c '
       CLUSTER_ID=$$(/opt/kafka/bin/kafka-storage.sh random-uuid) &&

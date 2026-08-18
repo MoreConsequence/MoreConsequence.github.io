@@ -19,7 +19,7 @@ This directory is the executable source for the recent Go runtime micro-benchmar
 - `go-string-byte-conversion`
 - `go-goroutine-stack-growth` (the isolated recursion probe is in `cmd/stack-growth`)
 
-Run from the repository root:
+From the repository root, enter `experiments/` first and run the commands there:
 
 ```bash
 cd experiments

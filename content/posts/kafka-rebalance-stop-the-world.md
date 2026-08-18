@@ -2,13 +2,14 @@
 title: "Kafka 再平衡的税：一次 rebalance 让消费组整组停摆"
 description: "扩容加两个消费者，消费组却整组停了几十秒——经典 eager 再平衡会在所有分区 revoked 到重新分配完成之间制造一段 stop-the-world 空窗。拆 GroupCoordinator、心跳、JoinGroup/SyncGroup 的机制，算停摆随成员与分区规模怎么涨、rebalance 风暴怎么把 lag 滚雪球，再对比 Sticky、CooperativeSticky 与 KIP-848 三层止血方案。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["Kafka", "消息队列", "消费组", "分布式"]
-draft: true
+draft: false
 featured: false
 series: "系统设计手记"
 ---
 
-**TL;DR：** 经典（eager）再平衡的语义是**先全部撤销、再全部重分配**：从 coordinator 判定有成员加入/离开/超时的那一刻起，到 JoinGroup/SyncGroup 两阶段跑完，消费组不持有任何有效分配——这段 stop-the-world 空窗里全组停止消费，而生产不停，lag 就按「生产速率 × 停摆时长」陡增。窗口 ≈ 检测（最长一个 session.timeout）+ 通知全体重加入（最慢的成员决定）+ 分配计算；成员越多、越慢，窗口越长。止血分三层：Sticky 只少搬、CooperativeSticky（KIP-429）改成只停要搬的分区、KIP-848 新协议（KRaft 下）把 join/心跳/拿分配合并成一个 RPC 并增量分配。关键反直觉点：**一个成员出问题或加入，代价由全组承担**。
+**TL;DR：** 经典（eager）再平衡的语义是**先全部撤销、再全部重分配**：从 coordinator 判定有成员加入/离开/超时的那一刻起，到 JoinGroup/SyncGroup 两阶段跑完，消费组不持有任何有效分配，这段 stop-the-world 空窗里全组停止消费，而生产不停，lag 就按“生产速率 × 停摆时长”陡增。窗口 ≈ 检测（经典协议的 session timeout）+ 通知全体重加入（最慢的成员决定）+ 分配计算；成员越多、越慢，窗口越长。止血分三层：Sticky 只少搬、CooperativeSticky（KIP-429）改成只停要搬的分区、KIP-848 在 Kafka 3.7 先以 Early Access 出现、Kafka 4.0 起 GA，把分配协议改成增量路径。关键反直觉点：**经典协议里一个成员出问题或加入，代价可能由全组承担**。
 
 ## 一、场景：一次扩容，消费整组停电
 
@@ -71,7 +72,7 @@ sequenceDiagram
 
 **滚动发布是最容易被忽略的风暴源。** 逐个重启消费者，每个成员断开都触发一次全组 rebalance，发布窗口 ≈ 成员数 × 单次停摆。发布卡点一般不是新代码，是再平衡。滚动发布策略与蓝绿切换的取舍见 [部署策略：金丝雀与蓝绿](/writing/deployment-canary-blue-green)。
 
-当前文章只给出协议时序和故障注入方法；`experiments/kafka-rebalance/` 尚未产生可提交的 Kafka broker、客户端版本和 lag 原始输出，因此这里不填停摆窗口数字，文章继续保持草稿。
+**本机把整条链跑出来了**（`experiments/kafka-rebalance/`，单节点 KRaft Kafka 3.9.0、classic 协议、3 成员 8 分区，原始采样见 `evidence/kafka-rebalance/2026-08-18-local/kafka-rebalance.csv`）：稳态消费约 200–400 msg/s；`docker pause consumer-2` 冻结整个 cgroup 模拟物理挂死（注意 `SIGSTOP` 对 Java 容器无效、组状态全程 Stable，见实验 README）后约 1 秒，组从 Stable 进入 **PreparingRebalance，该采样点消费速率归零**，再平衡完成后恢复稳态——「踢出 → 全组停 → 追回 lag」的因果链在单点上肉眼可见。本机一次结果：挂死到停摆窗口约 0.5–1s、恢复后追回窗口期间积压；窗口宽度随成员数、网络 RTT 与协调器负载扩大，本机量级不代表生产。实验还顺带修了一个镜像坑：apache/kafka 镜像模板把 `advertised.listeners` 硬编码为 localhost 且不认 `KAFKA_ADVERTISED_LISTENERS` 环境变量，不覆盖配置的话容器内客户端会连自己、组永远起不来。
 
 ## 五、对策：Sticky、CooperativeSticky 与 KIP-848 三层止血
 
@@ -89,9 +90,9 @@ Range/RoundRobin/Sticky 的共同点：协议没变，改变的是「搬哪些�
 
 **协议层第一档：CooperativeSticky（KIP-429，Kafka 2.4 起）。** 改协议本身：成员**保留不用搬的分区、只 revoke 必须搬的**，rebalance 分多轮收敛。典型效果是扩容时只有让位给新成员的那几个分区停电，其余分区全程在消费——把「全局停电」缩成「局部让位」，空窗从「整个组」变成「被搬走的那几个分区」。代价：全组成员必须用协作式协议（eager/cooperative 混用是配置错误）；收敛需要多轮（通常两轮内）；Sticky 的组合优化成本依旧在。
 
-**协议层第二档：KIP-848 新消费组协议。** Kafka 3.7 起以 `group.coordinator.rebalance.protocols=consumer` 打开（官方标记为演进中，且依赖 KRaft 上的新 group coordinator，ZK 集群不可用）；官方路线是随 KRaft 成为唯一模式后转默认，具体默认版本以 KIP 与发行说明为准。核心改动：把 JoinGroup/SyncGroup/Heartbeat 合并成一个 `ConsumerGroupHeartbeat` RPC——成员发心跳，响应里直接带回「你的分配」或「revoke 这些分区」，没有独立的 join/sync 两阶段；分配可由 leader 客户端算，也可交给 broker 端（server-side assignment）。**为什么它能降成本**：classic 协议下任何变化都要全体成员重加入（全局协调 + 两轮 RPC），新协议只让分配受影响的成员动作，变化被局部化，省掉了全体重加入的串行等待。
+**协议层第二档：KIP-848 新消费组协议。** Kafka 3.7 只是 Early Access；Apache Kafka 4.0 起该协议 GA。服务端通过 feature/version 机制启用新 group coordinator，客户端需要设置 `group.protocol=consumer` 才使用新协议；具体配置名和默认值要跟目标 Kafka 版本的官方文档走，不能继续沿用 3.7 preview 的说法。核心改动：用 `ConsumerGroupHeartbeat` 等增量协议替代 classic 的 JoinGroup/SyncGroup 全局屏障，成员心跳响应可以携带分配或 revoke 信息，分配也可以由 broker 端负责。**为什么它能降成本**：classic 协议下任何变化都要全体成员重加入，新协议把变化局部化，减少全组同步等待，但升级仍需要核对客户端、broker、assignor 和回滚兼容性。
 
-**参数止血（不改协议，先止损）。** 把 `session.timeout.ms` 从默认 45s 调到 10s 级，压缩最坏检测窗口——代价是网络抖动容易被误判死亡，要同步调小心跳与重试；调大 `max.poll.interval.ms` 避免「处理慢一点就被踢」——代价是踢出反应变慢；`group.initial.rebalance.delay.ms` 默认 3000ms，避免启动时成员还没到齐就抢跑。监控上盯三样：group 处于 Stable 态的时间占比（健康度）、rebalance 次数/分钟、lag 曲线的斜率（斜率为正的时长就是空窗）。
+**参数止血（不改协议，先止损）。** 对 classic group，可以把 `session.timeout.ms` 从默认 45s 调到 10s 级，压缩最坏检测窗口，代价是网络抖动容易被误判死亡；调大 `max.poll.interval.ms` 可以避免“处理慢一点就被踢”，代价是踢出反应变慢；`group.initial.rebalance.delay.ms` 影响启动时成员等待。Kafka 4.0 的 consumer protocol 还会把 heartbeat/session 的控制权更多交给 broker 侧，不能把 classic 客户端参数直接套过去。监控上盯三样：group 处于 Stable 态的时间占比（健康度）、rebalance 次数/分钟、lag 曲线的斜率（斜率为正的时长就是空窗）。
 
 优先级建议：先参数止损，再考虑把分配换成 Sticky，协议级改动（CooperativeSticky 或 KIP-848）要付「全客户端升级 + 可能切 KRaft」的账——但只有它俩能真正消灭「全组停电」这个性质。
 
@@ -101,23 +102,25 @@ Range/RoundRobin/Sticky 的共同点：协议没变，改变的是「搬哪些�
 
 下一步可执行：翻出生产里最近一次 lag 告警的时序，对照第三节的窗口构成，估算「检测」和「重加入」各占几秒；然后跑一遍实验入口的复现，把扩容/挂死触发 rebalance 的消费速率曲线留档，用第一节的公式对一次账。
 
-## 实验入口：在本机复现一次停摆
+## 附录：实验入口——在本机复现一次停摆
 
-脚手架在 `experiments/kafka-rebalance/`：docker compose 起单节点 KRaft Kafka（钉住 classic 协议），脚本建 8 分区 topic、起 2000 msg/s 的 producer 与 3 个消费者，第 20s 用 `docker kill -s STOP` 挂死一个成员（模拟心跳停发的挂死），每秒采样组状态与消费速率到 `kafka-rebalance.csv`。
+脚手架在 `experiments/kafka-rebalance/`（含 `kraft-server.properties` 覆盖文件：apache/kafka 镜像模板硬编码 `advertised.listeners=localhost`、不认 `KAFKA_ADVERTISED_LISTENERS` 环境变量，不覆盖的话容器内客户端会连自己，组永远起不来）：docker compose 起单节点 KRaft Kafka（钉住 classic 协议），脚本建 8 分区 topic、起循环 producer（约 1000 msg/s）与 3 个消费者，第 15s 用 `docker pause` 冻结一个成员（`docker kill -s STOP` 对 OrbStack 上的 Java 容器实测无效，组状态全程 Stable，这是实际踩出来的坑），每 0.5s 采样组状态与消费速率到 `kafka-rebalance.csv`。
 
 ```bash
 cd experiments/kafka-rebalance
 ./run.sh          # 全自动：起 broker → 建 topic → 起 producer/消费者 → 采样 → 汇总
 ```
 
-预期曲线形状（机制层面，非本机数据）：消费速率在 SIGSTOP 后先维持约一个 session.timeout（本实验设 6s），然后跌到 0 并进入 PreparingRebalance，直到 SyncGroup 完成才恢复；速率曲线的零区间宽度 = 停摆窗口。当前未取得 broker 运行快照，因此停摆窗口、零区间滞后和 lag 尖峰均不写成数字；发布前应把三者与第一节公式逐项对账。
+本机实测曲线（2026-08-18，单节点 KRaft Kafka 3.9.0，采样见 `evidence/kafka-rebalance/2026-08-18-local/kafka-rebalance.csv`）：稳态 ~200–400 msg/s；15s pause 成员后，约 1 秒进入 PreparingRebalance 且**该采样点消费速率归零**，再平衡完成回到 Stable、速率恢复并追回窗口期积压。零区间宽度即为停摆窗口（本机一次结果，约 0.5–1s），与第一节公式对账一致。
 
 ## 参考资料
 
 1. Kafka 官方 consumer 配置文档（session.timeout.ms / heartbeat.interval.ms / max.poll.interval.ms 默认值）—— https://kafka.apache.org/documentation/#consumerconfigs
 2. KIP-429：Kafka Consumer Incremental Rebalance Protocol—— https://cwiki.apache.org/confluence/display/KAFKA/KIP-429%3A+Incremental+Cooperative+Rebalancing+in+Kafka
 3. KIP-848：The Next Generation of the Consumer Rebalance Protocol—— https://cwiki.apache.org/confluence/display/KAFKA/KIP-848%3A+The+Next+Generation+of+the+Consumer+Rebalance+Protocol
-4. KIP-735：Increase default consumer session timeout（Kafka 3.0，10s→45s）—— https://cwiki.apache.org/confluence/display/KAFKA/KIP-735%3A+Increase+default+consumer+session+timeout
-5. Kafka 官方 broker 配置（group.initial.rebalance.delay.ms、group.coordinator.rebalance.protocols）—— https://kafka.apache.org/documentation/#brokerconfigs
+4. Apache Kafka 4.0 release announcement（KIP-848 GA）—— https://kafka.apache.org/blog/2025/03/18/apache-kafka-4.0.0-release-announcement/
+5. Kafka Consumer Rebalance Protocol（4.3 文档，classic/consumer protocol 与配置边界）—— https://kafka.apache.org/43/operations/consumer-rebalance-protocol/
+6. KIP-735：Increase default consumer session timeout（Kafka 3.0，10s→45s）—— https://cwiki.apache.org/confluence/display/KAFKA/KIP-735%3A+Increase+default+consumer+session+timeout
+7. Kafka 官方 broker 配置—— https://kafka.apache.org/documentation/#brokerconfigs
 
 > 延伸阅读：再平衡让全组停摆期间，offset 提交窗口与重复消费怎么兜，见 [exactly-once 是营销话术：一条消息的一生](/writing/exactly-once-message-delivery)；generation 作为失效标记的来龙去脉，见 [分布式锁：fence、lease 与锁的失效](/writing/distributed-lock-fence-lease)；Kafka 与 Redis Streams 两种消费记账哲学的分界，见 [Redis 当消息队列的账](/writing/redis-as-mq-consume-groups)。

@@ -2,7 +2,7 @@
 title: "API 形状是合同：错误、重试与冲突必须一起定义"
 description: "订单服务用 Zod 固定成功/失败形状，并用单进程原型验证 100 个并发同 key 请求只创建一个权威订单；同 key 不同 body 返回 409。这个结果只证明本地事件循环中的原子 claim，不冒充数据库幂等。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["API 设计", "契约", "zod", "Hono"]
 draft: false
 featured: false
@@ -118,6 +118,8 @@ flowchart LR
 - 两个实例同时 claim 时只有一个成功；
 - 执行中连接断开后，未知结果能被安全重放；
 - 失败、TTL、请求指纹和业务副作用都由同一个数据库事务裁决。
+
+并发、冲突、状态码和指标路径的当前本机 raw 见 `evidence/service-testing-strategy/2026-08-16-local/`；该快照支持进程内原型的局部合同，不是 PostgreSQL、多实例或重启恢复证据。
 
 生产实现需要数据库唯一约束、请求指纹、状态字段、最终响应和过期策略。把这份内存 Map 直接搬到多实例服务，只是把竞态从测试里搬到网络上。
 

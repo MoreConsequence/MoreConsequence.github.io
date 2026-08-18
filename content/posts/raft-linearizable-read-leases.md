@@ -2,8 +2,9 @@
 title: "Raft 的读也要过多数派：ReadIndex、Lease read 与 stale read 的三本账"
 description: "读 leader 本地内存并不线性一致——leader 可能已被分区、任期已过期。拆开三条读路径（写日志 / ReadIndex / Lease read）各自的往返次数与时钟假设，用迷你 Raft 实测复现分区下的 stale read 窗口，并对齐 etcd 的 linearizable（默认）与 serializable 两档语义。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["分布式", "Raft", "一致性", "etcd"]
-draft: true
+draft: false
 featured: false
 series: "系统设计手记"
 ---
@@ -145,9 +146,9 @@ t=2.9s   lease 过期 → 回落 ReadIndex → 拒绝，不再吐旧值
 
 关键观察：ReadIndex 分区下拒绝（不吐旧值）；serial 与 lease 在窗口内吐旧值；lease 过期后自动回落 ReadIndex。实验里我把旧 leader 的 lease 刻意拉长到 2.5s，让"多数派选新 leader + 提交新值"发生在 lease 窗口内——正常配置下 lease=election timeout，这个窗口要窄得多，但**方向不变**：窗口存在，且由时钟与分区时机决定。
 
-**Lease 的时钟假设尚未取得实测证据。** 需要跑带时钟偏移的 etcd/容器集群，量化"时钟偏移达到选举超时的多少比例时，旧 leader 的 lease 窗口与多数派的选举窗口错位"。命令见实验入口。
+**Lease 的时钟假设在本文是模型推演，不是实测。** 要量化"时钟偏移达到选举超时的多少比例时，旧 leader 的 lease 窗口与多数派的选举窗口错位"，需要跑带时钟偏移的 etcd/容器集群；本文只在本机原型里把窗口拉长演示了机制（见上文的 2.5s），偏移比例的定量关系属于保留的扩展实验（命令见实验入口），不给数字。
 
-## 实验入口
+## 六、实验入口：本机条件下的读路径比较
 
 ```bash
 cd experiments/raft-read
@@ -165,9 +166,9 @@ etcdctl endpoint status --cluster   # 确认 leader
 # 对 leader 容器注入时钟偏移，观察 linearizable 读何时开始返回旧值
 ```
 
-诚实注明：`experiments/raft-read` 是本地教学原型，已在本机（macOS / darwin-arm64 / Go 1.25.1，`experiments/go.mod` 声明 go 1.25）跑通并输出上述结果；它复现的是读路径的语义与 stale 窗口，不模拟生产网络分区与时钟偏移。时钟偏移和真实 etcd 集群结果尚未取得，因此本文保持草稿。
+诚实注明：`experiments/raft-read` 是本地教学原型，已在本机（macOS / darwin-arm64 / Go 1.25.1，`experiments/go.mod` 声明 go 1.25，2026-08-18 复跑）跑通并输出上述结果，原始输出见 `evidence/raft-linearizable-read-leases/`；Phase B 把「分区下旧 leader 的行为差异」完整跑出来了：serial 与 lease 读在窗口内吐旧值、readindex 拒绝、lease 过期后回落 ReadIndex。它复现的是读路径的语义与 stale 窗口，不模拟生产网络分区与时钟偏移。真实 etcd 集群与时钟偏移注入属于本文未覆盖的扩展项，已保留执行设计（见实验入口），不构成已证结论。
 
-## 结论：线性一致读必须过多数派，Lease 是"用时钟换延迟"的优化
+## 七、结论：线性一致读必须过多数派，Lease 是"用时钟换延迟"的优化
 
 - **串行读**：0 往返，可能旧——适合"旧一点没事"的读。
 - **ReadIndex**：1 次心跳往返，无时钟假设——etcd 默认线性读的实现。

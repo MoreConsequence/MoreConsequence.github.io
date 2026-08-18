@@ -2,7 +2,7 @@
 title: "发布清单不能替你证明上线：把每一勾绑定到证据"
 description: "把订单服务 01-06 的结论收敛为一张分层清单：本地可运行项与需要 PostgreSQL、Actions、staging、监控和回滚记录的外部项分开，避免把内存原型写成生产闭环。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["发布", "检查清单", "工程实践"]
 draft: false
 featured: false
@@ -52,6 +52,8 @@ test -s dist/app.js
 ```
 
 这只能证明 Node 24.19.0 当前 checkout 能完成独立 typecheck、18 个测试和非空 build。根 workflow 的 Node 20/22/24 矩阵已经进入生效路径，但还没有本次任务对应的 Actions run；因此清单把矩阵和 artifact 归到“外部证据”，不在正文里写“已经兼容三版并部署”。
+
+本地 service gate 的环境、命令和原始输出见 `evidence/service-ci-cd/2026-08-17-local/`；并发/冲突测试证据见 `evidence/service-testing-strategy/2026-08-16-local/`。两份快照都只证明本机与当前 checkout，不证明 Actions matrix、artifact digest、staging 或 production rollback。
 
 把“发布完成”拆成闸门后，失败动作也必须跟着写出来：
 

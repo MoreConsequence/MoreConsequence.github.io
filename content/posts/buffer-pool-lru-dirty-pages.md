@@ -1,34 +1,34 @@
 ---
 title: "Buffer Pool 不是缓存：LRU 与脏页刷盘的两条时间线"
-description: "InnoDB 的 Buffer Pool 给两本账同时记账：LRU 管'哪个页最该淘汰'，LSN 管'哪些脏页最该先刷'。前者按最近访问排序，后者按最早修改排序，互不相干。默认 innodb_max_dirty_pages_pct=90、innodb_io_capacity=200、innodb_old_blocks_pct=37。调参翻车多半是分不清自己在调哪一本。"
+description: "以 MySQL 8.4 为例，InnoDB Buffer Pool 同时维护 LRU 淘汰与脏页刷盘两条时间线：old_blocks 参数影响读路径，dirty-pages、redo 和 I/O capacity 影响写路径。默认值会随版本和发行版变化，调参前先确认自己在改变哪一条账。"
 publishedAt: "2026-08-10"
-updatedAt: "2026-08-10"
+updatedAt: "2026-08-17"
 tags: ["数据库", "InnoDB", "Buffer Pool"]
 draft: false
 featured: false
 series: "数据库与存储"
 ---
 
-**TL;DR：** Buffer Pool 常被当成"内存缓存"，这是方向性误读。它同时维护两本独立的账：**LRU 账**（读路径：页按最近访问时间排队，决定谁被淘汰）和 **LSN 账**（写路径：页按最早修改 LSN 排队，决定谁先落盘）。淘汰与刷盘互相独立——唯一的交汇点是"淘汰脏页前必须先把脏数据落盘"。默认参数给两本账各自定价：`innodb_max_dirty_pages_pct=90`（脏页上限）、`innodb_io_capacity=200`（每秒刷盘页数预算）、`innodb_old_blocks_pct=37`（LRU 新城区占比）。调参前先确认你在调哪一本账。
+**TL;DR：** Buffer Pool 常被当成"内存缓存"，这是方向性误读。它同时维护两条相关但不等价的时间线：**LRU 账**（读路径：页按访问和冷热分段，决定谁更可能被淘汰）和 **flush/checkpoint 账**（写路径：脏页按最早修改 LSN 进入 flush list，刷盘进度受脏页水位、redo 使用量和后台 I/O capacity 共同影响）。淘汰与刷盘不是同一条队列，唯一的直接交汇是淘汰脏页前必须先把它落盘。本文以 MySQL 8.4 为例：`innodb_max_dirty_pages_pct=90` 是目标水位，`innodb_old_blocks_pct=37` 是旧区比例，而 `innodb_io_capacity` 是后台 I/O 能力预算，不是固定的“每秒刷页数”；版本、构建和发行版不同，默认值也可能不同。
 
 ## 一、直觉错在哪：把 Buffer Pool 当"缓存"，就会调错参数
 
 "缓存"的心智模型是：命中=快，未命中=从磁盘读。按照这个模型，Buffer Pool 只是读加速层，调参就是往大调。
 
-但 InnoDB 最大的成本在写路径。一次 UPDATE 改一行（约 128B），落在 16KB 的页上（见[B+Tree 写放大](/writing/btree-page-split-write-amplification)的同一数学：行改一字节，页写一页）。如果每行都立刻写盘，就是 100 倍以上的字节级写放大。InnoDB 的回答：**先改内存页、标记脏（dirty），落盘交给后台批量、合并、顺序执行**。所以 Buffer Pool 的写路径功能是"写合并缓冲"，读缓存只是同一块内存的副作用。
+但 InnoDB 的写路径也不能只看“把一行写进磁盘”。一次行更新会先修改承载它的页并留下 redo 记录；页大小、记录格式、是否同一页还有其他更新、checkpoint 和刷盘时机，都会决定最终 I/O。InnoDB 的回答是：**先改内存页、标记脏（dirty），让后台根据 checkpoint 与 I/O 状态批量刷盘**。所以 Buffer Pool 的写路径功能是“延迟并合并页写”，读缓存只是同一块内存的另一种收益；不要用一个固定的“行字节 ÷ 页字节”比例替代真实写放大。
 
 两个推论立刻改变调参视角：
 
 1. 读路径吃**命中率**（LRU 账），写路径吃**刷盘节奏**（LSN 账）——两本账独立演进；
 2. 脏页比例不是"缓冲层用得多深"的指标，而是"写账积压多少"的指标，决定的是写 I/O 节奏，不决定读延迟。
 
-## 二、两本账的语法：LRU 链（读）与 LSN 链（写）
+## 二、两本账的语法：LRU 链（读）与 Flush list（写）
 
 两种"页"在 Buffer Pool 里都按链表排队，但排的依据完全不同：
 
-**LRU 链（读账）**：所有页按"最近访问时间"排成一条链，新读数页先进入"旧区"（默认占 37%，`innodb_old_blocks_pct`），并在一个 `innodb_old_blocks_time`（默认 1000ms）的窗口内被再次访问才提升到"新城区"。全表扫描的页读一遍就淘汰，不污染热段。淘汰发生时若页是脏页，必须先把它落盘再腾位——两本账唯一的交汇点。
+**LRU 链（读账）**：所有页按访问和冷热分段组织，新读入的页先进入“旧区”（MySQL 8.4 默认约占 37%，由 `innodb_old_blocks_pct` 控制）；旧区页只有在第一次访问后至少经过 `innodb_old_blocks_time` 才有资格晋升到新区。全表扫描的页因此不必立刻污染热段，但这只是启发式，不是“扫描页一定一次就淘汰”。淘汰发生时若页是脏页，必须先把它落盘再腾位——这是两条时间线的直接交汇点。
 
-**LSN 链（写账）**：每个脏页身上挂一个 `oldest_modification_lsn`（最早修改它的 LSN）。page cleaner 刷盘只看你**多早改的，不看多晚用的**——最早 LSN 的页最先刷。这保证刷盘按数据文件顺序推进，而不是随机挑页，与 redo log 的滑动方向一致。
+**Flush list（写账）**：脏页记录 `oldest_modification_lsn`，flush list 按这个最早修改位置组织，帮助 page cleaner 推进 checkpoint。它不是“只要 LSN 最老就一定先刷”的严格单线程队列；实际刷哪些页还会受脏页水位、redo 生成速度、I/O capacity、邻居刷盘和存储状态影响。正确的判断是：刷盘优先级有 LSN/checkpoint 约束，而不是由 LRU 最近访问顺序决定。
 
 ```text
 读账：这页 30 秒没被读了，淘汰它腾地方？
@@ -39,35 +39,38 @@ series: "数据库与存储"
 
 ## 三、写账的运营节奏：水位、IO 预算与 checkpoint 闭环
 
-写账由 page cleaner 线程运营（线程数=`innodb_page_cleaners`，默认等于 buffer pool 实例数）。它按四个信号决定每秒刷几页：
+写账由 page cleaner 线程运营（线程数=`innodb_page_cleaners`，默认与 buffer pool 实例数相同）。它根据脏页水位、redo 使用量和可用 I/O 能力动态决定刷盘工作量；`innodb_io_capacity` 是后台任务可用的 IOPS 预算，不应直接翻译成“每秒刷多少页”。
 
 ```mermaid
 flowchart LR
     A[脏页占比] --> B{超过<br/>lwm 低水位}
-    B -- 是 --> C[匀速刷盘<br/>预算 io_capacity 页/秒]
+    B -- 是 --> C[启动预刷<br/>受 I/O capacity 与算法控制]
     B -- 否 --> D[基本不刷]
     C --> E[Dirty 页落盘<br/>checkpoint LSN 前进]
     F[redo 利用率] --> G{超过 75%}
-    G -- 是 --> H[加速刷盘<br/>向 io_capacity_max<br/>顶到 2 倍]
+    G -- 是 --> H[异步加速刷盘<br/>直到日志压力缓解]
     H --> E
 ```
 
-- **常规水位刷**：脏页占比越过 `innodb_max_dirty_pages_pct_lwm`（8.4 默认 10，8.0 默认 0=关闭预刷）开始匀速刷；到 `innodb_max_dirty_pages_pct=90` 才换"激进"模式。**90 是设计出来的写合并区间，不是事故**——允许脏页占 9 成缓冲池，全是为了延迟落盘以减少 I/O 次数。
-- **IO 预算**：默认 `innodb_io_capacity=200` 页/秒，上限 `innodb_io_capacity_max=2000`。SSD 上必须提到 1000-2000 才跟得上设备能力；参数默认值是给老 HDD 的。
-- **redo 75% 硬顶**：无论脏页比例多少，redo 日志利用率到 75% 触发异步快速刷，接近满时触发"尖锐 checkpoint"：事务提交被迫等待刷完这组页，吞吐瞬时塌陷。**这是两本账独立的铁证级细节：Buffer Pool 再大，redo 转完照样骨折。**
+- **常规水位刷**：脏页占比达到 `innodb_max_dirty_pages_pct_lwm` 时启动预刷；MySQL 8.4 默认低水位是 10%，达到 `innodb_max_dirty_pages_pct=90` 时会更激进地刷。`90` 是刷盘目标，不是“允许任何情况下安全堆到 90%”的性能承诺。
+- **I/O 预算**：MySQL 8.4 的 `innodb_io_capacity` 默认值是 `10000`，`innodb_io_capacity_max` 默认是它的两倍；这些是版本相关的后台 I/O 能力参数，不是 SSD 的通用推荐值。应按目标实例的设备 IOPS、并发、脏页增长速率和其他后台任务校准。
+- **redo 75% 边界**：官方文档把 redo 利用率达到 75%描述为触发异步刷盘的硬编码边界。若 InnoDB 需要复用仍被脏页占用的 redo 区间，可能出现 sharp checkpoint，导致前台事务等待刷盘；“75%”不是“事务立刻失败”的单一阈值，也不是只由 Buffer Pool 大小决定的结果。
 
-## 四、可复现实验：各动一本账，另一本不动
+## 四、候选实验：各动一本账，另一本不动
 
-Docker 一行起 MySQL 8.4：
+下面是一个可重复的本地实验模板，不是本次 checkout 已保存的 MySQL raw。要把它升级成证据，必须固定镜像 digest、机器/存储、数据量、预热、采样周期和重复轮次；当前文章不把示意输出写成实测结论。
+
+启动 MySQL 8.4：
 
 ```bash
 docker run -d --name bp -e MYSQL_ROOT_PASSWORD=x mysql:8.4
 docker exec -it bp mysql -uroot -px
 ```
 
-建表并写高压负载（存储过程循环 INSERT 100 万行，行 500B）：
+建表并写一个固定规模的负载（以下只是实验输入，运行前先确认容器有足够磁盘）：
 
 ```sql
+CREATE DATABASE IF NOT EXISTS test;
 USE test;
 CREATE TABLE hot (id INT PRIMARY KEY AUTO_INCREMENT, v VARCHAR(500)) ENGINE=InnoDB;
 DROP PROCEDURE IF EXISTS fill_hot;
@@ -85,40 +88,44 @@ CALL fill_hot();
 -- 写入期间另开一个终端每秒取样
 ```
 
-然后每秒取样（读账 + 写账一起看）：
+然后每秒取样（读账 + 写账一起看），至少同时记录配置、脏页、redo 使用量、I/O 和事务延迟：
 
 ```sql
 SHOW ENGINE INNODB STATUS\G
+SHOW VARIABLES WHERE Variable_name IN
+  ('innodb_io_capacity', 'innodb_io_capacity_max',
+   'innodb_max_dirty_pages_pct', 'innodb_max_dirty_pages_pct_lwm',
+   'innodb_old_blocks_pct', 'innodb_old_blocks_time');
 ```
 
-看两段输出（示意值，实际随机器）：
+可以从输出中抽取这些字段；下面不填数字，避免把某次机器的快照伪装成默认结果：
 
 ```text
 BUFFER POOL AND MEMORY
-Buffer pool hit rate 999 / 1000, young-making rate 0.010   ← 读账：命中率
+Buffer pool hit rate ...                              ← 读账：命中率
 ...
-Modified db pages: 5160 / 8192 (63%)   ← 写账：脏页（23 占比）
-History list length: 25124             ← undo 未清理（写账副产物）
+Modified db pages: ...                                ← 写账：脏页
+History list length: ...                              ← 长事务/MVCC 清理压力，不能直接当刷盘指标
 ```
 
-把 `innodb_io_capacity` 从 200 提到 1500，再来一轮：**脏页峰值下降、写入毛刺消失，但命中率纹丝不动**——证明调的是写账，读账不受影响。反过来动 `innodb_old_blocks_pct` 只改变 LRU 冷热边界，对刷盘节奏零影响。
+实验设计应一次只改一个变量：例如只改变 `innodb_io_capacity`，比较脏页曲线、redo 利用率、刷盘 I/O 和前台延迟；另一轮只改变 `innodb_old_blocks_pct` 或 `innodb_old_blocks_time`，比较扫描后的热页命中与淘汰。只有在同一负载、同一初始状态和多轮结果下，才能说“主要改变了哪一本账”；当前没有这些 raw，因此本文只给出验证方法。
 
 ## 五、常见翻车点：把两本账当成一本调
 
 | 症状 | 病在哪本账 | 错误直觉 | 正确动作 |
 | --- | --- | --- | --- |
-| 读慢、命中率低 | 读账 | 加 buffer_pool 一个参数解决 | 本金照大、查 `old_blocks_time` 是否被扫描压爆 |
-| 写风暴、查询卡顿 | 写账 | 怀疑 LRU 淘汰 | 查 redo 利用率>75%、dirty>90  |
-| redo 写爆、磁盘 I/O 打满 | 写账 | 一个劲加内存 | 提 `io_capacity`（页/秒预算）或扩 redo 文件 |
-| 大表扫描后热点消失 | 读账 | 让调到刷盘参数 | 调 `old_blocks_time` 防扫描冲垮2 |
+| 读慢、命中率低 | 读账 | 加 buffer pool 一个参数解决 | 区分工作集、扫描污染、预读和存储延迟，再看 `old_blocks_*` |
+| 写风暴、查询卡顿 | 写账 | 怀疑 LRU 淘汰 | 看 redo 利用率、脏页水位、刷盘速率与设备队列；75%/90% 是信号，不是完整诊断 |
+| redo 写爆、磁盘 I/O 打满 | 写账 | 一个劲加内存 | 按实际 IOPS 校准 `io_capacity`，同时检查 redo 容量、写入速率和 checkpoint 压力 |
+| 大表扫描后热点消失 | 读账 | 去调刷盘参数 | 用 `old_blocks_pct/time`、访问模式和读放大验证扫描污染 |
 
-第三条尤其反直觉：**内存大满≠刷盘会解决**。脏页顶到 90% 后靠的是 io_capacity 把积成堆的页挤出，而非 LRU 顺手淘汰。
+第三条尤其反直觉：**内存大满≠刷盘会解决**。脏页压力需要看 flush/checkpoint 与设备是否跟得上；单纯扩大 Buffer Pool 可能增加可容纳的脏页数量，也可能改变工作集命中率，不能替代写入速率和刷盘能力的测量。
 
-## 六、结论：LRU 与 LSN 是两条独立的时间线
+## 六、结论：LRU 与 Flush list 是两条独立的时间线
 
-Buffer Pool 的架构真面目是"读一本账 + 写一本账并行运转的引擎"。LRU 按**最近用过**排队，LSN 按**最早改过**排队，两本账共享同一片页内存，但排序依据、触发条件、临界值、执行线程全部独立。唯一的耦合是"淘汰脏页必须先落盘"。
+Buffer Pool 的架构真面目是"读一本账 + 写一本账并行运转的引擎"。LRU 按**最近访问与冷热分段**组织，Flush list 按**脏页最早修改位置**帮助推进 checkpoint，两本账共享同一片页内存，但排序依据、触发条件、临界值、执行线程并不相同。唯一的直接耦合是"淘汰脏页必须先落盘"。
 
-调参纪律一句话：**先分清自己在动哪本账**。命中率低且读延迟高 → 读账，动 `buffer_pool/old_blocks_*`；脏页顶线 / redo 逼近 75% / 写入毛刺 → 写账，动 `dirty_pct/io_capacity/redo`。两边分开算，才是 InnoDB 的"内存账本"真相。
+调参纪律一句话：**先分清自己在动哪条时间线**。命中率低且读延迟高 → 先核对工作集、访问模式和 `old_blocks_*`；脏页积压、redo 利用率升高或写入毛刺 → 看 `dirty_pct`、flush/checkpoint、`io_capacity`、redo 容量和设备队列。两边分开测，才不会把一个参数的相关变化误判成因果。
 
 下一步（本机、分钟级）：
 
@@ -129,8 +136,9 @@ docker exec -it bp mysql -uroot -px -e "SHOW ENGINE INNODB STATUS\G" | grep -E "
 
 ## 参考资料
 
-1. MySQL 8.0：InnoDB Buffer Pool（LRU 两段机制与 scan resistant）—— https://dev.mysql.com/doc/refman/8.0/en/innodb-buffer-pool.html
-2. MySQL 8.4：Configuring Buffer Pool Flushing（lwm / io_capacity / 75% 阈值）—— https://dev.mysql.com/doc/refman/8.4/en/innodb-buffer-pool-flushing.html
-3. MariaDB InnoDB 系统变量（io_capacity=200 / io_capacity_max=2000 / old_blocks_pct=37 参数值验证）—— https://mariadb.com/docs/server/server-usage/storage-engines/innodb/innodb-system-variables
+1. MySQL 8.4：InnoDB Buffer Pool（LRU 两段机制与 scan resistant）—— https://dev.mysql.com/doc/refman/8.4/en/innodb-buffer-pool.html
+2. MySQL 8.4：Configuring Buffer Pool Flushing（lwm / redo 75% / sharp checkpoint）—— https://dev.mysql.com/doc/refman/8.4/en/innodb-buffer-pool-flushing.html
+3. MySQL 8.4：系统变量（默认值与 `io_capacity` 单位）—— https://dev.mysql.com/doc/refman/8.4/en/innodb-parameters.html
+4. MySQL 8.4：Configuring InnoDB I/O Capacity—— https://dev.mysql.com/doc/refman/8.4/en/innodb-configuring-io-capacity.html
 
 > 延伸：脏页落盘才有崩溃恢复，见[MySQL 的 redo/undo/binlog 三本账](/writing/mysql-redo-undo-binlog)；刷盘节奏的原点是 commit 时的 fsync，见 [fsync 不是数据保险单：group commit 与两级账](/writing/fsync-group-commit)；页级读放大与页填充的关系，见 [B+Tree 的写放大来自分裂](/writing/btree-page-split-write-amplification)。

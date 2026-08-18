@@ -3,7 +3,7 @@ title: "SSE 不是 WebSocket 的廉价版：LLM 流式选型的协议账"
 description: "『SSE 是 WebSocket 的廉价版』把方向说反了。拆 text/event-stream 与 RFC 6455 两套机制，用本机实测对比每事件字节、断线重连与连接数限制，落到 LLM token 流式为什么默认该选 SSE。"
 publishedAt: "2026-08-16"
 tags: ["网络", "SSE", "WebSocket", "LLM"]
-draft: true
+draft: false
 featured: false
 series: "网络协议"
 ---

@@ -2,7 +2,7 @@
 title: "给 Go 后端开发者的 TypeScript 语法避坑指南"
 description: "只讲 Go 开发者最容易误判的 TypeScript 类型、对象、函数与异步语法，并用小例子把编译期和运行时的边界说清楚。"
 publishedAt: "2026-08-14"
-updatedAt: "2026-08-14"
+updatedAt: "2026-08-17"
 tags: ["TypeScript", "Go", "后端"]
 draft: false
 featured: false
@@ -507,7 +507,7 @@ if (user) console.log(user.id);
 
 或者在项目配置中打开 `noUncheckedIndexedAccess`，让索引访问自动带上 `| undefined`。配置不能替你处理业务逻辑，但能把“字典里可能没有这个 key”暴露在类型层。
 
-## 结论：Go 后端转 TS，先建立这八条肌肉记忆
+## 七、结论：Go 后端转 TS，先建立这八条肌肉记忆
 
 1. 外部输入先是 `unknown`，通过运行时检查后才成为业务类型。
 2. `interface` / `type` 只描述编译期形状；它们不会验证、清洗或隐藏多余字段。
@@ -520,7 +520,7 @@ if (user) console.log(user.id);
 
 如果只带走一个判断，那就是：**TS 能减少“写错后还没发现”的范围，但不会替你完成运行时验证、并发编排和数据脱敏。** 这些仍然是后端代码自己的责任。
 
-## 七、参考资料：类型擦除、异步与配置语义
+## 八、参考资料：类型擦除、异步与配置语义
 
 - [TypeScript Handbook：The Basics](https://www.typescriptlang.org/docs/handbook/2/basic-types.html)：静态类型、类型擦除与 JavaScript 运行时边界。
 - [TypeScript Handbook：Everyday Types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html)：`unknown`、`any`、联合类型与类型收窄。

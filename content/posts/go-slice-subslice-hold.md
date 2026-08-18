@@ -1,7 +1,8 @@
 ---
-title: "slice 截断不释放：底层数组还在的 64MiB"
+title: "slice 截断不释放：底层数组还在的约 66MiB"
 description: "统一入口在 Go 1.25.1/arm64 下复现：65536 个 1KiB 切片只保留前 10 个，subslice 截断后 GC 的 HeapAlloc 约为 68.8MB；复制外层切片后约为 0.14MB。讲清 len/cap、底层数组与引用生命周期，以及日志、响应体和缓冲区的修法。"
 publishedAt: "2026-08-15"
+updatedAt: "2026-08-17"
 tags: ["Go", "内存", "GC"]
 draft: false
 featured: false

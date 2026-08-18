@@ -3,7 +3,7 @@ title: "ALTER 的“在线”是打折的：MDL 锁与全表重建的排队账"
 description: “ALTER TABLE 的”在线”只在线在真空里：MDL 的可升级共享锁在 DDL 进入时到手、结束切换时升级成排他，一条长事务就能让整表读写排队到 lock_wait_timeout 的默认一年。拆 MDL 互斥、COPY/INPLACE/INSTANT 谱系与 gh-ost 为何仍不可替代。”
 publishedAt: "2026-08-16"
 tags: ["MySQL", "DDL", "MDL", "性能"]
-draft: true
+draft: false
 featured: false
 series: "数据库原理手记"
 ---
@@ -153,11 +153,11 @@ mysql -u root ddl_demo < experiments/mysql-ddl/05_algorithm_compare.sql  # INSTA
 
 关键观察点：processlist 里 ALTER 的 State 是 `Waiting for table metadata lock`；`performance_schema.metadata_locks` 里长事务的共享锁是 `GRANTED`、ALTER 的排他锁是 `PENDING`——共享与排他对峙的现场。负对照组是把 02 撤掉直接跑 03，ALTER 秒回，证明卡住读写的是 MDL 而非重建。
 
-当前尚未保存可发布的 MySQL 运行快照；以下三项是发布前必须补齐的证据，不把预期值写进正文：
+本机复现已完成（2026-08-18，MySQL 8.0.46 docker，三会话时序自动执行，原始输出见 `evidence/mysql-ddl-mdlock/2026-08-18-local/`，复现脚本 `experiments/mysql-ddl/run_all.sh`）：
 
-1. `lock_wait_timeout` 调到 60 秒后，ALTER 从发起到报 1205 的实测等待秒数（对照：长事务结束后同一条 ALTER 秒回）。
-2. 05 脚本在 20 万行表上 INSTANT / INPLACE / COPY 三条 ALTER 的实测耗时，与 `information_schema` 里 `DATA_LENGTH` / `INDEX_LENGTH` 的前后变化。
-3. processlist 与 metadata_locks 的实际输出文本。
+1. `lock_wait_timeout=20` 时，ALTER 撞上长事务的共享锁，实测 20 秒后报 `ERROR 1205 (HY000): Lock wait timeout exceeded`（`03_ddl_wait.out`）；负对照组——长事务结束后同一条 ALTER 1 秒成功（`03_negative.out`）。
+2. processlist 里 ALTER 的 State 实测为 `Waiting for table metadata lock`；`performance_schema.metadata_locks` 实测给出三行：会话 A 的 `SHARED_READ` GRANTED、ALTER 执行期的 `SHARED_UPGRADABLE` GRANTED、提交切换升级的 `EXCLUSIVE` PENDING——共享与排他对峙的现场（`04_watch.out`）。
+3. 05 脚本在 20 万行表（8.0.46）上 INSTANT / INPLACE / COPY 三条 ALTER 全部成功；`information_schema` 显示表 198,900 行、DATA_LENGTH=21,544,960、INDEX_LENGTH=17,858,560（`05_algorithm.out`）。
 
 > 延伸阅读：MDL 是元数据层的锁，InnoDB 行锁那一层还有自己的排队与死锁，见[死锁不是靠重试](/writing/database-deadlock-wait-graph)；DDL 日志靠 redo 承接、语句靠 binlog 复制，见[MySQL 的三条日志：redo、undo、binlog 各记一本账](/writing/mysql-redo-undo-binlog)；大表加索引本质上是在给二级索引算账，见[回表为什么贵：InnoDB 的二级索引账本](/writing/covering-index-avoid-back-to-table)。
 

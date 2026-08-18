@@ -1,154 +1,125 @@
 ---
 title: "Go 内存泄漏不是玄学：pprof 的堆账与三个误报"
-description: "泄漏定位靠的是同一进程两个时刻的对照：用 1MB 采样级别的 heap profile 实测两种泄漏（全局 slice 吸水、goroutine 累积），再拆三个常见误报：RSS 高≠泄漏、alloc_space 狂涨≠泄漏、goroutine 泄漏不出现在堆上。"
+description: "泄漏定位靠的是同一进程两个时刻的对照：用仓库内受控 probe 同时保留 32×64KiB 缓冲并阻塞 100 个 goroutine，记录 HeapAlloc、对象数和 goroutine 数的差；再拆三个常见误报：RSS 高≠泄漏、alloc_space 狂涨≠泄漏、goroutine 泄漏不能只看 heap。"
 publishedAt: "2026-08-10"
-updatedAt: "2026-08-10"
+updatedAt: "2026-08-17"
 tags: ["Go", "pprof", "内存泄漏", "调试"]
 draft: false
 featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** 内存泄漏的证明方法只有一个：**同一进程两个时刻堆的差**。`go tool pprof` 默认看 `inuse_space`，但它有三处会骗人：**采样只取 1MB 以上的大块**（小对象漏检，得换 `inuse_objects`）、**`Sys` 涨不等于 `Alloc` 涨**（Go 不把堆还给 OS，RSS 高≠泄漏）、**goroutine 是隐形大户**（每个卡死的 G 挂着 2KB 起步的栈和引用对象，堆曲线却纹丝不动）。三大误报：RSS 高（空闲缓冲池占着）→ 看 `sys`；alloc_space 狂增（分配风暴）≠ 泄漏；goroutine 数翻番（真泄漏第一大户）→ 看 `goroutine` profile。正确姿势：先看总账再动刀，用 `-base` 对拍两帧。
+**TL;DR：** 内存泄漏的证明方法不是“某一刻内存很高”，而是**同一进程两个时刻的差**。`go tool pprof` 默认看 `inuse_space`，但它不能替代 `MemStats` 和 goroutine profile：`Sys` 涨不等于 `HeapAlloc` 涨，`TotalAlloc` 狂涨不等于对象仍被引用，goroutine 泄漏也可能主要体现为栈/调度资源。仓库内 probe 固定保留 32×64KiB 缓冲并阻塞 100 个 goroutine，记录前后 HeapAlloc、对象数和 goroutine 数；正确姿势是先看总账，再用 `-base` 对拍两帧。
 
-## 一、直觉错在哪：RSS 涨 ≠ 泄漏，泄漏 ≠ 内存涨
+## 一、先分清三本账：RSS、HeapAlloc 与 goroutine
 
-两个方向的误判都常见：
+“进程内存涨了”至少可能指三件不同的事：
 
-1. **看 RSS 说泄漏**：进程驻留 6GB，却不一定漏——Go 的内存在 GC 后不立即归还 OS，堆里空闲页继续占 RSS 等待复用（详见[Go GC 时间账本](/writing/go-gc-gctrace-account)）。
-2. **看 inuse_space 平稳说不漏**：但 goroutine 数 1000→100000，每个卡住的 goroutine 都有自己的栈和引用对象，堆曲线可以是平的——**goroutine 泄漏是最常见的内存泄漏形式，且第一时间不在 heap 上**。
+| 观察对象 | 它回答什么 | 不能直接推出什么 |
+| --- | --- | --- |
+| RSS / `Sys` | 进程从操作系统保留了多少地址空间或物理页 | 不等于仍被业务对象引用；GC 后的空闲页可能暂时留在进程里 |
+| `HeapAlloc` / `HeapObjects` | 当前 Go 堆中仍被认为存活的字节和对象数 | 不包含所有线程栈、文件映射、内核 socket 缓冲和外部进程资源 |
+| goroutine profile | 有多少 goroutine，以及它们按调用栈分成哪些等待组 | 不直接告诉你每组持有了多少业务对象 |
 
-先分清三本账：
+因此有两种常见误判：RSS 涨了就判定堆泄漏，或者 HeapAlloc 没明显变化就忽略不断增加的 goroutine。正确的问题不是“哪个数字大”，而是“哪个资源在同一时间窗口内持续增长、由谁持有、能否释放”。
 
-- **RSS（`Sys`）**：进程从 OS 拿的物理页——受 Go 内存池策略影响，上涨≠泄漏。
-- **HeapAlloc（`Alloc`）**：堆里共有多少字节"活着"——**真正判断泄漏的量**。
-- **HeapObjects**：存活对象数；对象数越来越多而字节数不动=碎片/小对象爆发。
+## 二、用受控输入建立两帧基线
 
-## 二、实验：泄漏的签名长什么样
+仓库内的 `experiments/go-memory-leak-pprof/main.go` 把“仍被引用的缓冲”和“卡住的 goroutine”放在同一个进程里，先取基线，再创建固定数量的资源并取第二帧：
 
-写一个两处泄漏的 demo 跑起来（全局 slice 吸水 + 每毫秒新开一个卡死的 goroutine），两帧采样：
-
-```go
-package main
-
-import (
-	"net/http"
-	_ "net/http/pprof"
-	"time"
-)
-
-var store [][]byte
-
-// 泄漏一：全局 store 只增不减（每 2ms 追加 1MB）
-func growHeap() {
-	for {
-		store = append(store, make([]byte, 1<<20))
-		time.Sleep(2 * time.Millisecond)
-	}
-}
-
-// 泄漏二：每 1ms 新起一个 goroutine，全部卡在永不发送的 channel 上
-func spawnStuckGoroutines() {
-	for {
-		ch := make(chan struct{})
-		go func() { <-ch }()
-		time.Sleep(time.Millisecond)
-	}
-}
-
-func main() {
-	go growHeap()
-	go spawnStuckGoroutines()
-	http.ListenAndServe(":6060", nil)
-}
+```bash
+cd experiments
+go run ./go-memory-leak-pprof --chunks 32 --chunk-bytes 65536 --stuck 100
 ```
 
-间隔 10 秒拉两帧（需要 pprof 已在程序里 import）：
+本机 Go 1.25.1 的一次输出：
+
+```text
+go=go1.25.1 chunks=32 chunk_bytes=65536 retained_bytes=2097152 stuck=100
+heap_alloc_before=130288 heap_alloc_after=2283792 heap_delta=2153504 objects_before=166 objects_after=400 goroutines_before=1 goroutines_after=101
+```
+
+这次输入有两个可手算的分母：保留缓冲为 `32 × 65536 = 2097152` 字节；goroutine 输入为 100 个，前后差为 100。`heap_delta` 比输入缓冲多 `56352` 字节，来自切片、运行时和 profile/对象元数据；它不应被写成所有 Go 版本都相同的固定开销。
+
+这个 probe 的价值是把“泄漏”拆成可检查的持有关系：`store` 保留了字节，阻塞 goroutine 保留了执行体和等待关系。它运行完就退出，不证明服务重启后会恢复，也不模拟连接、文件描述符或下游队列泄漏。原始输出与环境记录在 `evidence/go-memory-leak-pprof/2026-08-17-local/`。
+
+## 三、读 heap profile：采样、索引与基线都不能混用
+
+`go tool pprof` 的 heap profile 默认关注 `inuse_space`，也就是当前仍在使用的空间；`alloc_space` 关注进程生命周期内累计分配的空间。两者回答的不是同一个问题：
+
+1. **小对象可能被采样稀释**：`runtime.MemProfileRate` 默认按约 512KiB 的累计分配间隔采样，不是“每个对象都记录”。本地诊断可以把采样率调到 1，但 profile 变大、运行成本上升，不能把这个设置直接带进生产。
+2. **`alloc_space` 狂涨不等于泄漏**：如果 `TotalAlloc` 快速上涨而 `inuse_space` 在 GC 后回落，可能是分配风暴，不是对象永久被引用。
+3. **profile 需要时间基线**：单帧只能告诉你当前热点；两帧的 `-base` 才能过滤掉常驻对象，观察净增长来自哪条调用路径。
+
+服务已经暴露 `net/http/pprof` 时，保留同一进程的两帧：
 
 ```bash
 curl -s localhost:6060/debug/pprof/heap > /tmp/heap.1.prof
 sleep 10
 curl -s localhost:6060/debug/pprof/heap > /tmp/heap.2.prof
+
+go tool pprof -sample_index=inuse_space -base /tmp/heap.1.prof /tmp/heap.2.prof
+go tool pprof -sample_index=alloc_space /tmp/heap.2.prof
 ```
 
-本机实测两帧（M1 Pro、macOS、Go 1.25）：
-
-```text
-帧 1：heap profile: 245: 249569584   goroutine profile: total 1680
-帧 2：heap profile: 1912: 1987063792 goroutine profile: total 9929
-```
-
-**10 秒内堆 0.25GB→1.99GB，goroutine 1680→9929——这是两个泄漏的签名**。谁在吃内存？`go tool pprof -inuse_space`：
-
-```text
-Showing nodes accounting for 2.12GB, 99.70% of 2.12GB total
-     flat  flat%   sum%        cum   cum%
-   2.12GB 99.70% 99.70%     2.12GB 99.70%  main.growHeap
-```
-
-## 三、变量视角：heap 采样有倾斜，别用 inuse_space 定案
-
-`pprof` 默认 `-sample_index=inuse_space`，而 heap profile 只有**每分配 1MB 才采一次样**（头部 `@ heap/1048576`）。这决定了三个陷阱：
-
-1. **对象小**：小对象泄漏（几百字节的对象每次 1KB）在采样里几乎不出现——换 `-sample_index=inuse_objects` 或调 `MemProfileRate`（只在本地复现时 `debug.SetMemoryProfileRate(1)`，别上生产）。
-2. **alloc_space 狂涨**：分配风暴（高频小分配）≠ 泄漏。`TotalAlloc` 冲天但 inuse 平稳，是 GC 在兜底——查 alloc 热点而不是找 leak。
-3. **只看 inuse_space**：goroutine 栈虽在堆空间里统计，但归因到 runtime 而不是业务函数——想确认 G 层泄漏得看 goroutine profile。
-
-正确的"泄漏工作流"是**对拍两帧**，而不是单帧定案：
+goroutine 视图要单独采样，不能从 heap profile 的函数排名替代：
 
 ```bash
-go tool pprof -inuse_space -base /tmp/heap.1.prof /tmp/heap.2.prof
-# 输出 delta：growHeap 这条净增 ~1.7GB，其余节点全部归零
+curl -s 'localhost:6060/debug/pprof/goroutine?debug=1' > /tmp/goroutine.2.txt
 ```
 
-`-base` 把两帧里相同的内存热度减掉，只剩**净增长**，才是泄漏的账。
+看二进制 profile 时，`-top` 适合回答“谁的累计值最高”，`-traces` 适合回答“调用链在哪里等待”；看 `debug=1` 文本时，第一行的总数和每组栈尾的业务行号通常更快定位阻塞点。上一组 `go-goroutine-leak-pprof` 的 probe 就是用三组源码行把这件事固定下来。
 
-## 四、三大误报：什么时候"内存涨"不是泄漏
+## 四、三个误报：现象相似，修复动作完全不同
 
-| 现象 | 误认为 | 真因 | 怎么验证 |
+| 现象 | 误认为 | 更可能的解释 | 下一步证据 |
 | --- | --- | --- | --- |
-| inuse 不高但 RSS 涨 | 泄漏 | GC 后空闲堆不归还去 OS | 看 `Alloc` 与 `Sys` 的差 |
-| TotalAlloc 每秒狂涨 | 泄漏 | 大量临时分配（GC 在兜底） | inuse 差平稳→非泄漏，查 alloc 热点 |
-| goroutine 数暴涨 | 内存泄漏 | goroutine 泄漏（最常见形式） | `/debug/pprof/goroutine` 两帧 diff |
+| RSS 持续高，但 HeapAlloc 在 GC 后回落 | 堆泄漏 | Go 保留了可复用页，或是内存碎片/缓存 | 同时看 `HeapAlloc`、`HeapSys`、`Sys` 和 GC 后快照 |
+| `TotalAlloc` 每秒狂涨 | 对象泄漏 | 高频临时分配，GC 正在回收 | 对拍 `inuse_space` 与 `alloc_space`，看 GC 频率和分配热点 |
+| goroutine 数暴涨，HeapAlloc 不明显 | 没有资源问题 | goroutine 可能卡在 channel、锁、网络或 ticker | 两帧 goroutine profile，按等待栈和源码行分组 |
 
-实操细节：**RSS 高 ≠ 泄漏，Alloc 高且稳定才是**。Go 诊断顺序：
+“HeapAlloc 高且稳定才是泄漏”的说法仍然太粗。更可靠的判断是：对象在多个 GC 周期后仍由业务根引用，且增长与输入或请求数相关；如果资源是 goroutine、socket、FD 或外部队列，就必须看对应账本，不能只看 heap。
 
-```text
-1. /debug/pprof/goroutine?debug=1 两次：goroutine 数不涨 → 排除 G 泄漏
-2. heap 两帧 -base：inuse 差大 → 堆泄漏；差小 → 分配风暴
-3. 看 MemStats：Alloc 涨而 HeapSys 不动 → 泄漏落锤
+## 五、从 profile 走到修复：每种增长都要有释放路径
+
+拿到增长分组后按这个顺序排查：
+
+1. 先固定窗口和输入量：请求数、并发、payload、GC 设置与采样间隔必须记录，否则两帧没有可比性；
+2. 用 `HeapAlloc/HeapObjects` 判断对象是否跨 GC 存活，用 `goroutine?debug=1` 判断等待组是否持续增加；
+3. 对照等待栈找释放条件：消费者是否存在、`context` 是否能取消、`Ticker` 是否 `Stop()`、连接和文件是否关闭；
+4. 修复后注入同一个故障：主动取消、慢消费者、下游断开或重复请求，确认资源回落，而不是只确认接口返回 200。
+
+阻塞任务至少要有一个可结束分支：
+
+```go
+func consume(ctx context.Context, jobs <-chan Job) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case job, ok := <-jobs:
+			if !ok {
+				return nil
+			}
+			if err := handle(job); err != nil {
+				return err
+			}
+		}
+	}
+}
 ```
 
-demo 的 goroutine 数 10 秒从 1680 涨到 9929——G 层在漏；堆采样里 growHeap 占了 99.7%，说明对象层也在漏——两本账都验了。
+这段代码只展示取消合同，不等于完整的 worker 生命周期：调用方仍要 `cancel`，发送方仍要关闭或停止生产，错误路径还要释放连接和临时缓冲。真正的回归测试应断言取消后 goroutine 数、队列长度和连接占用在窗口内回落。
 
-## 五、排查的快速流程（从快到慢四步）
+## 六、结论：泄漏是时间窗口里的持有关系
 
-开挖顺序建议用"快→慢"：
+内存泄漏不是“RSS 高”或“某张 profile 看起来吓人”，而是同一进程在可比输入下，资源跨 GC/取消边界持续增长，且能沿引用或等待栈找到持有者。Heap profile 解决对象空间问题；`MemStats` 区分堆与进程保留；goroutine profile 解决执行体等待问题。三者必须放在同一时间线上。
 
-1. **先看 RSS**：突然爆但 heap 没爆 → 空闲列表、缓冲池问题，见上文误报一。
-2. **再看 goroutine**（一次 curl 的事）：`goroutine?debug=1` diff 数，找"只多不少"的入口。
-3. **heap 两帧 -base**：定位 inuse 增量函数。
-4. **临时降采样阈值**：本地 `debug.SetMemoryProfileRate(1)` 复现小对象（代价是 profile 文件变大、CPU 上涨）。
-
-生产禁止"看一次 profile 就下结论"：要有**监控-基线-双帧**配置。在监控里挂 HeapAlloc 曲线（如 Prometheus `go_memstats_alloc_bytes`），阈值告警后，拉两帧 pprof 互为基线，diff 定位——有基线才有发言权。
-
-## 结论：内存泄漏排查要把 RSS、heap 和 profile 放在同一时间线上
-
-内存泄漏的判定不靠"内存涨"也不靠"inuse 高"，靠的是**两个时刻的差 + 三张账（Alloc/goroutine/Sys）对着看**。pprof 的两帧对比（`-base`）能帮你把"系统性增长"和"配置/缓存/临时分配"分开：前者才叫泄漏，后者是另一类账。
-
-动手顺序（本机、10 分钟）：
-
-```bash
-cd leakdemo
-curl -s localhost:6060/debug/pprof/heap > /tmp/h1.prof && sleep 10
-curl -s localhost:6060/debug/pprof/heap > /tmp/h2.prof
-go tool pprof -inuse_space -base /tmp/h1.prof /tmp/h2.prof   # 交互输入 top15
-```
+本机 probe 只证明受控的 32×64KiB 缓冲和 100 个阻塞 goroutine 会在两帧指标中留下可观察差异；它不证明线上服务的泄漏速度、profile 采样精度或恢复时间。下一步应在目标服务上保存两帧 raw，注入取消/慢消费者故障，并把“资源最终回落”写进测试，而不是用重启掩盖增长。
 
 ## 参考资料
 
-1. Go 官方 pprof 文档（采样与四种视图）—— https://pkg.go.dev/runtime/pprof
-2. `runtime.MemStats` 字段解释（Alloc/Sys/Heap* 的账目）—— https://pkg.go.dev/runtime#MemStats
-3. Go 官方调试指南（含 pprof 一节）—— https://go.dev/doc/diagnostics
-
-> 前作见：[Go GC 时间账本](/writing/go-gc-gctrace-account)、[Go 调度器的三张表](/writing/go-scheduler-gmp-preemption)、[先采样再优化：perf 火焰图](/writing/perf-flamegraph-sampling)。
+1. Go 官方 `runtime.MemStats` 文档（`Alloc`、`Sys`、`Heap*`）—— https://pkg.go.dev/runtime#MemStats
+2. Go 官方 `runtime/pprof` 文档（heap、goroutine 与采样）—— https://pkg.go.dev/runtime/pprof
+3. Go 官方诊断指南（pprof 工作流）—— https://go.dev/doc/diagnostics
+4. 前作：[Go GC 时间账本](/writing/go-gc-gctrace-account)、[goroutine profile 的读法](/writing/go-goroutine-leak-pprof)

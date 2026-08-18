@@ -1,7 +1,7 @@
 // 模拟 LLM Agent 工具循环：演示 TS 类型系统如何让并发编排可编译、可失败、可取消
 //
-// 不接真实 LLM：用 sleep 模拟模型"思考"，工具调用以 JSON 形式从"模型"返回，
-// 每次调用有 30% 概率失败——用来演示 allSettled 保留部分成功。
+// 不接真实 LLM：用 sleep 模拟模型"思考"，工具调用以 JSON 形式从"模型"返回。
+// 固定 seed 让文章输出可复现；失败阈值只是模拟合同，不代表真实模型成功率。
 import { setTimeout as sleep } from "node:timers/promises";
 
 // ---------- 1. 工具协议：可辨识联合，模型输出与代码共享同一形状 ----------
@@ -40,12 +40,18 @@ function parseToolCall(raw: unknown): ToolCall {
 type ToolResult = { ok: true; value: unknown } | { ok: false; error: string };
 
 const failureRate = 0.3;
+let randomState = 20260817;
+
+function nextRandom(): number {
+  randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
+  return randomState / 2 ** 32;
+}
 
 async function runTool(call: ToolCall): Promise<ToolResult> {
-  if (Math.random() < failureRate) {
+  if (nextRandom() < failureRate) {
     return { ok: false, error: `tool ${call.kind} exploded` };
   }
-  await sleep(50 + Math.random() * 80); // 模拟外部延迟
+  await sleep(50 + Math.floor(nextRandom() * 80)); // 模拟外部延迟
   switch (call.kind) {
     case "lookup_order":
       return { ok: true, value: { status: "PROCESSING", items: 3 } };

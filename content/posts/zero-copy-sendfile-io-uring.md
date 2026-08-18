@@ -2,27 +2,32 @@
 title: "一次网络请求的数据被搬了几次:从 sendfile 到 io_uring 的零拷贝路线图"
 description: "把 read/write、sendfile、mmap、splice、MSG_ZEROCOPY 与 io_uring 的数据搬运路径画在同一张图上:每次拷贝的成本、DMA 与 CPU 的分工、瓶颈判断与选型决策。"
 publishedAt: "2026-08-01"
+updatedAt: "2026-08-17"
 tags: ["Linux", "网络", "硬核底层"]
 featured: false
 series: "硬核底层原理"
 ---
 
-**TL;DR：** 传统 `read + write` 把一条数据搬 4 次（2 次 CPU 拷贝 + 2 次 DMA）；`sendfile` 一次 syscall 让 CPU 拷贝归零；`MSG_ZEROCOPY`/`io_uring` 用 pin 缓冲把拷贝成本前置成一次性投入。零拷贝省不掉 DMA，每一层都有自己的适用边界。**先量瓶颈，再选路径。**
+**TL;DR：** 在本文的 buffered file-to-socket 模型里，传统 `read + write` 经过 2 次 CPU copy 和 2 次 DMA；Linux 的兼容 `sendfile` 路径可以把用户态 CPU copy 降到零，但具体是否保留页引用、是否落回 copy 取决于文件系统、socket、网卡和中间层。`MSG_ZEROCOPY` 是带完成通知的 copy-avoidance hint，`io_uring` 主要改变提交/完成路径。零拷贝省不掉 DMA，也不自动适用于 TLS、任意数据变换或所有设备。**先量瓶颈，再选路径。**
 
 ## 一、四次搬运的账单：read + write 的每一笔都记在 CPU 上
 
-最朴素的静态文件发送是循环 `read` + `write`：
+最朴素的静态文件发送是循环 `read` + `write`。下面是用于说明搬运路径的简化 C 片段，真实服务还要处理 `EINTR`、短写、背压和连接关闭：
 
 ```c
 int fd = open("bigfile.bin", O_RDONLY);
 char buf[64 * 1024];
 ssize_t n;
 while ((n = read(fd, buf, sizeof buf)) > 0) {
-    write(sock, buf, n);
+    for (ssize_t sent = 0; sent < n;) {
+        ssize_t m = write(sock, buf + sent, (size_t)(n - sent));
+        if (m <= 0) { /* 真实代码应按 errno 分类处理 */ break; }
+        sent += m;
+    }
 }
 ```
 
-这 8 行代码背后，每一块数据走了 4 次拷贝、2 次系统调用、4 次用户态/内核态上下文切换：
+在“文件命中页缓存、socket 走普通 TCP、没有 TLS 和额外变换”的教学模型里，每一块数据经过 4 次搬运、2 次系统调用和 4 次用户态/内核态切换。这里的切换是特权级边界，不是调度意义上的线程上下文切换：进程可能始终在同一个 CPU 上运行。
 
 ```mermaid
 sequenceDiagram
@@ -31,7 +36,7 @@ sequenceDiagram
     participant Buf as 用户缓冲区
     participant Sock as socket 缓冲区
     participant NIC as 网卡
-    Note over Disk,NIC: read() + write() 一条数据搬 4 次
+    Note over Disk,NIC: 本模型：read() + write() 一条数据搬 4 次
     Disk->>PageCache: DMA 拷贝 ①（CPU 零参与）
     PageCache->>Buf: CPU 拷贝 ②（read 内核态→用户态）
     Buf->>Sock: CPU 拷贝 ③（write 用户态→内核态）
@@ -39,35 +44,40 @@ sequenceDiagram
     Note over Buf: ①③ 之间的整段路径<br/>都在烧 CPU 周期
 ```
 
-三条路径的搬运次数放在一起看，差距一目了然——`sendfile` 让 CPU 拷贝归零，`MSG_ZEROCOPY` 把拷贝成本换成一次性的 pin 开销：
+三条路径的搬运次数放在一起看，差距一目了然——在支持的理想路径上，`sendfile` 可以省掉用户态 CPU copy，`MSG_ZEROCOPY` 把一部分 copy 成本换成 pin 与异步完成通知；两者都可能因端点或设备能力回退到 copy：
 
 ![三种数据搬运路径对比：read+write 4 次拷贝（2 次 CPU + 2 次 DMA）、sendfile 2 次全 DMA、MSG_ZEROCOPY 用 pin 住缓冲直达网卡](/images/zero-copy-paths.svg)
 
-`read` 的两次"上下文切换"各是一次完整的内核陷阱：保存用户态寄存器 → 进入内核 → 拷贝 → 恢复寄存器返回。64KB 缓冲区循环发 1GB 文件，就是 16384 轮 × 2 次系统调用 × 2 次切换——**syscall 数量本身就是可观开销**。但比 syscall 更贵的是 CPU 拷贝 ②③：每一字节都要进 CPU，走一遍寄存器/高速缓存往返，这是纯 CPU 周期，且**驱逐缓存行**——拷贝 1GB 数据大约要触发同等量级的缓存行失效，把相邻热数据挤出 L2。
+`read` 的两次内核陷阱各是一次用户态/内核态边界：保存必要的寄存器状态 → 进入内核 → 拷贝 → 返回用户态。64KB 缓冲区循环发 1GB 文件，在不考虑 EOF、短写和错误重试的教学算术下，约有 16384 轮 × 2 次系统调用；**syscall 数量本身就是可测的开销**。CPU copy 还会消耗带宽并可能污染 cache，但污染程度取决于工作集和微架构，不能把每个字节直接等同于一次 cache line eviction。
 
-账单结论：**该路径在"大文件、高带宽"场景下，CPU 拷贝是实打实的瓶颈**。nginx 从早期版本就提供 `sendfile` 指令，官方文档默认 `off`，但主流发行版模板普遍显式 `sendfile on`，静态文件场景因此普遍受益，就是算过这笔账。
+账单结论：**该路径在“大文件、高带宽”场景下可能把 CPU copy 变成瓶颈**。nginx 从早期版本就提供 `sendfile` 指令；静态文件是否受益，要结合文件是否命中页缓存、TLS 是否在用户态终止、网卡能力和真实 profile 验证，不能从指令名推出固定收益。
 
 ## 二、sendfile：一次 syscall，CPU 拷贝归零
 
-`sendfile` 只做一件事：**在内核里把页缓存直接搬进 socket**，数据从头到尾不碰用户态：
+在 Linux 支持的文件到 socket 路径上，`sendfile` 允许内核直接在页缓存与 socket 发送路径之间传递数据，应用不需要把文件内容搬进用户态；但这不是“所有文件系统/设备都零 copy”的保证：不支持的端点、TLS、额外数据变换或内核 fallback 都可能重新产生 copy。
 
 ```c
 off_t off = 0;
-ssize_t n = sendfile(sock, fd, &off, file_size);
-// 一次调用完成整文件发送
+for (;;) {
+    ssize_t n = sendfile(sock, fd, &off, file_size - off);
+    if (n == 0) break;
+    if (n < 0) { /* 真实代码应按 errno 分类处理 */ break; }
+}
+// sendfile 也可能短写，调用方必须循环处理
 ```
 
-链路变成：磁盘 →(DMA)→ 页缓存 →(DMA,scatter-gather)→ 网卡。中间的两次 CPU 拷贝消失了，syscall 从"每块 2 次"变成"每文件 1 次"。
+在支持页引用传递的理想路径上，链路可以近似为：磁盘 →（DMA）→ 页缓存 →（scatter-gather/可能的 DMA）→ 网卡。中间的用户态 CPU copy 被省掉，syscall 也可能从“每块 2 次”减少到按批次调用；实际返回次数、短写和 fallback 仍需按目标系统验证。
 
 `sendfile` 能省 CPU 拷贝的底层原因是 **DMA scatter-gather**：网卡驱动并不需要一块连续的物理内存，它拿到"页缓存里的一个页列表"，就能让 DMA 引擎按列表逐个搬运。
 
-于是"页缓存 → socket 缓冲区 → 网卡"两步被合并成"页缓存 → 网卡"一步。**这是内核把"拷贝"变成"引用传递"的典型手法：socket 缓冲区里放的不再是数据的副本，而是页缓存的页引用。**
+于是，在满足 endpoint/driver 条件时，“页缓存 → socket 缓冲区 → 网卡”的数据副本路径可以被页引用和 scatter-gather 代替。**这是内核把一部分 copy 变成引用传递的典型手法，但不是应用可以无条件观察到的硬保证。**
 
 `sendfile` 的适用边界同样明确：
 
-- 数据必须**已在页缓存**（或能直接读到页缓存）——冷文件首次发送依然要等磁盘 DMA，但那是异步的，不烧 CPU；
+- 数据必须能走页缓存或目标内核的对应读取路径——冷文件首次发送依然要等磁盘 I/O，sendfile 省不掉这段等待；
 - 只支持"文件 → socket"方向，不能凭空合成数据、不能改写；
-- 传统 `sendfile` 从 socket 缓冲区拿不到任何"已发送"的反馈，对需要确认语义的场景不适用。
+- 传统 `sendfile` 的返回值只表示内核已接受/处理了多少字节，不等价于对端应用已经收到；需要端到端确认时仍要设计应用层协议。
+- TLS 终止、压缩、加密或响应拼接通常需要用户态处理，不能直接把 file-to-socket 的 sendfile 路径套上去。
 
 ## 三、页缓存与预读：零拷贝的前提
 
@@ -151,10 +161,12 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count, lo
 三段代码拼出完整结论：
 
 - **sendfile = “文件 → 进程私有管道 → socket” 的 splice 链**：`current->splice_pipe` 首次调用时分配、此后整个进程生命周期复用，省掉了每次 sendfile 的管道建拆成本；
-- **为什么没有用户态拷贝**：`vfs_splice_read` 从页缓存拿的是**页引用** 而不是数据副本——页引用挂进 pipe 的 buf 数组，之后由 DMA 直接搬运，数据从头到尾不经过 CPU；
+- **为什么通常没有用户态拷贝**：`vfs_splice_read` 在支持的路径上可以把页缓存的引用挂进 pipe 的 buf 数组，避免把内容复制到用户缓冲；后续是否由网卡 DMA 直接读取、是否发生 deferred copy，仍由 socket、驱动和设备能力决定；
 - **为什么应用层别用两个 splice 替代 sendfile**：注释原话 “an extra system call（splice in + splice out，as compared to just sendfile()）”——手动拼接等于每次多付一次 syscall 与管道管理成本，这正是 sendfile 存在的理由。
 
 可运行对比：`cd experiments && go run ./zero-copy <文件>`，在自己机器上量 read+write 与 sendfile 的差距。
+
+这个 probe 只记录当前操作系统 API 的本地时间，代码包含 macOS/Linux 的 offset 差异处理，不能把 macOS 的 `syscall.Sendfile` 结果当成 Linux v6.6 内核或真实网卡的 zero-copy 证据。它也没有 TLS、加密、真实磁盘冷缓存、网卡 fallback 或多轮统计；要发表性能结论，必须在目标 Linux 内核、文件系统、网卡和 TLS/非 TLS 路径上保存原始输出。
 
 ## 五、mmap + write 与 splice：同一个内核，另外两把钥匙
 
@@ -166,7 +178,7 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count, lo
 
 **“mmap + write 和 sendfile 一样零拷贝”是错的。** mmap 只省掉了“页缓存 → 用户缓冲”那一次 CPU 拷贝（read 干的活），`write` 时内核走的是普通写路径：页缓存 → socket 缓冲，仍是**一次实打实的 CPU 拷贝**——普通 write 不会做页引用传递，内核无法在发送期间保证用户视图与页缓存一致。sendfile 的零 CPU 拷贝来自 splice 的**页引用传递**（上面 `vfs_splice_read` 拿的是页引用），mmap 没有这层机制。所以表格里 mmap+write 是 1+2、sendfile 是 0+2，差的正是“普通 write 那一次 CPU 拷贝”。
 
-**splice**——把"页缓存 → pipe → socket"串起来，全部走 DMA，且可以处理**非文件** 的数据源（两个 socket 之间、socket 与 pipe 之间）。Nginx 的 `aio + splice` 方案就是拿它读文件再发出去。边界：需要临时 pipe 作为中转（`pipe` + 两次 `splice` 调用），内存占用多一个 pipe 缓冲的页。
+**splice**——把"页缓存/其他 fd → pipe → socket"串起来，在支持的路径上避免用户态 copy，且可以处理**非文件**的数据源（两个 socket 之间、socket 与 pipe 之间）。是否真的走零 copy 仍取决于端点和驱动；边界是需要临时 pipe 作为中转（`pipe` + 两次 `splice` 调用），并增加 pipe 缓冲与生命周期管理。
 
 ## 六、MSG_ZEROCOPY 与 io_uring：把"拷贝"换成"pin"
 
@@ -190,7 +202,7 @@ if (sendmsg(sock, &msg, MSG_ZEROCOPY) < 0) {
 2. **完成后通知是异步的**：`sendmsg` 返回只表示"内核收下任务"，复用缓冲区必须等 `MSG_ERRQUEUE` 上的完成通知，否则就是在改一块网卡还在读的内存；
 3. **它不省 syscall**：与 `io_uring` 组合后才同时拿到"提交开销前置"的好处。
 
-**io_uring** 的思路更进一步：与其每次发送都做一次完整 syscall，不如**把"提交"和"完成"都变成共享内存里的队列**。应用把若干次发送的 `iovec` 一次性写进 submission queue，内核在 completion queue 里异步回填结果——每次 I/O 的开销从"系统调用"降为"两次共享内存写"。配合 registered buffers（`IORING_REGISTER_BUFFERS`，把 buffer 提前注册进内核，省掉每次的页表校验/固定操作），就成了 "pin 成本前置、发送路径零拷贝" 的组合。
+**io_uring** 的思路更进一步：把提交和完成组织成共享环形队列，应用可以批量准备 SQE，内核在 CQE 中回填结果；普通提交仍可能需要 `io_uring_enter`，只有 SQPOLL 等配置才可能减少提交 syscall。配合 registered buffers（`IORING_REGISTER_BUFFERS`，把 buffer 提前注册进内核，减少每次的校验/固定操作），可以把 pin 成本前置，但不自动保证发送路径零拷贝。
 
 ```c
 // 概念级：io_uring 发送路径的提交形态
@@ -285,7 +297,7 @@ io_uring_submit(&ring);
 
 ```nginx
 server {
-    sendfile           on;      # 页缓存 → socket（第二节的 splice 链）
+    sendfile           on;      # 支持的文件 → socket 路径；TLS/变换路径另算
     tcp_nopush         on;      # TCP_CORK：响应头+文件开头合并成一个大包
     sendfile_max_chunk 2m;      # 单次 sendfile 上限，防单连接霸占整个 worker
 }
@@ -326,11 +338,11 @@ location /video/ {
 | 路径 | 拷贝（CPU + DMA） | syscall | 数据来源 | 典型场景 |
 | :--- | :--- | :--- | :--- | :--- |
 | read + write | 2 + 2 | 每块 2 次 | 任意 | 小数据、通用兜底 |
-| sendfile | 0 + 2 | 每文件 1 次 | 文件（页缓存） | 静态文件、代理转发 |
-| mmap + write | 1 + 2 | 映射后每块 1 次 | 文件（可改写） | 模板合成、需要读文件内容 |
-| splice | 0 + 2 | 每块 2 次（+pipe） | 任意（含 socket） | socket 间转发 |
-| MSG_ZEROCOPY | 0 + 2（pin 后） | 每块 1 次 | 用户内存（大缓冲） | 大响应体、加密/压缩结果 |
-| io_uring + ZEROCOPY | 0 + 2（注册后） | 队列化提交 | 用户内存（大缓冲） | 高并发代理、网关 |
+| sendfile | 理想路径 0 + 2，可能 fallback | 按批次，可能短写 | 文件（页缓存/支持路径） | 静态文件、代理转发 |
+| mmap + write | 模型 1 + 2 | 映射后每块 1 次 | 文件（可改写） | 模板合成、需要读文件内容 |
+| splice | 理想路径避免用户态 copy | 每块 2 次（+pipe） | 任意（含 socket，视端点） | socket 间转发 |
+| MSG_ZEROCOPY | hint 路径 0 + 2，可能 deferred copy | 每块 1 次 + 异步通知 | 用户内存（大缓冲） | 大响应体、加密/压缩结果 |
+| io_uring + ZEROCOPY | 注册/设备支持时减少 copy | 队列化提交，仍有配置条件 | 用户内存（大缓冲） | 高并发代理、网关 |
 
 ```mermaid
 flowchart TD

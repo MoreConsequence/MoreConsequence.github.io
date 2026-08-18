@@ -3,7 +3,7 @@ title: "Token 的吊销税：JWT、Session 与 OAuth2 的状态两难"
 description: "JWT 的无状态是用吊销能力换来的：登录态要能踢人，就得在黑名单、短 TTL 与 introspection 三选一付税。从三种方案的机制差异、OAuth2 流程选型到生产决策矩阵，把认证的状态两难讲清楚。"
 publishedAt: "2026-08-16"
 tags: ["安全", "认证", "JWT", "OAuth2"]
-draft: true
+draft: false
 featured: false
 series: "系统设计手记"
 ---

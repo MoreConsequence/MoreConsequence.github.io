@@ -3,7 +3,7 @@ title: "乐观锁不是免费的：冲突重试税 vs FOR UPDATE 排队税"
 description: "「读多写少用乐观锁」是句没量化的废话：它把选型压成读写比一个变量，而真正决定胜负的是冲突率 p、同行动并发度 N 与重试/排队成本比。拆开版本号 CAS 的重试税 p/(1-p) 与 FOR UPDATE 的排队税 (N-1)/2×持锁时间，用 Go 模拟画出交叉点曲线，并解释为什么秒杀热行上乐观锁会重试风暴。"
 publishedAt: "2026-08-16"
 tags: ["MySQL", "并发", "锁"]
-draft: true
+draft: false
 featured: false
 series: "数据库原理手记"
 ---
@@ -131,7 +131,7 @@ go run . -mode storm      # mode=storm：热行重试风暴对照 + storm.svg
 go run . -a 100 -s 200 -mode storm -gap 200us -k 128
 ```
 
-`sweep` 用 200,000 次独立抽样验证了 `E[attempts]=1/(1-p)`（测得均值与理论差 <0.01），并输出固定 N 下的交叉点曲线（`crossover_N20.svg`：`p*=0.952`；`crossover_N100.svg`：`p*=0.990`）；`storm` 复现热行重试放大。**真实 DB 证据尚未取得**：真实 MySQL 下乐观锁单次尝试延迟（读+条件更新的 p99）、`SELECT ... FOR UPDATE` 在高并发下的排队延迟与吞吐仍需要真机压测；在这之前，本文的延迟只属于模拟成本单位，只证明相对形状。
+`sweep` 用 200,000 次独立抽样验证了 `E[attempts]=1/(1-p)`（测得均值与理论差 <0.01），并输出固定 N 下的交叉点曲线（`crossover_N20.svg`：`p*=0.952`；`crossover_N100.svg`：`p*=0.990`）；`storm` 复现热行重试放大。**真实 DB 压测已补齐**（2026-08-18，MySQL 8.0.46 docker 容器、单行热行、Go 驱动 `github.com/go-sql-driver/mysql`，原始输出见 `evidence/mysql-lock-bench/2026-08-18-local/`）：w=4 时乐观锁重试率 72.9%、每提交 5.36ms，悲观锁 0% 重试、每提交 3.17ms；w=32 时乐观锁重试率升到 94.9%、吞吐跌到 94 提交/s，悲观锁 349 提交/s（3.7 倍）。同场景、同 SQL、同一数据库，输赢完全由重试税 vs 排队税决定——热行上悲观锁赢是真实 MySQL 的行为，不只是模拟形状。注意这是"单行热行"极端场景与容器内 fsync 延迟（各档同设置），均匀分布的多行场景未在此验证。
 
 ## 参考资料
 

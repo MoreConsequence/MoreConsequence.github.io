@@ -1,32 +1,28 @@
 ---
 title: "数据库为什么宁可慢，也要等你 fsync"
-description: "把 fsync 拆开看：write() 与 fsync() 之间差着一个内核的距离，一次 fsync 的延迟去哪了，group commit 怎样把 fsync 次数从\"事务数\"压到\"批次数\"，以及每一档持久化档位明码标价的丢失窗口。"
+description: "把 fsync 及其等价同步机制拆开看：普通 write()、fdatasync、O_SYNC 和设备缓存各自承诺什么，group commit 怎样把同步次数从事务数压到批次数，以及异步提交如何把耐久性窗口交给明确配置。"
 publishedAt: "2026-08-06"
-updatedAt: "2026-08-06"
+updatedAt: "2026-08-17"
 tags: ["数据库", "存储引擎", "性能"]
 draft: false
 featured: false
 series: "数据库原理手记"
 ---
 
-**TL;DR：** fsync 是持久化的唯一时点，也是提交路径上唯一的同步等待。数据库宁可慢，是因为 fsync 的语义无法绕过：write() 只把数据交进内核页缓存，断电一样丢。group commit 把"一次事务一次 fsync"变成"一批事务一次 fsync"，把吞吐从"1 / fsync 延迟"的锁死中解放出来，代价是批内最慢的成员决定整批的提交延迟。降档（synchronous_commit=off 之类）只是把账期拉长，每降一档都有一句必须写清楚的价签：能丢多久。
+**TL;DR：** 对普通文件写入，`write()` 成功通常只表示数据进入内核缓存；数据库还要依赖 `fsync`、`fdatasync`、`O_SYNC`/`O_DSYNC` 或平台等价机制，把 WAL 推到操作系统和设备承诺的稳定存储边界。group commit 把“每个事务各自等待同步”变成“一批事务共享一次同步”，用批内等待换吞吐；代价是批内最慢的成员影响提交延迟。`synchronous_commit=off` 等降档不是关闭 WAL，而是把成功响应与本地 durable commit 分开，必须把风险窗口和故障模型写进合同。
 
 ## 一、write() 返回了，数据却没到磁盘
 
-先做一个实验。在一个空目录里写一个文件：
+先做一个 Linux 语义实验。在一个空目录里写一个文件；`conv=fdatasync` 是关键，它要求 `dd` 在结束前对文件调用一次数据同步：
 
 ```bash
-# 示意输出：strace 统计一次批量写入中的系统调用耗时
-$ strace -c -e trace=write,fsync,fdatasync dd if=/dev/zero of=f bs=1M count=128 status=none
-% time     seconds  usecs/call     calls    errors syscall
------- ----------- ----------- --------- --------- ----------------
- 96.25    0.014295        28.6         1           fdatasync
-  3.75    0.000551         0.0       128           write
+# 输出数字随内核、文件系统和设备变化；重点检查是否出现 write + fdatasync
+$ strace -c -e trace=write,fsync,fdatasync dd if=/dev/zero of=f bs=1M count=128 conv=fdatasync status=none
 ```
 
-`dd` 的 128 次 `write()` 每次都立刻返回成功——这不是数据已经到磁盘的证据，而是内核收下了一笔债务：脏页进了页缓存，真实落盘被推迟。`write()` 的系统调用语义是"把数据拷贝进内核页缓存"，仅此而已。页缓存里的脏页什么时候落到磁盘，由内核的写回机制（writeback）决定：`dirty_expire_centisecs`（默认 3000，即 30 秒）后、`dirty_ratio`（默认 20%）内存被脏页占满时、或后台 flusher 线程周期性唤醒时。断电时这些债务全部作废——`write()` 返回成功而数据蒸发，是内核完全合法的行为。
+对普通 regular file 且未使用 `O_DIRECT`/`O_SYNC` 的路径，`dd` 的 `write()` 返回并不是数据已经稳定落盘的证据，而是内核收下了一笔债务：脏页进入页缓存，真实写回由操作系统和文件系统调度。`dirty_expire_centisecs`、`dirty_ratio` 等是 Linux 版本和配置相关的写回参数，不能当成所有发行版的固定默认值。断电时未完成同步的缓存可能丢失；`write()` 返回成功而数据尚未稳定，是允许的系统调用语义。
 
-所以"持久化"必须由另一个系统调用完成：`fsync()`。它做两件事：**把该文件的所有脏页排队刷到设备；然后发一条 flush 命令，等设备确认"我缓存里的数据也落盘了"**。第二件事是设备侧的：SSD 内部的 DRAM 写缓存、机械盘的磁盘缓存都在这条命令里被强制清空。`fsync()` 返回成功 = 数据在断电后依然存在，这才是数据库能对外说"提交成功"的唯一依据。
+所以持久化需要一个同步边界：`fsync()` 会同步文件数据和相关元数据，`fdatasync()` 在满足后续数据读取所需的范围内减少元数据同步，`O_SYNC`/`O_DSYNC` 则把类似要求放进写调用语义。Linux 手册还特别提醒，目录项可能需要单独对目录 fd 调用 `fsync()`；设备、文件系统和虚拟化层是否正确透传 flush 也属于耐久性合同。同步调用成功是应用拿到“系统已完成该同步请求”的依据，但不是替硬件诚实性、复制或备份作保证。
 
 ```mermaid
 flowchart LR
@@ -49,49 +45,36 @@ flowchart LR
     E -->|"掉电保护后才算数"| F
 ```
 
-*图注：write() 只走到页缓存；fsync 的职责是走完剩下的全部路径，直到设备确认。图中的任何一层缓存都可能撒谎，见第五节。*
+*图注：普通 write() 通常只走到页缓存；同步机制才把数据推进到文件系统/设备承诺的边界。图中的任何一层缓存都可能改变耐久性结论，见第五节。*
 
-这套语义有个直接推论：**fsync 是提交路径上唯一无法绕过的同步点**。一个事务的提交等于"WAL 记录被 fsync"，其余工作（改页、追加日志到缓冲区）都可以在内存里完成。于是数据库的提交延迟 ≈ fsync 延迟，数据库的提交吞吐 ≈ "单位时间内能做多少次 fsync"——这就是本文全部问题的起点。
+这套语义有个直接推论：**durable commit 必须等某种等价的同步边界，但不一定字面调用 `fsync()`**。一个事务的提交通常要求 WAL 记录满足数据库所选的本地/远程耐久性合同；其余工作可以先在内存里完成。于是提交延迟会受到同步延迟和批次组织影响，提交吞吐也不应简单等同于“单位时间能调用多少次字面 `fsync()`”。
 
 写这篇文章时，我特意把 WAL 那篇[WAL 是数据库的命根子](/writing/wal-crash-recovery)里讲过的内容（torn write、checkpoint、档位表、硬件防线的清单）留在那边，这篇只谈 fsync 本身：它的语义、它的延迟去哪了、group commit 怎样把它的次数压下来。
 
 ## 二、一次 fsync 的时间去哪了
 
-fsync 的延迟不是恒定的。同一块盘上，空闲时和写满时测出来的数字可以差一个数量级。先给一个量级参考（顺序写场景，`pg_test_fsync` 或 `fio` 实测常见区间）：
-
-| 设备 | 单次 fsync 延迟 | 说明 |
-| :--- | :--- | :--- |
-| NVMe SSD（数据中心级） | 约 0.1–1 ms | 空闲时接近 100µs；有积压时到毫秒级 |
-| SATA SSD | 约 0.5–3 ms | 消费级盘无掉电保护，语义存疑 |
-| 机械盘（7200rpm） | 约 8–15 ms | 每次 sync 都要等盘片转到位 |
+fsync 的延迟不是恒定的。同一块盘上，空闲时和写满时测出来的数字可能差很多；设备类型只能提供方向，不能提供目标 SLO。应在目标机器上用 `pg_test_fsync`、`fio` 或数据库自身的 WAL I/O 计数测量，并保存负载、文件系统、队列深度和重复轮次。
 
 两个反直觉的事实藏在数字后面：
 
-**第一，fsync 延迟 ≈ 等待前面积压的 IO 清空。** 内核刷这个文件的脏页时，要与设备上已有的写请求竞争。设备队列越满，flush 等得越久。所以 fsync 的延迟波动，主要不是"这次 sync 本身慢"，而是"前面欠了多少账"。这也是为什么把 `dirty_ratio` 调大、让内核攒更多脏页，反而会放大单次 fsync 的延迟——你的提交在替整个系统还债。
+**第一，fsync 延迟会受到前面积压的 I/O 影响。** 内核刷这个文件的脏页时，要与设备上已有的写请求竞争。设备队列越满，同步等待可能越久。所以 fsync 的延迟波动，不能只归因于“这次 sync 本身慢”，也要看前面欠了多少账。把 `dirty_ratio` 调大可能改变批量和单次等待，但具体方向必须测，不能把某个内核参数写成普遍因果。
 
 **第二，fsync 和 fdatasync 不是同一件事。** `fsync()` 除了刷数据，还刷文件元数据（inode、目录项）；`fdatasync()` 只管数据。对固定大小、预先分配的 WAL 段文件，元数据几乎不变，所以 `fdatasync` 通常更快，这正是 PostgreSQL 在 Linux 上默认 `wal_sync_method=fdatasync` 的原因[^fsync]。RocksDB 的 `recycle_log_file_num` 复用旧文件也是为了省掉元数据刷新的开销。第一节的 strace 已经能看出这层差别：128 次 `write()` 只占百分之几的时间，真正的时间几乎全堆在最后一次同步刷盘上。
 
-`pg_test_fsync` 是 PostgreSQL 自带的工具，把这台机器上五种 `wal_sync_method` 的平均延迟逐一打出来，文档里它的用途写得很直白——"determine fastest wal_sync_method for PostgreSQL"：
+`pg_test_fsync` 是 PostgreSQL 自带的工具，可以把这台机器上不同 `wal_sync_method` 的同步能力打出来。它的输出是本机当前环境的测量，不应复制成跨机器的默认数字：
 
 ```bash
-# 示意输出：pg_test_fsync 在本机（NVMe）的实测区间
+# 示例命令；本文不保存本机 pg_test_fsync raw
 $ pg_test_fsync
-...
-Open file 'pg_fsync_test', w+b.  Writing 4000 random 8kB buffers
-Performing 10,000 fsync operations per method
-	fdatasync                                2056.988 ops/sec    0.486 msec/op
-	fsync                                    2046.113 ops/sec    0.489 msec/op
-	open_sync                                2060.224 ops/sec    0.485 msec/op
-	open_datasync                            2006.456 ops/sec    0.498 msec/op
 ```
 
-注意一个陷阱：**`pg_test_fsync` 测的是"这台机器此刻的延迟"，不是"这台设备会不会撒谎"**。它证明不了 fsync 语义可靠，只回答"fsync 是不是瓶颈"这个前提问题。设备撒谎的检测要靠别的手段（见第五节）。
+注意一个陷阱：**`pg_test_fsync` 测的是“这台机器此刻的延迟”，不是“这台设备会不会撒谎”**。它能帮助比较方法和暴露 I/O 瓶颈，但证明不了设备掉电保护、虚拟化透传或复制链路可靠。后者要靠目标平台的耐久性测试和故障演练。
 
-## 三、每次提交都 fsync，吞吐被一把锁锁死
+## 三、单线程每次提交都同步，吞吐被一把锁锁死
 
 现在把数学摆出来。单线程、每次提交一次 fsync 的模型下：
 
-**提交吞吐 ≈ 1 / fsync 延迟**
+在“单线程、每次提交都要等待同一次同步完成、没有批处理”的简化模型里：**提交吞吐 ≈ 1 / 同步延迟**。
 
 这是硬上限：线程只能"提交 → 等 fsync 返回 → 再提交"，串行循环。fsync 1ms，吞吐上限就是每秒约 1000 次提交；fsync 10ms，就掉到每秒约 100 次。这个模型解释了所有"为什么加并发也没有用"的困惑——多个线程各自等自己的 fsync，互不合并，锁还在：
 
@@ -136,21 +119,21 @@ func commit(w *WALWriter, buf *WALBuffer) error {
 }
 ```
 
-吞吐模型随之改变：**提交吞吐 ≈ 批次大小 × (1 / fsync 延迟)**。fsync 1ms、平均一批 20 个事务，吞吐就能从约 1000 tps 拉到约 2 万 tps。批次大小由并发度决定：并发越高，同一时刻排队等提交的人越多，批越大——这正是"数据库并发越高，group commit 收益越明显"的原因。
+在理想的批处理模型里，**提交吞吐 ≈ 批次大小 × (1 / 同步延迟)**。例如同步延迟取 1ms、平均一批 20 个事务，模型上限从约 1000 次同步/秒变成约 2 万次事务/秒；这不是生产吞吐承诺。批次大小受并发到达、日志缓冲区、锁和调度影响，并发增加只是在有等待者时可能提高合并收益。
 
 ### 4.2 PostgreSQL：从 commit_delay 到默认的自动组提交
 
 PostgreSQL 的提交路径是 `XLogInsertRecord`（把记录追加进 WAL 缓冲区）加 `XLogFlush`（把缓冲区刷到磁盘），后者主要在事务提交时触发。组提交在早期版本里并不自动：`commit_delay` 参数让 leader 在持有锁后先睡一会儿，等更多人加入本批再刷，需要配合 `commit_siblings` 规定"至少攒几个"才值得等。这个设计的本质是"用延迟换批次"——主动等，批次才够大。
 
-到 9.5 以后，组提交变成了默认路径上的自动行为：等待者不再重复抢锁做 fsync，而是直接阻塞在"刷盘完成"这个事件上，leader 的 fsync 完成即唤醒整批。`commit_delay` 默认 0，高并发下的组提交依然发生——"在同一时间窗口内到达的提交"自然共享同一批，不需要 leader 额外睡觉。`commit_delay` 只在你刻意想放大批次时才有意义，而放大批次 = 人为增加提交延迟，绝大多数场景不值得。
+现代 PostgreSQL 的提交路径会让等待者共享一次 WAL flush：等待者阻塞在“刷盘完成”这个事件上，leader 完成后唤醒整批。`commit_delay` 默认通常为 0；高并发下的自然组提交不等于 leader 必须主动睡眠，只有刻意设置 delay 才是在用额外提交延迟换更大的加入窗口。
 
 这里有个容易被误读的点：**"每次提交都 fsync"不等于"每个事务单独调用一次 fsync"**。commit 时 flush 的是 WAL 缓冲区，里面通常攒着多个事务的记录，一次 fsync 覆盖整批。真正的"一事务一 fsync"只在并发为 1 时近似成立。
 
-### 4.3 MySQL：为什么 5.6 之前做不到，之后才做到
+### 4.3 MySQL：两份日志为什么需要三阶段组提交
 
 MySQL 的组提交史是一段更长的弯路，值得单独讲，因为它把 group commit 的难点暴露得最清楚。
 
-5.6 之前，MySQL 的提交路径上有两次必须的 fsync，而且**互不合并**：先 InnoDB prepare 阶段 fsync redo log，再 binlog 落盘阶段 fsync binlog。两个文件、两次等待、顺序执行，一个事务的提交被钉死在"2 × fsync 延迟"上，且并发事务之间完全独立——binlog 的 fsync 没有合并机制。这组"两把锁串行"的问题让 5.6 之前的 MySQL 在 `sync_binlog=1` + `innodb_flush_log_at_trx_commit=1` 的默认档位下，吞吐被 fsync 延迟锁死。
+当 MySQL 同时启用 InnoDB redo 与 binlog 的 durable 提交时，提交路径必须协调两份日志的顺序和可见性：redo prepare、binlog 写入/同步、InnoDB commit 不能被随意打乱。若每个事务都独立完成两份日志的同步，等待会串行叠加；现代 MySQL 用 flush → sync → commit 三阶段组提交，让一组事务共享 binlog 的同步阶段，再处理各自的 InnoDB commit。具体 durability 仍取决于 `sync_binlog`、`innodb_flush_log_at_trx_commit` 和版本实现。
 
 5.6 的修复是"三阶段组提交"：把提交路径拆成 **flush（把各自的 binlog cache 写入文件）→ sync（一次 fsync 刷整组 binlog）→ commit（InnoDB 层提交）** 三个阶段，每个阶段都是"一个 leader 干活、整组人共享"：
 
@@ -180,7 +163,7 @@ sequenceDiagram
 
 三个阶段各自有锁（`LOCK_flush`、`LOCK_sync`、`LOCK_commit`），组长持锁干活、组员排队等结果。fsync 的次数从"事务数 × 2"变成"组数 × 2"——批次的粒度从单个事务提升到整个并发组。
 
-这个演进史说明一件事：**group commit 不是数据库的某种"优化技巧"，而是提交路径的默认正确形态**。5.6 之前 MySQL 的问题不是"没做优化"，而是架构上把两次 fsync 串在了无法共享的路径上。
+这个提交路径说明一件事：**group commit 不是脱离语义的微优化，而是把同一 durability 边界按批次摊开的组织方式**。它能减少重复同步，但不会消除 redo/binlog 顺序、故障恢复和配置一致性的约束。
 
 ### 4.4 三引擎的组提交横截面
 
@@ -201,15 +184,15 @@ sequenceDiagram
 
 fsync 的等待还能不能更少？能，但只有一种方式：**减少"必须等待 fsync 的提交"的占比**，即放宽账期。WAL 那篇的[档位表](/writing/wal-crash-recovery)已经把这笔账算完，这里只重复结论和一个前提：
 
-- `synchronous_commit=off` 不是关掉 WAL，是让提交不等 fsync，由后台 `wal_writer` 周期性刷（`wal_writer_delay` 默认 200ms）——丢最近约 200ms 内的已确认事务；
-- `innodb_flush_log_at_trx_commit=0/2` 同理，账期拉长到约 1 秒；
+- `synchronous_commit=off` 不是关掉 WAL，是让提交不等待本地 durable flush；后台 WAL writer 之后会刷未同步记录。官方文档指出风险窗口的最大值是 `3 × wal_writer_delay`，而不是固定写死的 200ms；实际值取决于版本和配置；
+- `innodb_flush_log_at_trx_commit=0/2` 也把事务提交与每次本地 redo flush 解耦；刷盘间隔、`innodb_flush_log_at_timeout`、设备和故障类型共同决定风险窗口，不能直接写成通用的 1 秒上限；
 - 降档的前提是两件事同时成立：压测证明瓶颈在提交路径的 fsync 上，且业务写得出一句"能丢多久"。缺任何一个，都留在默认档。
 
-为什么数据库"宁可慢"？因为默认档位的语义最简单：提交成功 = 已落盘。降档是把"成功"的定义改了，改成"成功 = 已进缓存，稍后落盘"——这是对客户端的撒谎，必须知道谎言的最长有效期。
+为什么数据库“宁可慢”？因为 durable 档位的语义最简单：提交成功意味着 WAL 满足所选的本地/远程耐久性条件。降档是把成功响应与 durable commit 分开，必须知道风险窗口、进程崩溃与主机/断电故障的差异。
 
-最后一种情况比降档更危险：**fsync 失败了，但系统假装成功**。Linux 上 fsync 返回 EIO 时，内核可能随后"清掉"这个错误标记，紧接着对同一批数据的第二次 fsync 返回成功——写入已经被丢弃，却看起来一切正常。PostgreSQL 为此把关键路径（WAL、checkpoint）上的 fsync 失败直接 PANIC：让崩溃恢复从上次 checkpoint 重放，把失败的写重做一遍。带电池的 RAID 控制器（BBU）如果驱动不转发 FLUSH CACHE 命令、虚拟化平台不透传写、消费级 SSD 没有掉电保护（PLP），fsync 都会"撒谎"。数据库对 fsync 的信任没有替代品：**fsync 语义依赖硬件不撒谎，数据库能做的只是把失败当灾难处理**。
+最后一种情况比降档更危险：**同步调用失败，或硬件/虚拟化层没有兑现它的承诺**。Linux `fsync(2)` 文档描述了 `EIO` 等失败返回；PostgreSQL 也会把关键路径的写入错误当成严重故障处理。带电池的 RAID 控制器（BBU）如果驱动不转发 flush、虚拟化平台不透传写、消费级 SSD 没有掉电保护（PLP），应用拿到“同步成功”也不能替它们完成验证。数据库能做的是选择正确同步方法、暴露失败并通过故障演练验证平台，而不是把字面 `fsync` 当成整个存储栈的保险单。
 
-## 结论：group commit 让持久性成本按批次摊平
+## 六、结论：group commit 让持久性成本按批次摊平
 
 回到开头的问题：数据库为什么宁可慢，也要等 fsync？答案分三层：
 
@@ -221,8 +204,8 @@ fsync 的等待还能不能更少？能，但只有一种方式：**减少"必�
 
 ```bash
 $ pg_test_fsync                              # 这台机器上 fsync 到底多慢
-$ SHOW synchronous_commit;                   # 现在欠多久的账
-$ SHOW innodb_flush_log_at_trx_commit;       # MySQL 同理（如果用的是 MySQL）
+$ psql -c 'SHOW synchronous_commit;'
+$ mysql -e 'SHOW VARIABLES LIKE "innodb_flush_log_at_trx_commit";'
 ```
 
 ## 参考资料

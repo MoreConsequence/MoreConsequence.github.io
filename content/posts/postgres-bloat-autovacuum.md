@@ -3,7 +3,7 @@ title: "Postgres 的膨胀税：autovacuum 没跑的那 40% bloat 与冻结年�
 description: "Postgres 的 DELETE 之后行其实还在：MVCC 把旧版本就地留在表页面里，回收只能靠 autovacuum 这个清理工。清理工赶不上产废速度，表就膨胀、顺序扫描变慢；xid 冻结年龄逼近 2^31 还会触发强制全表冻结。讲清膨胀税从哪来、怎么量、怎么止血。"
 publishedAt: "2026-08-16"
 tags: ["Postgres", "MVCC", "运维"]
-draft: true
+draft: false
 featured: false
 series: "数据库原理手记"
 ---
@@ -79,7 +79,7 @@ SELECT table_len, tuple_count, dead_tuple_count,
 FROM pgstattuple('orders');
 ```
 
-`dead_tuple_percent` 是死元组占表字节的精确比例，是「膨胀税」的账单。配套 Docker 实验可以测量全表 UPDATE 后的变化，但当前工作区没有保存 PostgreSQL 运行时、版本和原始输出，因此本文不填一个看似精确的 40% 数字；注意 pgstattuple 会扫全表，生产大表挑低峰期跑。
+`dead_tuple_percent` 是死元组占表字节的精确比例，是「膨胀税」的账单。配套 Docker 实验（`experiments/postgres-bloat/`，PostgreSQL 16，原始输出见 `evidence/postgres-bloat/2026-08-18-local/run.log`）实测：10 万行表一次全表 UPDATE，在 REPEATABLE READ 快照事务拖住旧版本时，`dead_tuple_percent` 从 0 涨到 **44.3%**（`dead_tuple_count=100000`，页面 free 只剩 0.8%）；`VACUUM` 后归零、但表文件仍 19MB 不变；关掉表级 autovacuum 再制造 30 万死元组，65 秒内 `last_autovacuum` 自动更新、死元组清空。实验还揭示一个反直觉点：**autocommit 单条 UPDATE 反而测不出 bloat**——旧版本对新快照立即可见性消失，插入路径会顺手 prune 掉它们（实测 `dead_tuple_count` 归零、只剩 `free_percent` 上涨），死元组积累必须有一个更老的活快照钉住回收时机。注意 pgstattuple 会扫全表，生产大表挑低峰期跑。
 
 ## 五、冻结年龄：xid 回卷线与强制全表冻结
 
@@ -121,7 +121,7 @@ SELECT relname, age(relfrozenxid) FROM pg_class WHERE relkind = 'r' ORDER BY 2 D
 
 为什么 Postgres 这么设计：旧版本就地留档，写路径就**不需要额外写 undo**，UPDATE 变成纯指针操作、写放大低于 InnoDB；但代价是清理责任从「写路径顺便记账」转交给了外部 vacuum，而且你不能一直欠着不还——欠着是 bloat，欠到 2^31 是停摆。这就是膨胀税的本质：**MVCC 的免费写不是真的免费，只是把税单从写路径挪到了清理路径。** MySQL 是镜像的另一面：写时要付 undo 的账，表与清理解耦——所以 MySQL 的课后题是 undo 膨胀，Postgres 的课后题是 bloat，同一道题的两个方向。
 
-下一步：把 `experiments/postgres-bloat/` 的 docker 脚本跑一遍，亲眼看到「一次 UPDATE 后 pgstattuple 的 40% 死元组」和「VACUUM 后归零」，再把 `age(relfrozenxid)` 的监控 SQL 接进你的巡检脚本。
+实验入口：`experiments/postgres-bloat/` 的 docker 脚本（01 建表造数 → 02 两会话制造死元组 → 03 测量 → 04 VACUUM 重测 → 05 看 autovacuum 自醒），按 README 顺序跑一遍，就能亲眼看到「44.3% 死元组 → VACUUM 后归零但表不缩」和「autovacuum 自动醒来」两个画面；再把 `age(relfrozenxid)` 的监控 SQL 接进你的巡检脚本。
 
 ## 参考资料
 

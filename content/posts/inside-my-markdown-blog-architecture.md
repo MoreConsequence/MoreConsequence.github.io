@@ -2,6 +2,7 @@
 title: "一个 Markdown 博客的完整生命周期：从文本到线上的全链路架构"
 description: "从 npm run new 到 GitHub Pages 上线，完整拆解 Next.js 16 + remark/rehype + Shiki + GitHub Actions 的静态博客系统是怎样工作的。"
 publishedAt: "2026-07-26"
+updatedAt: "2026-08-17"
 tags: ["Next.js", "架构", "工程效率", "静态站点", "CI/CD"]
 draft: false
 featured: true
@@ -380,11 +381,12 @@ flowchart TB
         C3 --> C4["npm test （Vitest）"]
         C4 --> C5["npm run lint （ESLint）"]
         C5 --> C6["npm run build （next build）"]
-        C6 --> C7["upload-pages-artifact<br/>把 ./out 上传为 CI artifact"]
+        C6 --> C7["configure-pages<br/>仅 push/dispatch"]
+        C7 --> C8["upload-pages-artifact<br/>把 ./out 上传为 CI artifact"]
     end
 
     subgraph Job2["Job: deploy"]
-        C7 --> D1["deploy-pages<br/>发布到 GitHub Pages"]
+        C8 --> D1["deploy-pages<br/>发布到 GitHub Pages"]
         D1 --> D2["https://moreconsequence.github.io<br/>CDN 全球生效"]
     end
 ```
@@ -392,12 +394,14 @@ flowchart TB
 关键细节：
 
 - **Test gate**：`npm test` 在 `npm run build` 之前运行，测试失败则构建被阻断，不会部署。
+- **Lint gate**：`npm run lint` 也在 build 前执行；代码规则错误不会进入 Pages artifact。
+- **Artifact gate**：`configure-pages`、`upload-pages-artifact` 和 deploy 只在 push/手动触发时继续；Pull Request 只验证 build job，不覆盖线上环境。
 - **PR 保护**：Pull Request 触发 build job（跑测试和构建验证），但跳过 `configure-pages` 和 `deploy`，不会意外覆盖线上环境。
 - **并发控制**：`concurrency: group: pages` + `cancel-in-progress: true`，新的推送自动取消正在运行的前一次部署。
 
 ### 6.3 推送即发布
 
-开发者唯一需要做的操作：
+开发者在 `main` 发布路径上通常只需要提交并推送：
 
 ```bash
 git add -A && git commit -m "新文章" && git push
@@ -405,8 +409,10 @@ git add -A && git commit -m "新文章" && git push
 
 之后可以在 GitHub 仓库的 Actions 标签页查看实时日志：
 
-1. `build` 任务（~1 分钟）：安装依赖 → 测试 → 构建
-2. `deploy` 任务（~30 秒）：发布到 GitHub Pages
+1. `build` 任务：安装依赖 → 测试 → lint → 构建 → 上传 Pages artifact
+2. `deploy` 任务：等待 build 成功后发布 artifact，并回写 Pages 环境 URL
+
+具体耗时应以目标 commit 的 Actions 日志为准。本文没有保存一份稳定的 CI 时间基线，因此不把“几十秒”或“几分钟”写成发布合同。
 
 ## 七、 架构全景图
 
@@ -470,7 +476,7 @@ const compiledPostCache = new Map<string, Promise<CompiledPost[]>>();
 | 内容管线 | unified/remark/rehype，npm 生态直接复用 | Goldmark，插件用 Go 模板或 Hooks | remark/rehype 可用，但受框架管线约束 |
 | 交互增强 | React 客户端组件 + 水合（本文档的 Mermaid 渲染器、主题切换、复制按钮都靠它） | 模板语言，交互要靠手写 JS | 岛屿架构，可以挂框架组件，但集成成本高于 App Router |
 | 目录 / 高亮 / 阅读时长 | 同一份 Node 代码在构建期算出 | 需要模板语言或外部工具重新实现 | 需要跟着框架的集成方式重做 |
-| 构建速度 | 全量编译（本文档 14 篇 < 7 秒，瓶颈在 Shiki 高亮） | 增量构建极快 | 增量构建快 |
+| 构建速度 | 全量编译；耗时取决于文章数、Shiki、Next 页面数量和 CI 机器 | 增量构建极快 | 增量构建快 |
 | 依赖体积 | node_modules 数百 MB | 单二进制，无依赖 | 比 Next.js 轻 |
 | 内容格式 | 任意：Markdown / MDX / JSON 均可驱动 | Markdown 一等公民 | Markdown 一等公民 |
 
@@ -515,7 +521,7 @@ const compiledPostCache = new Map<string, Promise<CompiledPost[]>>();
 
 **问：新增一篇文章后需要重新部署吗？**
 
-不需要手动操作。`git push origin main` 自动触发 GitHub Actions 工作流，完成构建和部署。整个过程大约 1-2 分钟。
+不需要手动操作。`git push origin main` 会触发当前 workflow；只有 build、测试、lint 和 artifact 步骤成功，deploy job 才会继续。发布耗时和失败原因以对应 Actions run 为准，不应照抄某一次运行的时间。
 
 **问：草稿文章会被部署到线上吗？**
 
@@ -531,7 +537,7 @@ const compiledPostCache = new Map<string, Promise<CompiledPost[]>>();
 
 **问：文章很多之后构建会变慢吗？**
 
-编译是 O(n) 的，每篇文章独立编译。当前 14 篇文章构建耗时不到 7 秒。对于个人博客量级（几十到几百篇），瓶颈在 Shiki 的语法高亮，而非文件 I/O。
+文章编译按篇组织，缓存只在单次构建进程内复用；整体耗时会随文章数量、代码高亮语言、静态路由数量、依赖版本和 CI 机器变化。要判断瓶颈，应保存一次目标 checkout 的 `npm run build` 输出和 wall-clock，再把 Shiki、Markdown 编译与页面生成分别测量，不能沿用旧文章的时间样张。
 
 **问：新增图片时需要单独压缩吗？**
 

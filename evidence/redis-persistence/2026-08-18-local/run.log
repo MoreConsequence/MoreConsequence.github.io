@@ -1,0 +1,18 @@
+# redis-persistence:2026-08-18 本机复现
+机器: Apple Silicon(M1 Pro), macOS, OrbStack docker, redis:7-alpine
+脚本: experiments/redis-persistence/bench.sh + crash-loss.sh(原样执行)
+
+## bench.sh(三个独立容器, --save '' 关 RDB, 只变 appendfsync; redis-benchmark SET 10 万次, -c 50 -d 32)
+- appendfsync=no:       rps≈202,020 avg 0.153ms
+- appendfsync=everysec: rps≈196,236 avg 0.161ms
+- appendfsync=always:   rps≈16,269-17,921 avg 2.7-3.0ms (每写 fsync, 吞吐约慢 11 倍)
+- 排序 no ≈ everysec >> always, 与"1/fsync 模型"一致; 单次本机结果, 绝对值随磁盘变化
+
+## crash-loss.sh(每配置写 100 key 后 docker kill --signal KILL, start 重启, --scan 数剩余)
+- 仅 RDB: 剩 0/100 (上一次 SAVE 之后写入的全部丢失)
+- AOF always: 剩 100/100
+- AOF everysec: 剩 99/100
+- AOF no: 剩 100/100
+- 解读: kill -9 只杀进程, 宿主内核页缓存还活着, everysec/no 的未 fsync 内容仍会写回,
+  所以进程级窗口≈0; "≤1s/≤30s" 是断电窗口(页缓存整体蒸发), 需宿主机重启/VM 快照回滚才能测,
+  本地单机测不出 — 这正是正文想讲的"进程窗口 vs 断电窗口"之分。

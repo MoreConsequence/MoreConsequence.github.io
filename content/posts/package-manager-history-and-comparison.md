@@ -1,15 +1,15 @@
 ---
 title: "从 make install 到 /nix/store：Linux 与 macOS 包管理器三十年记账"
-description: "每一代包管理器解决的都是同一道题：软件装到哪、依赖从哪来、要怎么删。从 1994 年的 dpkg、1998 年的 apt，到 2002 年的 MacPorts、2009 年的 Homebrew，再到 2015 年的 Flatpak，路上每个名字都是对上一代缺陷的回答。用一条时间线和四张语义承诺表，讲清 deb/rpm、apt/dnf/pacman、Homebrew、Nix、Flatpak/Snap/AppImage 各自真正卖的货，以及今天该选谁。"
+description: "按发布、依赖、隔离、回滚和供应链证据比较 Unix/Linux 与 macOS 包管理器，区分发行版包、开发环境、桌面应用和可复现构建的真实承诺。"
 publishedAt: "2026-08-08"
-updatedAt: "2026-08-08"
+updatedAt: "2026-08-17"
 tags: ["Linux", "macOS", "包管理", "历史", "工程史"]
 draft: false
 featured: false
 series: "系统设计手记"
 ---
 
-**TL;DR：** 每一代包管理器都是在回答上一代答不动的三问：**依赖从哪来、装到哪、怎么删**。三十年的演化能压成一条主线：**从"手动攒依赖"到"机器算依赖"，从"一股脑装进系统目录"到"装进隔离位置"，从"随系统版本走"到"应用自带整个世界"**。具体账目：dpkg（1994）让安装可记账 → apt（1998）让依赖解析自动化 → portage/pacman（2002）把选择权交给用户 → macOS 这条线则是 Fink（2000）→ MacPorts（2002）→ **Homebrew（2009）**，Homebrew 用"借用系统库 + /usr 之外 + Git 化 formula"把包管理做成普通开发者也能用 → Nix（2003 发明、2020 年前后流行）把"安装结果由输入哈希唯一决定"做到可复现可回滚 → Snap/Flatpak/AppImage（2014–2015）把依赖树塞进应用自身。当前推荐一句话：**服务器跟发行版走（Debian 系 apt、Red Hat 系 dnf），Linux 桌面 GUI 用 Flatpak 更主流，DevOps 与多版本共存上 Nix，macOS 开发者用 Homebrew（配 pip/cargo/npm 等语言级管理器）。**
+**TL;DR：** 包管理器不能只按“安装速度”比较，至少要问五件事：依赖由谁解析、文件由谁拥有、升级是否有事务边界、运行时是否隔离、供应链和回滚证据在哪里。`apt/dnf` 主要服务发行版一致性，`pacman/portage` 把发行版策略交给用户，Homebrew 服务 macOS 开发机，Nix 提供路径隔离与声明式/可回滚工作流，但“哈希路径”不自动证明构建 bit-for-bit 可复现；Flatpak、Snap、AppImage 面向桌面分发，隔离、更新和系统集成取舍不同。推荐只能按场景给起点，不能把 2026 年的生态偏好写成所有团队的默认答案。
 
 ## 一、起点：没有包管理器的时代在赌什么
 
@@ -19,143 +19,145 @@ series: "系统设计手记"
 2. **安装不可逆**：`make install` 没有卸载的概念，装错了只能翻编译日志手工反操作，慢且易错。
 3. **不同来源互相打架**：`/usr/local/bin` 与 `/usr/bin` 可能并存两份同名程序，PATH 顺序决定谁赢，靠肉眼调试。
 
-于是整个 Unix/Linux 世界的包管理器，本质都是把这三个问题自动化 + 规范化：**依赖怎么声明、装到哪、怎样卸载还能回滚**。每一世代只在"这三问各自取什么答案"上拉开差异——这是读接下来三十年历史的那把钥匙。
+于是 Unix/Linux 世界的包管理器不断把这三个问题自动化和规范化：**依赖怎么声明、文件装到哪、怎样卸载与升级**。回滚、快照、沙箱和可复现构建是后来叠加的能力，不能从“有包清单”直接推出。每一代只是在这些问题上选择不同边界。
 
 ```mermaid
 timeline
     title 包管理器三十年主线
-    1994 : dpkg：安装可记账
-    1995 : rpm 出现（Red Hat 2.0）
-    1998 : apt 自动解析依赖
-    2000 : Fink（mac，Debian 移植）
-    2002 : DarwinPorts（后 MacPorts）；portage；pacman
-    2003 : Nix 发明（纯函数安装）
-    2009 : Homebrew 简化 macOS 安装
-    2014 : Snap 由 Canonical 推出
-    2015 : Flatpak（xdg-app）发布
-    2020+ : Nix 复兴 ; Flatpak 成桌面事实标准
+    约 1994 : dpkg：安装可记账
+    约 1995 : rpm 进入 Red Hat 生态
+    约 1998 : apt 进入 Debian 生态，依赖解析上移
+    约 2000 : Fink：把 Debian 风格带到 macOS
+    约 2002 : DarwinPorts（后 MacPorts）；portage；pacman
+    约 2003 : Nix 项目形成，纯函数包管理进入实践
+    约 2009 : Homebrew 简化 macOS 开发机安装
+    约 2014 : Snap 生态形成
+    约 2015 : Flatpak（早期 xdg-app）进入桌面分发
+    2020+ : 声明式开发环境、桌面沙箱与应用自带运行时继续并存
 ```
+
+时间线标的是项目形成、发布或进入生态的近似窗口，不等同于“首次出现”“成为默认”或当前维护状态；历史年份与当前默认值应回到项目官方档案和版本文档核对。
 
 ## 二、第一代：把"安装"变成可记录的——dpkg、rpm（1994–1995）
 
-1994 年 1 月，Debian 创始人 Ian Murdock 为 Debian 写了 **dpkg**：起初是个 Shell 脚本，后改写成 Perl，再由 Ian Jackson 用 C 重写。它引入今天所有包管理器都会有的基础：**每个包声明"我装哪些文件、依赖哪些包、占用哪个库"，安装前先校验依赖，卸载时照着清单清理**。`.deb` 包格式自此定型。
+dpkg 在 Debian 早期形成并于 1994 年进入公开历史，是 `.deb` 包的底层安装、查询和卸载工具。它把文件清单、包元数据和依赖声明写进可查询的本地数据库：**安装可记录、文件有归属、卸载有依据**。它本身不是完整的仓库解析与系统升级策略，这个边界很重要。
 
-1995 年 9 月，Red Hat Linux 2.0 带着 **RPM（Red Hat Package Manager）** 首次出现，是第一个把打包格式内建进发行版的做法。RPM 与 dpkg 是同一问的两种答案——包格式、元数据、依赖命名不同，底层哲学一致。
+RPM 在 1990 年代中期进入 Red Hat 生态，和 dpkg 一样负责包格式、元数据与本地事务；具体发行版版本和发布日期应按项目档案核对。RPM 与 dpkg 是同一类底层工具的两种实现——包格式、元数据和依赖命名不同，仓库与高层求解器另算。
 
 这一代解决的问题：安装能记录、能查询、能卸载；坑也随之而来：**依赖解析靠包内声明，声明不全或成环就无解**，"依赖地狱"（dependency hell）一词由此诞生。`rpm -i` 时代装一个软件要先手动一次攒齐它要的所有依赖，像解连环锁。
 
 ## 三、第二代：把"依赖解析"变成可解的题——apt、yum、dnf（1998–2015）
 
-手动逐个攒依赖太累，那就让机器算。**apt** 于 1998 年先行（Scott Drake 发布 0.0.1）：它不替代 dpkg，而是在其上加了**依赖仓库（repository）与解析层**——你只说"我要装 X"，它读索引库把依赖树算出、按拓扑排好，再交给 dpkg 一次性执行。
+手动逐个攒依赖太累，那就让机器算。APT 在 1990 年代后期形成并运行在 dpkg 之上：它增加仓库索引、版本选择、依赖求解和下载策略，最后把已选事务交给 dpkg 执行。用户只需声明“我要装 X”，但最终结果仍受仓库、pinning、架构、版本约束和本地配置影响，不是数学上唯一的依赖答案。
 
-Red Hat 系的路径稍不同：先有 rpm 本身，再到 2002 年推出的 **YUM**（Yellowdog Updater Modified），再到 2015 年 Fedora 用 **dnf** 替换 yum，并成为 RHEL 8 开始的事实默认。**apt 与 yum/dnf 都把"先更新元数据 → 再算依赖 → 再执行安装"做成一件事**，这是这一代的核心贡献。
+Red Hat 系先有 RPM，随后由 YUM 和 DNF 提供仓库、元数据和高层事务；Fedora 在 2010 年代逐步转向 DNF，RHEL 的具体默认值按发行版版本核对。**apt 与 yum/dnf 都把“更新元数据 → 选择依赖 → 执行事务”组合起来**，这是这一代的核心贡献，但它们的 solver、仓库策略和事务恢复能力并不相同。
 
-实现上有差别：apt 的解析器是手写的依赖规则，dnf 用 **libsolv（SAT 求解器）** 做全局一致性求解，语义更精确但历史上启动更慢。**deb 与 rpm 两个生态自此并列，再没有统一。**
+实现上也有差别：不同版本的 apt、libdnf/dnf 和发行版插件使用不同的求解与策略，不能用“一个手写、一个 SAT、一个更慢”概括所有版本。`.deb` 与 `.rpm` 生态长期并列，选择通常跟随发行版、镜像、支持周期和组织运维能力。
 
 | | apt/Debian 系 | dnf/RHEL 系 |
 | :--- | :--- | :--- |
 | 底层包格式 | `.deb`（dpkg） | `.rpm`（rpm） |
 | 解析器 | apt 依赖规则 | libsolv（SAT 求解） |
 | 仓库 | Debian 官方 + Ubuntu PPA | Fedora 官方 + EPEL |
-| 事务/回滚 | 基本无 | `dnf history` 记录 + undo |
+| 事务/回滚 | 有安装事务，但不等同于全系统快照 | `dnf history` 可记录/undo/rollback 部分事务，受当前状态和版本影响 |
 
 ## 四、第三代：把"选择权"交给用户——portage 与 pacman（2002）
 
 同期出现两个把用户选择权往前推的结构：
 
-- **Portage**（2002 年随 Gentoo 1.0 发布）：从 FreeBSD ports 学到"源码 + 编译参数"模型。每个包是一个 ebuild 脚本，编译前按 **USE flags** 选特性（要不要 X、要不要 CUPS），装出"专为你的机器裁剪"的二进制。代价是大软件首次编译动辄几十分钟到数小时。
-- **pacman**（2002 年随 Arch Linux 发布）：本质仍是二进制包 + 元数据仓库，但把 `-Syu` 一键同步 + 升级合并成一步，又铺了 AUR 社区源，"一条命令装整个宇宙"由此成型。代价是滚动发布，稳定性交给用户掌握。
+- **Portage**（约 2000 年代初随 Gentoo 生态成熟）：从 BSD ports 类系统继承“源码 + 编译参数”模型。每个包以 ebuild 描述，USE flags 允许选择特性；代价是构建时间、维护成本和二进制缓存覆盖率取决于包与硬件，不能用“几十分钟/数小时”当作统一基线。
+- **pacman**（约 2000 年代初随 Arch Linux 生态形成）：仍是二进制包 + 元数据仓库，但把同步与升级做成简洁命令，AUR 则是社区构建脚本/包来源，不应与官方仓库混为一谈。代价是滚动发行版的兼容性和修复责任更多交给用户。
 
 两者的哲学都是"**系统是用户的选择，不是发行版的选择**"。现实是两个都留了学费：portage 的学习曲线陡、只吸引乐意折腾的少数；Arch 的滚动发布让用户得常修系统。它们没有成为主流，但留下了"包内参数可摸"的思想遗产。
 
-## 五、岔路一：Nix——把安装结果变回纯函数（2003 发明，2020+ 流行）
+## 五、岔路一：Nix——把安装输入与路径显式化（约 2003 起）
 
-2003 年，Eelco Dolstra 提出 **Nix**，把安装模型重新定义了一遍：
+2003 年前后，Eelco Dolstra 的研究和 Nix 项目把安装模型重新定义了一遍：
 
-- 包不装进共享目录，而是装进 **`/nix/store/<hash>-name/`**，hash 由"源码 + 依赖 + 编译参数"推导而来。**同样的输入 → 完全相同的输出**，这就是"纯函数"的含义。
-- 装两个版本互不冲突——它们住在不同 hash 目录；**升级 = 装入新 hash + 切换 symlink，回滚 = 切回旧 symlink**，秒级完成。
-- 依赖全部显式：**编译时声明的依赖写进哈希**，缺失立时暴露在构建期，而不是运行期崩溃。
+- 包不装进传统共享目录，而是装进 **`/nix/store/<hash>-name/`**；这个标识编码了 derivation 的输入和依赖图。不同输入通常落到不同 store path，因此多版本可以并存，升级和 profile 切换也能保留旧代供回滚。
+- 依赖声明进入构建环境，未声明的主机资源不应被构建过程随意读取；这能把一类“在我的机器上能编译”的错误提前暴露。
+- 但 store path 哈希不自动等于 bit-for-bit 可复现：源码固定、输入锁定、构建过程无时间/随机/网络等未声明影响、目标架构一致，以及缓存/签名策略都影响最终证据。Nix 提供复现和回滚的机制，不替项目消除所有不确定性。
 
-代价是：生态要"全部按 Nix 约定重打包"，学习曲线陡峭，`/nix/store` 占磁盘（一个包一份硬副本）。但在 CI 可复现构建、开发者个人 shell 环境的可迁移上，2020 年后的 Nix 成为显学。核心承诺是这一代独有的：**"我昨天装的、你三天后装的"可以被证明一字不差**。
+代价是：生态需要按 Nix 的表达式、sandbox、channels/flakes 和 binary cache 约定维护，学习曲线较陡；旧 store path 也要等 profile 不再引用后才能安全垃圾回收。它适合声明式开发环境、需要多版本共存或希望把依赖输入显式化的 CI，但“可复现”必须由锁定输入和重建/对比实验来证明，而不是由 `/nix/store` 路径本身证明。
 
 ## 六、macOS 这条线：Fink → MacPorts → Homebrew（2000–2009）
 
-macOS 的包管理史和 Linux 平行但另起炉灶，因为 Mac 的处境完全不同：mac 有图形 GUI 生态，所以"系统包"的需求集中在开发者；又没有为第三方库定制的系统仓库，于是第一代直接把 Linux 的工具搬过来。
+macOS 的包管理史和 Linux 平行但另起炉灶：系统自带 GUI 与命令行工具，开发者却仍需要编译器、库和可并存的版本；因此 Fink、MacPorts、Homebrew 选择了不同的 prefix、源码/二进制和依赖策略。
 
-**2000 年，Fink** 把 dpkg/apt 移植到 Mac，做得很早但不温不火：它有 Debian 的仓库与依赖解析，但 build 链依附于 Xcode，演进慢、包旧，渐渐被边缘化。
+**约 2000 年，Fink** 把 dpkg/apt 风格带到 Mac，提供仓库与依赖解析；它与系统 SDK、编译链和包维护节奏之间的取舍，影响了后来生态的选择。历史判断应以项目档案和当前维护情况为准，不能只用“包旧/被边缘化”概括。
 
-**2002 年，Apple 内部员工与 BSD 社区做了 DarwinPorts**（2006 年改名为 **MacPorts**）。它继承 FreeBSD ports 的"源码编译"模型，默认编译并安装到 **`/opt/local`**，自带 X11 依赖链。优点是"纯源码、很干净"；缺点是装一次大库编译十分钟起，且 `/opt/local` 与系统库并存，升级中的版本错乱会让系统里的同一库出现两套。它在 macOS 上一直活着，时至今日仍在维护，但始终没成为开发者默认。
+**2002 年前后，DarwinPorts**（后来改名为 **MacPorts**）继承 BSD ports 的源码编译模型，默认使用 **`/opt/local`**，与系统 prefix 隔离。优点是编译选项与依赖边界可控；代价是构建时间、磁盘和升级维护成本，具体体验取决于是否有二进制包和目标包。它至今仍是可用的替代方案，但“默认”应按团队已有资产而不是流行度判断。
 
-**2009 年 5 月，Max Howell 写下 Homebrew**，一举换赛道：
+**约 2009 年，Max Howell 发起 Homebrew**，一举换赛道：
 
-- **安装位置**：默认装到 **`/usr/local`（Intel）或 `/opt/homebrew`（Apple Silicon）**，不碰系统保护目录，卸载干净；
-- **依赖哲学**：优先"借用"系统里已有的库（macOS 自带 openssl 等），缺的才由 Homebrew 自己装进 Cellar（`/usr/local/Cellar/<name>/<version>`），然后 symlink 链接出来——所以"挪用系统 + 最小自建"，比 MacPorts 少很多编译；
-- **配方即代码**：一个"formula"就是一段 Ruby 脚本（描述源码地址、构建参数、依赖），存放在 **tap（Git 仓库）** 里，增删改提交都走 Git——社区贡献几乎零门槛；
-- **bottle 机制**：预编译二进制（bottle）默认可用，常见的包直接下载，把"编译 N 分钟"压成"下载几秒"；
+- **安装位置**：默认 prefix 是 **`/usr/local`（Intel）或 `/opt/homebrew`（Apple Silicon）**，使用默认 prefix 还能获得更完整的 bottle 覆盖；这不等于不会安装独立依赖或不会与系统软件并存。
+- **依赖策略**：formula 会声明并优先使用 Homebrew 自己管理的依赖；某些系统库和工具可能作为外部依赖或 keg-only 项出现，不能概括成“借用系统 OpenSSL”。实际依赖以 `brew deps`、formula 和当前平台为准。
+- **配方即代码**：formula 描述源码、构建参数和依赖，历史上以 tap/Git 维护；现代 Homebrew 还会通过 API 和 bottle 服务分发，不能假设每次操作都需要本地完整仓库。贡献仍需遵守审核、测试和平台支持规则。
+- **bottle 机制**：有匹配平台和 prefix 的预编译二进制时，Homebrew 会优先下载；没有 bottle、使用非默认 prefix 或显式要求源码构建时，成本会完全不同，不能用“下载几秒”作为通用体验。
 - **cask**：对 GUI 应用（.dmg/.pkg）用 `brew install --cask` 安装，把"去官网下载拖进 Applications"也脚本化。
 
-结论：Homebrew 赢的**不是"更正确"，而是"更可用"**。它对准的是普通开发者：一条命令，缺什么装什么，升级、回滚都有预案。二十年后的 macOS 开发机，`brew install / --cask` 基本就是事实标准的发行口。
+结论：Homebrew 的优势是低摩擦的开发机体验、bottle 覆盖和成熟的 formula/cask 生态；它不是系统快照工具，也不提供 Nix 那种天然的多版本隔离和声明式回滚。升级可能联动依赖，旧版本清理也有自己的规则；需要稳定构建的团队应使用 lockfile、容器/CI 镜像或其他环境管理手段。Homebrew 在 macOS 开发机上很常见，但“事实标准”不等于所有组织的唯一选择。
 
-## 七、终局：应用自成一个世界——Flatpak、Snap 与 AppImage（2014–2015 起）
+## 七、桌面分发分叉：Flatpak、Snap 与 AppImage（约 2014–2015 起）
 
 桌面应用的分发在 Linux 撕开新战场：**开发者不想替每个发行版、每个 glibc、每个 Gtk/Qt 变体各编一份**，发行版也不想让系统依赖被 app 绑架。于是三路"扁平化"答案：
 
 | | AppImage | Snap | Flatpak |
 | :--- | :--- | :--- | :--- |
-| **出身** | 2004 年 klik 起家，2013 年定名 | 2014 年 Canonical（源自 Ubuntu Phone 的 click 格式） | 2015 年 Red Hat 的 xdg-app，2016 年更名 Flatpak |
+| **出身** | 起源可追溯到 klik 等项目，具体格式与工具版本需按项目历史核对 | Canonical 的 snap 生态，沿用了 click 时代的一些经验 | xdg-app 项目后更名为 Flatpak；具体年份按官方历史核对 |
 | **核心形态** | 单个可执行文件 `.AppImage` | squashfs 打包 + snapd 系统服务 | OSTree 内容寻址 + Bubblewrap 沙箱 + 权限 portal |
-| **依赖** | 全部打进单文件，自带运行时 | 自带 core 基座（core22 等） | 与宿主共享 runtime，多应用共用一份 |
-| **隔离/沙箱** | 无（同普通用户权限） | AppArmor / seccomp 限制 | Bubblewrap 命名空间强制隔离 |
-| **更新** | 无内置更新，替换文件 | snapd 自动 / 定时更新 | `flatpak update` 推送 |
-| **痛点** | 无签名背书；权限无限制 | 闭源组件、仓库中心化，风评批评 | 沙箱边界会拦正常操作（走 portal 授权） |
+| **依赖** | 通常把运行时依赖放进单文件，但仍要考虑目标发行版基础库、驱动和打包策略 | snap 包与 base snap 组合，运行依赖由 snapd 管理 | 应用绑定 runtime，也可捆绑 runtime 没有的库 |
+| **隔离/沙箱** | AppImage 文件本身不是沙箱；程序按普通用户/系统权限运行 | snapd 结合 AppArmor、seccomp 等机制，实际权限看接口和配置 | 默认 sandbox，文件、网络、设备等访问通过权限与 portal 暴露 |
+| **更新** | 文件替换和更新器由发行者/用户选择，格式本身不提供统一更新策略 | snapd 负责刷新策略，企业环境可配置/延迟更新 | repository 对象版本化，`flatpak update` 可升级，具体 remote 由系统配置 |
+| **痛点** | 体积、基础库兼容、签名/更新/沙箱需另配 | 中心化服务、自动刷新和权限/接口语义需要运营治理 | runtime、portal 和 sandbox 权限会增加打包与调试成本 |
 
-一句话对照：**AppImage 卖'一个文件，拔插即用'；Flatpak 卖'沙箱内应用各行其是'；Snap 卖'厂商集中管理、自动更新、服务器友好'**。在主流桌面发行版语境里，Flatpak 在 2024 年后已成事实标准（Flathub 成为社区默认来源）；Snap 在 Ubuntu 默认但安装慢、透明度常被吐槽；AppImage 只适合便携分享。
+一句话对照：**AppImage 卖“一个文件，发布者自己负责运行边界”；Flatpak 卖“runtime + sandbox + portal + repository”；Snap 卖“由 snapd 管理的包、接口与刷新策略”**。选择应先看目标发行版、GUI 集成、权限模型、更新控制和供应链责任；没有证据支持把 Flatpak、Snap 或 AppImage 之一称为所有 Linux 桌面的事实标准，Ubuntu 默认路径与其他发行版的默认路径也不同。
 
 ## 八、一张总账：主流管理者的语义承诺
 
 | 维度 | dpkg/apt | rpm/yum-dnf | pacman | Homebrew | Nix | Flatpak |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **诞生** | 1994 / 1998 | 1995 / 2002（dnf 2015） | 2002 | 2009 | 2003 | 2015 |
+| **历史位置** | dpkg / apt：1990 年代形成 | rpm / yum / dnf：1990–2010 年代演进 | 2000 年代初形成 | 2009 年前后形成 | 2000 年代初形成 | xdg-app/Flatpak：2010 年代形成 |
 | **适用系统** | Debian/Ubuntu | RHEL/Fedora | Arch | macOS（亦可 Linux） | 多平台 | Linux 桌面 |
 | **安装位置** | `/usr` 全局 | `/usr` 全局 | `/usr` | `/usr/local` 或 `/opt/homebrew` | `/nix/store` 隔离 | runtime 共享目录 |
-| **依赖策略** | 仓库求解 | 仓库求解 | 仓库 | 借用系统 + 最小 Cellar | 哈希显式 | 共享 runtime |
-| **回滚** | 无事务回滚 | dnf history undo | 无 | 半：`brew list` 记录 | 秒级回滚 | commit 历史可回 |
-| **沙箱** | 无 | 无 | 无 | 无 | 无（纯路径隔离） | Bubblewrap |
+| **依赖策略** | 仓库求解 | 仓库求解 | 仓库/社区包 | formula 声明 + Homebrew 依赖/bottle | derivation 输入与路径显式 | runtime + 应用捆绑库 |
+| **回滚** | 依赖重装/版本选择；不等同系统快照 | history undo/rollback 有边界，不能替代备份 | 通常依赖重新同步/降级 | 无系统级事务快照；旧版本和 pinning 另算 | profile/generation 可回滚；GC 前提是旧路径仍可达 | repository 版本可升级/降级，应用状态另算 |
+| **隔离** | 系统全局 prefix | 系统全局 prefix | 系统全局 prefix | 独立 prefix，但不等于沙箱 | store path 隔离；不是权限沙箱 | sandbox + portal，权限由 manifest/remote 决定 |
 
-竖着读这张表，历史的"答案"主线是：**依赖从"装完算数"（dpkg/rpm）演进到"装完且能更新"（apt/dnf），再到"装完=依赖证明"（Nix 哈希）**。
+竖着读这张表，历史的“答案”主线是：本地包格式先解决文件归属和安装记录，仓库工具再解决版本选择与依赖求解；隔离型系统进一步把路径、构建输入或运行权限显式化。Nix 的 hash 能帮助识别 derivation 输入和 store path，但“装进哈希目录”不等于依赖、构建和发布已经被证明可复现。
 
-## 当前推荐（2026 视角）
+## 九、当前推荐：按故障边界选择，而不是按流行度选择
 
-| 角色 | 推荐 | 理由一句话 |
+| 场景 | 可作为起点的选择 | 需要额外验证的边界 |
 | :--- | :--- | :--- |
-| Linux 服务器 | 发行版自带（Debian→apt、RHEL→dnf） | 原厂安全补丁、审计面最小 |
-| Linux 桌面 GUI 应用 | **Flatpak（Flathub）** | 沙箱 + 统一 runtime，跨发行版即装即用 |
-| 开发机 / 多版本共存 | 语言级（pip/npm/cargo）+ Nix 兜底 | 项目级隔离，运行时库不污染系统 |
-| macOS 开发者 | **Homebrew**（CLI + cask） | 事实默认、社区最大、cask 管 GUI |
-| 可复现 CI/部署 | **Nix** | 同一 hash 同一比特，构建可复现 |
+| Linux 服务器基础包 | 发行版自带（Debian 系 apt、RHEL/Fedora 系 dnf） | 生命周期、仓库镜像、事务失败恢复、回滚/备份方案 |
+| Linux 桌面 GUI | Flatpak、发行版包或 Snap，按目标发行版和权限需求选 | runtime/portal、沙箱权限、更新控制、GPU/文件集成 |
+| 开发机 / 多版本共存 | 语言级工具 + 项目 lockfile；需要跨项目系统依赖时评估 Nix | shell/flake 输入锁定、二进制缓存信任、团队学习成本 |
+| macOS 开发工具 | Homebrew、MacPorts 或官方 installer，按已有工具链选 | prefix、bottle 覆盖、联动升级、单用户权限和旧版本策略 |
+| 可复现 CI/部署 | 固定基础镜像/锁文件，或 Nix + 固定输入与重建验证 | 构建是否确定、架构是否一致、缓存签名、供应链来源和运行时状态 |
 
-一个反直觉提醒：**"跨发行版通用"不是唯一标准，事务与回滚也不天然更优**。apt 没有事务功能也能活 25 年——因为"装错重装"的代价足够低；而"系统目录不可碰 + 依赖要显式证明"这些后来者才带出来的优点，恰恰是 macOS 与 Linux 桌面版在演进中逐渐补齐的。
+一个反直觉提醒：**“跨发行版通用”不是唯一标准，事务与回滚也不天然更优**。服务器最重要的可能是安全补丁、镜像可审计和失败恢复；桌面最重要的可能是权限和 GUI 集成；CI 最重要的可能是锁定输入与可重建证据。Nix、Flatpak 和 AppImage 解决的边界不同，不能把某一项优势外推成整个软件生命周期的保证。
 
-## 结论：包管理器演进是在可安装、可复现与隔离之间换账
+## 十、结论：包管理器卖的是一组边界，不是一条安装命令
 
-三十年的账没有绕开一个问法：**依赖怎么解决、装到哪、能不能删**——每一代的答案都不同，且每一代都是对前一代缺陷的一次还债。dpkg/rpm 解决"能记账"，apt/dnf 解决"能自己解依赖"，portage/pacman 把选择权让给用户，Homebrew 把"能用"普及到开发者，Nix 交付"可复现"，Flatpak 交付"隔离"。而当镜像构建与容器成为既有基建后，"包管理"与"镜像构建"两本账正走向合流——那是下一篇要记的账。
+三十年的账没有绕开一个问法：**依赖怎么解决、文件由谁拥有、失败如何恢复、运行时隔离到哪里**。dpkg/rpm 解决本地安装记录，apt/dnf 解决仓库和依赖选择，portage/pacman 把构建/发行版策略交给用户，Homebrew 降低 macOS 开发机摩擦，Nix 把路径和构建输入显式化，Flatpak/Snap/AppImage 则重新划分桌面应用的运行与更新边界。它们没有一个能同时给出系统补丁、沙箱、bit-for-bit 重建和无状态回滚；选型的第一步是写清楚你真正需要哪一种证据。
 
-**下一步可动手（10 分钟）：** 在 macOS 上 `brew list --versions` 看 Homebrew 的账本；在 Linux VM 里敲 `dnf history` 或 `apt list --installed` 看"事务记录"；再一次性装 `brew install nix`，（或 `nix shell nixpkgs#hello -c hello` 看一眼哈希目录与秒级回滚）。把三个输出并排摆开，三十年不靠背，靠看。
+**下一步可动手：** 先只做只读检查：在 macOS 上运行 `brew list --versions`，在 Linux VM 中运行 `dnf history` 或 `apt list --installed`，记录它们分别能证明什么、不能证明什么。若机器已经安装 Nix，再运行 `nix shell nixpkgs#hello -c hello` 并查看 `nix path-info`；不要把安装包管理器本身当成无风险的十分钟实验。要证明可复现，另建一个固定输入的最小 derivation，在两台同架构环境重建并比较输出哈希。
 
 ## 参考资料
 
 1. dpkg 项目与历史 —— https://wiki.debian.org/Dpkg
 2. Debian 的 APT 历史 —— https://wiki.debian.org/Apt
 3. RPM 官网 —— https://rpm.org/
-4. Fedora DNF 文档 —— https://fedoraproject.org/wiki/DNF
+4. DNF 命令参考（history、undo、rollback 的边界）—— https://dnf.readthedocs.io/en/latest/command_ref.html
 5. Arch Wiki：pacman —— https://wiki.archlinux.org/title/Pacman
 6. Homebrew 文档 —— https://docs.brew.sh/
 7. MacPorts 官网与历史 —— https://www.macports.org/
 8. Fink 项目主页 —— https://www.finkproject.org/
-9. Nix 手册与系统综述（Dolstra, 2006）—— https://manual.nixos.org/
-10. Flatpak 官网 / Alex Larsson《Flatpak: a history》—— https://flatpak.org/
+9. Nix 官方：How Nix Works（store path、依赖、回滚与构建确定性边界）—— https://nixos.org/guides/how-nix-works/
+10. Flatpak 官方：Basic concepts（runtime、sandbox、portal、repository）—— https://docs.flatpak.org/en/latest/basic-concepts.html
 11. Snap 官方文档 —— https://snapcraft.io/docs
 12. AppImage 官方 Wiki（History）—— https://github.com/AppImage/AppImageKit/wiki/History
-13. Andrew Nesbitt《Package Manager Timeline》—— https://nesbitt.io/2025/11/15/package-manager-timeline.html
+13. AppImage 官方：Concepts（单文件与系统依赖边界）—— https://docs.appimage.org/introduction/concepts.html
 
 > 延伸阅读：包管理器与事务、回滚的取舍，和[两阶段提交与 Saga/Outbox 的选择](/writing/distributed-transactions-2pc-saga)是同一种心态；把依赖冲突这种"并发写同一资源"的账，见[数据库死锁的等待图](/writing/database-deadlock-wait-graph)；把"启动快不快"放大到整台机器的包管理，见[理解事件循环](/writing/understanding-event-loops)。

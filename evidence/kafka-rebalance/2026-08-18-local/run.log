@@ -1,0 +1,19 @@
+# kafka-rebalance:2026-08-18 本机复现
+机器: Apple Silicon(M1 Pro), macOS, OrbStack docker
+镜像: apache/kafka:3.9.0(单节点 KRaft,classic 再平衡协议)
+参数: PARTITIONS=8 MEMBERS=3 RATE=1000(循环 producer) SESSION_MS=6000 KILL_AFTER=15 WATCH=28 SAMPLE_MS=0.5
+方法: docker pause consumer-2 冻结整个 cgroup 模拟物理挂死(心跳停发)。
+      注意 docker kill -s STOP 在 OrbStack 上对 Java 容器无效(实测组状态全程 Stable),改用 pause。
+
+## 关键修复:advertised.listeners
+镜像模板硬编码 advertised.listeners=localhost,KAFKA_ADVERTISED_LISTENERS 环境变量不生效,
+容器内客户端拿到 localhost 连自己、组永远起不来。挂载 kraft-server.properties 覆盖后恢复正常。
+
+## 结果(完整见 kafka-rebalance.csv)
+- 0.0s PreparingRebalance(组形成) → 0.5s Stable
+- 稳态: ~200-400 msg/s(循环 producer 节流 1000/s,消费端最新位置追随)
+- 15.0s: docker pause consumer-2
+- 16.0s: 组进入 PreparingRebalance,该采样点 rate=0.0(全组停止消费)
+- 16.5s: 回 Stable, rate=800(追回窗口期 lag), 之后恢复 ~200-400 稳态
+- 结论: 单节点本环境下,挂死成员到全组停摆窗口约 0.5-1s;PreparingRebalance 期间消费归零是
+  stop-the-world 的直接证据。窗口宽度随成员数/网络 RTT/协调器负载扩大,本机结果不代表生产量级。

@@ -2,8 +2,9 @@
 title: "http.Transport 的复用账本：默认 2 条空闲连接怎么拖慢高并发"
 description: "Keep-Alive 承诺连接默认复用，Go http.Transport 的默认值却只给每条宿主留 2 条空闲槽位——并发一高，大量请求取不到现成连接，只能付一次 TCP+TLS 新建税。本机实测：50 并发 × 15000 请求，默认池新建约 3580 次连接（24% 请求付税），调大池只新建 49 次；并发推到 200，默认池进入 1.1k~16.2k req/s 的震荡区，调大池稳定在 29k。四个旋钮各管一摊：MaxIdleConnsPerHost / MaxIdleConns 管复用、IdleConnTimeout 管寿命、MaxConnsPerHost 管并发硬上限。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["Go", "网络", "HTTP", "性能"]
-draft: true
+draft: false
 featured: false
 series: "Go 的设计边界"
 ---
@@ -83,7 +84,7 @@ HTTP/2 的多路复用改变了这笔账的性质（机制详见 [HTTP/2 的队�
 - **不复用老连接也划算**。h1 下每请求新建 = 每次付 TCP+TLS 全税，所以要拼命复用。h2 下即使某条连接要换，新建成本摊在 250 个流上，单位成本低两个数量级——「重连」的惩罚大幅变小。
 - **注意这是双层配置**：`Transport` 本身是 h1/h2 共用的（`DefaultTransport` 里 `ForceAttemptHTTP2=true`，会让 HTTPS 在 TLS ALPN 能协商出 h2 时走 h2，协商不出则回退 h1），但旋钮语义不能照搬 h1：`IdleConnTimeout` 对 h2 仍生效（h2 传输自己管 idle 定时器，未设时回退到 `Transport.IdleConnTimeout`），而 `MaxIdleConns`/`MaxIdleConnsPerHost` 基本不被 h2 连接池引用——h2 的并发由流承载，每 host 只需保留少量连接。排查时先确认上游到底走的是 h1 还是 h2，再谈旋钮。
 
-## 实验入口：本机起上游，压默认池 vs 调大池
+## 六、实验入口：本机起上游，压默认池 vs 调大池
 
 代码在 `experiments/go-nethttp/`（`cmd/server` 起本地上游并统计 accept，`cmd/bench` 包装 `DialContext` 精确计数新建连接）。复现命令：
 
@@ -105,7 +106,7 @@ go run ./go-nethttp/cmd/bench -workers 50 -requests 300 -perhost 100 -maxidle 10
 
 > 复现提示：`IdleConnTimeout` 的回收行为可以单独看——`bench -idle-timeout 2s` 跑完等 5s，再 `curl http://127.0.0.1:18766/stats`，返回 `"open":0`，证明空闲连接被按时回收。服务端视角可用 `ss -tan`（Linux）或 `lsof -i :18765` 观察连接数。
 
-## 结论：先量 miss 率，再动旋钮；回环测不出这笔税
+## 七、结论：先量 miss 率，再动旋钮；回环测不出这笔税
 
 复用税的排查顺序是：**先确认池子的 miss 率，再谈调参**。落地三步：
 

@@ -28,7 +28,12 @@ def sh(*args):
 
 
 def group_state():
-    """返回组状态机的当前态，读不到返回 'no-group'。"""
+    """返回组状态机的当前态，读不到返回 'no-group'。
+
+    输出列是 GROUP | COORDINATOR (ID) | STATE，第 2 列是 coordinator 地址，
+    状态是最后一列（Stable/PreparingRebalance/CompletingRebalance/Empty/Dead）。
+    不能固定按列取：COORDINATOR 形如 "kafka:9092 (0)" 占两个 token。
+    """
     out = sh(
         "compose", "exec", "-T", "kafka",
         "/opt/kafka/bin/kafka-consumer-groups.sh",
@@ -37,7 +42,10 @@ def group_state():
     for line in out.splitlines():
         parts = line.split()
         if parts and parts[0] == GROUP:
-            return parts[1] if len(parts) > 1 else "?"
+            for p in reversed(parts):
+                if p in ("Stable", "PreparingRebalance", "CompletingRebalance",
+                         "Empty", "Dead", "NoOffset"):
+                    return p
     return "no-group"
 
 
@@ -55,8 +63,11 @@ def main():
         w.writerow(["t_s", "group_state", "rate_msg_per_s", "total_consumed"])
         while t <= WATCH_S:
             if not killed and t >= KILL_AFTER:
-                print(f"[t={t:.1f}s] SIGSTOP consumer-2 模拟成员挂死（心跳停发）")
-                sh("kill", "-s", "STOP", "consumer-2")
+                # docker pause 冻结整个 cgroup（所有线程停摆、心跳停发），比 SIGSTOP
+                # 更贴近"成员物理挂死"：SIGSTOP 只发进程信号，OrbStack 上对 Java 容器
+                # 实测无效（consumer-2 仍在消费、组状态全程 Stable）。
+                print(f"[t={t:.1f}s] docker pause consumer-2 模拟成员挂死（心跳停发）")
+                sh("pause", "consumer-2")
                 killed = True
             cur = {i: consumed(i) for i in range(1, N_MEMBERS + 1)}
             rate = sum(cur[i] - prev[i] for i in cur) / SAMPLE_MS

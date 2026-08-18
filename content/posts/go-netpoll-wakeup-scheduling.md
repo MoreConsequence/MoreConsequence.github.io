@@ -3,7 +3,7 @@ title: "阻塞在 socket 读的 goroutine 为什么不吃线程：Go netpoll 的
 description: "100 万个阻塞读的 goroutine 不占线程，因为 Go 把内核的 epoll 就绪事件翻译成『可运行的 G』：netpoll() 返回可运行列表，等在 epoll_wait 里的那个 M 就地跑第一个、其余注入 runq。四次交接、gopark 挂起、pollable 边界、阻塞 syscall 钉死 M——『阻塞不吃线程』的成立条件与退化点，讲到底。"
 publishedAt: "2026-08-16"
 tags: ["Go", "并发", "网络", "调度器"]
-draft: true
+draft: false
 featured: false
 series: "Go 的设计边界"
 ---

@@ -1,159 +1,107 @@
 ---
 title: "Go 调度器的三张表：P 队列、抢占与调度延迟"
-description: "一次 goroutine 创建 441ns、channel 两手传球 171ns（M1 Pro 实测）。Go 调度器的三个数字讲完调度延迟：GMP 三表谁是谁、run 队列 256 上限、10ms 时间片抢占。判断调度慢是创建价、切换价还是时间片价，再动手。"
+description: "把 Go 调度延迟拆成三笔不同的账：仓库内 Go 1.25.1 benchmark 一次运行测到 goroutine 创建/回收 310.7ns、无缓冲 channel 传递 130.1ns；源码层再解释 P 的本地队列、M 的线程角色与异步抢占。数字绑定本机与 benchmark 参数，不把 10ms 机制阈值写成 p99。"
 publishedAt: "2026-08-10"
-updatedAt: "2026-08-10"
+updatedAt: "2026-08-17"
 tags: ["Go", "调度器", "GMP", "性能"]
 draft: false
 featured: false
 series: "Go 的设计哲学"
 ---
 
-**TL;DR：** Go 调度的三个关键数字：**goroutine 创建 441ns**、**channel 无锁传球 171ns**（M1 Pro 实测）、**时间片抢占最坏等 10ms**（runtime/proc.go 的 `forcePreemptNS`）。调度器的三个组件 G/M/P 各管一件事：G 是协程栈，P 是 CPU 上的调度队列（数量 = GOMAXPROCS），M 是线程。**调度延迟 = 创建/切换的固定开销（百 ns 级）+ 排队与抢占的最坏等待（10ms 级）**。哪个占了你的大头，决定了是换池子、调 GOMAXPROCS 还是本来就没问题。
+**TL;DR：** Go 调度的三笔账不能混成一个“调度延迟”：当前 benchmark 在 `-cpu=8`、Go 1.25.1、Apple M1 Pro 上一次运行测到 goroutine 创建/回收 **310.7ns**、无缓冲 channel 传递 **130.1ns**；源码层的异步抢占触发阈值是 `forcePreemptNS` 的 10ms。G/M/P 各管一件事：G 是执行体，P 持有可运行队列，M 承载 OS 线程。**创建/传递的本机稳态成本，不等于排队和抢占的线上尾延迟**；先确认慢在固定成本、阻塞、队列还是长计算。
 
-## 一、直觉错在哪：goroutine 便宜 ≠ 免费
+## 一、先纠正直觉：goroutine 便宜，但不是零成本
 
-"goroutine 便宜"指与线程比（线程创建 µs 级、栈 8MB），不是零成本。实测分解：
+“goroutine 便宜”是相对于创建 OS 线程和维护大块栈而言，不是免费。当前 benchmark 的两个操作都很窄：一个 goroutine 启动后立即 `Done()`，另一个 goroutine 通过无缓冲 channel 接收 `b.N` 次整数；它们不能直接代表业务请求。
 
-| 操作 | 本机 ns/op | 每秒 100 万次的账单 |
-| --- | --- | --- |
-| goroutine 创建 | 440.6 | 0.44 秒 CPU |
-| channel 双 G 传球 | 171.1 | 0.17 秒 CPU |
-| 无锁原子计数（参考） | ~7 | 7ms |
+| 操作 | 本机 `ns/op` | 这个数字能说明什么 |
+| --- | ---: | --- |
+| goroutine 创建/回收 | 310.7 | 该 benchmark 输入下的启动、排队和完成成本 |
+| channel 双 G 传球 | 130.1 | 该无缓冲同步形状的传递成本 |
+| 无锁原子计数 | 未在同一 benchmark 中测量 | 不与调度路径直接等价 |
 
-创建要花钱的地方在三个都会遇到：分配栈（初始 2KB）、填调度上下文、链入队列。每秒百万 goroutine 吃掉近半核，这不是"免费"，只是"比其他方案便宜"。任何把 goroutine 当廉价标签堆的代码，最终账单都会寄回 CI 的 CPU 预算上。
+创建成本来自栈、调度上下文和队列管理；具体分配与回收路径会受编译器、Go 版本、`GOMAXPROCS` 和 benchmark 结构影响。每秒百万次的线性外推只能作为容量预算起点，不能替代并发服务的 trace、pprof 和尾延迟。
 
-## 二、三张表：G 是执行体，M 是线程，P 是"CPU 的调度队列"
-
-GMP 不是三张内存表那么简单，分工决定了你能调的旋钮：
+## 二、三张表：G 是执行体，P 是调度权，M 是 OS 线程
 
 ```mermaid
 flowchart LR
-    subgraph M1[线程 M]
-        P1[P<br/>运行队列 runq]
-    end
-    subgraph M2[线程 M]
-        P2[P<br/>runnext]
-    end
-    GMQ[全局全局队列<br/>新 G 溢出时]
-    P1 --> P2
-    GMQ --> P1
+    G1["G：goroutine<br/>栈与执行上下文"] --> P1["P：processor<br/>本地 runq + runnext"]
+    P1 --> M1["M：machine<br/>承载 OS 线程"]
+    P2["其他 P 的本地队列"] --> GQ["全局队列<br/>窃取与溢出"]
+    GQ --> P1
 ```
 
-- **G（goroutine）**：栈指针 + 上下文。可以很多，几乎不占用 OS 资源；创建即排队。
-- **P（processor）**：数量 **固定 = GOMAXPROCS**（默认 8）。每个 P 有一份本地运行队列 runq（容量 256）和一个 runnext（优先插队位）。**调度器调度的是"哪个 G 上 P"**，P 才是严格并发上限：GOMAXPROCS=8 时最多 8 个 G 同时跑。
-- **M（machine/线程）**：数量动态。M 去干 syscall 久不回时要新开 M；本地队列空时从全局队列掏 G。全局队列是溢出的下水道（每 P 256 满后）。
+- **G（goroutine）**：带有栈和执行上下文的用户态执行体。可以很多，但每个 G 都可能持有 channel、锁、连接或业务对象。
+- **P（processor）**：调度 Go 代码所需的逻辑处理器，数量固定为 `GOMAXPROCS`。默认值由 Go 版本、机器和容器 CPU 配额共同决定；本次 benchmark 的 `-cpu=8` 只是实验参数，不是所有环境的默认值。P 有本地 run queue 和 `runnext` 优先槽。
+- **M（machine）**：承载 OS 线程的 runtime 结构。M 阻塞在系统调用时，runtime 可以安排其他 M 运行可执行的 G；因此 M 的数量不等于 `GOMAXPROCS`。
 
-调 GOMAXPROCS 的实际效果：调的是可以同时跑几个 G（P 数），不是"允许多少线程"（M 数自己长）。要并发上的量大，P 是硬顶；要让线程少，P 保持小。
+调 `GOMAXPROCS` 调的是同时执行 Go 代码的 P 数量，不是线程总数，也不是队列长度。应用把“G 多”误当成“CPU 并发更多”，就会把等待、排队和资源占用一起推迟到生产环境。
 
-## 三、抢占：10ms 时间片的账
+## 三、异步抢占：10ms 是 runtime 阈值，不是延迟承诺
 
-Go 从 1.14 起有异步抢占，但机制简化成一句话：**任何 G 连续运行超过 10ms 就会被标记让路**。源码 `runtime/proc.go`：
+Go 1.14 起支持异步抢占。runtime 中的 `forcePreemptNS` 是触发抢占检查的时间阈值：
 
-```
+```go
 const forcePreemptNS = 10 * 1000 * 1000 // 10ms
 ```
 
-- 后台线程 sysmon 每秒几十趟检查各 P，发现某个 G 跑了这么久（`schedwhen+forcePreemptNS <= now`），就给它发抢占信号；
-- 被抢占的 G 在下一个安全点（函数入口的栈 check）切换出去；  
-- 如果 G 在系统调用里，P maven者"先从 P 拿走等 syscall 结束"。
+这个常量不能被翻译成“每个 G 每 10ms 获得一次时间片”，更不能翻译成“其他请求最多等待 10ms”。运行时还要处理：
 
-效果：**单 G 对单核的"最长占时 10ms** 是对有活要跑的另一个 G 的承诺。卡任务用了 5ms 不会被抢占；一样活 100ms 最多等 10ms 就被迫让。
+1. sysmon 发现某个 G 长时间占用 P 后请求抢占；
+2. G 在可安全抢占的位置响应请求，安全点和函数形状会影响观察到的时间；
+3. 如果 G 阻塞在系统调用，P 可以被交给其他可运行的 G，M 数量也可能变化；
+4. 锁等待、GC、OS 调度和队列排队都可能成为比抢占阈值更大的延迟来源。
 
-> 注意：这不是实时 10ms 准点：抢占要等安全点，安全点最坏可以离触发点再远个循环——所以"很短的密集计算 9ms <10ms <10ms"毫安然无恙，"循环单次 9.9ms"这类 hairline 会抖动。
+所以“10ms”适合解释 runtime 为什么会尝试打断长计算，不适合作为实时 SLO。要回答某个请求的 p99，必须测完整请求路径和竞争条件。
 
-## 四、验算：本机三个数字
+## 四、验算：把 benchmark 与调度现场分开
 
-本机执行（代码见下，10 秒）：
-
-```go
-package sched
-
-import (
-	"sync"
-	"testing"
-)
-
-func BenchmarkGoroutineCreate(b *testing.B) {
-	var wg sync.WaitGroup
-	for i := 0; i < b.N; i++ {
-		wg.Add(1)
-		go func() { wg.Done() }()
-	}
-	wg.Wait()
-}
-
-func BenchmarkChannelPingPong(b *testing.B) {
-	ch := make(chan int)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < b.N; i++ {
-			<-ch
-		}
-	}()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ch <- i
-	}
-	wg.Wait()
-}
-```
+benchmark 工件在 `experiments/go-scheduler-boundary/bench_test.go`。命令固定 Go 包、输入形状、预热时间和 `-cpu=8`：
 
 ```bash
-$ go test -bench . -benchtime=2s -run=^$
-BenchmarkGoroutineCreate-8   	5389287	       440.6 ns/op
-BenchmarkChannelPingPong-8   	14045991	       171.1 ns/op
+cd experiments
+go test ./go-scheduler-boundary -run '^$' -bench '^(BenchmarkGoroutineCreate|BenchmarkChannelPingPong)$' -benchmem -benchtime=500ms -count=1 -cpu=8
 ```
 
-（上面就是 M1 Pro + Go 1.25 实测输出。）
+本机 Go 1.25.1、Darwin arm64、Apple M1 Pro 的一次输出：
 
-另一只眼，看调度轨迹——4 个忙 goroutine 抢 2 个 P（`GOMAXPROCS=2`，循环 50ms 忙 + 10ms 睡）：
-
-```bash
-$ GODEBUG=schedtrace=250 go run main.go
-SCHED 258ms: gomaxprocs=2 idleprocs=0 threads=5 spinningthreads=1 needspinning=1 idlethreads=2 runqueue=0 [ 0 1 ] schedticks=[ 12 15 ]
-SCHED 510ms: gomaxprocs=2 idleprocs=0 threads=5 spinningthreads=1 needspinning=1 idlethreads=2 runqueue=1 [ 0 1 ] schedticks=[ 24 26 ]
-SCHED 767ms: gomaxprocs=2 idleprocs=0 threads=5 spinningthreads=1 needspinning=1 idlethreads=2 runqueue=1 [ 0 0 ] schedticks=[ 37 38 ]
-SCHED 1020ms: gomaxprocs=2 idleprocs=0 threads=5 spinningthreads=1 needspinning=1 idlethreads=2 runqueue=1 [ 0 0 ] schedticks=[ 49 50 ]
+```text
+BenchmarkGoroutineCreate-8    1972687   310.7 ns/op   17 B/op   1 allocs/op
+BenchmarkChannelPingPong-8    4582046   130.1 ns/op    0 B/op   0 allocs/op
 ```
 
-**读法**：`schedticks` 是各 P 累计切换次数。258ms 时 P0 切了 12 次、P1 切了 15 次；1020ms 时变成 49/50——**每个 P 平均约 12 次/250ms，即约每 20ms 换一次人**：50ms 忙循环被 10ms 抢占切成几段，sleep 则让出 P。`runqueue=1` 说明还有 G 在全局队列等空位。这就是"10ms 时间片"在现实里的剖面。
+这两个数字只支持“该输入和参数下的稳态操作成本”。它们不支持把 channel 传递时间当作上下文切换时间，也不支持把创建成本直接外推成 HTTP 请求延迟。完整 raw 与环境记录在 `evidence/go-scheduler-gmp-preemption/2026-08-17-local/`。
 
-## 五、决策：调度慢发生在哪一层
+若要观察 runtime 现场，可在自己的服务上打开 `GODEBUG=schedtrace=250,scheddetail=1`，同时记录 Go 版本、`GOMAXPROCS`、负载和完整输出。`runqueue`、`schedticks` 和线程数是某个时间点的调度快照，不能拿一行 schedtrace 推导“每 10ms 换一次人”，也不能替代 pprof 或延迟分布。
 
-| 症状 | 账单落在哪 | 诊断 | 解法 |
+## 五、诊断决策：先找慢在创建、阻塞还是排队
+
+| 症状 | 首要假设 | 证据 | 常见动作 |
 | --- | --- | --- | --- |
-| 大量小任务、CPU 突然爆 | 创建 441ns | pprof 里 createGoroutine 帧多 | worker pool 复用 |
-| 单请求偶发 ~10ms 延迟 | 时间片 | 火焰图是长函数循环 | 循环内插入 `Gosched`/channel idle |
-| 大量 syscall 时线程爆炸 | M 表 | threads 数秒级翻倍 | 改用 polling 或调系统 |
-| 极端时上万 goroutine 不跑 | 队列满 | runq 256 满、全局 掏空 | 分片、限并发 |
+| 大量小任务让 CPU 突然升高 | 创建/回收成本或任务过碎 | benchmark + CPU profile + 任务计数 | 比较 worker pool，不要先凭感觉引入池 |
+| 请求偶发毫秒级延迟 | 长计算、锁等待或队列排队 | trace、mutex/block profile、p99 | 缩短临界区、拆分计算或主动让出 |
+| 系统调用多时线程数上涨 | M 在等待 syscall | schedtrace、runtime/trace、线程 profile | 调整 I/O 模型和并发上限，别把 P 当线程池 |
+| G 数持续上涨 | goroutine 生命周期没有关闭路径 | 两帧 goroutine profile、等待栈、资源计数 | 增加 context、超时、关闭或消费者；见[goroutine profile 的读法](/writing/go-goroutine-leak-pprof) |
 
-关键区分：**441ns 和 171ns 是"稳态成本"，10ms 是"最坏延迟"**。业务变卡时先看 pprof 时间线哪一段占最多，调度器只是其中一层。如果创建为主，用池；如果偶发延迟，先确认是"时间片被抢"还是"锁等待"（见[锁的成本](/writing/go-lock-cost-futex-rwlock)）。
+关键区分：**310.7ns 和 130.1ns 是本机稳态 benchmark 数字，10ms 是 runtime 抢占阈值，不是最坏延迟合同**。业务变卡时先看 trace、pprof 和延迟分布哪一段占最多；如果创建为主，再比较 worker pool；如果偶发延迟，先确认是长计算、锁等待、系统调用还是队列排队（见[锁的成本](/writing/go-lock-cost-futex-rwlock)）。
 
-## 六、结论：调度器优化先看抢占、阻塞与队列迁移
+## 六、结论：调度器优化要围绕可测的等待路径
 
-Go 调度器安全的工程三线：
+Go 调度器没有一个可以替代所有问题的“快慢数字”：创建和 channel 传递是微秒以下的局部操作，P 队列决定可运行任务如何等待，异步抢占只是 runtime 对长计算的纠偏机制。生产决策应按证据分层：
 
-1. **任务粒度很小（每条 < 20µs）**：直接用 `go func`——441ns 的创建成本占任务开销不到 5%，无脑开就行
-2. **任务粒度到微秒级批量**：业务里有"每秒百万次级小任务"时，创建成本开始吃 CPU 预算，换成 worker pool（复用 G&M，单次成本降一个量级）
-3. **有硬延迟要求（<10ms）**：调度器承诺不了最坏延迟，设计上避免"单 G 长函数循环"，把大计算拆小或主动让出
+1. 任务很小且创建成本占比低，直接使用 goroutine，先保持代码简单；
+2. 任务量达到每秒百万级或创建/回收在 profile 中占比明显，再用同语义 benchmark 比较 worker pool；
+3. 有硬延迟要求时，不把 10ms 常量写成 SLO，必须测锁、GC、syscall、队列和 OS 调度的联合尾部。
 
-工程判断不是看"goroutine 贵不贵"，而是看"创建成本占任务总成本的比例"：任务 100µs，441ns 占 0.4%，随便开；任务 1µs，441ns 占 44%，必须复用。
-
-下一步操作（本机 10 秒验证）：
-
-```bash
-go test -bench 'GoroutineCreate|ChannelPingPong' -benchtime=2s
-GODEBUG=schedtrace=250 go run .
-```
+下一步：运行仓库 benchmark 建立本机基线，再对目标服务采集 trace、goroutine/block profile 和 p99；只有当两类证据指向同一等待路径，才调整 `GOMAXPROCS`、池化或任务切分。
 
 ## 参考资料
 
-1. Go 源码 `runtime/proc.go`（forcePreemptPreemptNS=10ms、retake、preemptone、schedtrace 实现）—— https://github.com/golang/go/blob/master/src/runtime/proc.go
-2. Go 源码 `runtime/runtime2.go`（G、P、M struct 与 runq 256 定义）—— https://github.com/golang/go/blob/master/src/runtime/runtime2.go
-3. Go 官方文档 GOMAXPROCS 与环境变量—— https://pkg.go.dev/runtime#GOMAXPROCS
-4. GODEBUG 变量列表（schedtrace / scheddetail）—— https://go.dev/wiki/GODEBUG
+1. Go 源码 `runtime/proc.go`（`forcePreemptNS`、retake、preemptone、schedtrace）—— https://github.com/golang/go/blob/go1.25.1/src/runtime/proc.go
+2. Go 源码 `runtime/runtime2.go`（G、P、M 与 run queue）—— https://github.com/golang/go/blob/go1.25.1/src/runtime/runtime2.go
+3. Go 官方 `runtime.GOMAXPROCS` 文档—— https://pkg.go.dev/runtime#GOMAXPROCS
+4. Go 调度跟踪环境变量—— https://go.dev/wiki/GODEBUG
 
-> 延伸：goroutine 切换的另一半是锁排队（[锁的成本在排队](/writing/go-lock-cost-futex-rwlock)）；调度器的内存账（GC 停顿不是调度）（[Go GC 时间账本](/writing/go-gc-gctrace-account)）；并发保障的先后规则（[happens-before 唯一的裁判](/writing/go-happens-before)）。
+> 延伸：goroutine 切换的另一半是锁排队（[锁的成本](/writing/go-lock-cost-futex-rwlock)）；调度器的内存账是 GC 停顿，不是同一个问题（[Go GC 时间账本](/writing/go-gc-gctrace-account)）；并发先后关系由 [happens-before](/writing/go-happens-before) 约束。

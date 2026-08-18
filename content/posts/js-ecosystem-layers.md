@@ -1,19 +1,19 @@
 ---
-title: "V8 加减法：一个 JS 引擎的五种包装"
-description: "按引擎→浏览器→运行时→桌面→移动五层拆解 JS 生态：所有产品都是同一台 JS 引擎在不同容器里的排列组合，加减不同的部件就得到从 V8 到 Tauri 的全部答案，附每一层的取舍与量级数字。"
+title: "JavaScript 生态的五层包装：引擎、浏览器、运行时与原生壳"
+description: "按引擎→浏览器→运行时→桌面→移动五层拆解 JS 生态：用常见引擎与宿主能力的组合解释 V8、Node、Electron、Tauri、React Native 等产品，并把每一层的取舍与平台边界写清。"
 publishedAt: "2026-08-06"
-updatedAt: "2026-08-06"
+updatedAt: "2026-08-17"
 tags: ["JavaScript", "前端", "生态"]
 draft: false
 featured: false
 series: "前端全景手记"
 ---
 
-**TL;DR：** JS 生态的"乱"在容器层其实非常规整：所有产品都是同一台 JS 引擎（或等价引擎）的排列组合——加渲染能力是浏览器，加系统接口是运行时，两者都加是 Electron，把原生 UI 接到引擎上是 React Native，扔掉浏览器改用系统 WebView 是 Tauri，换一台引擎是 Bun 和 Firefox。本文按引擎、浏览器、运行时、桌面、移动五层拆开，每层回答"题目是什么、答案是什么、代价是什么"，最后给一张加减法总表。
+**TL;DR：** JS 生态的“乱”可以先用一张容器模型拆开：许多产品都是 JS 引擎与渲染、系统接口、原生 UI 或 WebView 的组合，但并不是所有产品都共享同一台引擎，也不是每个层次都能互换。加渲染能力是浏览器，加系统接口是运行时，两者都加是 Electron，把原生 UI 接到引擎上是 React Native，依赖系统 WebView 的桌面壳是 Tauri。本文按引擎、浏览器、运行时、桌面、移动五层拆开，每层回答“题目是什么、答案是什么、代价是什么”。
 
 ## 一、一个引擎，五种包装
 
-JavaScript 的特别之处在于：1995 年它诞生时只是浏览器的脚本语言，三十年后的今天，同一个语言跑在服务端、桌面、移动、边端。这么多形态不是凭空长出来的，它们共享同一个内核。把 JS 翻译成机器码的引擎只有几台：V8、JavaScriptCore、SpiderMonkey——剩下的产品全是在"翻译官"外面做加法：
+JavaScript 的特别之处在于：1995 年它诞生时只是浏览器的脚本语言，三十年后的今天，同一个语言跑在服务端、桌面、移动、边端。这么多形态不是凭空长出来的，它们通常把少数主流 JS 引擎与不同宿主能力组合起来。常见引擎家族包括 V8、JavaScriptCore 和 SpiderMonkey，另有 Hermes、QuickJS 等面向不同约束的实现；剩下的产品多数是在“翻译官”外面做加法：
 
 ```mermaid
 flowchart LR
@@ -65,7 +65,7 @@ Chakra 的退场是一道历史注脚：2018 年微软宣布 Edge 转用 Chromiu
 
 两个值得记住的边界事实：
 
-- **iOS 上所有浏览器都必须用 WebKit**。App Store 政策要求浏览器类 app 使用系统 WebKit，于是 iPhone 上的 Chrome、Firefox 实为"Safari 的皮"。这一点让前端在 iOS 上的 Bug 有了"永远收敛到一个内核"的属性。
+- **iOS 的浏览器引擎政策取决于地区、系统版本和 entitlement**。在许多地区，第三方浏览器仍使用 WebKit；但 Apple 的开发者文档说明，欧盟用户在满足 Web Browser Engine Entitlement、iOS 17.4/iPadOS 18 等条件时可以使用替代引擎，日本也有后续系统版本的特定资格路径。因此“iPhone 上的 Chrome、Firefox 永远只是 Safari 的皮”已经不是无条件成立的判断；做兼容性决策时要把地区、最低系统版本和分发资格写进矩阵。
 - **引擎与渲染引擎的绑定是营销之外的技术选择**。Firefox 坚持自家两份引擎是意识形态（开源、防止一家垄断），也是技术负担——它必须独自维护 Gecko 的兼容性。
 
 "换壳游戏"的真相其实是：壳（渲染引擎）和心脏（JS 引擎）都值得各自单独算一笔账，而多数用户感知到的差异（内存、速度、省电）是这两份工程加总的结果。Chrome 吃内存的槽点，一半来自 Blink 的进程模型，一半来自 V8；Safari "省电"的卖点，同样来自 JSC（更省的 JIT 预热）与 WebKit 的渲染管线共同作用。
@@ -150,7 +150,7 @@ flowchart LR
 1. **引擎的数量远少于产品的数量**。真正独立的"翻译官"只有几台，其余全是容器。看到一个陌生名词，先问"它用什么引擎、在哪个层"，定位就完成了一半。
 2. **每一层都是在用'一致性'换'轻'（或反过来）**。Electron 用体积换一致性，Tauri 用一致性换轻；Bun 用生态兼容换启动快；浏览器们用各自引擎换命运自主。凡是看到"X 完胜 Y"的标题，先找它没写出来的那半笔账。
 
-## 结论：先分清运行时容器，再谈框架
+## 八、结论：先分清运行时容器，再谈框架
 
 JS 生态不是一堆各自为战的框架，而是一个引擎的五种包装。学习前端时，先分清**容器层**（引擎/浏览器/运行时/桌面壳/移动壳，本系列第 0 篇）和**框架层**（UI 如何组织，见系列后两篇），就不会再被"又一个新名词"带节奏——绝大多数新名词只是某层上的一个新容器，而非新原理。
 
@@ -170,5 +170,6 @@ JS 生态不是一堆各自为战的框架，而是一个引擎的五种包装�
 10. React Native 官方文档（Hermes、桥与 Fabric）—— https://reactnative.dev/
 11. Flutter 官方文档（Impeller 渲染引擎取代 Skia 的情况）—— https://docs.flutter.dev/perf/impeller
 12. Uni-app / Taro 编译原理文档 —— https://uniapp.dcloud.net.cn/ 、 https://docs.taro.zone/
+13. Apple Developer：欧盟替代浏览器引擎资格（iOS/iPadOS 版本、地区与 entitlement，2026-08-17 核对）—— https://developer.apple.com/support/alternative-browser-engines/
 
 > 延伸阅读：容器层（本文）讲 JS 在哪里跑，接下来两篇讲 UI 怎么组织——见[前端框架为什么这么乱：四代问题与解法](/writing/frontend-framework-history)和[前端框架真正差在哪：渲染、响应式与状态](/writing/frontend-framework-taxonomy)；容器层的异步机制，见[事件循环不是一个循环](/writing/understanding-event-loops)。

@@ -1,15 +1,15 @@
 ---
 title: "K8s 调度器不是找最空的机器：filter 与 score 的两轮筛选"
-description: "调度器不'选最优'，它只做两件事：先用 filter 把不合格的节点拒掉，再对剩下的打分——而且打分阶段可能根本不全量。用源码公式复查（LeastAllocated/MostAllocated/BalancedAllocation 的权重与计分），再跑一个 Go 模拟：四个节点、三种打分策略，赢家各不相同。附抽样逻辑：为什么节点一多，分数最高的那台未必参与打分。"
+description: "调度器不'选最优'，它只做两件事：先用 filter 把不合格的节点拒掉，再对剩下的打分——而且打分阶段可能根本不全量。以 Kubernetes v1.33 为版本边界复查 LeastAllocated/MostAllocated/BalancedAllocation，并用固定输入模型解释四个节点、三种策略为何会选出不同赢家。"
 publishedAt: "2026-08-10"
-updatedAt: "2026-08-10"
+updatedAt: "2026-08-17"
 tags: ["Kubernetes", "调度", "kube-scheduler", "性能"]
 draft: false
 featured: false
 series: "系统设计手记"
 ---
 
-**TL;DR：** 调度器不是"找最合适的节点"，而是两轮筛选：**filter 先砍掉不合格的（硬约束），score 再给剩下的按加权算分（软偏好）**。三个反直觉点：**filter 阶段只按 requests 记账，不看真实用量**（"requests 是调度账、limits 是运行时账"）；**score 阶段不是必须全量打分**——节点超过 100 台后按 `50 - n/125`（最低 5%）抽样，只对抽到的台打分；**同分节点之间用抽签（reservoir sampling）**，没有任何"就近"或稳定性保证。所以"调度结果忽东忽西"多半不是玄学：不是没打分换台机器，就是抽签抽到了另一台。
+**TL;DR：** 调度器不是"找最合适的节点"，而是两轮筛选：**filter 先砍掉不合格的（硬约束），score 再给剩下的按加权算分（软偏好）**。三个反直觉点：**filter 阶段只按 requests 记账，不看真实用量**（"requests 是调度账、limits 是运行时账"）；**score 阶段不是必须全量打分**——以 Kubernetes v1.33 源码公式为例，大集群按 `50 - n/125`（最低 5%）抽样；**同分节点之间用抽签（reservoir sampling）**，没有任何"就近"或稳定性保证。版本或 SchedulerConfiguration 改变后，这些默认值必须重新核对。
 
 ## 一、先说直觉错在哪：调度没有"最优"这一说
 
@@ -23,7 +23,7 @@ series: "系统设计手记"
 
 ## 二、filter：否决权在谁手上
 
-得分前先过 filter。默认配置（v1 `default_plugins.go`）里负责资源的 filter 是 `NodeResourcesFit`，规则简单到可以直接贴源码公式：
+得分前先过 filter。以 Kubernetes v1.33 的默认插件配置为例，负责资源的 filter 是 `NodeResourcesFit`，规则简单到可以直接贴出核心公式：
 
 ```go
 // fit.go — 每个资源维度的硬检查
@@ -44,7 +44,7 @@ filter 是多插件并行跑的（`parallelize.Until`），一个节点只要有
 
 ## 三、score：默认权重与三分公式
 
-分是**多把尺子加权**。v1.33 的默认权重（`default_plugins.go`）：
+分是**多把尺子加权**。下面是 Kubernetes v1.33 源码快照中的默认权重示例，不是所有发行版或自定义 SchedulerConfiguration 的合同：
 
 | 插件 | 默认权重 | 它偏好的"好" |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ filter 是多插件并行跑的（`parallelize.Until`），一个节点只要有
 | NodeResourcesBalancedAllocation | 1 | CPU 与内存占用比例均衡 |
 | ImageLocality | 1 | 节点上已有镜像 |
 
-其中跟资源相关的是 `NodeResourcesFit`（默认 LeastAllocated：**越空越好**）和 BalancedAllocation（**CPU 和内存占用率别一边倒**）。公式在 `pkg/scheduler/framework/plugins/noderesources/` 下，我按源码逐行抄了个可运行的 Go 对照实现（四个 8C/16G 节点，新 Pod 请求 1C/2GiB）：
+其中跟资源相关的是 `NodeResourcesFit`（默认 LeastAllocated：**越空越好**）和 BalancedAllocation（**CPU 和内存占用率别一边倒**）。公式在 `pkg/scheduler/framework/plugins/noderesources/` 下；本文另写了一个固定输入的 Python 教学模型，只复现这三条资源计分公式，不模拟完整 scheduler framework、插件权重合并或真实节点状态（四个 8C/16GiB 节点，新 Pod 请求 1C/2GiB）：
 
 ```go
 // least:       ((capacity-requested)*100)/capacity，CPU/内存加权平均
@@ -75,7 +75,7 @@ filter 是多插件并行跑的（`parallelize.Until`），一个节点只要有
 
 ```text
 node least   most    balanced  说明
-n1   49      49      87         CPU 松、内存松 → least 爱它
+n1   50      50      87         CPU 松、内存松 → least 爱它
 n2   37      62      75         若塞得进，most 认为它"划算"
 n3   25      75      75         装箱（最接近满）的最佳选择
 n4   43      56      93         CPU/内存平衡得最好
@@ -93,7 +93,7 @@ n4   43      56      93         CPU/内存平衡得最好
 
 ## 四、两个反直觉细节：打分不全量、同分靠抽签
 
-**反直觉 1：score 阶段未必给所有可行节点打分。** `schedule_one.go` 里的 `numFeasibleNodesToFind`：
+**反直觉 1：score 阶段未必给所有可行节点打分。** Kubernetes v1.33 的 `schedule_one.go` 里的 `numFeasibleNodesToFind`：
 
 ```go
 // 节点总数 < 100：全打
@@ -113,9 +113,12 @@ n4   43      56      93         CPU/内存平衡得最好
 
 ## 五、对照实验的用法：怎么用这三把尺子
 
-回到第四节那份 Go 仿真：给定任意节点起点与新请求，三把尺子会给不同赢家，这就是集群形态的杠杆。实操上你改的是 weights/strategy，而不是"调随机数"：
+回到第四节那份 Python 教学模型：给定任意节点起点与新请求，三把尺子会给不同赢家，这就是集群形态的杠杆。它的输出是 `least:n1 most:n3 balanced:n4`；实操上你改的是 weights/strategy，而不是"调随机数"：
 
 ```bash
+cd experiments
+python3 k8s-scheduler-boundary/schedule_model.py
+
 kubectl -n kube-system get cm kube-scheduler -o yaml   # 看当前权重
 kubectl describe pod mypod                              # 看被拒原因
 kubectl logs -n kube-system kube-scheduler-xxx --v=5     # 调度日志明细
@@ -127,7 +130,7 @@ kubectl logs -n kube-system kube-scheduler-xxx --v=5     # 调度日志明细
 2. **想达成什么形态？** 论分布（least）、论装箱（most）、论匀称（balanced）。默认 least。
 3. **同分抽签你介意吗？** 介意就加 `PodTopologySpread` 权重或 `nodeAffinity` 硬约束，把"唯一峰值"变成明确偏好，而不是赌随机。
 
-## 结论：filter 决定能不能调，score 决定偏好
+## 六、结论：filter 决定能不能调，score 决定偏好
 
 调度器把"一人一台"改成"两轮筛选 + 加权偏好"后，行为就可预测了：**filter 决定能不能调，score 决定调在哪**。摸清三件事就够用：
 
@@ -140,7 +143,9 @@ kubectl logs -n kube-system kube-scheduler-xxx --v=5     # 调度日志明细
 ## 参考资料
 
 1. Scheduler Configuration（默认插件与权重）—— https://kubernetes.io/docs/reference/scheduling/config/
-2. kube-scheduler 源码（filter/score 插件，含 `numFeasibleNodesToFind`、reservoir）—— https://github.com/kubernetes/kubernetes/blob/master/pkg/scheduler/
+2. Kubernetes v1.33 kube-scheduler 源码（filter/score 插件，含 `numFeasibleNodesToFind`、reservoir）—— https://github.com/kubernetes/kubernetes/tree/release-1.33/pkg/scheduler/
 3. Resource Bin Packing（MostAllocated 官方文档）—— https://kubernetes.io/docs/concepts/scheduling-eviction/resource-bin-packing/
+
+实验入口：`experiments/k8s-scheduler-boundary/schedule_model.py`；固定输入、环境和原始输出：`evidence/k8s-scheduler-resource-ledger/2026-08-17-local/`。模型只证明教学公式和 v1.33 取样算术，不证明目标集群的调度结果、插件权重或生产容量。
 
 > 延伸：调度是控制面 watch 循环的一环（[控制器与 watch 的增量账](/writing/k8s-controller-watch-etcd)）；调度结果落到节点后怎么优雅退（[Kubernetes 优雅终止](/writing/kubernetes-graceful-termination)）。

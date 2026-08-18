@@ -272,7 +272,7 @@ func (s *Server) closeIdleConns() bool {
 3. **轮询间隔 1ms 指数退避到 500ms，带 10% jitter**：`pollIntervalBase` 每轮翻倍、封顶 `shutdownPollIntervalMax`（摘自 Go 1.25.1 src/net/http/server.go:3150-3157）。jitter 让多个实例不会同步轮询；这条常量上面的注释还留了一句 "…but that is left as an exercise for the reader"（把"找到不轮询的更优解"留给读者），是标准库里少见的彩蛋；
 4. **空闲判定只看状态位，与 IdleTimeout 无关**：Shutdown 只认 `StateIdle`，从不读任何超时配置——这就是本章开头那条"该行为与 `IdleTimeout` 无关，Go 1.19 与 1.20 实现一致"的源码依据。
 
-可运行演示：go run ./graceful-shutdown，观察"慢请求在 Shutdown 后仍 200"——慢请求跑在自己的 goroutine 里，Shutdown 的轮询照常关掉空闲连接，唯独不碰它。
+可运行演示（从仓库根目录）：`cd experiments && go run ./graceful-shutdown`，观察"慢请求在 Shutdown 后仍 200"——慢请求跑在自己的 goroutine 里，Shutdown 的轮询照常关掉空闲连接，唯独不碰它。
 
 ## 七、长连接与 WebSocket 的排空：Shutdown 管不到的地方
 

@@ -3,7 +3,7 @@ title: "造一个迷你 LSM：写放大与读放大，同一份数据的两张�
 description: "亲手把 memtable、WAL、SST 与 bloom 拼成一个约 600 行的 Go 迷你 LSM，用字节账推写放大、用随机 IO 次数算读放大，看同一份数据为什么这两张账互相拆台；附一个可运行的 compaction 模拟器，把三条曲线照跑出来。"
 publishedAt: "2026-08-16"
 tags: ["Go", "存储引擎", "LSM", "造轮子"]
-draft: true
+draft: false
 featured: false
 series: "造轮子手记"
 ---

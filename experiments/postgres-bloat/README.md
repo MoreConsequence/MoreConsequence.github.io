@@ -18,19 +18,21 @@
 ```bash
 D=experiments/postgres-bloat
 docker exec -i pg-bloat psql -U postgres -v ON_ERROR_STOP=1 < $D/01_create_and_seed.sql          # 建表造 10 万行 + 关表级 autovacuum + ANALYZE
-docker exec -i pg-bloat psql -U postgres -v ON_ERROR_STOP=1 < $D/02_generate_dead_tuples.sql      # 1 次全表 UPDATE → 10 万死元组
+bash $D/02_generate_dead_tuples.sh                                                                    # 两会话：长事务拖快照 + 全表 UPDATE → 10 万死元组
 docker exec -i pg-bloat psql -U postgres -v ON_ERROR_STOP=1 < $D/03_measure_bloat.sql              # n_dead_tup / pgstattuple / age(relfrozenxid) / 扫描计时
 docker exec -i pg-bloat psql -U postgres -v ON_ERROR_STOP=1 < $D/04_vacuum_and_remeasure.sql       # VACUUM 后重测：比例归零、文件大小不变
 docker exec -i pg-bloat psql -U postgres -v ON_ERROR_STOP=1 < $D/05_show_autovacuum_fires.sql      # 重开 autovacuum，制造 30 万死元组，等它自醒
 ```
 
+为什么 02 必须是两会话，而不是一条 autocommit UPDATE？PG16 实测：autocommit 单条 UPDATE 提交后旧版本对新快照立即可见性消失，插入路径会顺势 prune 掉它们，`pgstattuple` 里 `dead_tuple_count` 归零（页面只显示 `free_percent` 上涨）；要看到真实的死元组积累，必须先有一个 REPEATABLE READ 快照事务钉住旧版本，UPDATE 提交后再放它走——这正是 `02_generate_dead_tuples.sh` 做的事，也对应正文第三节「最老快照拖住，回收就无从谈起」。
+
 跑完后按 expected_output.md 的结构回填数字，并注明：PostgreSQL 版本、是否修改过 autovacuum 参数、机器型号。单次结果只能称「本机一次结果」，不要当稳定分界线。
 
 ## 预期结论（方向性）
 
-- 02 之后，`n_dead_tup` 约等于行数（每行 1 个死版本），`dead_tuple_percent` 在 **40%~50%** 量级（本机实测待补）。
-- 03 到 04：`dead_tuple_percent` 从约 40% 降到约 0%；`pg_relation_size` 前后基本不变——**普通 VACUUM 不缩文件**。
-- 05 之后 60~90s 内 `last_autovacuum` 更新、`autovacuum_count` +1。
+- 02 之后，`n_dead_tup` 约等于行数（每行 1 个死版本），`dead_tuple_percent` 实测 **44.3%**（2026-08-18 本机：macOS / Apple Silicon / postgres:16-alpine，表现路径 `evidence/postgres-bloat/2026-08-18-local/run.log`）。
+- 03 到 04：`dead_tuple_percent` 从 44.3% 降到 0%；`pg_relation_size` 前后基本不变（19MB）——**普通 VACUUM 不缩文件**。
+- 05 之后 60~90s 内 `last_autovacuum` 更新、`autovacuum_count` +1（实测 65s，`n_dead_tup` 从 299770 清到 0）。
 - 顺序扫描 `SELECT count(*)` 的耗时，膨胀态应慢于清理态（10 万行差距可能只有几毫秒到几十毫秒，量级才是结论）。
 
 ## 可选扩展：挂起事务把死元组拖住（bloat 最常见帮凶）

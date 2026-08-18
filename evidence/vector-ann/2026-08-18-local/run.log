@@ -1,0 +1,17 @@
+# vector-ann:2026-08-18 本机复现
+机器: Apple Silicon(M1 Pro), macOS, 系统 python3(/usr/bin/python3, 3.9.6)
+venv: experiments/vector-ann/.venv  (python3.9, numpy, faiss-cpu 1.13.0, hnswlib)
+命令: .venv/bin/python experiments/vector-ann/run_ann_scan.py --n 50000 --d 128 --queries 500 --k 10
+数据: 标准正态随机向量 d=128, 500 条 query, recall@10 以 flat 精确 top-10 为基准
+说明: 合成随机数据, 机制演示性质, 不代表真实 embedding 分布; matplotlib 缺失未出 PNG, 只出 CSV
+
+## 关键行(完整见 ann_scan.csv)
+- flat(精确):            recall=1.000  qps=24642   index_bytes=25,600,045 (≈25.6MB, = 50000×128×4B 全量)
+- hnsw M=8 efS=32:        recall=0.283  qps=89515   bytes=29,859,188
+- hnsw M=32 efS=256:      recall=0.951  qps=4691    bytes=39,417,632 (体积比 flat +54%)
+- hnsw M=16 efS=256:      recall=0.860  qps=7520    bytes=33,032,520
+- ivfpq nlist=1000 m=8 nprobe=256: recall=0.063  qps=25228  bytes=1,451,252 (≈flat 的 1/17.6)
+- ivfpq 全部 nprobe 档 recall ≤ 0.063 (m=8 量化随机数据分辨率不足)
+## 规律
+- HNSW: recall/QPS 是同一曲线上的两点(efSearch↑ → recall↑ qps↓); M↑ → 体积↑
+- IVF-PQ: 体积省 17.6 倍但 recall 崩(合成随机数据 + m=8 太粗是主因), prove "省内存 ≠ 保精度"

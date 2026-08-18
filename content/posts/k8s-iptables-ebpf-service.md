@@ -3,7 +3,7 @@ title: "Service 不是转发是线性遍历：iptables 规则链 vs eBPF O(1)"
 description: "K8s Service 的默认实现（kube-proxy iptables）不是'转发'，是让每个新连接在 NAT 规则链里逐条匹配：每个 Service 占一组 DNAT 规则，匹配成本与规则规模线性相关，规则上万时 CPU 与建连延迟双涨、conntrack 表满还会丢包。IPVS 用内核哈希表把查表降到 O(1)，eBPF/Cilium 把 datapath 压进内核态和网卡、去掉 iptables 与 conntrack 开销。选型是'规则规模 × 性能预算'的账，不是信仰题。"
 publishedAt: "2026-08-16"
 tags: ["Kubernetes", "网络", "eBPF"]
-draft: true
+draft: false
 featured: false
 series: "系统设计手记"
 ---
@@ -73,7 +73,7 @@ iptables 的匹配语义是**"从链头往下逐条匹配，第一条命中即�
 
 iptables 的 DNAT 依赖 conntrack：每个新连接占一条连接表项，回复包靠它把源地址改回 ClusterIP。于是新建连接越密、每连接越频繁，**conntrack 表压力越大**（表项数只随连接数增长；Service 规则多只是集群更大的伴随信号，不直接占表项）。`nf_conntrack_max`（内核 sysctl，默认等于 `nf_conntrack_buckets`，现代 ≥4GB 内存内核常见 262144、老内核/小内存为 65536，见参考资料 #4）被占满后，**新连接会被直接丢弃**，内核日志打 `nf_conntrack: table full, dropping packet`——表象是 Service"间歇性不可用"，根因不是后端挂了，是 conntrack 表满了。规则上万 + 高连接率，是把这个故障提前引爆的两根引线。
 
-**本机关系验证分成两层**（见文末）：仓库里的 `rule-match-sim.go` 跑出的平均匹配步数与上表逐行一致（步数是推导结果）；它同时打印的 ns/包计时只是**用户态 Go 循环的模拟值**（不算内核 datapath 证据，见文末证据清单），真实 kind 集群（`kind-bench.sh`）的每轮 ms/req-s 原始输出才是尚未取得的本机证据，不能用推导步数冒充。
+**本机关系验证分成两层**（见文末）：仓库里的 `rule-match-sim.go` 跑出的平均匹配步数与上表逐行一致（步数是推导结果）；它同时打印的 ns/包计时只是**用户态 Go 循环的模拟值**（本机已复跑，原始输出见 `evidence/k8s-iptables-ebpf-service/2026-08-19-local/`，不算内核 datapath 证据）。真实 kind 集群（`kind-bench.sh`）的每轮 ms/req-s 属于内核 datapath 的真实基准，需要宿主机内核功能与虚拟机权限才能跑，超出的本文证据链——本文用推导步数确立关系，用官方文档确立机制，模拟值只作量级方向，不断言内核实测。
 
 ## 四、IPVS：内核哈希表的 O(1) 直查，大集群为什么换
 

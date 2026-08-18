@@ -2,14 +2,14 @@
 title: "Go 并发里没有先来后到：happens-before 才是唯一的裁判"
 description: "代码里“先写后读”的顺序不是证据，happens-before 才是。拆开 Go 内存模型的三类同步契约：channel 按收发配对、锁按 Unlock→Lock 配对、原子按全局顺序，并带一个 -race 实测：缓冲容量从 0 变 1，保证就消失。"
 publishedAt: "2026-08-08"
-updatedAt: "2026-08-08"
+updatedAt: "2026-08-17"
 tags: ["Go", "并发", "原理"]
 draft: false
 featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** 两个 goroutine 访问同一个变量，代码里的先后顺序不是证据，happens-before 才是。Go 内存模型只承认三类同步契约：channel 按"发送↔接收"配对（无缓冲的接收同步于发送完成，"缓冲容量 C"则把边推给第 k+C 次发送，这是缓冲 channel 保不住顺序的原因）、锁按"Unlock(n) 同步于 Lock(m)，n<m"配对、原子按全局顺序一致性记账。肉眼排序不作数，`-race` 是唯一诚实的裁判。
+**TL;DR：** 两个 goroutine 访问同一个变量，代码里的先后顺序不是证据，happens-before 才是。Go 内存模型把 goroutine 创建、channel、锁、原子操作等同步关系写成了可验证的边；本文重点拆三组最容易误读的规则：channel 按发送与接收配对，锁按 `Unlock(n)` 到后续 `Lock(m)` 配对，原子操作按顺序一致性建立观察关系。肉眼排序不作数，内存模型是合同，`-race` 只能在实际执行路径上帮助发现竞态，不能替你证明所有路径都无竞态。
 
 ## 一、不直觉的起点：容量从 0 变 1，保证消失
 
@@ -66,7 +66,7 @@ Go 内存模型把一次执行建模成两样东西：
 
 > 对同一个变量的两次访问（至少一次是写），若它们之间没有 happens-before 关系，就构成 data race。发生 data race 时，程序行为不做任何保证。
 
-注意措辞：不是"可能出错"，而是**观察结果不再受约束**——读过旧值、读到半新值、读出新旧混合的字段，都可能发生。最直观的官方案例是：
+注意措辞：不是“偶尔出错”，而是**程序不再享有数据竞争程序的可推理保证**。读到旧值或其他未被同步关系约束的结果都不能作为合同。最直观的官方案例是：
 
 ```go
 var a string
@@ -102,7 +102,7 @@ channel 的条款一共三条（`go.dev/ref/mem`）：
 
 回到第一节的例子。无缓冲 C=0：主 goroutine `c <- 0` 会一直被卡住，直到 goroutine 的 `<-c` 完成；条款 2 把接收排在发送之前，于是 `a` 的写 → 接收 → 发送完成 → 主函数读 `a`，全链建立。容量 C=1：发送不等接收，`c <- 0` 立即完成；`print(a)` 与 `a = "hello, world"` 之间没有任何边，竞争成立。
 
-`-race` 能直接证明（演示环境：Go 1.25 / M1 Pro）：
+`-race` 可以在这条执行路径上把竞态报告出来，但它不是静态证明器。当前仓库的可运行入口是 `experiments/go-happens-before/main.go`：
 
 ```go
 func bufferedSignal() {
@@ -117,28 +117,15 @@ func bufferedSignal() {
 }
 ```
 
-```text
-$ go run -race main.go
-==================
-WARNING: DATA RACE
-Write at 0x00c000126020 by goroutine 7:
-  main.bufferedSignal.func1()
-      main.go:9 +0x30
-
-Previous read at 0x00c000126020 by main goroutine:
-  main.bufferedSignal()
-      main.go:13 +0x11c
-==================
-Found 1 data race(s)
-exit status 66
+```bash
+cd experiments/go-happens-before
+go run -race main.go buffered
+go run -race main.go unbuffered
 ```
 
 把 `make(chan int, 1)` 改成 `make(chan int)`（无缓冲）后重跑：
 
-```text
-$ go run -race main.go
-hello, world
-```
+`buffered` 命令应报告 data race 并以非零状态结束；`unbuffered` 命令输出 `hello, world` 且不应报告 race。原始 stdout/stderr、Go 版本和命令保存在 `evidence/go-happens-before/2026-08-17-local/`。即使这两个命令都通过，也只覆盖这两个小程序的执行路径。
 
 缓冲 1 的 channel 当信号，是生产环境第一高频的隐性竞态：代码看起来"发完信号再读数据"，实际发的只是"我有货了"，接收方却没有关于数据的承诺。
 
@@ -177,30 +164,30 @@ fmt.Println(data) // 一定看到 "ready"
 
 `done.Store(true)` 之后的写，对 `done.Load() == true` 之后的读可见。这就是自旋等待（busy-wait）唯一正确的写法：**标志本身必须是原子**，普通转折不行（见第二节反例）。Go 的原子操作语义与 C++ 的 `memory_order_seq_cst` 对齐[3]。
 
-但原子公约也有边界：它保证"原子之间"的全局序，并不帮你包装包内普通变量的"读取一批"。要想手工实现无锁的"原子读标志 + 普通字段"，每次访问字段仍然要原子化——所以真正大规模的无锁结构（如 `sync.Map` 之类）内部全部走了原子。
+但原子公约也有边界：它保证“原子之间”的顺序关系，并不帮你把一组普通字段的读取变成不可分割快照。要设计“原子读标志 + 普通字段”，必须让发布和读取的顺序关系完整覆盖字段生命周期；如果需要一致地读取多字段，通常应使用锁、不可变快照或专门的数据结构。不要根据 API 名字推断某个并发容器内部只使用一种同步原语。
 
 ## 六、选择表：先看你需要哪条边
 
 | 需求 | 该用 | 依据的边 |
 | --- | --- | --- |
 | 把值安全交给另一个人 | 无缓冲 channel | 条款 2（收先于发完成） |
-| 异步队列（上限 C） | 缓冲 channel + 显式数据保护 | 条款 3 只算"槽位账" |
+| 异步队列（上限 C） | 直接通过 channel 传递数据 | 需要共享旁路状态时，再补锁/原子 |
 | 保护一片共享内存 | Mutex / RWMutex | Unlock(n) → Lock(m) |
 | 懒初始化（多 reader 同读） | sync.Once | f 完成先于所有 Do 返回 |
 | 单 bit 状态标志 | atomic.Bool | 原子全局序 |
 | 计数器 | atomic.AddInt64 | 原子全局序 + no lock |
 
-**最容易翻车的组合**：缓冲 channel 当"信号"并直接通过它传数据。缓冲只卖"槽位"，不卖"数据可见"；数据本身还得靠锁或原子。生产标准做法是：同步语义必须落到条款 1/2 的完全配对，否则就换成显式锁。
+**最容易翻车的组合**：缓冲 channel 当“信号”，却把真正的数据放在旁路普通变量里。channel 中传递的值本身受发送/接收关系保护；旁路变量不一定受同一条边保护。生产做法是把数据直接放进消息，或为旁路状态补上完整的锁/原子发布合同。
 
-## 结论：跨 goroutine 读写必须有一条 happens-before 边
+## 七、结论：跨 goroutine 读写必须有一条 happens-before 边
 
 happens-before 不是"编译器小抄"，是 Go 内存模型全部保证的唯一载体。它要求你每次跨 goroutine 访问共享内存时，都能说清"这一读和那一写之间的边由谁建立"——channel 收发、锁的解锁加锁、原子的单序，三选一。说不清，就让 `-race` 替你说：跑一次
 
 ```bash
-$ go test -race ./...        # 每次 CI 必跑，报错即竞态，不是"偶尔挂"
+go test -race ./...        # 应覆盖会并发访问共享状态的测试路径
 ```
 
-最诚实的一句话：**并发安全不是"我认为它会看到"，是"确保边存在"**。每省一行同步，暂时的本地运行都看不出来，直到某次恰好错乱。
+`-race` 报告竞态时就是可操作的失败信号；没有报告不等于所有输入、调度和代码路径都被证明安全。最诚实的一句话是：**并发安全不是“我认为它会看到”，是“我能指出边由谁建立”**。每省一行同步，暂时的本地运行都看不出来，直到某次未覆盖的交错把问题暴露出来。
 
 ## 参考资料
 

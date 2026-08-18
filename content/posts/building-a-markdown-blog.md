@@ -2,7 +2,7 @@
 title: "把写作还给 Markdown"
 description: "静态博客与 Markdown 文件的底层逻辑：无数据库、无后台，内容即文件、git push 即发布，以及这套文本工作流值得保留的摩擦。"
 publishedAt: "2026-07-26"
-updatedAt: "2026-08-02"
+updatedAt: "2026-08-17"
 tags: ["Markdown", "工程效率"]
 featured: true
 ---
@@ -58,13 +58,13 @@ flowchart LR
 
 这已经是完整的"后台"。它不需要登录，也没有会丢失数据的富文本编辑器；发布按钮就是 `git push`，而"后台地址"是一条 CI 工作流文件。校验不过不会发布，构建失败不会部署——出问题的地方，就是问题被拦下的地方。
 
-作者与构建系统之间唯一的约定是 frontmatter：标题、摘要、日期、标签、草稿标记。它是内容的自描述元数据，放在文件头部而不是后台表单里，意味着每篇文章都带着自己的"说明书"迁移。Pull Request 阶段 CI 只做校验和构建验证、不会真正发布，合并到主分支才触发部署——线上永远只存在审核通过的内容。
+作者与构建系统之间最主要的机器约定是 frontmatter：标题、摘要、日期、标签、草稿标记。它是内容的自描述元数据，放在文件头部而不是后台表单里，意味着每篇文章都带着自己的"说明书"迁移。当前 workflow 在 Pull Request 阶段只做校验和构建验证，push 到 `main` 才进入 Pages deploy；是否必须经过人工 review，还取决于仓库的 branch protection，不能仅由 CI 文件推出“线上永远只有审核通过的内容”。
 
 ## 四、frontmatter 为什么是 YAML
 
 第一节表格里我说"作者与构建系统之间唯一的约定是 frontmatter"。这句话值得拆开讲：为什么是 YAML，为什么每个字段长这样，坏掉的元数据什么时候会被拦住。
 
-**为什么是 YAML。** 文件头的元数据格式有过一轮竞争：JSON 被转义符和引号占掉一半可读性，TOML 更晚才流行，而 YAML 是为"配置即文本"设计的——缩进表达结构、不需要引号也能读。更重要的是 Jekyll 在 2010 年代把它变成了事实约定（`---` 包裹的 frontmatter），后来的静态站点生成器几乎都沿用。选 YAML 没有技术上的惊天理由，选的是"所有人都会写、所有生成器都认"。
+**为什么是 YAML。** 文件头的元数据格式有过一轮竞争：JSON 被转义符和引号占掉一半可读性，TOML 更晚才流行，而 YAML 是为"配置即文本"设计的——缩进表达结构、不需要引号也能读。更重要的是 Jekyll 在 2010 年代把它变成了事实约定（`---` 包裹的 frontmatter），后来许多静态站点生成器沿用了这个约定，但 frontmatter 仍是生态惯例，不是所有生成器的共同标准。选 YAML 没有技术上的惊天理由，选的是"读者容易编辑、当前工具链能稳定解析"。
 
 这套博客的 frontmatter 由 Zod 合约（lib/content/schema.ts）规定，字段逐个解释：
 
@@ -137,7 +137,7 @@ git log --oneline -- content/posts      # 全部文章的提交史
 git log --oneline --follow -- content/posts/clock-skew-distributed-systems.md  # 单篇的修改史
 ```
 
-数据库里的"出版时间"字段会撒谎（可以 UPDATE），Git 里的提交时间不会。
+数据库里的"出版时间"字段可能被 UPDATE，Git 提交历史通常更容易审计；但 commit metadata 也能在 rebase 或重写历史时改变，真正需要长期可追溯时仍要保留受保护分支、review 记录和发布 artifact。
 
 ## 六、图片与静态资源
 

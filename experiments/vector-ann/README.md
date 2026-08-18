@@ -41,11 +41,11 @@ Outputs to `experiments/vector-ann/results/`:
 - `ann_scan.csv` — one row per (algo, config): recall@10, QPS, index_bytes, build_s;
 - `recall_vs_qps.png`, `recall_vs_index_bytes.png`, `qps_vs_index_bytes.png`.
 
-## Backfill
+## Evidence gate
 
-The post's in-text local numbers are placeholders `【本机实测待补】`. After a run,
-take the CSV rows for the configurations you cite in the post and replace the
-placeholders, recording machine / OS / python + faiss + hnswlib versions and the
-exact command in the post's experiment section. This is a synthetic random
-dataset — treat it as a mechanism demo, not a benchmark against real embedding
-distributions.
+The companion post intentionally does not cite QPS, recall, or serialized-size
+numbers from this script yet. After a run, save the selected CSV rows together
+with machine / OS / Python / faiss / hnswlib versions and the exact command
+under an evidence snapshot before adding numbers to the post. This is a
+synthetic random dataset — treat it as a mechanism demo, not a benchmark
+against real embedding distributions.

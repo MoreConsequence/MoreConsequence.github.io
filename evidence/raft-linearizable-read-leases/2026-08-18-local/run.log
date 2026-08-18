@@ -1,0 +1,27 @@
+[phase A] leader = node 1 (term 1)
+
+== Phase A: 延迟量级（进程内 RTT≈0，只反映往返次数排序，非生产量级）==
+serial read   : mean 1.6µs（0 次往返，本地读）
+readindex read: mean 7.8µs（1 次心跳往返 + commitIndex 追平）
+write-log read: mean 4.4µs（一轮提交：日志追加 + 多数确认）
+排序（往返次数参考，进程内相对顺序不稳定）: serial < write-log < readindex
+	serial=1.6µs  readindex=7.8µs  write-log=4.4µs
+
+
+== Phase B: 把 leader 与多数派分区（时间戳相对 partitionStart）==
+t=0s  partition 生效
+t=352ms  readindex 读: ok=false val="" err="readindex timeout: cannot confirm leadership with majority"  → 分区下拒绝，不吐旧值
+t=352ms  serial 读:   val="1"（旧值，stale 候选）
+t=352ms  lease 读:    val="1"（lease 窗口内本地读，stale 候选）
+[phase B new leader] leader = node 2 (term 2)
+t=658ms  新 leader node 2 提交 k=2（旧 leader 的 lease 有效期到 t≈2.5s）
+t=658ms  serial 读:   val="1"  → STALE：新 leader 已提交 k=2，这里还读到 1
+t=658ms  lease 读:    val="1"  → STALE：新 leader 已提交 k=2，这里还读到 1（lease 固有风险窗口）
+t=958ms  readindex 读: ok=false val="" err="readindex timeout: cannot confirm leadership with majority"  → 拒绝，不吐旧值
+t=959ms  等待旧 leader lease 过期（再过 1.641s）
+t=2.902s  lease 读(过期后): ok=false val="" err="readindex timeout: cannot confirm leadership with majority"  → 回落 ReadIndex 拒绝，不再吐旧值
+
+== 结论 ==
+串行读: 任意节点本地读，分区下旧 leader 照常吐旧值（等死，不拒绝）
+ReadIndex: 向多数派确认，分区下无法确认 → 超时拒绝，不吐旧值
+Lease read: lease 窗口内免确认，能吐旧值（固有风险窗口）；过期后回落 ReadIndex

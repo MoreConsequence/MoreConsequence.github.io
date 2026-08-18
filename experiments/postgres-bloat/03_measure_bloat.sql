@@ -9,7 +9,7 @@
 SELECT relname,
        n_live_tup,
        n_dead_tup,
-       round(100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0), 1) AS dead_pct_est,
+       round((100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0))::numeric, 1) AS dead_pct_est,
        last_autovacuum,
        autovacuum_count,
        vacuum_count
@@ -29,8 +29,8 @@ CREATE EXTENSION IF NOT EXISTS pgstattuple;
 SELECT table_len,
        tuple_count,
        dead_tuple_count,
-       round(dead_tuple_percent, 1) AS dead_tuple_percent,
-       round(free_percent, 1) AS free_percent
+       round(dead_tuple_percent::numeric, 1) AS dead_tuple_percent,
+       round(free_percent::numeric, 1) AS free_percent
 FROM pgstattuple('bloat_demo.orders');
 
 -- 4) 顺序扫描计时（膨胀态）：和 04 脚本 VACUUM 后的耗时对比

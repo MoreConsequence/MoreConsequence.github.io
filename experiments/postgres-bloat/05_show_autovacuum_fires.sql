@@ -18,7 +18,7 @@ UPDATE bloat_demo.orders SET note = note;
 
 -- 此刻 n_dead_tup 应已超过阈值（若显示 0，等 1~2 秒重查）
 SELECT n_dead_tup,
-       round(100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0), 1) AS dead_pct,
+       round((100.0 * n_dead_tup / nullif(n_live_tup + n_dead_tup, 0))::numeric, 1) AS dead_pct,
        last_autovacuum,
        autovacuum_count,
        vacuum_count

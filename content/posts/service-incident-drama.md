@@ -2,7 +2,7 @@
 title: "一次构造事故演练：两个 Map 为什么要一起验收"
 description: "不把无法找回 raw RSS 和 wrk 输出的旧数字继续冒充真实事故，改用当前 checkout 可重跑的增长演练：无界订单表与幂等表各增长 500 条，有界修复版把两张表同时限制在 100 条，并用反向索引保持一致。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["事故复盘", "内存泄漏", "排障"]
 draft: false
 featured: false
@@ -62,6 +62,8 @@ Node 24.19.0 本机输出：
 ```json
 {"count":500,"boundedLimit":100,"unbounded":{"orders":500,"keys":500},"bounded":{"orders":100,"keys":100}}
 ```
+
+本次命令、环境和原始 JSON 保存在 `evidence/service-incident-drama/2026-08-16-local/`；这份快照只支持容量不变量，不支持历史事故、RSS 或生产 OOM 结论。
 
 这个输出可以证明：
 

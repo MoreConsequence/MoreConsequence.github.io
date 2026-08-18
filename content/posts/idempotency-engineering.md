@@ -1,28 +1,29 @@
 ---
-title: "重试会放大一切错误:幂等性工程的完整账本"
-description: "一次超时被层层重试放大 27 倍,写路径非幂等就产生重复扣款。从幂等键表、唯一约束到状态机终态,给出幂等性工程的分层实现与选型决策。"
+title: "重试会放大错误：幂等性工程的键、状态与未知结果"
+description: "把条件重试放大、唯一约束、状态机、保留期和结果未知放在同一张决策图里；区分单库原子事务、跨服务副作用与只能靠对账的边界。"
 publishedAt: "2026-08-01"
-updatedAt: "2026-08-02"
+updatedAt: "2026-08-17"
 tags: ["系统设计", "分布式", "工程实践"]
+draft: false
 featured: false
 series: "系统设计手记"
 ---
 
-**TL;DR：** 网络超时是常态，所以重试必然存在；但重试会放大一切错误——客户端超时重试、网关再重试、服务内部又重试，一次请求最多能被放大成 27 次，非幂等的写路径就变成"27 次扣款"。幂等性工程就是给"重试"装上限流阀：**幂等键（唯一约束）保证同一请求只执行一次，状态机保证重复请求返回第一次的结果**。实现上有三层：存储层唯一约束兜底、业务层幂等键占位、终态响应缓存（重放）。选型看一个参数：**写操作天然幂等吗？** 是——直接用 HTTP 方法语义（PUT/DELETE）；否——必须引入幂等键或状态机。
+**TL;DR：** 请求可能已经执行、但响应没有到达；重试次数也不是固定常数。若客户端、网关和服务三层各自最多发起 3 次尝试，**27 是这个配置下的乘法上界，不是线上观测值**。幂等性工程也不是一句“只执行一次”就能覆盖所有副作用：单一权威数据库里的唯一约束可以裁决 claim，状态机可以表达进行中和终态，跨支付方或消息系统的结果未知仍需要对账、供应商幂等键或补偿。选型先问：写操作的权威效果在哪个事务边界内？再决定使用 HTTP 语义、幂等键、状态机还是对账。
 
 ## 一、重试的必要与代价
 
-先承认一个前提：**网络不可靠，超时必然发生**——丢包、对端 GC 停顿、负载均衡摘除、机器崩溃重启，都会让请求"发出去了但没收到响应"。客户端只能靠重试自救。但重试要付出三重代价：
+先承认一个前提：**网络故障与超时不可避免会出现**——丢包、对端 GC 停顿、负载均衡摘除、机器崩溃重启，都会让请求"发出去了但没收到响应"。客户端有时只能靠重试自救，但重试要付出三重代价：
 
-1. **放大**：每一层重试都是乘法。请求 → 网关（×3）→ 服务 A（×3）→ 服务 B（×3）= 27 次，见下图；
-2. **超时叠加**：每层各等 3 秒才重试，整条链路的最坏等待 = 各层超时之和，用户等 9 秒+，前端又触发自己的重试；
-3. **语义破坏**：读操作重试无害，写操作重试会产生重复效果——扣款两次、下单两条、消息发两遍。
+1. **放大**：每一层都可能再次尝试。若请求 → 网关（最多 ×3）→ 服务 A（最多 ×3）→ 服务 B（最多 ×3），理论上界是 `3 × 3 × 3 = 27` 次；真实次数还受 deadline、熔断和错误分类影响；
+2. **超时叠加**：各层的 attempt timeout、退避和调用 deadline 必须相容；把每层都设成固定 3 秒并不会自动得到一个可用的用户体验预算；
+3. **语义破坏**：可安全重试的读操作也要先确认没有关键副作用；写操作若没有幂等合同，则可能重复扣款、下单或发消息。
 
-![重试放大示意图:一次超时被层层放大 27 倍,幂等键把 27 次重试收敛为 1 次执行](/images/retry-amplification.svg)
+![三层各允许三次尝试的重试放大示意图，以及幂等键如何把重复请求收敛到同一个权威结果](/images/retry-amplification.svg)
 
-*图注：非幂等写路径上，重试次数逐层相乘；引入幂等键后，重复请求只执行一次，其余重试返回第一次的结果。*
+*图注：非幂等写路径上，重试次数会按配置相乘；在单一权威存储的语义范围内，幂等键可以让重复请求重放同一个结果，但不自动覆盖外部副作用。*
 
-三个教训级别的工程事实：**超时并不代表请求没执行**（响应丢失 ≠ 未处理）；**"重试就能解决"的假设在写路径上从不成立**；**分布式场景下，"执行一次且仅一次"（exactly-once）是物理上做不到的**——能做的是"至少一次 + 幂等化"，把重复执行变得无害。目标不是消灭重试，而是让重试无副作用。
+三个工程事实需要同时记住：**超时并不代表请求没执行**（响应丢失 ≠ 未处理）；**"重试就能解决"的假设在写路径上不成立**；**exactly-once 只在明确的事务/系统边界内有意义**。跨越网络、支付方或外部消息系统时，常见做法是至少一次投递 + 幂等化 + 对账，而不是用一句 exactly-once 覆盖未知结果。目标不是消灭重试，而是让重试的副作用可裁决、可重放或可补偿。
 
 ## 二、HTTP 方法语义：RFC 9110 怎么说
 
@@ -38,30 +39,35 @@ series: "系统设计手记"
 
 **第二，幂等方法 ≠ 无副作用。** 同一段原文明确说：服务端可以"log each request separately, retain a revision control history, or implement other non-idempotent side effects"。扣款这种操作做成 PUT 也是幂等的——重复 PUT 不会重复扣，但每次请求都会被记账、进审计、触发回调。副作用允许存在，只要它们不改变资源终态。
 
-**第三，RFC 把"自动重试"的资格交给幂等性。** 原文说幂等方法之所以被单独区分，是因为"the request can be repeated automatically if a communication failure occurs before the client is able to read the server's response"——这正是第一节"放大"的对冲：幂等请求的重试是零成本、零风险的。反过来，RFC 对非幂等请求的重试给了两条硬约束：客户端 "SHOULD NOT automatically retry a request with a non-idempotent method"（除非它确定语义幂等），代理 "MUST NOT automatically retry non-idempotent requests"。**网关层自动重试 POST，直接违反 RFC。**
+**第三，RFC 把"自动重试"的资格交给幂等性。** 原文说幂等方法之所以被单独区分，是因为请求在客户端还没读到响应时可以自动重复；这正是第一节"放大"的对冲。反过来，RFC 对非幂等请求要求客户端不要在未确认语义幂等时自动重试，代理也不能把未知的非幂等请求当成安全重试。**网关层自动重试 POST 之前，必须有业务幂等合同，不能只看 HTTP 方法名。**
 
-这一节的结论与第九节决策树的第一问呼应：写操作若是全量替换、删除这类"天然幂等"的语义，HTTP 方法语义就是零成本方案，一张幂等表都不用建。
+这一节的结论与第九节决策树的第一问呼应：写操作若确实是全量替换、删除这类可重放语义，HTTP 方法合同可以省掉一张专门的幂等表；资源版本、权限审计和其他副作用仍然要单独设计。
 
 ## 三、幂等键：唯一约束是最朴素也最可靠的闸门
 
-幂等键（idempotency key）的思路：客户端为每次"业务上只该发生一次"的操作生成一个全局唯一键，服务端**以这个键为主键落一笔记录**——数据库唯一约束保证并发重试只能有一个成功。Stripe 的 API 设计是行业范本：客户端传 `Idempotency-Key` 头，服务端把"键 → 处理结果"存下来，重复键直接返回已存结果。
+幂等键（idempotency key）的思路：客户端为每次"业务上只该发生一次"的操作生成一个键，服务端在**明确的作用域**内落一笔记录——例如租户、操作类型和键的组合。数据库唯一约束可以在一个权威存储内裁决并发 claim，但不能替外部支付方或消息 broker 提供原子性。Stripe 的 API 文档是一个公开工程例子：客户端传 `Idempotency-Key` 头，服务端保存请求与结果，重复键按其合同重放或返回冲突。
 
 ```sql
 CREATE TABLE idempotency_keys (
   id           BIGINT PRIMARY KEY AUTO_INCREMENT,
-  idem_key     VARCHAR(64)  NOT NULL,
-  request_hash CHAR(64)     NOT NULL DEFAULT '',  -- 请求体指纹,防止同键不同请求体;示例 INSERT 省略该列时使用默认空串
+  scope        VARCHAR(128) NOT NULL,             -- 租户/操作/资源等作用域
+  idem_key     VARCHAR(255) NOT NULL,
+  request_hash CHAR(64)     NOT NULL,             -- 同键不同语义请求必须冲突
   status       VARCHAR(16)  NOT NULL,  -- IN_PROGRESS / SUCCESS / FAILED
   response     JSON,                   -- 第一次执行的结果,用于重放
   created_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  UNIQUE KEY uk_idem_key (idem_key)
+  lease_until  DATETIME(3) NULL,
+  fencing_token BIGINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_idem_scope_key (scope, idem_key),
+  KEY idx_idem_created_at (created_at),
+  KEY idx_idem_claim_lease (status, lease_until)
 ) ENGINE=InnoDB;
 ```
 
-Go 侧的完整流程（扣款为例）：
+下面是**关键流程节选**（扣款为例），省略了类型、驱动错误类型、响应编码和事务重试；它只适用于业务写入与幂等记录位于同一权威数据库事务中的情况。若 `debitTx` 调用的是外部支付方，不能把这段代码当成跨系统原子方案。
 
 ```go
-func HandleDebit(ctx context.Context, key, accountID string, amount int64) (*Receipt, error) {
+func HandleDebit(ctx context.Context, scope, key, accountID string, amount int64) (*Receipt, error) {
     // 1. 开启事务:占位与执行业务必须落在同一事务(见正文规则),
     //    否则"占位成功但业务没执行"的间隙会被重试发现,导致重复扣款
     tx, err := db.BeginTx(ctx, nil)
@@ -72,9 +78,10 @@ func HandleDebit(ctx context.Context, key, accountID string, amount int64) (*Rec
 
     // 2. 占位:唯一约束在 INSERT 执行瞬间生效(即时约束),
     //    所以并发重试仍然只有一个 INSERT 成功,事务内检测不受影响
+    requestHash := hashDebitRequest(accountID, amount) // 规范化业务字段后计算
     _, err = tx.ExecContext(ctx,
-        `INSERT INTO idempotency_keys (idem_key, status)
-         VALUES (?, 'IN_PROGRESS')`, key)
+        `INSERT INTO idempotency_keys (scope, idem_key, request_hash, status)
+         VALUES (?, ?, ?, 'IN_PROGRESS')`, scope, key, requestHash)
     if err != nil {
         // 区分错误类型:只有唯一键冲突才算"键已存在"——
         // MySQL 错误码 1062(DUPLICATE ENTRY)。生产代码建议用驱动类型精确判断,
@@ -86,14 +93,14 @@ func HandleDebit(ctx context.Context, key, accountID string, amount int64) (*Rec
 
         // 3. 键已存在:事务里没有需要提交的写入,回滚后查已有记录,不重新执行
         tx.Rollback()
-        rec, err := findByIdemKey(ctx, key)
+        rec, err := findByIdemKey(ctx, scope, key)
         if err != nil {
             return nil, err
         }
         if rec.Status == "SUCCESS" {
             return rec.Receipt, nil // 重放第一次的结果
         }
-        return nil, ErrDuplicateInProgress // 并发占位中,让客户端退避
+        return nil, ErrDuplicateInProgress // 仅适用于另有已提交 claim 的状态机模型
     }
 
     // 4. 第一次执行真正业务(扣款):debitTx 使用 tx 上的同一连接,与占位同事务
@@ -107,7 +114,7 @@ func HandleDebit(ctx context.Context, key, accountID string, amount int64) (*Rec
     // 5. 回填结果(用相同键 UPDATE 自己占的那行,仍在同一事务)
     if _, err := tx.ExecContext(ctx,
         `UPDATE idempotency_keys SET status=?, response=?
-         WHERE idem_key=?`, status, resp, key); err != nil {
+         WHERE scope=? AND idem_key=? AND request_hash=?`, status, resp, scope, key, requestHash); err != nil {
         return nil, err
     }
 
@@ -121,9 +128,9 @@ func HandleDebit(ctx context.Context, key, accountID string, amount int64) (*Rec
 
 四个细节决定这套代码的成败：
 
-- **占位与执行业务必须落在同一事务/同一存储**——若幂等表在 MySQL 而业务在另一个库，两者之间就不是原子的，"占位成功但业务没执行"的间隙会被重试发现，重复执行；
-- **IN_PROGRESS 卡死怎么办**：进程崩溃留下 IN_PROGRESS 行，需要超时回收（如 60s 未完成视为死行，允许新请求接管）——否则一次崩溃永久卡死该键；回收与接管的完整实现见第五节；
-- **FAILED 语义**：业务失败允许客户端**换新键** 重试（失败本身不幂等）；只有 SUCCESS 才用旧键重放；
+- **事务边界必须诚实**——若幂等表在 MySQL 而业务在另一个库或支付方，两者之间就不是原子的；此时需要外部系统的幂等键、outbox、回调状态机和对账，不能套用“同一事务”；
+- **`IN_PROGRESS` 只属于已提交 claim 的模型**：上面的单库同事务流程在提交前崩溃会回滚占位，不会留下死行；若选择先提交 claim 再异步执行，才需要 lease、接管者和未知结果合同；
+- **`FAILED` 语义**：是否允许用新键重试取决于业务失败是否已经产生外部副作用；不能仅凭一个字符串状态判断安全；
 - **请求体指纹**（request_hash）：同一键配不同请求体必须拒绝，防止客户端 bug 复用键；指纹怎么算才稳定，见第四节。
 
 ### 一个常见的误解：INSERT 幂等键表失败不代表请求重复
@@ -145,7 +152,7 @@ return nil, err // 其它错误:结果未知 → 按重试语义处理,不是重
 
 把非 1062 错误误判成"键已存在"，重试会走上"查表重放"路径，而表中根本没有这行——该执行的操作永远没执行完；反过来把 1062 误判成其它错误，客户端换新键重试，同一笔业务会真的执行两遍。**1062 → 重放；其余 → 结果未知（重试，不重放）。**
 
-可运行演示：go run ./idempotency，20 个并发重试中只有 1 次首次执行，其余重放。
+本地演示：从仓库根目录运行 `cd experiments && go run ./idempotency`。它用一个互斥锁模拟“唯一约束 + 结果重放”，20 个并发调用中只有 1 次首次执行；它没有数据库、进程崩溃、重启、外部支付或多实例证据，只能证明这个教学模型的输出。2026-08-17 本机原始输出保存在 `evidence/idempotency-engineering/2026-08-17-local/`。
 
 ## 四、请求指纹的工程细节：同键不同请求体，怎么才算"不同"
 
@@ -155,7 +162,7 @@ request_hash 的用途是拒绝"同一个幂等键、不同的请求体"——�
 
 ```go
 // 请求指纹：只对"业务语义"字段做哈希。
-// 时间戳、trace_id、随机数、客户端版本这类易变字段一律不进指纹，
+// 时间戳、trace_id、随机数、客户端版本这类不属于业务效果的字段通常不进指纹，
 // 否则同键同业务会因为字段抖动被误拒
 type debitRequest struct {
     AccountID string `json:"account_id"`
@@ -181,48 +188,43 @@ func fingerprint(req *debitRequest) string {
 
 幂等表不是建完就不管的表。每笔业务一行，日单量百万时一年就是三亿行，所以它必须回答三个问题：过期行怎么清、死行怎么接管、保留期怎么定。
 
-**保留期与重放窗口的关系** 是设计基准：客户端最晚什么时候还会重试，幂等行就要活到什么时候。客户端超时 3 秒、退避重试最多 5 次，最晚一次重试发生在 15 秒内——但客户端进程可能崩溃重启、运维可能手动重放，所以保留期要按"最大重试窗口 + 缓冲区"来定，常见是 7 天。**保留期短于重放窗口，超期后的重试就会真的再执行一次**——"重放"和"重执行"的分界线就是这一行数据活着没有。
+**保留期与重放窗口的关系** 是设计基准：客户端最晚什么时候还会重试，幂等行就要活到什么时候。退避、调用 deadline、客户端重启和人工重放都要计入窗口；“7 天”不是通用默认值，必须由业务风险、退款/对账窗口和存储成本决定。**保留期短于重放窗口，超期后的重试就可能再次执行**——“重放”和“重执行”的分界线就是权威记录是否仍然存在。
 
-**过期清理**：按 `created_at` 分批 DELETE，配合按月分区后直接 DROP 整月分区，避免长事务：
+**过期清理**：按带索引的时间列分批删除，避免一次长事务。分区可以降低清理成本，但数据库对分区表唯一键有额外约束，不能把下面的表定义直接复制到所有 MySQL 版本：
 
 ```sql
--- 按月分区（建表节选）：过期整月直接 DROP PARTITION，比 DELETE 干净
-ALTER TABLE idempotency_keys
-  PARTITION BY RANGE (TO_DAYS(created_at)) (
-    PARTITION p2026_06 VALUES LESS THAN (TO_DAYS('2026-07-01')),
-    PARTITION p2026_07 VALUES LESS THAN (TO_DAYS('2026-08-01')),
-    PARTITION p2026_08 VALUES LESS THAN (TO_DAYS('2026-09-01'))
-  );
-
--- 保留期之外的行分批删除（每批 1000 行，避免长事务锁）
+-- 7 天只是示例窗口；生产值必须来自重放/对账合同。
+-- 分批删除（每批 1000 行，避免长事务锁）
 DELETE FROM idempotency_keys
  WHERE created_at < NOW(3) - INTERVAL 7 DAY
  LIMIT 1000;
 ```
 
-**IN_PROGRESS 死行的回收** 有两种实现，职责不同：回收进程负责"清扫"，新请求负责"接管"。清扫是兜底（防止表里堆积垃圾行），真正让业务自愈的是接管——进程崩溃后，60s 内没有完成的那笔操作，允许后来的请求用**条件 UPDATE** 把执行权抢过来：
+**已提交 claim 的 `IN_PROGRESS` 回收** 有两种职责：回收进程负责"清扫"，新请求负责"接管"。清扫是兜底，真正让业务自愈的是接管——只有在业务已经把 claim 独立提交、并且确认旧执行者不再拥有执行权时，才允许后来的请求用**条件 UPDATE** 把执行权抢过来。不要把固定 60 秒当作安全答案：lease 必须大于可证明的执行时间和续租容错，并且要考虑旧执行者恢复后的 fencing。
 
 ```sql
--- 死行接管：60s 前还停在 IN_PROGRESS 的视为已死。
--- 影响行数 = 1 → 接管成功，继续执行业务；
--- 影响行数 = 0 → 别人已接管，或已有终态，回到"查表重放"分支
+-- 伪 SQL：只有 request_hash 相同且 lease 已过期的请求才能竞争接管。
+-- 影响行数 = 1 → 拿到新的 lease/fencing token；
+-- 影响行数 = 0 → 别人已接管，或已有终态，回到"查表重放"分支。
 UPDATE idempotency_keys
    SET status     = 'IN_PROGRESS',
-       request_hash = ?,
-       created_at = NOW(3)
- WHERE idem_key = ?
+       lease_until = ?,
+       fencing_token = fencing_token + 1
+ WHERE scope = ?
+   AND idem_key = ?
+   AND request_hash = ?
    AND status = 'IN_PROGRESS'
-   AND created_at < NOW(3) - INTERVAL 60 SECOND;
+   AND lease_until < CURRENT_TIMESTAMP(3);
 ```
 
-这个 UPDATE 的妙处在于它把"判断死行"和"抢占执行权"合并成一条原子语句：两个并发的新请求同时抢同一行，行锁串行化后只有一个能影响 1 行，另一个拿到 0 行就乖乖回去查表——和第三节的 INSERT 占位是同一个思想，只是把判定条件从"键不存在"换成了"键是死行"。
+这个 UPDATE 的价值在于它把"判断 lease 是否过期"和"抢占执行权"合并成一条条件写入；两个并发请求最终只有一个能影响 1 行。但 lease 只能解决“谁可以继续尝试”的裁决，不能自动撤销已经发给旧执行者的外部请求；外部资源还必须检查 fencing token，或由供应商幂等键/对账承担未知结果。
 
 ## 六、没有单库可依赖时：Redis 版幂等键
 
 第三节的整套方案默认"有一张可以放幂等表的单点数据库"。分库分表之后这个前提没了：幂等表跟着业务键分片，重试可能落在不同分片；性能敏感的场景下，每次操作多两次 SQL 事务也不划算。这时候 Redis 版幂等键是常见替代——占位和结果都放 Redis：
 
 ```bash
-# 占位：键不存在才写入，SET 的 NX+EX 组合是原子的
+# 占位：键不存在才写入，SET 的 NX+EX 组合在 Redis 单命令内是原子的
 redis-cli SET "idem:req_123" "IN_PROGRESS" NX EX 3600
 # -> OK      ：拿到执行权，继续执行业务
 # -> (nil)   ：键已存在，读结果键重放
@@ -241,11 +243,11 @@ redis-cli GET "idem:req_123:result"
 | 原子占位 | 唯一约束，事务内 | SET NX EX，单命令原子 |
 | 结果持久化 | 与业务同库同事务提交 | 结果键另写，业务与占位不原子 |
 | 过期机制 | 自建清理任务 | 键自带 TTL |
-| 崩溃语义 | IN_PROGRESS 死行靠条件 UPDATE 接管 | 占位键过期即自动释放，天然自愈 |
+| 崩溃语义 | 已提交 claim 需要 lease/fencing 或人工对账 | TTL 会释放键，但旧执行者可能仍在运行，不能称为天然安全 |
 | 一致性前提 | 单库 | Redis 主从/集群，切换窗口有丢键风险 |
 | 适用场景 | 业务库在手，强一致优先 | 无单点库、性能敏感、可容忍小窗口 |
 
-两个必须写进代码的注意点。第一，**业务失败时占位键不会自动变 FAILED**：占位与业务不在同一事务里，业务失败必须主动 DEL 占位键（或等 TTL 兜底），否则客户端同一键重试会一直撞上"IN_PROGRESS"。第二，**Redis 的可用性窗口直接等于幂等性窗口**：主从切换瞬间丢失未同步的键，重试就可能真的重执行——这和 MySQL 版"单库事务"的保证不是一个量级，选它之前先确认业务能接受。
+两个必须写进代码的注意点。第一，**业务失败时占位键不会自动变 FAILED**：占位与业务不在同一事务里，业务失败必须通过状态写入、显式接管或对账决定下一步；简单 `DEL` 可能让仍在执行的旧请求与新请求并发产生副作用。第二，**Redis 的可用性窗口直接影响幂等性窗口**：主从切换丢失未同步的键、TTL 到期、网络分区或旧 worker 越过 lease，都可能导致重执行——这和 MySQL 版"单库事务"的保证不是一个量级，选它之前先确认业务能接受并补上 fencing/供应商幂等。
 
 ## 七、消息队列的重复消费：同一个幂等键问题的另一种形态
 
@@ -255,7 +257,7 @@ redis-cli GET "idem:req_123:result"
 2. **消费端崩溃**：处理完消息、还没提交 offset 就崩溃，重启后从最后提交的 offset 重放，已处理的消息再处理一遍；
 3. **rebalance 转手**：consumer 加入/退出导致分区重新分配，新消费者从最后提交的 offset 继续消费，未提交的部分重复。
 
-Kafka 的幂等生产者解决了其中一条的一半：`enable.idempotence` 从 Kafka 3.0 起默认开启（KIP-679），broker 给每个生产者分配 producer ID，消息带单调递增的序号，broker 按 producer ID + 分区序号去重——**producer 自身重试不会再产生重复**。但官方 javadoc 明说了边界："the producer can only guarantee idempotence for messages sent within a single session"——进程重启拿到新 producer ID，或者应用层自己重发（"application level re-sends"），都不在去重范围内。至于真正的 exactly-once，需要事务 API（`transactional.id`）+ 消费端 `read_committed`，而且严格说只是"对 Kafka 自己"的 exactly-once——消费端把消息写进外部系统的那一步，事务管不到。
+Kafka 的幂等生产者解决了其中一条的一半：在支持的版本和配置下，`enable.idempotence` 可以让 broker 按 producer ID 与分区序号抑制同一 producer session 的重试重复。官方文档同时强调了边界：进程重启拿到新 producer ID，或应用层自己重发，都不自动落在同一个去重合同内。至于 Kafka 事务 + `read_committed` 的 exactly-once，也主要覆盖 Kafka 内部的读写；消费端把消息写进外部系统的那一步，Kafka 事务管不到，版本和客户端配置还需现场核对。
 
 所以消费端的账还是要自己算：
 
@@ -280,7 +282,7 @@ sequenceDiagram
 
 ## 八、状态机：让"结果"本身幂等
 
-幂等键解决"同一请求只执行一次"，但业务里还有一类问题它管不到：**步骤间的重试**——比如支付回调流程：收到回调 → 更新订单 → 通知商户 → 发券，其中任何一步重试，前面的步骤会重复。解法是把业务流程建成**状态机**，每个状态是终态，重试从"重放步骤"变成"查当前状态"：
+幂等键解决"同一请求只执行一次"，但业务里还有一类问题它管不到：**步骤间的重试**——比如支付回调流程：收到回调 → 更新订单 → 通知商户 → 发券，其中任何一步重试，前面的步骤会重复。解法是把业务流程建成**状态机**，为每个迁移定义前置状态和可观察结果，重试从"盲目重放步骤"变成"查当前状态并决定是否继续"：
 
 ```mermaid
 stateDiagram-v2
@@ -294,7 +296,7 @@ stateDiagram-v2
     COUPONED --> [*]: 终态,一切重试=查询
 ```
 
-规则只有一条：**每个状态是终态，迁移是幂等的**——`PAID` 收到重复支付回调不会"再付一次"，只是确认自己是 `PAID`。实现上状态迁移必须加条件（`WHERE status = 'PENDING'`），防止乱序迁移覆盖终态：
+核心规则是：**状态迁移必须有条件，终态要可重复读取**——`PAID` 收到重复支付回调不会"再付一次"，只是确认自己是 `PAID`。实现上状态迁移必须加条件（`WHERE status = 'PENDING'`），防止乱序迁移覆盖已确认状态：
 
 ```sql
 -- 条件迁移:只有 PENDING 允许变为 PAID,重放/乱序不会覆盖终态
@@ -333,7 +335,7 @@ flowchart TD
 
 | 方案 | 核心机制 | 覆盖场景 | 成本 |
 | :--- | :--- | :--- | :--- |
-| HTTP 语义幂等 | PUT/DELETE 天然可重放 | 全量更新、删除 | 零 |
+| HTTP 语义幂等 | PUT/DELETE 的目标效果可重放 | 全量更新、删除 | 低（不另建幂等键，但仍需实现资源语义） |
 | 幂等键 | 唯一约束 + 结果重放 | 单步写操作 | 中（表 + 流程） |
 | 状态机 | 终态 + 条件迁移 | 多步流程 | 高（建模 + 迁移） |
 | 补偿/对账 | 事后检测抵消 | 无法前置幂等时兜底 | 高（对账延迟） |
@@ -344,21 +346,21 @@ flowchart TD
 
 | 注入动作 | 预期行为 | 靠哪条机制 |
 | :--- | :--- | :--- |
-| kill -9 正在处理的实例 | IN_PROGRESS 行 60s 后能被新请求接管，重试最终成功且不重复扣款 | 第五节死行接管 |
-| 同键同请求体重放 100 次 | 恰好执行 1 次，其余返回第一次的结果 | 唯一约束 + 重放 |
+| kill -9 正在处理的实例 | 在已提交 claim 的模型中，lease/fencing 或对账裁决下一步；同库事务模型则占位随事务回滚 | 第五节 claim 模型 |
+| 同键同请求体重放 100 次 | 在单一权威存储的合同内最多一次 claim，其余拿到同一终态或明确处理中 | 唯一约束 + 重放 |
 | 同键不同请求体 | 拒绝，不执行 | 第四节请求指纹 |
-| 20 个并发同键请求 | 恰好 1 次首次执行，19 个走重放路径 | INSERT 占位 |
+| 20 个并发同键请求 | 单库原子模型中只有一个权威 claim；其余重放或等待，不把外部副作用自动算成一次 | INSERT 占位 |
 | 清空幂等表后重放旧键 | 重新执行一次——验证保留期边界 | 第五节保留期 |
 
-最后一条最有信息量：它把"保留期 ≥ 重放窗口"变成可验证的规则。生产里出现"同一笔操作执行了两遍"时，第一件事不是翻业务代码，而是查幂等行还在不在——**如果行没了，问题不在幂等逻辑，在保留期**。
+最后一条最有信息量：它把"保留期 ≥ 重放窗口"变成可验证的规则。生产里出现"同一笔操作执行了两遍"时，第一件事不是只翻业务代码，而是同时查幂等行、清理任务、保留期和外部副作用记录——**如果行没了，可能是保留期设计、清理竞态或状态存储丢失，不能先验归因。**
 
 ## 十一、重试预算与 SLA
 
 给"重试"本身装上限流阀：**重试必须有预算**（次数 × 退避上限），并且**超时与重试预算要写进 SLA**。
 
-用户最坏体验有一个简单公式：**P99 延迟 × 最大重试次数**。服务方承诺 P99 200ms、调用方最多重试 5 次，用户最坏等待就是 200ms × 5 = 1s。SLA 上写"P99 200ms"并不等于用户体验 200ms——体验的最坏值取决于两个预算的乘积，所以预算数字必须写进合同；否则一次故障里每一层都在超预算重试，放大效应从这里开始。
+在每次尝试都独立受同一个延迟分位数约束、且忽略退避与排队的教学模型里，用户等待可近似写成 **P99 延迟 × 尝试次数**。例如 200ms × 5 = 1s 只是这个模型的算术，不是尾延迟上界；真实合同还要写调用 deadline、每次 attempt timeout、退避/jitter、重试条件和取消传播。SLA 上写"P99 200ms"并不等于用户体验 200ms，预算数字必须绑定同一条调用链和同一时间窗口。
 
-退避策略一行建议：固定退避（如每次 500ms）简单可控，适合低并发、延迟不敏感的场景；指数退避 + jitter（`min(2^n, 上限)` 加随机化）避免重试风暴，适合高并发链路。要点不是选哪种算法，而是让"次数 × 上限"有明确的数字。
+退避策略一行建议：固定退避适合低并发、延迟不敏感的场景；指数退避 + jitter（`min(base × 2^n, cap)` 加随机化）通常更能分散重试风暴。要点不是背算法，而是让"次数、单次超时、退避上限、总 deadline"形成一个能在故障测试中兑现的预算。
 
 这条纪律和[优雅停机的预算分配](/writing/graceful-shutdown-in-go)是同一种思维方式：**凡是有上限的资源，都先分预算，再谈实现**。
 
@@ -372,6 +374,6 @@ flowchart TD
 6. RFC 9110：HTTP Semantics §9.2.2（幂等方法定义与自动重试规则）—— https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2
 7. Apache Kafka 官方文档：Message Delivery Semantics（幂等生产者、exactly-once 边界与 at-least-once）—— https://kafka.apache.org/documentation/#semantics
 8. Redis 官方文档：SET 命令（NX/EX 原子占位）—— https://redis.io/docs/latest/commands/set/
+9. 本机教学模型原始输出：`evidence/idempotency-engineering/2026-08-17-local/`；只覆盖单进程互斥锁，不覆盖数据库、Redis、支付方或多实例。
 
 > 延伸阅读：重试放大的超时视角来自停机排空,见[SIGTERM 之后发生了什么:把优雅停机做成一件确定的事](/writing/graceful-shutdown-in-go)；主从延迟导致读旧数据时,幂等校验正是"读从 + 版本校验"的兜底,见[主从复制延迟 300ms 的账单:读路径设计的三种姿势](/writing/replication-lag-read-paths)；时钟回拨造成的重复与逆序,最终也靠幂等兜底,见[时间戳会骗人:时钟回拨与分布式系统的顺序幻觉](/writing/clock-skew-distributed-systems)。
-

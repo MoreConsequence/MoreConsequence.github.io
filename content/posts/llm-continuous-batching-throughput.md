@@ -3,7 +3,7 @@ title: "LLM 推理的排队税：从静态批到 continuous batching，一张 GP
 description: "prefill 吃计算、decode 吃带宽且逐 token 串行；批的粒度太粗，让整批等最慢的序列、末尾留空档。从静态批到 continuous batching，调度粒度从一批缩到一步。"
 publishedAt: "2026-08-16"
 tags: ["AI 工程", "LLM", "推理", "性能"]
-draft: true
+draft: false
 featured: false
 series: "AI 工程"
 ---

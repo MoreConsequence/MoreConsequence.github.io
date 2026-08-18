@@ -2,8 +2,9 @@
 title: "MySQL 为什么不走你的索引：统计信息、代价模型与 EXPLAIN 的账"
 description: "把『我建了索引它为什么不用』从玄学变成可对账的账单：读 type/rows/filtered/Extra 四列，追 rows 是从 index dive 还是统计信息里来的，用 optimizer_trace 与 cost model 看懂优化器为什么选了全表扫。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["MySQL", "查询优化", "EXPLAIN", "性能"]
-draft: true
+draft: false
 featured: false
 series: "数据库原理手记"
 ---
@@ -146,7 +147,7 @@ trace 里找两段：`rows_estimation`（看用的是 index dive 还是统计、
 
 诚实说局限：EXPLAIN 的 rows 永远是估算，`EXPLAIN ANALYZE` 也只证明本机这一次执行。生产环境请以真实流量 + 压测为准，不能拿一次 EXPLAIN 当结论。
 
-## 实验入口
+## 附录：实验入口
 
 本仓库 `experiments/mysql-optimizer/` 提供可运行脚本（MySQL 8.0，环境与预期输出见 `README.md` 与 `expected_output.md`）：
 
@@ -157,7 +158,7 @@ mysql -u root opt_demo < experiments/mysql-optimizer/03_optimizer_trace.sql  # �
 mysql -u root opt_demo < experiments/mysql-optimizer/04_compare_cost.sql     # 走索引 vs 全表的实测耗时
 ```
 
-正文里的 `rows≈10000` 是为说明倾斜分布而写的预期量级，不是当前运行输出；走索引/全表耗时也尚未取得带 MySQL 版本和配置快照的原始结果，因此不作性能结论。跑完以上脚本后应把 EXPLAIN、optimizer_trace 和耗时原始输出一起保存。文中各成本项默认值来自官方文档，可直接用 `SELECT * FROM mysql.server_cost;` 与 `SELECT * FROM mysql.engine_cost;` 核实。
+2026-08-18 本机实测（MySQL 8.0.46，Docker，原始输出见 `evidence/mysql-optimizer/2026-08-18-local/`）：`status=1` 走 `idx_status`、rows=10000；`status=0`（99% 分布）走全表、rows=996756；`uniq_user` 等值 rows=10；`EXPLAIN ANALYZE` 输出同一查询 cost=3476、actual time 49.2..630ms（本机一次结果，缓存冷热会让 actual time 波动几个量级——这本身印证了"EXPLAIN ANALYZE 只证明本机这一次执行"）——估算 rows 与表实际分布（status=1 恰 10000 行、status=0 恰 990000 行）一致。可复现路径：`01_create_skew.sql` 建相同倾斜数据后跑 `02_explain.sql`，输出与预期输出文件（`expected_output.md`）逐行对照。文中各成本项默认值来自官方文档，可直接用 `SELECT * FROM mysql.server_cost;` 与 `SELECT * FROM mysql.engine_cost;` 核实。
 
 ## 参考资料
 

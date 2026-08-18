@@ -1,0 +1,23 @@
+# mysql-lock-bench:2026-08-18 本机真实 MySQL 压测
+机器: Apple Silicon(M1 Pro), macOS, OrbStack docker, mysql:8.0 镜像(8.0.46)
+库: lock_bench.accounts(单行热行 id=1, balance BIGINT, version BIGINT)
+驱动: github.com/go-sql-driver/mysql v1.10.0, Go 1.25.1
+注意: 容器内 MySQL 默认每个 COMMIT fsync redo 日志(innodb_flush_log_at_trx_commit=1),
+所有档位同设置, 绝对延迟含 fsync 噪声, 对比相对优劣有效。
+命令: go run ./mysql-lock-bench -dsn root:root@tcp(localhost:13306)/lock_bench -w N -n 1000/300 -s 100us -mode X
+
+## 结果(单行热行, 每次业务持锁 100µs)
+| 场景 | 提交数 | 尝试数 | 耗时 | 吞吐 | 每提交 | 重试率 |
+|---|---|---|---|---|---|---|
+| 乐观 w=4   | 4000 | 14746 | 21.44s | 187/s  | 5.36ms | 72.9% |
+| 悲观 w=4   | 4000 | 4000  | 12.67s | 316/s  | 3.17ms | 0%    |
+| 乐观 w=32  | 9600 | 189244| 101.9s | 94/s   | 10.61ms| 94.9% |
+| 悲观 w=32  | 9600 | 9600  | 27.52s | 349/s  | 2.87ms | 0%    |
+
+## 要点
+- 即使 w=4, 单热行上乐观锁重试率已 72.9%(每次提交前抢行版), 每提交 5.36ms;
+  w=32 重试率 94.9%, 每提交 10.61ms, 吞吐掉到 94/s。
+- 悲观锁重试率恒 0%, w=32 时吞吐 349/s 是乐观锁的 3.7 倍。
+- 这是"单行/热行"极端场景: 无间隙锁/索引变化, 乐观锁的版本重试全撞在同一行。
+- 结论方向与 simulation 一致(热行上悲观锁赢), 真实 DB 把模拟成本单位变成了
+  可量化延迟; 多行均匀分布场景(每行独立冲突)未在此测, 属于文章模型外推。

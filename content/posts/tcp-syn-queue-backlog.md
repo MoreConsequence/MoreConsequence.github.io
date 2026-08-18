@@ -1,15 +1,15 @@
 ---
 title: "TCP 握手也要排队：SYN 队列与 accept 队列的两道闸"
-description: "TCP 服务端从收到 SYN 到应用 accept()，中间要过两道队列：SYN 队列（半连接，等第三次握手）和 accept 队列（完整连接，等应用收）。本机实测：backlog=2 时 6 个并发连进来只有 2 个握手成功，其余全部超时。排队不是 HTTP 层的专属——连接建立本身就排队。"
+description: "TCP 服务端从收到 SYN 到应用 accept()，中间要过两道队列：SYN 队列（半连接，等第三次握手）和 accept 队列（完整连接，等应用收）。仓库内 probe 在 Darwin 上以 backlog=2、6 个并发连接观察到 2 个成功、4 个超时；结果受内核与调度影响，不能当作跨平台容量公式。"
 publishedAt: "2026-08-10"
-updatedAt: "2026-08-10"
+updatedAt: "2026-08-17"
 tags: ["网络", "TCP", "Linux"]
 draft: false
 featured: false
 series: "网络协议"
 ---
 
-**TL;DR：** TCP 握手不是一次性的"动作"，而是**两道队列的排队过程**。服务端收到 SYN 后先入 **SYN 队列**（半连接，等第三次握手的 ACK），收到 ACK 后移入 **accept 队列**（完整连接，等应用调 accept()）。两个队列都要容量预算：实际容量 = `listen(backlog)` 与内核参数取最小值（Linux 上 `net.core.somaxconn` 管 accept 队列上限，`net.ipv4.tcp_max_syn_backlog` 管 SYN 队列上限）。队列满了，内核**静默丢包**——客户端看到的是握手超时，不是"连接被拒绝"。本机实测（backlog=2）：6 个并发连接只有 2 个 ESTABLISHED。"connection timed out" 的锅，一半在应用层超时，一半在这两把闸上。
+**TL;DR：** TCP 握手不是一次性的“动作”，而是**两道队列的排队过程**。服务端收到 SYN 后先入 **SYN 队列**（半连接，等第三次握手的 ACK），收到 ACK 后移入 **accept 队列**（完整连接，等应用调 `accept()`）。Linux 上实际容量受 `listen(backlog)`、`net.core.somaxconn` 和 `net.ipv4.tcp_max_syn_backlog` 等参数共同影响；满队列的表现还取决于内核策略，不能把一个平台的数字外推到另一个平台。仓库内 probe 在 Darwin 25.5.0 上用 backlog=2、6 个并发连接得到 2 个成功、4 个超时，这个结果用于观察排队现象，不是跨平台容量合同。
 
 ## 一、先纠正直觉：TCP 握手是"两个队列的接力"
 
@@ -19,7 +19,7 @@ series: "网络协议"
 flowchart LR
     C[客户端] -->|"1. SYN| A[SYN 队列<br/>半连接<br/>等 ACK]
     A -->|"2. ACK 到达| B[accept 队列<br/>完整连接<br/>等 accept()]
-    B -->|"3. accept()| S[应用<br/>连接的底部 socket]
+    B -->|"3. accept()| S[应用<br/>取得已建立连接]
     A -.容量不够丢包.-> C
 ```
 
@@ -82,38 +82,26 @@ LISTEN 2    4096  0.0.0.0:443    ...
 3. **应用侧加速 accept**：线程池容量、非阻塞事件循环、避免把 IO 放进 accept 路径。
 4. **接受不了就**：`net.ipv4.tcp_abort_on_overflow=1` 把溢出直接 RST，让客户端**立刻知道失败**而不是卡在超时（只在服务无法接管时才建议）。
 
-## 五、可复现实验（本机、30 秒）
+## 五、可复现实验：让脚本证明“未 accept 就会排队”
 
-起一个 backlog=1 的服务端（不调用 accept）：
+实验脚本 `experiments/tcp-syn-backlog/probe.py` 起一个不调用 `accept()` 的监听 socket，让多个客户端同时完成 `connect()`，并在所有客户端结束前保持成功连接打开，减少“客户端过早关闭”造成的调度噪声：
 
-```python
-import socket
-s = socket.socket()
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(("127.0.0.1", 18923))
-s.listen(1)
-import time; time.sleep(30)
+```bash
+python3 experiments/tcp-syn-backlog/probe.py \
+  --backlog 2 --clients 6 --timeout 0.5 --hold 1.0
 ```
 
-同一秒内从 6 个线程同时 connect：
-
-```python
-import socket, threading
-for i in range(6):
-    threading.Thread(target=lambda: (
-        socket.create_connection(("127.0.0.1", 18923), timeout=0.5) or None)).start()
-```
-
-本机实测输出（macOS，backlog=2，6 客户端并发、0.5s 超时）：
+本次运行环境是 Darwin 25.5.0、Python 3.14.5，输出为：
 
 ```text
-ESTABLISHED: 2 个
-TimeoutError: 4 个
+platform=Darwin 25.5.0 python=3.14.5
+backlog=2 clients=6 timeout_s=0.5 hold_s=1.0
+connected=2 timeout=4 errors=0
 ```
 
-**结论**：backlog=2 时 accept 队列只容 2 个，并发 6 个只有 2 个成功，其余超时。把阻塞的 `accept()` 还回去（做个空循环 `s.accept()`），全部成功——同一个 listen 端口，差别只在队列排空的速度。
+**这次运行支持的结论**：在该 OS、该 backlog、该客户端超时和该调度条件下，监听 socket 不调用 `accept()` 时，6 个并发连接中 2 个完成、4 个超时；把队列排空，结果会改变。它不支持“所有系统 backlog=2 都只能容纳 2 个连接”，因为 backlog 语义、SYN cookies、回环实现和客户端关闭时序都可能不同。
 
-> 复现提示:先用 `python3 backlog_probe.py` 起服务（上文代码即该脚本），再改 Python 客户端代码用 6 线程并发。上述耗时结果就是我实测 backlog 脚本的输出（2 个 ESTABLISHED、4 个 TimeoutError）。
+Linux 上可另开终端观察 `ss -lnt` 的 Recv-Q/Send-Q 和内核统计；不要把 Darwin probe 的输出冒充 Linux SYN 队列容量。原始输出与环境记录在 `evidence/tcp-syn-queue-backlog/2026-08-17-local/`。
 
 ## 六、除了队列还要注意什么
 
@@ -131,8 +119,8 @@ TCP 连接质量的方程**就是队列的排队问题**：SYN 队列管半连�
 ## 八、下一步：用 backlog 与 accept 速度复现队列溢出
 
 ```bash
-# 复现：起服务（不 accept），再 6 线程并发 connect，观察超时数
-python3 backlog_probe.py
+# 复现本机观察（不 accept），再 6 线程并发 connect，观察超时数
+python3 experiments/tcp-syn-backlog/probe.py --backlog 2 --clients 6 --timeout 0.5 --hold 1.0
 # Linux 上同时观察队列填充：
 ss -lnt        # Recv-Q = accept 队列当前量，Send-Q = 上限
 netstat -s | grep -i "SYNs to LISTEN"

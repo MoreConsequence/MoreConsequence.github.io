@@ -2,7 +2,7 @@
 title: "先定义 SLO，再写监控：进程内 p99 不是生产承诺"
 description: "用订单服务的零依赖 Metrics 说明 SLI、SLO 与探活的边界：成功、404、400、500 都进入按操作/结果分组的延迟样本，但 app.request() 只证明 handler 微基准，不能证明月度可用性或生产 API p99。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["可观测性", "SLO", "监控", "指标"]
 draft: false
 featured: false
@@ -83,6 +83,8 @@ store throw   -> 500 -> orders_get.error
 - 原始 stdout、stderr 和从原始数据生成表格的脚本。
 
 当前仓库没有这些生产证据，所以本文的合法说法是“handler 级指标原型”。`p99 < 100ms` 可以作为候选 SLO，不能从一轮 `app.request()` 自动变成已达成的用户承诺。
+
+当前本机指标 raw、环境和命令保存在 `evidence/service-observability-slo/2026-08-16-local/`；其中 JSON 只证明进程内 middleware 的分桶形状，不证明真实端口或月度 SLO。
 
 ## 五、结论：指标先闭合，SLO 再接受生产检验
 

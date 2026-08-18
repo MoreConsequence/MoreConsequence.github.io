@@ -18,7 +18,7 @@ WHERE n.nspname = 'bloat_demo' AND c.relname = 'orders';
 
 -- 清理后：死元组比例归零
 SELECT dead_tuple_count,
-       round(dead_tuple_percent, 1) AS dead_tuple_percent
+       round(dead_tuple_percent::numeric, 1) AS dead_tuple_percent
 FROM pgstattuple('bloat_demo.orders');
 
 -- 清理后：统计视图里的死元组归零

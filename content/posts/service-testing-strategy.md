@@ -2,7 +2,7 @@
 title: "测试值多少钱：先把并发反例写进断言"
 description: "订单服务当前 checkout 的独立验证：3 个文件、18 个测试在 Node 24.19.0 通过；覆盖率为 80% statements、71.62% branches、81.48% lines。测试重点从旧的顺序幂等升级为 100 并发同 key、不同 payload 冲突、404/400/500 指标路径和容量不变量。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["测试", "vitest", "金字塔", "替身"]
 draft: false
 featured: false
@@ -90,6 +90,8 @@ Lines       81.48%   (110/135)
 ```
 
 这些数字随依赖、机器和源码变化；原文旧的 11 tests、83.67% statements 和 90% branches 属于另一份代码状态，当前 checkout 不再复现，不能继续放在正文。覆盖率报告也只覆盖 service 的 3 个源文件，根目录 `tsconfig.json` 和 ESLint 明确排除 `experiments`。
+
+本次覆盖率命令、Node/依赖版本和原始输出保存在 `evidence/service-testing-strategy/2026-08-16-local/`；它是本机 evidence snapshot，不是 Actions 矩阵或生产测试报告。
 
 ## 五、哪些信任仍然没有买到
 

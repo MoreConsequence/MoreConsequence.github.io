@@ -1,15 +1,15 @@
 ---
 title: "死锁不是靠重试：wait-for graph 与间隙锁"
-description: "死锁是确定性事件不是概率事件：事务排队一旦成环，InnoDB 的 wait-for graph 检测器就能看见。拆开锁排队模型、检测器与 innodb_lock_wait_timeout 的分工、以及 RR 下间隙锁怎么制造'幻读型死锁'，并给出双会话复现。"
+description: "死锁是锁等待图成环后的确定性结果：InnoDB 检测器负责尽快破环，innodb_lock_wait_timeout 只是单锁等待的兜底。本文区分普通一致性读、锁定读、UPDATE/INSERT 的间隙锁，给出双会话复现与重试边界。"
 publishedAt: "2026-08-06"
-updatedAt: "2026-08-06"
+updatedAt: "2026-08-17"
 tags: ["MySQL", "数据库", "事务", "并发"]
 draft: false
 featured: false
 series: "数据库原理手记"
 ---
 
-**TL;DR：** 死锁不是"偶尔撞上的运气"，是**锁等待关系成环**的确定性后果——只要两个事务各持有一把对方要的锁，死锁必然发生。MySQL 用** wait-for graph（等待图）**主动检测，发现环就立刻回滚"回滚代价最小"的那个事务（报 `ER_LOCK_DEADLOCK`），所以业务重试并不需要碰运气——死锁重试是"算法承诺它会尽快破坏环"，不是赌概率。难点在 RR 隔离级别下：**间隙锁（gap lock）让只读语句也参与锁与死锁**，死锁不再只出现在"写写冲突"上。本文拆开锁模型与两个真实复现。
+**TL;DR：** 死锁不是“偶尔撞上的运气”，是**锁等待关系成环**的确定性后果——只要两个事务各持有一把对方要的锁，当前调度下就无法推进。MySQL 用 wait-for graph 主动检测，发现环就回滚一个受害事务并返回 `ER_LOCK_DEADLOCK`；`innodb_lock_wait_timeout` 处理的是单笔锁等待超时，不是死锁检测器。RR 下的 next-key/gap lock 会让范围写入和插入意图锁进入等待图，但普通一致性读、锁定读和写语句的锁语义不能混为一谈。本文拆开锁模型与两个双会话复现。
 
 ## 一、死锁的物理真相：等待图里出现环
 
@@ -35,11 +35,11 @@ MySQL 对付环有两条防线：
 
 受害者选择不是随机：InnoDB 倾向于回滚**已修改行更少**的事务（估算回滚成本）。因此"短事务 + 每行一次 UPDATE"的写法，比"长事务 + 批量更新"更不易被牺牲——这正是"让事务短"的工程核点之一。
 
-## 三、间隙锁：为什么只读也会死锁
+## 三、间隙锁：为什么范围写入会把插入也拉进等待图
 
-MVCC（见上一篇）把"读"从锁里解放了，但 **`UPDATE ... WHERE` 与 `INSERT` 在 RR 下却需要间隙锁**。间隙锁锁的是"索引上两个值之间的空隙"，防止其他事务向区间内插入。于是这个本来是"防幻读"的机制，**变成了锁的参与者**：
+MVCC（见上一篇）让普通一致性读可以从快照读历史版本，但 **`UPDATE ... WHERE`、`DELETE ... WHERE`、`SELECT ... FOR UPDATE` 与 `INSERT` 在 RR 下可能进入 next-key/gap lock 语义**。间隙锁锁的是“索引上两个值之间的空隙”，防止其他事务向区间内插入。于是范围修改和插入意图锁会一起进入等待图；这不是“所有只读 SELECT 都加 gap lock”。
 
-**典型的"幻读型死锁"**
+**典型的“范围锁型死锁”**
 
 ```sql
 -- SESSION 1
@@ -66,14 +66,26 @@ INSERT INTO t VALUES(6);                         -- 等 S1 的 gap lock → 环�
 -- 结果: ERROR 1213 (40001): Deadlock found
 ```
 
-结果：`ERROR 1213 (40001): Deadlock found`。这里的重点是 **S1 最后一条语句几乎没用到行锁，但间隙锁 + 插入意图锁插队，环照样生成**。读"只读" SQL 在 RR 下锁范围不是行而是区间，这正是 `SELECT` 也能成为死锁参与者的原因。
+结果：`ERROR 1213 (40001): Deadlock found`。这里的重点是 **S1/S2 的范围修改先持有了不同区间的 next-key/gap lock，后续 INSERT 再通过插入意图锁互相等待**。如果把语句换成普通一致性 `SELECT`，它通常读取快照而不按这个路径持有 gap lock；如果是 `SELECT ... FOR UPDATE`，则又回到锁定读语义，必须按索引和隔离级别重新分析。
 
 ## 四、复现与救援站：把死锁训练出来
 
 最可靠的学习方式，是让死锁在可控环境里发生两次：
 
 ```bash
-# 打开 deadlock 监测
+# 在 disposable MySQL 8.0/InnoDB 实例中先准备表；本文没有保存该实例的 raw。
+mysql <<'SQL'
+CREATE DATABASE IF NOT EXISTS deadlock_lab;
+USE deadlock_lab;
+CREATE TABLE IF NOT EXISTS employees (
+  id INT PRIMARY KEY,
+  salary INT NOT NULL
+) ENGINE=InnoDB;
+INSERT INTO employees (id, salary) VALUES (1, 1000), (2, 2000)
+  ON DUPLICATE KEY UPDATE salary = VALUES(salary);
+SQL
+
+# 打开 deadlock 监测（只影响后续测试实例）
 SET GLOBAL innodb_lock_wait_timeout = 5;   # 先调小，便于观察兜底路径
 
 # 会话 1                                # 会话 2
@@ -86,7 +98,7 @@ UPDATE employees SET salary=5000 WHERE id=2;  -- 等 2 的锁
                                          # ERROR 1213 Deadlock 出现在其中一个会话
 ```
 
-观测工具：`SHOW ENGINE INNODB STATUS` 的输出里 `LATEST DEADLOCK DETECTION` 段落会打印**死锁时的完整版本**：两个事务各持哪些锁（在 authorized 列表）、等待哪把、哪一个是 victim。把这段日志留下来，它就是"死锁不是运气"的最强证据。
+观测工具：`SHOW ENGINE INNODB STATUS` 的 `LATEST DETECTED DEADLOCK` 段落会打印死锁时的事务、持有/等待的锁以及被回滚的 victim。把这段输出和两会话的 SQL、索引定义、隔离级别一起留下来，才足以解释“环在哪里形成”。
 
 ```mermaid
 flowchart LR
@@ -104,7 +116,7 @@ flowchart LR
 3. **能 `SELECT ... FOR UPDATE` 一次锁够就锁够**，避免先查后改造成"两次锁窗口"。
 4. **接受死锁并把它设计成可重试短事务**。既然检测器保证"总有一个被回滚"，短事务重试的成本就是最小化了的——**不是靠运气，是接受算法**与它做朋友。
 
-## 结论：死锁先画等待图，再谈重试
+## 六、结论：先画等待图，再谈重试
 
 死锁 = 锁等待图成环，是并发写顺序决定的**确定性事件**。InnoDB 用 wait-for graph 检测器保证"环必被打破"（回滚一个），超时只是兜底。RR 下间隙锁让只读范围查询也能成为锁参与者，所以**死锁排查不只在写写冲突里**。工程上的解法从来不是写更长超时，而是固定锁顺序 + 短事务 + 优雅重试。
 

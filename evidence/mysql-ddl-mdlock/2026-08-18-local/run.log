@@ -1,0 +1,13 @@
+# mysql-ddl:2026-08-18 本机复现
+机器: Apple Silicon(M1 Pro), macOS, OrbStack docker, mysql:8.0 镜像(8.0.46)
+复现方式: experiments/mysql-ddl/run_all.sh 自动化三会话时序(A 长事务→B ALTER→C 观察)
+
+## 结果
+- 01_setup: 20 万行表建好
+- 会话 B 的 ALTER(lock_wait_timeout=20): ERROR 1205 (HY000) Lock wait timeout exceeded
+- 会话 C 观察(04_watch.out):
+  - processlist: ALTER 处于 "Waiting for table metadata lock"
+  - metadata_locks: big_table SHARED_READ GRANTED(会话 A) + SHARED_UPGRADABLE GRANTED(ALTER 执行期) + EXCLUSIVE PENDING(提交切换升级被挡)
+- 负对照(03_negative.out): A 事务结束后同一条 ALTER 1 秒成功
+- 05_algorithm_compare: 8.0.46 上 INSTANT/INPLACE/COPY 三条 ALTER 全成功;
+  表 198900 行, DATA_LENGTH=21544960, INDEX_LENGTH=17858560

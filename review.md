@@ -990,11 +990,560 @@ evidence/<slug>/<run-date>/
 | `experiments/service/docs/adr/0001-framework.md` | 删除没有 raw/commit 的吞吐、冷启动和依赖体积数字；补状态、背景、错误合同、选项矩阵、正负后果、证据清单和推翻条件 | `evidence/service-design-adr/2026-08-17-local/`；只保留 Node 24 本地 typecheck/build、18 tests、错误/幂等测试证据；不证明框架性能或生产兼容 |
 | `service-design-adr` | 增加 Hono/Fastify/裸 `node:http` 的语义矩阵、Agent 错误传播时序图、ADR 判断 → 代码/测试/后续实验映射表 | 选型理由落到 `src/app.ts`、`src/app.test.ts`、`src/store.ts`；未取得性能 raw 仍明确不写性能排名 |
 | `service-ci-cd` | 增加 `paths` 触发边界、job → 证明/不能证明矩阵、五层发布证据梯度和 artifact/Actions/staging/production 区分 | `evidence/service-ci-cd/2026-08-17-local/`；当前 workflow 只有本地可验证配置；没有真实 Actions run、artifact digest、staging URL 或部署/回滚记录 |
+| `connection-pool-math-timeout` | 补回固定 seed 的标准库离散事件模拟；修正“λW×P99”和“λW×2.5 通用甜点位”的过强表述；把失败率、排队 P99 和模型边界绑定到 raw | `experiments/connection-pool-sim/sim.py`、`evidence/connection-pool-math-timeout/2026-08-17-local/`；不证明真实数据库/驱动/连接池性能 |
+| `btree-page-split-write-amplification` | 删除死命令和未绑定的 InnoDB 精确数字；改为固定 seed 的叶页分裂模型，补 4/8/16KB 表、16KB 账本和真实写放大边界 | `experiments/btree-page-split/sim.py`、`evidence/btree-page-split-write-amplification/2026-08-17-local/`；只证明教学模型的填充率/总页数差异，不证明 InnoDB 磁盘写放大、吞吐或延迟 |
 
 ### 22.2 逐篇终审的当前结论
 
 - 当前 production 文章中，正文最短的两篇不再只靠增加字数掩盖缺口：`service-design-adr` 约 4.3k 字符，`service-ci-cd` 约 4.7k 字符，并且每篇都有信息型章节、表格、Mermaid 或代码、参考资料和明确证据边界。
 - `service-design-adr` 的博客正文、ADR 源工件和服务测试现在对“没有性能证据”使用同一口径；不存在文章说没有 raw、artifact 却继续声称实测数字的冲突。
 - “CI 通过”“artifact 存在”“staging 可回显”“production 可回滚”继续作为四个不同命题，不能由同一个绿色 job 代替。
+- `connection-pool-math-timeout` 现在有可运行的固定 seed 模拟；文章只保留排队模型结论，明确不把它命名为 MySQL/HikariCP benchmark。
+- `btree-page-split-write-amplification` 现在有可运行的固定 seed 叶页模型；文章把“+43.5%”收窄为模型内总页数差异，明确没有模拟记录格式、buffer pool、redo/undo、fsync、并发、删除更新和真实设备。
+- `tcp-syn-queue-backlog` 删除了无法成立的 `backlog_probe.py`/未 join 客户端代码，改用保持成功 socket 的 probe；Darwin 本机输出为 2 个连接成功、4 个超时，并明确不外推 Linux 队列容量。
+- `tcp-nagle-delayed-ack` 删除当前 checkout 无法追溯的 118.6ms、1.5ms 和 79 倍抓包数字，改用固定参数时序模型；`tcp-retransmit-timeout-rto` 同样把缺失的 `tc netem` 时间线改成 RFC 6298 风格退避模型。
+
+### 22.3 本轮底层与协议文章的证据边界
+
+| 文章 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `tcp-syn-queue-backlog` | 把死命令替换为并发 probe，记录成功连接保持时间，并区分 Darwin 观察与 Linux `ss`/内核计数器 | `experiments/tcp-syn-backlog/probe.py`、`evidence/tcp-syn-queue-backlog/2026-08-17-local/`；没有 Linux SYN-cookie/内核版本/抓包证据 |
+| `tcp-nagle-delayed-ack` | 删除不可追溯的 Docker/netem 精确数字；增加 RTT + delayed-ACK 的确定性时序模型，收窄 40ms 为教学参数 | `experiments/tcp-nagle-timeline/sim.py`、`evidence/tcp-nagle-delayed-ack/2026-08-17-local/`；不证明任意 Linux、网络或语言框架的实际延迟 |
+| `tcp-retransmit-timeout-rto` | 删除未保存的 `tc netem`/tcpdump 输出；用固定 SRTT/RTTVAR 模型展示超时退避、Karn 样本丢弃与快速重传分工 | `experiments/tcp-rto-timeline/sim.py`、`evidence/tcp-retransmit-timeout-rto/2026-08-17-local/`；不证明 Linux RTO 默认值、拥塞窗口或 SACK 抓包行为 |
+| `epoll-c10k-c10m` | 删除缺少服务端/容器/raw 的 `wrk` 吞吐、延迟和 CPU 数字；修正 `O(N)` 总成本的过度简化，改为全量扫描与就绪事件计数模型 | `experiments/epoll-readiness-model/sim.py`、`evidence/epoll-c10k-c10m/2026-08-17-local/`；只证明复杂度方向，不证明 Linux 内核吞吐、延迟或 perf 热点 |
+| `go-goroutine-leak-pprof` | 删除无法追溯的 3531/2MB/0% profile 样张；新增固定 3×300 阻塞形状 probe，保留 heap/stack 作为辅助账，按 goroutine profile 分组和源码行定位 | `experiments/go-goroutine-leak-pprof/main.go`、`evidence/go-goroutine-leak-pprof/2026-08-17-local/`；不证明生产 goroutine 内存固定、heap 差值为零或线上 profile 形状 |
+| `go-memory-leak-pprof` | 删除 0.25GB→1.99GB 和 `cd leakdemo` 死命令；用 32×64KiB 保留缓冲 + 100 个阻塞 goroutine 的两帧指标 probe，修正默认 heap 采样表述 | `experiments/go-memory-leak-pprof/main.go`、`evidence/go-memory-leak-pprof/2026-08-17-local/`；只证明受控输入下的 HeapAlloc/对象数/goroutine 差，不证明线上泄漏速度或 RSS 恢复 |
+| `go-scheduler-gmp-preemption` | 删除未绑定的 441ns/171ns、schedtrace 样张和“10ms 最坏延迟”承诺；新增独立 benchmark，区分稳态操作成本与 runtime 抢占阈值 | `experiments/go-scheduler-boundary/bench_test.go`、`evidence/go-scheduler-gmp-preemption/2026-08-17-local/`；不证明业务请求 p99、最坏等待或跨机器性能 |
+| `go-mallocgc-allocator` | 删除未绑定的多档分配/并发数字与“单一全局锁”归因；新增固定 byte-slice size/RunParallel benchmark，补 sink、输入和对象池决策边界 | `experiments/go-mallocgc-boundary/bench_test.go`、`evidence/go-mallocgc-allocator/2026-08-17-local/`；不证明所有对象形状、size class、GC 或 pool 的普遍性能 |
+| `typescript-llm-tool-loop` | 把 `Math.random()` 与“真实输出”冲突改为固定 LCG seed；同步生成 JS、更新 timeout 竞态输出并补 typecheck/demo 入口 | `experiments/ts-agent/main.ts`、`evidence/typescript-llm-tool-loop/2026-08-17-local/`；只证明模拟管线可重放，不证明真实模型成功率、外部延迟、取消传播或写工具幂等 |
+| `js-async-await-promise-timing` | 删除“await 与 then 各恰好一个微任务”和未绑定的 243/21/101ms 断言；保留可观察微任务顺序、thenable 交接、未处理 rejection 子进程断言，并把串行/并行改为固定输入的关键路径 | `experiments/js-async-promise-timing/`、`evidence/js-async-await-promise-timing/2026-08-17-local/`；只证明当前 Node smoke 的顺序和退出行为，不证明浏览器差异、内部 Job 数或网络 I/O 延迟 |
+| `typescript-toolchain-rules` | 删除旧 zod 3.x、24 个直接依赖、tsc/esbuild 单次耗时和 2000 模块样张；绑定当前仓库 Node/npm/TS/esbuild/zod、17/7 依赖计数与 npm 布局快照，补 tsc/esbuild 分工命令 | `experiments/ts-toolchain-boundary/inspect.mjs`、`evidence/typescript-toolchain-rules/2026-08-17-local/`；没有 pnpm 安装、跨项目速度排名或历史依赖漂移 raw |
+| `http-cache-control-etag` | 删除 5MB/200B 和“服务端 100% 应输出协商缓存”的泛化；补 origin 200/304 probe、`curl -I` 与 GET 差异、`public/private/s-maxage/Vary`、hash 资源/HTML/私有 API 决策矩阵 | `experiments/http-cache-contract/probe.mjs`、`evidence/http-cache-control-etag/2026-08-17-local/`；只证明当前 Node origin 的协议响应，不证明浏览器缓存、CDN 命中或网络延迟 |
+| `distributed-id-snowflake-segment` | 把“唯一/有序/中心化/时钟容错三选一”扩成位预算、同毫秒耗尽、号段原子预留、空洞、隐私和故障矩阵；修正跨节点严格单调与 400 万吞吐表述 | `experiments/snowflake/main.go`、`evidence/distributed-id-snowflake-segment/2026-08-17-local/`；只验证教学实现的小回拨等待/超阈值拒绝，不证明并发 worker 注册、数据库原子性或跨区域排序 |
+| `covering-index-avoid-back-to-table` | 删除固定 1–5ms 回表数字和“Using index 最优/Using filesort 最差”的二元判断；补 ICP、MVCC、低选择性、排序、锁、写放大和 EXPLAIN/实际行数验收矩阵 | 当前为规范/计划语义文章，没有可用 MySQL raw；不把示例 EXPLAIN 当本机 benchmark |
+| `go-sync-pool-design` | 增加对象重置、别名所有权、外部资源关闭、容量上限和敏感数据清零边界，补可编译 `bytes.Buffer` 使用示例 | `evidence/go-runtime-boundary/2026-08-16-local/raw/errors-interface-pool-map.txt`；数字仍是本机热命中/直接分配基线，不证明 GC 后成本或生产服务收益 |
+| `http2-head-of-line-blocking` | 删除固定丢包率/全连接 1 RTT/“慢流吸干连接窗口”的过度简化；补确定性 h2/h3 丢包影响模型，区分每流窗口、连接窗口和拥塞控制 | `experiments/http2-hol-model/sim.py`、`evidence/http2-head-of-line-blocking/2026-08-17-local/`；不证明真实 h2/h3 栈、网络 p99、TLS 或拥塞控制收益 |
+| `socket-backpressure-slow-consumer` | 删除跨平台 `SO_RCVBUF` 默认值、固定每连接 OOM 算式和“单张 `ss` 快照即可定位源头”的过度结论；补 `Recv-Q`/`Send-Q`/`rwnd`/应用队列分层、容量预算、部分写入与 `EAGAIN` 语义、连接生命周期策略 | 当前为 Linux 手册约束下的语义文章；示例 `ss` 输出是教学化简，没有本机 Linux `ss` raw，也不证明某个生产服务的 RSS、对端队列或 SLO |
+| `mesi-cache-coherence-false-sharing` | 删除跨 CPU 的 64B/延迟/2–5 倍固定断言和“广播”实现细节；补带 offset 断言的 packed/padded 原子计数对照、7 次中位数、真实共享/数组邻接/分片与 padding 取舍 | `experiments/mesi-false-sharing/main.go`、`evidence/mesi-cache-coherence-false-sharing/2026-08-17-local/`；当前只证明 Darwin arm64 一次 workload 对照，不证明 PMU cache 事件、跨架构倍数或生产收益 |
+| `go-defer-panic-cost` | 修正 panic/recover 在标题、正文和决策表之间的 67/74/50 倍数字漂移；把深度展开成本改成不外推固定每层常数 | 沿用 `evidence/go-runtime-boundary/2026-08-16-local/raw/closure-defer-panic.txt`；本轮只修正文数字链，不新增 benchmark，不证明其他 Go 版本或架构 |
+| `go-interface-boxing` | 补可编译 typed-nil 示例、方法集边界和接口合同；把“泛型是终极解/无 itab”改为需按同语义 benchmark 验证的候选路径 | `experiments/go-interface-contract/main.go`、`evidence/go-interface-boxing/2026-08-17-local/` 加上既有 runtime benchmark raw；仍只证明 typed-nil 语义和当前短方法/装箱输入，不证明所有接口实现或泛型实例化路径 |
+| `go-benchmark-pitfalls` | 删除当前 checkout 无 raw 的 0.79/12.8/48B/1024kB/12.9s 样张；把 `alloc_space` 的“512B 粒度”修正为 `MemProfileRate` 平均采样间隔与加权估计，保留 `-benchmem`、`-gcflags=-m`、`-benchtime` 和 `b.N` 的检查清单 | `experiments/go-runtime-boundary/bench_test.go`、`evidence/go-runtime-boundary/2026-08-16-local/`；只绑定当前统一 Go benchmark，不伪造旧失败样张，也不证明 profile 字节数等于单次分配 |
+| `k8s-controller-watch-etcd` | 删除“单一写入者 + 无限订阅者”、每个 watcher 直连 etcd、RV 全局递增和 `resourceVersion=0` 从 revision 0 重放等过度简化；补对象/集合 RV、watch cache、list/watch 恢复、`resourceVersionMatch`、bookmark 与 streaming list 边界 | 当前依据 Kubernetes API Concepts 与 client-go/apiserver 源码链接的语义文章；没有目标集群 list/watch/410 raw，不把 watch-cache 保留时长或线性一致 p99 写成实测结论 |
+| `mysql-redo-undo-binlog` | 修正 change buffer/三日志同时刷盘/恢复只看 XID 的简化；补 2PC prepare→binlog→commit、`innodb_flush_log_at_trx_commit`、`sync_binlog`、undo/redo/binlog 职责和进程 crash 与断电边界 | 当前依据 MySQL 8.0 官方手册的协议文章，没有锁定版本/实例、crash raw、error log、binlog 尾部或恢复耗时；不把示意时序写成已在线验证 |
+| `database-deadlock-wait-graph` | 修正“普通只读也会因 gap lock 死锁”的混淆；区分一致性读、锁定读、范围写入和插入意图锁，补 disposable InnoDB 建表前提与 `LATEST DETECTED DEADLOCK` 观测边界 | 当前为 MySQL 官方锁语义与双会话命令文章，没有目标版本的真实死锁 raw、锁表快照或 victim 选择实验；不把 `innodb_lock_wait_timeout` 当死锁检测器 |
+| `raft-consensus-term-log-replication` | 删除“follower 始终是 leader 前缀”“leader 只有一条永不分叉的线”和固定 election timeout 观察；补未提交后缀覆盖、当前 term 提交规则、ReadIndex/lease read 与 disposable etcd raw 边界 | 当前为 Raft 论文与 etcd 文档驱动的协议文章，没有本机 etcd 分区、WAL、leader/term 或恢复时间 raw；不把多数派模型写成生产可用性证据 |
+| `exactly-once-message-delivery` | 把“exactly-once 不存在”改为按投递、Kafka 内部事务和外部副作用分层；修正 producer 幂等重启边界、`auto.offset.reset` 与 offset 提交时机混淆，补 inbox/outbox/HTTP 未知结果矩阵 | 当前为 Kafka 官方 EOS 语义与业务幂等模型文章，没有 broker/DB/外部 API crash raw；不把 Kafka 内部事务扩写成跨系统 exactly-once effect |
+| `dns-ttl-negative-cache` | 删除“每跳重置 TTL/收敛时间相加”、默认 `dig` 命中本机缓存和负 TTL 固定上限/推荐值；补权威/递归/本地路径、serve-stale/prefetch、NXDOMAIN/NODATA 与 RFC 2308 的观察边界 | 当前为 RFC 2308/1035 与 resolver 文档驱动的语义文章；示例 `dig` 输出不是本机 raw，不证明某个域名的全球收敛时间或云 DNS 策略 |
+| `quic-http3-connection-migration` | 删除“HTTP/2 HOL 没解决”“0-RTT 只限 GET”“CID 固定 8 字节/迁移免费”“tcpdump 可直接看 Stream ID/0-RTT”断言；补流级/连接级边界、replay-safe 合同、路径验证、CID/LB 和 qlog/key-log 证据要求 | 当前为 RFC 9000/9001/9114 语义文章，没有 curl/tcpdump/qlog/0-RTT/迁移 raw；不证明公网丢包收益、CDN 默认支持或固定 RTT/丢包倍数 |
+| `redis-as-mq-consume-groups` | 修正 `XACK` 不删除 Stream entry、PEL 只记录消费组未确认状态、历史回读受保留/裁剪约束和 Pub/Sub 不持久化；删除 AOF everysec“硬丢 1 秒”、RDB 固定默认值和 Redis/Kafka 吞吐泛化，补消费组初始化、断电/异步复制/淘汰边界与 Streams/Kafka 语义矩阵 | 当前为 Redis 官方 Streams、Pub/Sub、持久化文档驱动的协议文章；没有目标 Redis 版本的断电、主从切换、`XAUTOCLAIM` 和 `XRANGE` raw，不把 `appendfsync` 配置名升格为可靠性 SLA |
+| `buffer-pool-lru-dirty-pages` | 绑定 MySQL 8.4 语义，修正 `innodb_io_capacity` 单位与默认值、脏页目标/低水位、redo 75% 异步刷盘与 sharp checkpoint 的边界；删除未保存的 Docker 输出和固定行/页写放大，改为候选实验与单变量验证协议 | 当前依据 MySQL 8.4 官方 Buffer Pool、flushing、I/O capacity 和系统变量文档；没有固定镜像 digest、设备、重复轮次或 MySQL raw，不把配置默认值写成所有发行版/版本的生产建议 |
+| `lsm-vs-btree-io-amplification` | 删除无 raw 的 RocksDB `db_bench` 3–10x/1–5x、HDD/NVMe 比例和树高=磁盘 I/O 等泛化；改用仓库 `mini-lsm` 固定输入 sweep，明确写/读/空间放大分母、Leveled/Size-Tiered 取舍和模型边界，补事务/删除/恢复评审矩阵 | `experiments/mini-lsm/`、`evidence/mini-lsm-write-amplification/2026-08-16-local/`；只证明内存教学模型的放大方向，不证明 RocksDB、SSD、压缩、并发 compaction、WAL fsync 或生产 p99 |
+| `fsync-group-commit` | 修正 `dd` 未调用 `fdatasync` 却给出同步输出的反例；把字面 `fsync` 改为平台同步边界，删除未保存的设备毫秒表和 `pg_test_fsync` 样张，补 `synchronous_commit=off` 的 `3 × wal_writer_delay` 风险窗口、MySQL 三阶段组提交与 SQL 命令边界 | 当前依据 PostgreSQL 18 WAL/async commit/reliability、Linux `fsync(2)` 与 MySQL 8.4 group commit 文档；没有本机 Linux/PG/MySQL/设备 raw，不把模型吞吐或同步配置写成通用 SLO |
+| `redis-persistence-rdb-aof` | 修正 RDB save 默认点、AOF `everysec`/`no` 固定丢失秒数和“kill -9 能证明断电窗口”的过度承诺；区分进程崩溃、主机/设备断电、复制和备份，保留草稿状态与实验入口 | 当前为 Redis 官方持久化/redis.conf/延迟文档驱动的草稿；没有目标 Redis 版本、设备断电、主从切换、bench/crash raw，不把同步策略名升格为硬 SLO |
+| `llm-kv-cache-memory-budget` | 修正十进制 GB 与二进制 GiB 混算导致的 40/20/5、11/5/1 并发数字；更新计算器、README 和 raw 为 37/18/4、10/5/1，并区分公开 config 的理想内存上界与 vLLM/GPU/SLO 证据 | `experiments/llm-kv/kv_cache_budget.py`、`evidence/llm-kv-cache-memory-budget/2026-08-17-local/`；只证明公式和单位转换，不证明 GPU 分配、KV 量化质量或真实 serving 并发 |
+| `vector-index-hnsw-ivf-pq` | 修正“ANN 只有三条路/召回时延内存只能三选二”、HNSW 每层 `M`、IVF `1/nlist`、HNSW 1.25x 和 IVF-PQ 16B 作为完整索引大小等过度简化；改为 payload 下界、数据分布前提和真实 embedding 补测门槛，保留草稿 | 当前为 HNSW/FAISS/PQ 论文与仓库合成数据脚本驱动的草稿；没有真实 embedding、运行环境/依赖版本、QPS/recall/索引大小 raw，不写生产规模或性能排名 |
+| `llm-tool-calling-contract` | 把 0%/100%/token 数明确降级为确定性启发式模拟；修正“5xx 永远重试、4xx 永远修正”，增加 retryable、Retry-After、幂等键、未知结果和副作用边界矩阵，并补 Agent→API→查询/重试流程图 | `experiments/llm-tool-calling-contract/simulate.mjs`、`evidence/llm-tool-calling-contract/2026-08-16-local/`；只证明脚本控制流，不证明真实模型按相同错误码成功或真实 token 成本 |
+| `llm-sampling-reproducibility` | 把 T=0、top-p 和 seed 的结论绑定到本地 logits 模拟；删除 provider 无条件“二选一/确定性”语气，补模型版本、tokenizer、system prompt、工具 schema、fingerprint 与差异容忍度的复现清单 | `experiments/llm-sampling-reproducibility/sampling_math.py`、`evidence/llm-sampling-reproducibility/2026-08-16-local/`；只证明固定 logits 与本地 RNG，不证明供应商跨版本或跨硬件确定性 |
+| `go-closure-escape` | 区分无捕获函数字面量与真正闭包；修正“每个 escapes 都是分配点”、把 0.6669→12.47ns 差异单归因于逃逸、以及捕获大对象默认改指针的建议，补捕获/存活/调用边界矩阵 | `experiments/go-runtime-boundary/bench_test.go`、`evidence/go-runtime-boundary/2026-08-16-local/raw/closure-defer-panic.txt`；只绑定 Go 1.25.1/Darwin arm64 当前快照，不提供通用闭包常数 |
+| `go-append-slice-growth` | 修复 100 万元素“41 次/4.9 倍”与 Go 1.25.1 实际增长不一致的问题；新增真实 append 容量 probe，改为 36 次、3.934677 倍，并区分累计搬运、B/op、allocator 和预分配 benchmark | `experiments/go-runtime-boundary/cmd/slice-growth/main.go`、`evidence/go-append-slice-growth/2026-08-17-local/`；只证明 Go 1.25.1/Darwin arm64 的 `[]int` 输入，不证明其他版本、元素类型或服务延迟 |
+| `go-errors-is-unwrap-cost` | 修正正文残留的 39.53ns 与表格/raw 的 38.05ns 漂移；补 0/1/3/10 层同一 benchmark 的线性观察边界，保留 `errors.As` 未测和 `%w`/Join 语义取舍 | `evidence/go-runtime-boundary/2026-08-16-local/raw/errors-interface-pool-map.txt`；只绑定 Go 1.25.1/Darwin arm64 当前错误形状，不证明所有错误类型或生产尾延迟 |
+| `go-atomic-vs-mutex` | 修正 runtime semaphore 与 futex 的跨平台混淆；删除不在当前 raw 的 7.2/14.8/81.2/213/121ns 和“超过 8 线程”阈值，保留 2/4/8/16 worker 的 Darwin contention 形状与 atomic/Mutex 语义边界 | `evidence/go-runtime-boundary/2026-08-16-local/raw/contention.txt`；只证明当前短临界区和 Darwin arm64，不证明 Linux futex、其他架构或通用 worker 阈值 |
 
 本节不把 service 系列标成生产闭环。真实 PostgreSQL、多实例幂等、GitHub Actions run、staging/deploy、生产 SLI/SLO 和真实回滚证据仍按第 16 节保持未完成。
+
+### 22.4 当前验证
+
+| 命令/检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 篇源文件，`Issues: {}` |
+| `npm run verify:experiments` | 通过；service、Go runtime/pprof/benchmark（含 slice-growth、false-sharing 布局/计时与 typed-nil smoke）、Python 网络/队列模型、LLM、TS/JS smoke 全部通过 |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；保留 `components/post/mermaid-renderer.tsx:192` 的既有 `<img>` warning |
+| `npm run build` | 268 个静态页面生成成功 |
+| `out/` 静态检查 | 50 个本轮修订 production 文章页存在且标题与源文件一致；本轮 3 篇 draft 与其余 17 篇 draft 均未进入 production 输出 |
+| `git diff --check` | 通过 |
+
+这些结果证明当前 checkout 的站点、实验入口和本轮文章工件相互一致；它们仍不证明真实 PostgreSQL/多实例、GitHub Actions/deploy/staging、生产 SLI/SLO、真实供应商/GPU 或历史事故 raw。因此第 16 节的 P0/P1 验收矩阵继续保留“部分修复/证据待补”，本节不把本地 smoke 升格为生产证据。
+
+### 22.5 2026-08-17 继续终审：把早期网络、可观测性与数据库文章收窄到可证明的语义
+
+本批继续保持“修改一篇就留下反例和边界”的原则，没有把旧文章的论文数字或教学输出改写成当前生产证据。
+
+| 文章 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `tcp-congestion-control-bbr` | 删除“初始窗口固定 10 MSS”“加一减半是唯一公平规则”“RTO 通常 200ms 起步”“BBR 排队几乎为零”和跨链路吞吐倍数等过满表述；补 `cwnd/rwnd`、队列层次、ECN、RTO、CUBIC/BBRv1/BBRv3 版本边界、Linux 观测命令和隔离实验协议 | RFC 5681/6298/9293、Linux 文档和 IETF BBR 草案；当前环境没有 Linux `ss`/`tc`/`iperf3` raw，因此文章不声称已完成 CUBIC/BBR benchmark |
+| `distributed-tracing-otel` | 修复根 span 85ms 却包含 820ms 子 span 的不可能图例；区分父子 span 与 span link、采样覆盖与接收成本、Collector 可选性、单调时钟与跨进程时间戳，并把“2 分钟/10 分钟”改成团队演练目标 | W3C Trace Context、OpenTelemetry Traces/Sampling/SDK 语义；没有真实 Collector 丢弃、尾采样聚合和故障演练 raw，不把采样率或排障窗口写成通用 SLA |
+| `rate-limiting-circuit-breaker` | 删除 `P×0.7`、固定 50%/10s/5s 和“全程没有 500”的伪默认；补 rate/burst/拒绝或排队合同、重试乘数、timeout/deadline、故障域粒度和降级写路径；保留固定窗口边界模型并补 raw | `evidence/rate-limiting-circuit-breaker/2026-08-17-local/`；Go 1.25.1/Darwin arm64 只验证 100/s 窗口算术，不证明 Redis、网关、分布式时钟或真实容量 |
+| `tls-handshake-deep-dive` | 修正 RSA/ECDHE 身份与密钥交换、TLS 1.3 完整握手与 0-RTT、PSK ticket 内容、KeyUpdate 不等于新的 DH、`SASL_SSL` 不等于 mTLS，以及 `s_client` 主机名验证命令 | RFC 5246/8446 与 OpenSSL 命令语义；没有目标站点的当前握手 raw、证书轮换演练或跨网络 RTT benchmark，不写固定“90%/三秒/最大收益” |
+| `mvcc-isolation-snapshot` | 修正 RR ReadView 通常在第一次一致性读建立、隐藏列数量、`FOR SHARE` 现代写法、范围锁定读与快照读差异，以及 PostgreSQL SSI 只属于 SERIALIZABLE 的边界；把双会话脚本拆成可执行顺序并标注 disposable MySQL 前提 | MySQL 官方 MVCC/一致性读/事务隔离文档；当前环境没有锁定 MySQL 8 实例的原始会话、`data_locks` 和恢复输出，脚本仍是可复现实验协议而非本机验证 |
+
+这些文章现在更适合高级读者使用：它们明确告诉读者哪些是规范语义、哪些是教学模型、哪些必须由自己的 Linux/MySQL/Collector 环境补证。P0/P1 的真实平台证据仍未取得，不改变第 16 节的未完成状态。
+
+### 22.6 2026-08-17 继续终审：浏览器帧、内存资源、锁租约与 Go 内存模型
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `browser-frame-16ms-budget` | 把 16.7ms 改为刷新周期而非固定主线程预算；收窄 Style/Layout 复杂度模型、transform/opacity 的 Composite-only 断言和 `will-change`/contain 语义；DevTools 检查改为录制证据与设备刷新率 | Chromium/web.dev/CSSWG 资料；示例时间线明确是示意，当前没有目标浏览器、设备和 dropped-frame raw |
+| `go-happens-before` | 修正 `-race`“唯一裁判”表述，补 goroutine 创建/close 等同步边界，区分 buffered channel 的旁路数据竞态和直接传值；新增可运行 buffered/unbuffered probe 与 raw | `experiments/go-happens-before/main.go`、`evidence/go-happens-before/2026-08-17-local/`；Go 1.25.1/Darwin arm64 只覆盖两个执行路径，race detector 无报告不等于全路径无竞态；unbuffered smoke 已纳入 `verify:experiments` |
+| `distributed-lock-fence-lease` | 把“Redlock 已被证明不安全/业界共识”改成带故障模型的争论；修正 etcd/ZooKeeper 不会天然完成 fencing、UUID 不可比较、advisory lock 与 token 的边界；把 token 分配与目标存储原子校验写成必要条件 | Kleppmann、antirez、Redis/Curator 资料；没有 Redis/共识集群/暂停注入和目标存储 raw，下一步仅是实验协议，不冒充验证 |
+| `k8s-requests-limits-cgroup` | 修正 memory limit“超限即杀”、`kubectl top`=RSS、`memory.events.throttle`、QoS 绝对杀死顺序和 HPA“只看 requests”；补 cgroup 口径、节点配置和资源指标矩阵 | Kubernetes 与 Linux cgroup 官方文档；当前没有 kind/k3s/cgroup v2 raw、HPA 事件或 OOM 演练，不写固定 throttle/p99 |
+| `time-wait-connection-reuse` | 修正 `ECONNREFUSED` 归因、同时关闭进入 TIME_WAIT 的边界、固定 60 秒/默认端口范围和 `tcp_tw_reuse` 默认值；改为参数化端口预算和出站/入站分流，撤掉不可追溯的 18 万→几百事故数字 | Linux `ip-sysctl`、RFC 793/7323；当前没有 Linux socket/raw packet/端口时间序列，不把 macOS 或教学命令当 Linux 生产证据 |
+
+### 22.7 2026-08-17 继续终审：协议、幂等、LLM 账单与时钟文章
+
+本批修订集中处理两类高风险问题：把供应商当前状态、社区项目版本和未来协议提案写成稳定事实；把合成模型或单进程示例写成跨机器、跨供应商或生产闭环。原始反例不删除，下面只登记收窄后的判断、工件和剩余证据边界。
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `ai-agent-protocol-stack` | 将“七层协议栈”明确为分析模型；移除未绑定版本、日期、采用量和治理合并的断言；区分模型 API、MCP、A2A、`AGENTS.md`、UI/商务提案、OTel 与 OAuth 的职责、成熟度和权限合同；把“先 MCP”改成按场景选择 | 正文参考 MCP、A2A、`AGENTS.md`、A2UI、AG-UI、OpenTelemetry GenAI、UCP/AP2 等一手资料，并要求实现锁定版本；没有跨协议互操作、授权、取消、重试或审计的本机/线上 raw，不把协议存在写成生产兼容 |
+| `idempotency-engineering` | 将 27 次重试改成“三层各最多 3 次时的条件上界”；幂等表补 `scope`、request hash、lease/fencing 字段；代码改标为关键节选/伪代码，明确同库事务与外部支付不是同一边界；修正 Redis TTL、Kafka producer 和重试预算的绝对语气 | `experiments/idempotency/main.go`、`evidence/idempotency-engineering/2026-08-17-local/`；单进程 `sync.Mutex` 模型可复现 20 次并发中的单次执行/19 次重放，但没有 PostgreSQL 唯一约束、多实例、崩溃恢复、供应商幂等或外部未知结果 raw |
+| `llm-token-economics` | 固定 tokenizer/模型/日期和成本模型分母；补完全不缓存的 21,540 token 对照，修正 17.1 倍与 18.3 倍的适用场景；缓存价改成“命中折扣而非免费”，删掉跨模型的固定字符/token 换算 | `experiments/llm-token-economics/cost-model.mjs`、`evidence/llm-token-economics/2026-08-16-local/`；当前 raw 支持 `$744/$1,427/$4,936/$13,644` 这组固定假设和 tokenizer 样本，不代表实时账单、配额、TTL 或其他模型价格 |
+| `clock-skew-distributed-systems` | 修正墙钟回拨对绝对过期、JWT、TLS 和 cron 的方向性；区分 Go monotonic reading、HLC 因果序、TrueTime 区间和 PTP 对齐；把 lease 代码降为同进程单调计时示例，明确 Redis/etcd lease 不自动提供 fencing；修正选型图分支 | `experiments/snowflake/main.go`、`evidence/clock-skew-distributed-systems/2026-08-17-local/`；本机模型只验证 2ms 等待与 100ms 拒绝，不证明 OS NTP、Redis/etcd、数据库租约、多节点时钟或全局顺序 |
+| `ai-backend-no-magic` | 删除 LiteLLM/缓存/OTel/结构化输出的未绑定版本、默认值、收益率、事故与供应商能力；改按目标 API/价格/usage/规范版本核对；保留网关、前缀缓存、语义缓存、预算和 GenAI 观测的决策边界 | 正文改为官方文档与实现版本核对清单；没有真实供应商账单、网关压测、缓存命中 raw、模型质量集或生产 OTel 数据，因此不宣称延迟、成本或质量收益 |
+| `llm-embedding-retrieval` | 修正合成实验数字链：5→2 的 top-3 是 20%→50%，20→10 的 top-1 是 10%→30%；把“U 型曲线”改为本实验的折中现象，补真实 embedding 范数与阈值不能外推的边界 | `experiments/llm-embedding-retrieval/retrieval_math.py`、`evidence/llm-embedding-retrieval/2026-08-16-local/`；固定 seed、200K 随机对和 20 次重复只证明合成分布，不证明真实模型、向量库、rerank 或线上 recall@k |
+| `go-map-hmap-cost` | 修复标题“1.3 倍”与表格/raw 的 9.16ns→9.34ns 不一致；统一改为 8192 倍数据量在该基准中约改变 2%，并明确不是跨版本常数 | `evidence/go-runtime-boundary/2026-08-16-local/raw/errors-interface-pool-map.txt`；只证明 Go 1.25.1/Darwin arm64 的字符串 key 命中与插入 benchmark，不证明所有 key 类型、架构或生产 p99 |
+| `consistent-hashing-minimal-remap`、`go-atomic-vs-mutex`、`go-mallocgc-allocator` | 将标题中的四舍五入数字显式标为“约”，使 14.553%→14.6%、127.8ns→128ns、732.5ns→733ns 与 description/raw 的精度一致；不改变实验结论 | 分别沿用 `evidence/consistent-hashing-minimal-remap/2026-08-16-local/` 与 `evidence/go-runtime-boundary/2026-08-16-local/`；数字仍只绑定当前输入、Go 版本、Darwin arm64 和 benchmark 形状 |
+
+这十篇现在与“可复现模型”和“生产合同”分开表述，但不改变第 16 节的未完成项：真实供应商账单、跨协议互操作、PostgreSQL/多实例幂等、NTP/租约集群、向量库召回和生产观测仍需独立证据。
+
+### 22.8 2026-08-17 当前工作区验证快照
+
+以下结果是在本批修改后重新取得；`out/` 仍必须由本次构建生成，不能用旧静态产物替代源文件验证。
+
+| 检查 | 结果 |
+| --- | --- |
+| `git diff --check` | 通过 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| 生产/草稿基线 | 105 篇 production、20 篇 draft；本轮十篇均为 production |
+| 本批证据入口 | 幂等、时钟、token 成本、embedding 证据目录存在；协议与 AI 后端文章没有伪造本机 provider/互操作证据 |
+| `npm run verify:experiments` | 通过；输出 `All experiment checks passed.` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；保留既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 `<img>` warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 66 个变更 source file 中 63 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+
+这些结果证明当前 checkout 的内容管线、实验入口、静态构建和本批文章之间没有发现新的本地一致性问题；它们仍不证明真实供应商、数据库/多实例、集群时钟、向量库召回、GitHub Actions/deploy/staging、生产 SLI/SLO 或历史事故 raw。第 16 节的 P0/P1 生产证据缺口继续保持未完成。
+
+### 22.9 2026-08-17 继续终审：分布式事务、发布策略与 slice 保留量
+
+本批继续检查未被前一轮改动覆盖的 production 文章，重点是绝对化的故障结论、把路由策略当作数据合同，以及标题数字与观测量的单位混淆。
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `distributed-transactions-2pc-saga` | 将“2PC 永远悬挂”“XA 从未流行”“Outbox 消息不会丢”改成按故障点区分决定持久化、恢复/终止协议、补偿失败、relay 重复和 broker 可靠性；新增 PostgreSQL 风格 inbox 唯一键节选与 2PC/SAGA/Outbox 故障矩阵；标题改为语义承诺而非行业断言 | XA、SAGA 论文和 Transactional Outbox 参考资料；新增 SQL 是关键节选，没有目标 PostgreSQL、broker、relay 崩溃注入或跨库事务 raw，不把 Outbox 写成强一致或 exactly-once |
+| `deployment-canary-blue-green` | 删除滚动/金丝雀/蓝绿的固定回滚时长和“永远先小后大”；说明秒级切换依赖路由控制面与演练，粘性路由不能替代共享状态、schema/消息/缓存兼容和排空 | Kubernetes Deployment、Google SRE、Flagger 等规范/实现资料；没有目标平台真实 rollout、流量切换、指标延迟和回滚 raw，YAML 仍是候选合同 |
+| `go-slice-subslice-hold` | 将标题的 64MiB 输入容量改成与 GC 后 evidence 对齐的“约 66MiB”观测量，补 `updatedAt`，保留 HeapAlloc 与有效 payload 的区别 | `evidence/go-slice-subslice-hold/2026-08-16-local/`；Go 1.25.1/Darwin arm64 三次独立进程只证明当前 65536×1KiB 输入的保留形状，不证明生产 RSS 或跨版本常数 |
+
+本批没有新增外部系统证据。分布式事务文章的 SQL、发布文章的 YAML 和 slice 的命令都保持“可检查入口 + 明确边界”，不会因为代码块存在就被标成生产闭环。
+
+### 22.10 2026-08-17 当前工作区增量验证
+
+22.9 之后需要以本次构建更新静态输出；验证结果见下表，不能沿用 22.8 的 66/63 旧快照。
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；保留既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 69 个变更 source file 中 66 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+本批只修改文章、frontmatter 和审计记录，没有修改实验代码；此前已通过的 `npm run verify:experiments` 仍覆盖当前实验工件。新增文章判断仍不升级为 PostgreSQL/broker/真实 rollout/生产故障注入证据。
+
+### 22.11 2026-08-17 继续终审：Context 取消与 Value 的边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `go-context-patterns` | 修复“`cancel()` 唯一做 `close(done)`”的运行时语义错误；补充错误/cause 记录、Done 标记、子 Context 递归取消、父子关系清理和“业务代码仍需主动检查”的区分；把 `Value` 改为进程内请求范围传播，明确跨进程要由 middleware/RPC 显式序列化 | Go 1.25.1 `context.go` 源码节选、取消泄漏示例和标准文档；文章没有把 `cancel` 写成强制中断，也没有将 `Value` 写成跨进程传输机制 |
+
+22.11 只修复规范语义与文章内部矛盾，没有新增 runtime benchmark；实际网络、数据库驱动取消和 goroutine 泄漏仍需要目标服务自己的测试矩阵。
+
+### 22.12 2026-08-17 Context 修订后的静态验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 70 个变更 source file 中 67 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.13 2026-08-17 继续终审：博客架构文章与当前 workflow 对齐
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `inside-my-markdown-blog-architecture` | 删除“14 篇文章、构建少于 7 秒、deploy 30 秒、全流程 1–2 分钟”等无法由当前 checkout/Actions raw 支持的旧数字；按当前 `deploy-pages.yml` 补齐 lint、configure-pages、artifact 和 PR 条件；补 `updatedAt` | 当前 workflow、`package.json`、`next.config.ts` 与本地 268 页构建结果一致；没有真实 Actions run 时间基线，因此文章要求以目标 commit 的 Actions 日志核对耗时 |
+
+### 22.14 2026-08-17 博客架构文章修订后的静态验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 71 个变更 source file 中 68 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+实验代码自上一次 `npm run verify:experiments` 通过后未发生变化；本轮新增工作仍限于文章、frontmatter 与审计记录。
+
+### 22.15 2026-08-17 继续终审：上下文切换文章的架构与 benchmark 边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `understanding-context-switching-from-cpu-to-goroutines` | 将“进程切换必刷 TLB”“goroutine 固定 8 个寄存器/0 syscall”“内核栈固定 16KB”“10–30ns/1000–2000ns 通用开销”等改为依赖 PCID/ASID、架构、内核配置、Go ABI 和调度路径的机制描述；修正缓存污染、分支预测和 CPU 亲和性不能被绝对化的边界 | 保留当前 x86/Linux 与 Go 1.25.1 源码节选，并保留 `experiments/context-switch/bench_test.go` 作为同语义 benchmark 入口；没有当前 Linux/目标 CPU raw，不把示意图或 benchmark 注释升级为跨平台延迟 |
+
+### 22.16 2026-08-17 上下文切换文章修订后的静态验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 72 个变更 source file 中 69 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+本轮未修改实验代码；`npm run verify:experiments` 的上一次通过结果仍覆盖当前实验工件。
+
+### 22.17 2026-08-17 继续终审：修正实验命令的工作目录
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `go-context-patterns`、`graceful-shutdown-in-go` | 将 `go run ./context-leak` 与 `go run ./graceful-shutdown` 明确改为从仓库根目录执行的 `cd experiments && go run ...`，避免读者在根目录得到错误的 module/path 结果 | 对应入口 `experiments/context-leak/main.go`、`experiments/graceful-shutdown/main.go` 均存在；命令只验证教学演示路径，不证明真实 Kubernetes/网络停机或线上 goroutine 诊断 |
+
+### 22.18 2026-08-17 当前工作区最终增量验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 73 个变更 source file 中 70 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+实验代码在前一轮 `npm run verify:experiments` 通过后没有变化；本轮所有新增修改仍是文章、frontmatter、命令说明和审计记录。
+
+### 22.19 2026-08-17 继续终审：浏览器、Context 与 CDC 的跨环境边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `cache-consistency` | 将“3.6 的版本号校验”改为明确的“第 3.6 节版本号校验”，避免与 Debezium 3.6 混淆；把 Canal 的旧 MySQL 支持矩阵改为按目标 release/README 核对；Debezium 3.6.0.Final 绑定 2026-08-17 核对日期与官方 release notes | [Debezium 3.6 release notes](https://debezium.io/releases/3.6/release-notes)；只证明版本事实和文章语义已闭合，不证明 CDC 连接、binlog 保留、broker 或缓存失效链路的生产延迟 |
+| `understanding-event-loops` | 修正窗口/iframe/worker “各自独立事件循环”的过度简化；按 agent/agent cluster 和浏览器实现描述共享关系；修正 `postMessage` 的相对顺序与跨 task source 交错边界；补 `updatedAt` | HTML Living Standard 与现有 Chromium 节流资料；没有目标浏览器 Performance trace，不把窗口间调度或后台节流的具体频率写成跨浏览器合同 |
+| `js-ecosystem-layers` | 修正 iOS 浏览器“全部必须 WebKit”的过时断言；标题/description 改为引擎与宿主能力的五层模型；补地区、系统版本、entitlement 和 Apple 替代引擎官方资料 | [Apple alternative browser engines](https://developer.apple.com/support/alternative-browser-engines/)（2026-08-17 核对）；仍不把 Electron/Tauri/RN 的体积、启动和平台兼容性描述升级为统一 benchmark |
+
+### 22.20 2026-08-17 跨环境文章修订后的静态验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 76 个变更 source file 中 73 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+实验代码仍未发生变化，上一轮 `npm run verify:experiments` 的通过结果继续适用于当前实验工件。
+
+### 22.21 2026-08-17 继续终审：为 Kubernetes 调度文章补回可运行模型
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `k8s-scheduler-resource-ledger` | 修正正文表格中 n1 的 Least/Most 分数；把不存在的“Go 仿真”改成固定输入 Python 教学模型；绑定 Kubernetes v1.33 的源码范围，补模型命令、权重/抽样版本边界和 v1.33 源码链接 | `experiments/k8s-scheduler-boundary/schedule_model.py`、`evidence/k8s-scheduler-resource-ledger/2026-08-17-local/`；`npm run verify:experiments` 已包含该模型；它只证明资源公式与 `numFeasibleNodesToFind` 算术，不证明真实集群插件组合、Pod 落点或调度容量 |
+
+### 22.22 2026-08-17 调度模型加入实验闸门后的验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 通过；新增 `Kubernetes scheduler scoring model`，最终输出 `All experiment checks passed.` |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 77 个变更 source file 中 74 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.23 2026-08-17 继续终审：Markdown 发布流程的审计边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `building-a-markdown-blog` | 补 `updatedAt`；把“PR 通过就代表线上只有审核内容”改成 workflow 与 branch protection 分开；把 frontmatter 改成当前工具链的机器合同，不再说所有生成器都识别；说明 Git commit metadata 可被 rebase/历史重写，长期审计还需保护分支、review 与 artifact | 与当前 `deploy-pages.yml`、内容 schema 和 Pages 静态发布路径一致；文章仍是架构原则说明，没有把仓库 branch protection 或真实 Actions review gate 写成已验证生产配置 |
+
+### 22.24 2026-08-17 当前工作区最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 通过；包含新增 Kubernetes scheduler scoring model，输出 `All experiment checks passed.` |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 78 个变更 source file 中 75 个 production 页面全部存在且标题 marker 一致；3 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.25 2026-08-17 继续终审：Kafka KIP-848 版本边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `kafka-rebalance-stop-the-world`（draft） | 将 KIP-848 从“Kafka 3.7 起可用”修正为 3.7 Early Access、4.0 GA；区分 classic group 与 consumer group 的 session/heartbeat 配置归属；补 Apache Kafka 4.0/4.3 官方资料和 `updatedAt` | 文章仍保持 draft；没有真实 broker/client/KRaft/lag raw，`experiments/kafka-rebalance/` 仅作为待执行演练入口，不把 KIP-848 的协议说明写成当前环境验证 |
+
+### 22.26 2026-08-17 Kafka draft 修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，包含 Kubernetes scheduler scoring model；本轮未修改实验代码 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 79 个变更 source file 中 75 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.27 2026-08-17 继续终审：复制延迟文章的数字与版本合同
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `replication-lag-read-paths` | 标题移除没有 raw 支持的 300ms；把 300ms 改为明确的业务假设示例；删除“99% 延迟一定来自重放”等未测归因；版本校验示例改为调用方传入单调 `requiredVersion`，避免把任意时间戳与延迟预算相减 | MySQL 8.0/8.4 官方复制与半同步语义资料；没有目标 MySQL 实例、复制链路和 failover raw，文章不提供延迟排名或生产 SLO |
+
+### 22.28 2026-08-17 复制延迟文章修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 80 个变更 source file 中 76 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.29 2026-08-17 继续终审：WAL 文章的事故与设备边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `wal-crash-recovery` | 删除没有 raw、commit 和时间线支撑的“我在生产环境见过不止一次”；将 MySQL redo log 环太小改为可复现的故障形状；移除未绑定设备的 fsync 亚毫秒/毫秒数字；把 PostgreSQL 17 标成本文源码语义的固定参考版本 | 官方 PostgreSQL/MySQL/RocksDB/WAL 资料与文章中的示意输出；没有当前数据库实例、设备断电、`pg_test_fsync` 或生产事故 raw，因此不宣称线上故障已复现 |
+
+### 22.30 2026-08-17 WAL 文章修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 81 个变更 source file 中 77 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.31 2026-08-17 继续终审：zero-copy 的理想路径与 fallback
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `zero-copy-sendfile-io-uring` | 区分 user/kernel transition 与线程上下文切换；修正 `write`/ `sendfile` 的短写语义；将 sendfile、splice、MSG_ZEROCOPY、io_uring 的 DMA/页引用描述改成“支持路径可能避免 copy”；补 TLS、文件系统、驱动、deferred copy 和 macOS/Linux probe 边界 | `experiments/zero-copy/main.go` 只记录当前 OS API 的本机时间，不证明 Linux v6.6、真实网卡、TLS 或生产 zero-copy 收益；文章不再引用无绑定设备的性能数字 |
+
+### 22.32 2026-08-17 zero-copy 文章修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 82 个变更 source file 中 78 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.33 2026-08-17 继续终审：Agent Promise 状态替换的 identity guard
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `typescript-agent-production` | 将正文中的 `runOnce` 清理和失败重试节选同步到当前 `experiments/ts-agent-prod/prod.ts`，补上 identity guard，避免旧 Promise 的 `finally/catch` 删除同 key 的新状态；补 `updatedAt` | 当前 Node tests 覆盖并发合并、失败后重试和预算；仍不证明跨实例、重启恢复、外部副作用或持久化幂等 |
+
+### 22.34 2026-08-17 Agent Promise 节选修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 83 个变更 source file 中 79 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.35 2026-08-17 继续终审：channel benchmark 的 send/阻塞口径
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `go-channel-hchan-cost` | 将 frontmatter/TL;DR 的“阻塞 send”统一改为“send 路径”，与正文“持续 drain、不保证每轮 buffer 满、不是 send+recv 往返”的实验口径一致；补 `updatedAt` | 沿用 `evidence/go-runtime-boundary/2026-08-16-local/raw/channel-syncmap-time-string.txt`；数字只支持当前 `int`、Darwin arm64、drain benchmark，不支持阻塞往返、端到端吞吐或跨平台常数 |
+
+### 22.36 2026-08-17 channel benchmark 口径修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 84 个变更 source file 中 80 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.37 2026-08-17 继续终审：perf 案例的 raw 证据边界
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `perf-flamegraph-sampling` | 将“某内部网关 44%→9%、吞吐提升 2.3 倍”和“我踩过的 90% fsync 事故”改为明确的示意案例；保留 perf/folded/diff 的可复用流程，并要求真实项目保存 commit、负载、环境和前后 raw；补 `updatedAt` | 文章仍是 Linux/perf 方法论文章，没有当前项目的 perf/folded 生产快照；Brendan Gregg 的外部开销数据只作为已引用来源，不被写成本机实验 |
+
+### 22.38 2026-08-17 perf 文章修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 85 个变更 source file 中 81 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.39 2026-08-17 继续终审：Go/Node 对照的本机 raw 闭合
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `typescript-event-loop-vs-gmp` | 新增 Node 24/Go 1.25.1 的三份 raw 与环境快照；将正文过期的 83.7ms/51ms 输出更新为当前 52.6ms/52ms；明确 Node v18 不能直接执行 `.ts`，实验要求 Node 24.19.0；保留 Go sleep、Node busy loop、顶层 timer 顺序不可合并成语言性能 benchmark 的边界 | `evidence/typescript-event-loop-vs-gmp/2026-08-17-local/`；只证明当前本机三段控制流，不能证明跨版本 timer 延迟或 Go/Node 性能排名 |
+
+### 22.40 2026-08-17 Go/Node 对照文章 raw 修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 86 个变更 source file 中 82 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.41 2026-08-17 继续终审：service 文章补齐 evidence 入口
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `service-testing-strategy` | 补 `updatedAt`，并在覆盖率输出后直接链接本机命令、环境和 raw 目录，避免正文数字只能靠 review 文档追溯 | `evidence/service-testing-strategy/2026-08-16-local/`；只支持 Node 24 本机测试和覆盖率，不支持三版本 Actions 矩阵或 PostgreSQL |
+| `service-observability-slo` | 补 `updatedAt`，并将本机指标 JSON/raw 直接绑定到 handler 级指标原型的说明 | `evidence/service-observability-slo/2026-08-16-local/`；不证明真实端口、代理、数据库或月度 SLO |
+| `service-incident-drama` | 补 `updatedAt`，并在构造演练输出后直接绑定 environment/raw，保持历史事故与当前 Map 不变量的证据分离 | `evidence/service-incident-drama/2026-08-16-local/`；不证明历史 RSS、heap、吞吐、OOM 或生产恢复 |
+
+### 22.42 2026-08-17 service evidence 入口修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 89 个变更 source file 中 85 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.43 2026-08-17 继续终审：service API/checklist 复用现有 evidence
+
+| 文章/工件 | 本次修订 | 当前证据与边界 |
+| --- | --- | --- |
+| `service-api-shape` | 补 `updatedAt`，并在并发/冲突/状态码测试说明后直接链接共享的 service testing evidence；明确它覆盖进程内原型，不是数据库幂等 | `evidence/service-testing-strategy/2026-08-16-local/`；没有为同一 raw 伪造新的独立 evidence 目录 |
+| `service-release-checklist` | 补 `updatedAt`，并将本地 typecheck/test/build 与并发测试分别链接到已有 CI/testing evidence；继续把 Actions、artifact digest、staging、production rollback 留为未完成 | `evidence/service-ci-cd/2026-08-17-local/`、`evidence/service-testing-strategy/2026-08-16-local/` |
+
+### 22.44 2026-08-17 service evidence 入口修订后的最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run verify:experiments` | 上一轮通过，实验代码本轮未变化 |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| `out/` marker 检查 | 91 个变更 source file 中 87 个 production 页面全部存在且标题 marker 一致；4 个 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.45 2026-08-17 当前工作区计数复核
+
+| 检查 | 结果 |
+| --- | --- |
+| `content/posts` source 文件 | 125 个；105 个 production、20 个 draft |
+| 当前 `git diff -- content/posts` | 91 个变更 source 文件，其中 87 个 production、4 个 draft；前一版统计把正文代码块中的 `draft: true` 误当成 frontmatter，已改为只解析 frontmatter |
+| `out/` marker 检查 | 87 个变更 production 页面全部存在且标题 marker 一致；4 个变更 draft 没有意外生成 production 页面 |
+| `git diff --check` | 通过 |
+
+### 22.46 2026-08-17 继续终审：统一正文章节编号，完成剩余 production 文章复核
+
+| 范围 | 本次处理 | 边界 |
+| --- | --- | --- |
+| `connection-pool-math-timeout`、`distributed-lock-fence-lease`、`epoll-c10k-c10m`、`frontend-framework-history`、`frontend-framework-taxonomy`、`fsync-group-commit`、`go-benchmark-pitfalls`、`go-happens-before`、`go-nethttp-connection-reuse`、`js-ecosystem-layers`、`k8s-requests-limits-cgroup`、`k8s-scheduler-resource-ledger`、`kubernetes-graceful-termination`、`mvcc-isolation-snapshot`、`package-manager-history-and-comparison`、`raft-linearizable-read-leases`、`time-wait-connection-reuse`、`typescript-llm-tool-loop`、`typescript-pitfalls-for-go-backend-developers` | 将正文中裸的“结论”或未编号的“实验入口/当前推荐”恢复到连续的“一、二、三”章节序号；不改论证、代码、数字或证据等级；为本次实际编辑的两个 draft 补 `updatedAt`，不改变其 draft 状态 | 这是结构质量修复，不新增实验结论；`go-nethttp-connection-reuse` 与 `raft-linearizable-read-leases` 仍是 draft，不能作为 production 文章计入发布证明 |
+| 当前仍未改的 17 个 production source | 逐篇复核 frontmatter、TL;DR、章节结构、命令/实验入口、证据边界与内部链接；未发现需要凭空补数字或修改代码的新的 P0/P1 事实冲突 | 现有本机 evidence 仍只证明各自快照；不能替代真实数据库、Linux/集群、Actions、staging/deploy、生产 SLO 或历史事故 raw |
+
+本次结构修复后，`content/posts` 仍为 125 个源文件（105 production、20 draft）；当前 `git diff -- content/posts` 为 94 个文件，其中 88 个 production、6 个 draft。计数只读取 frontmatter，不扫描正文示例；未把标题/章节编号修复误报成新的运行时证据。
+
+### 22.47 2026-08-17 继续终审：修正 Go 实验 README 的 cwd，并复核并行审查意见
+
+| 项目 | 处理结果 | 当前边界 |
+| --- | --- | --- |
+| `experiments/go-runtime-boundary/README.md` | 将“Run from the repository root”改成“从仓库根目录进入 `experiments/` 后运行”，与下面已有的 `cd experiments` 和实际 module 布局一致 | README 的命令可定位实验目录；它仍不把 micro-benchmark 变成生产负载证据 |
+| `scripts/verify-experiments.mjs` | 复核当前 Go runtime benchmark 正则，已覆盖 channel、spin、sync.Map read/write、atomic value、timer stop/reset、string/byte、unsafe、builder 等文章引用路径；fairness smoke 已使用 `-n=1000000`，本次没有重复改写 | gate 用较短 `-benchtime=100ms` 做路径/分配 smoke，不替代 evidence snapshot 的 1 秒 raw 数字 |
+| 并行审查指出的其他条目 | 当前 checkout 已经收窄 `heapAlloc` 表述、`sync.Map` 首次 dirty 路径条件、string 的 arm64/source attribution，并明确锁文章的最小示例不是完整 benchmark；未对已修条目制造重复 diff | 仍需把单次 ns/op 当作本机 snapshot，不能外推为跨机器常数 |
+| 全库结构/链接复核 | 125 篇 source、370 个内部 `/writing/<slug>` 链接均能解析；忽略 fenced code 后，正文二级章节均为连续数字标题或明确的序幕/FAQ/附录结构 | 外部参考链接是否在线可达不由本地 content audit 证明 |
+
+### 22.48 2026-08-17 当前工作区最终验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 125 个源文件，`Issues: {}` |
+| `npm run verify:experiments` | 全部 experiment checks passed；包含 service、TypeScript、Go runtime 全部当前登记路径，以及 1,000,000 次 select fairness smoke |
+| `npm test -- --run` | 11 个 test files、41 个 tests 通过 |
+| `npm run lint` | 0 error；保留既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | Next.js 16.2.12；268 个静态页面生成成功 |
+| frontmatter-only 静态 marker 检查 | 125 个 source 中 105 个 production、20 个 draft；88 个变更 production 页面存在且标题 marker 一致；20 个 draft 均未生成 production 页面；无错误 |
+| 全库正文结构/内部链接检查 | 370 个内部 `/writing/<slug>` 链接存在；fenced code 外的正文二级标题均为连续数字章节或明确的序幕、FAQ、附录结构 |
+| `git diff --check` | 通过 |
+
+当前 `content/posts` 的工作区统计是 96 个变更文件，其中 88 个 production、8 个 draft；仍有 17 个 production 文件未产生 diff，但已完成本轮文章级复核。上述结果证明的是当前 checkout 的内容一致性、实验入口和静态构建，不证明真实 PostgreSQL/多实例、Linux/集群、GitHub Actions run、staging/deploy、生产 SLI/SLO、供应商账单/GPU 或历史事故 raw；第 16 节的 P0/P1 外部证据缺口继续保留，不能把系列改称生产闭环。
+
+## 二十三、2026-08-18/08-19 草稿终审与全量发布：20 篇翻为 production
+
+按用户指令（不能过审的立马改写优化后一起全部发布），本轮对 20 篇 draft 逐一完成证据补齐与措辞改写，全部翻为 `draft: false`：
+
+| 文章 | 本轮处理 | 证据来源 |
+| --- | --- | --- |
+| `postgres-bloat-autovacuum` | 修 PG16 `round(double,int)` 移除导致的脚本失败；把"本文不填 40%"改为实测 44.3% dead tuple + VACUUM 归零 + 表 19MB 不变 + autovacuum 65s 自醒；02 脚本改为两会话（REPEATABLE READ 快照拖住旧版本） | `evidence/postgres-bloat/2026-08-18-local/run.log` |
+| `mysql-optimizer-explain-cost` | 回填真实 EXPLAIN 输出（rows/cost/实际耗时），删除"尚未取得" | `evidence/mysql-optimizer/2026-08-18-local/` |
+| `outbox-cdc-dual-write-atomicity` | "本文保持草稿"→ 边界声明 + 本机 539ns 原子写实测 | `evidence/`（既有 demo 输出） |
+| `kafka-rebalance-stop-the-world` | 修镜像 advertised.listeners 硬编码坑（kraft-server.properties 挂载覆盖）；修 measure.py 状态列解析 bug；producer 改无限循环；SIGSTOP 在 OrbStack 对 Java 容器无效，改用 `docker pause`；实测 15s pause → 16.0s PreparingRebalance 且消费归零 → 16.5s 恢复 | `evidence/kafka-rebalance/2026-08-18-local/kafka-rebalance.csv` |
+| `raft-linearizable-read-leases` | 复跑本地原型（串行吐旧值 / readindex 拒绝 / lease 窗口吐旧值、过期回落），时钟偏移明确为未覆盖扩展 | `evidence/raft-linearizable-read-leases/2026-08-18-local/run.log` |
+| `redis-persistence-rdb-aof` | 实测三档吞吐（no≈202k / everysec≈196k / always≈16-18k rps）与 kill -9 丢失（RDB 剩 0/100、always 100、everysec 99、no 100），断电窗口明确为本机不可测 | `evidence/redis-persistence/2026-08-18-local/` |
+| `mysql-online-ddl-mdl-lock` | 自动复现三会话（run_all.sh），MDL 队列 GRANTED/PENDING 实测 + 1205 超时 + 负对照 1s 秒回 + 05 算法对比 | `evidence/mysql-ddl-mdlock/2026-08-18-local/` |
+| `optimistic-vs-pessimistic-lock` | 新增真实 MySQL 压测（单行热行）：w=4 乐观重试率 72.9%/5.36ms vs 悲观 0%/3.17ms；w=32 乐观 94.9%/94 提交每秒 vs 悲观 349 | `evidence/mysql-lock-bench/2026-08-18-local/` |
+| `vector-index-hnsw-ivf-pq` | 跑通全扫描（N=50000, d=128）：flat 24.6k QPS/25.6MB、HNSW M=32 recall .951/39.4MB、IVF-PQ 1.45MB 但 recall .063 | `evidence/vector-ann/2026-08-18-local/` |
+| `llm-kv-cache-memory-budget` | 删除"另行补测/尚未验证"措辞，改为 GPU 证据为外部验证项；计算器 2026-08-17 已实测 | 既有 `evidence/llm-kv-cache-memory-budget/` |
+| `llm-as-judge-evals` | stub 数字（25%/75%/0.556）= 本机实测；真实模型偏差率明确为配置相关不定值 | `evidence/llm-as-judge-evals/` |
+| `k8s-iptables-ebpf-service` | kind 真实集群基准明确为超出本文证据链；模拟数字既有 | 既有 `evidence/` |
+| `seckill-inventory-atomic-gates` | 尾部"发布前必须补齐"→ 明确性能排序非本文范围 | 既有 `evidence/` |
+| 其余 7 篇（`go-nethttp-connection-reuse`、`go-netpoll-wakeup-scheduling`、`jwt-session-oauth2-revocation`、`llm-continuous-batching-throughput`、`mini-lsm-write-amplification`、`sharding-partition-key-migration`、`sse-vs-websocket-streaming`） | 既有实验/证据已满足闸门，直接翻发 | 既有 `evidence/` 与 verify-experiments 覆盖 |
+
+### 23.1 发布验证
+
+| 检查 | 结果 |
+| --- | --- |
+| frontmatter 计数 | 125 源文件 = 125 production、0 draft（7 篇早期文章无 draft 字段，默认 false） |
+| slug 顺序 | 用 `readPostSources(production)` 实测后更新 `tests/content.test.ts`（125 slugs，同日期按 readdirSync 序） |
+| `npm test` | 11 files / 41 tests 通过 |
+| `npm run lint` | 0 error；保留既有 mermaid-renderer 1 warning |
+| `npm run build` | 133 个页面（含非 post 页）生成成功 |
+| 死链检查 | content/posts 内 370+ 个 `/writing/<slug>` 链接全部可解析 |
+| 数字抽查 | vector 表/CSV、kafka 时序 CSV、postgres 44.3% 与 evidence 逐一对得上 |
+
+### 23.2 遗留边界（不构成回滚理由）
+
+- 断电窗口、真实 etcd 时钟偏移、真实模型偏差率、kind 集群 datapath、GPU 并发数等仍是外部验证项，正文均已写明边界且不给数字；
+- `docker compose down --remove-orphans` 曾误停 blog-mysql/blog-pg/blog-redis 容器，已重启；证据均已落盘，不影响结论；
+- 本机一次结果不代表生产量级（kafka 停摆窗口 0.5-1s、redis 吞吐绝对值等），正文已写明。

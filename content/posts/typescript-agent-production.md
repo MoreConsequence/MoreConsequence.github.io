@@ -2,7 +2,7 @@
 title: "Agent 服务化的三个边界：并发合并、幂等状态与成本单位"
 description: "用当前可运行的 TypeScript 实验验证 100 个并发调用只启动一个 task、失败后可重试，以及每 1k token 费率必须除以 1000；所有实现都明确标记为单进程原型，不把 Map 当成多实例生产存储。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["TypeScript", "Agent", "幂等", "并发"]
 draft: false
 featured: false
@@ -39,9 +39,12 @@ flowchart LR
 const result = deferred<T>();
 state.set(key, { promise: result.promise, startedAt: Date.now() });
 void Promise.resolve()
-  .then(task)
+.then(task)
   .then(result.resolve, result.reject)
-  .finally(() => state.delete(key));
+  .finally(() => {
+    // 旧执行不能删除已经替换成新执行的同 key 状态。
+    if (state.get(key)?.promise === result.promise) state.delete(key);
+  });
 ```
 
 如果先执行 `task()`，再 `state.set()`，task 的同步前缀可能在第一个 `await` 前重入 `runOnce`，竞争窗口仍然存在。当前测试对同一个 key 发 100 个并发调用，断言执行次数为 1，且所有调用得到同一个结果。
@@ -63,7 +66,8 @@ state.set(key, execution);
 try {
   return { value: await execution, replayed: false };
 } catch (error) {
-  state.delete(key); // 失败允许上层按策略重试
+  // 只删除自己的 execution，避免误删并发重试已经建立的新状态。
+  if (state.get(key) === execution) state.delete(key);
   throw error;
 }
 ```

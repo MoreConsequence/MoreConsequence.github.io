@@ -14,7 +14,8 @@
   Llama-2-70B : layers=80 q_heads=64 kv_heads=8  head_dim=128  （GQA）
   Llama-3-8B  : layers=32 q_heads=32 kv_heads=8  head_dim=128  （GQA）
 
-权重大小默认按 fp16（2 字节/参数）估算。这是教学演示，不是 serving 引擎的
+权重大小默认按 fp16（2 字节/参数）估算。`--vram` 与 `--overhead` 使用十进制 GB，
+KV 表格同时显示二进制 GiB；所有并发整除都在字节数上进行。这是教学演示，不是 serving 引擎的
 内存分配模型；vLLM/SGLang 还要算 CUDA context、激活、预填充峰值等固定开销。
 """
 
@@ -56,7 +57,7 @@ def gib(num_bytes: float) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser(description="KV cache 显存预算")
     parser.add_argument("--model", choices=PRESETS.keys(), default="llama3-8b")
-    parser.add_argument("--vram", type=float, default=40.0, help="GPU 显存，GB")
+    parser.add_argument("--vram", type=float, default=40.0, help="GPU 显存，十进制 GB")
     parser.add_argument("--dtype", choices=BYTES_PER_ELEM.keys(), default="fp16",
                         help="权重的 dtype（KV 未单独指定时也用于 KV）")
     parser.add_argument("--kv-dtype", choices=BYTES_PER_ELEM.keys(), default=None,
@@ -64,7 +65,7 @@ def main() -> None:
                              "只量化 KV 时（如 --dtype fp16 --kv-dtype fp8）权重保持 fp16，"
                              "KV 字节减半，区别于权重量化")
     parser.add_argument("--overhead", type=float, default=4.0,
-                        help="CUDA context + 激活 + 预填充峰值等固定开销，GB")
+                        help="CUDA context + 激活 + 预填充峰值等固定开销，十进制 GB")
     parser.add_argument("--seq", default="4096,8192,32768",
                         help="要评估的上下文长度，逗号分隔")
     parser.add_argument("--batch", type=int, default=1,
@@ -73,18 +74,22 @@ def main() -> None:
 
     kv_dtype = args.kv_dtype if args.kv_dtype is not None else args.dtype
     model = PRESETS[args.model]
-    weights_gb = model.params_b * BYTES_PER_ELEM[args.dtype]
+    weight_bytes = model.params_b * 1_000_000_000 * BYTES_PER_ELEM[args.dtype]
+    overhead_bytes = args.overhead * 1_000_000_000
+    vram_bytes = args.vram * 1_000_000_000
     per_token = kv_bytes_per_token(model, kv_dtype)
-    usable_gb = args.vram - weights_gb - args.overhead
+    usable_bytes = vram_bytes - weight_bytes - overhead_bytes
+    weights_gb = weight_bytes / 1_000_000_000
+    usable_gib = max(usable_bytes, 0.0) / (2**30)
 
     print(f"模型: {model.name}  权重 dtype: {args.dtype}  KV dtype: {kv_dtype}  "
           f"层数={model.layers}  kv_heads={model.kv_heads}  head_dim={model.head_dim}")
     print(f"每层每 token K/V: {2 * model.kv_heads * model.head_dim * BYTES_PER_ELEM[kv_dtype]} B  "
           f"({per_token // model.layers // 1024} KiB)")
     print(f"每 token 全层 K/V: {per_token} B = {per_token / 1024:.1f} KiB")
-    print(f"权重(估算): {weights_gb:.1f} GB  固定开销: {args.overhead:.0f} GB  "
-          f"可用给 KV: {max(usable_gb, 0.0):.1f} GB")
-    if usable_gb < 0:
+    print(f"权重(估算): {weights_gb:.1f} GB  固定开销: {args.overhead:.1f} GB  "
+          f"可用给 KV: {usable_gib:.3f} GiB")
+    if usable_bytes < 0:
         print(f"!! 权重 + 固定开销已超过 {args.vram:.0f} GB，该模型在此卡上放不下，"
               "需量化权重或换更大显存。")
     print()
@@ -92,9 +97,10 @@ def main() -> None:
           f"{'并发上限':>10} {'并发时 KV 上限':>14}")
     print("-" * 66)
     for seq in (int(s) for s in args.seq.split(",")):
-        one = gib(per_token * seq)
+        one_bytes = per_token * seq
+        one = gib(one_bytes)
         total = one * args.batch
-        cap = int(usable_gb // one) if usable_gb > 0 and one > 0 else 0
+        cap = int(usable_bytes // one_bytes) if usable_bytes > 0 and one_bytes > 0 else 0
         cap_kv = cap * one
         print(f"{seq:>8} {one:>9.3f} GiB {total:>12.3f} GiB {cap:>10} {cap_kv:>11.3f} GiB")
 

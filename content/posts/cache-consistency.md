@@ -2,7 +2,7 @@
 title: "缓存一致为什么比缓存命中难"
 description: "命中率是可以算的数学题，一致性是没有终点的工程题：失效窗口、并发竞态与从容忍到强一致的分层解法。"
 publishedAt: "2026-07-31"
-updatedAt: "2026-08-02"
+updatedAt: "2026-08-17"
 tags: ["缓存", "系统设计", "架构"]
 draft: false
 featured: false
@@ -311,7 +311,7 @@ sequenceDiagram
 - **读放大**：读方要知道「当前版本号是几」，于是多一次元数据查询（比如把当前版本号单独缓存）。冷 key 还会经历「版本号在缓存、值不在」的二次 miss。
 - **可见性窗口**：版本切换不是原子的——读方拿到版本号 v2 后，`user:v2:123` 可能还没写进去，于是回到数据库回源。这个窗口比删除竞态小得多，但存在。
 
-版本化 key 与 3.6 的版本号校验是同一思路的两个方向：校验是读侧对账（发现版本落后就重读），版本化 key 是写侧切换（让新值天然可读）。前者适合读多、写少、值体积大的场景，后者适合写频繁、命中率被写失效拖垮的场景——正好是第五章问题 2 的分岔路。
+版本化 key 与第 3.6 节的版本号校验是同一思路的两个方向：校验是读侧对账（发现版本落后就重读），版本化 key 是写侧切换（让新值天然可读）。前者适合读多、写少、值体积大的场景，后者适合写频繁、命中率被写失效拖垮的场景——正好是第五章问题 2 的分岔路。
 
 ### 3.5 CDC / binlog 订阅：让数据库自己宣布变更
 
@@ -327,13 +327,13 @@ flowchart LR
     D --> E["删除对应缓存 Key"]
 ```
 
-两个组件都成熟，选谁主要看三点差异：
+两个项目都提供 MySQL binlog 订阅能力，选谁主要看三点差异：
 
-- Canal 是阿里开源的 MySQL binlog 订阅组件，要求源库开启 binlog 且格式为 ROW，支持 5.1.x 到 8.0.x 的 MySQL，原生支持把事件投递到 Kafka 或 RocketMQ；
+- Canal 是阿里开源的 MySQL binlog 订阅组件，要求源库开启 binlog 且格式为 ROW；支持的 MySQL 版本和 Kafka/RocketMQ 适配能力应以目标 release 与项目 README 核对，不把旧支持矩阵写成长期合同；
 - Debezium 是 Red Hat 主导的 CDC 框架，通过 Kafka Connect 接入，覆盖面更广，原生投递目标是 Kafka，接 RocketMQ 需借助 RocketMQ Connect 的社区适配器；
-- 版本节奏：截至 2026 年中，Debezium 主线已迭代到 3.x，当前稳定版 3.6。
+- 版本节奏：截至 **2026-08-17** 核对，Debezium 官方 release notes 列出的 3.6.0.Final 发布日期为 2026-07-01；后续升级仍需重新核对兼容性和 breaking changes。
 
-支持矩阵随版本变化较快，具体以仓库 README 为准。
+支持矩阵随版本变化较快，具体以目标版本的 README 和 [Debezium 3.6 release notes](https://debezium.io/releases/3.6/release-notes) 为准。
 
 消费端的逻辑朴素到几乎不需要测试：
 

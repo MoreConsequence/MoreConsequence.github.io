@@ -1,15 +1,15 @@
 ---
 title: "用 TypeScript 写 LLM 工具循环：类型系统如何替并发编排兜底"
-description: "一篇以真实可运行的 LLM Agent 工具循环为载体的 TypeScript 实战：工具调用 JSON 的运行时校验、Promise.all + 超时竞态、部分失败的类型化表达、never 穷尽检查。每个错误都是真实运行输出，每段代码都能编译能跑。"
+description: "一篇以固定 seed、可运行的 LLM Agent 工具循环模拟为载体的 TypeScript 实战：工具调用 JSON 的运行时校验、Promise.all + 超时竞态、部分失败的类型化表达、never 穷尽检查。模拟输出可复现，但不冒充真实模型成功率或外部服务延迟。"
 publishedAt: "2026-08-15"
-updatedAt: "2026-08-15"
+updatedAt: "2026-08-17"
 tags: ["TypeScript", "后端", "LLM", "Agent"]
 draft: false
 featured: false
 series: "从 Go 到 TypeScript"
 ---
 
-**TL;DR：** 系列第一篇讲的是"TS 能减少写错的范围"，这篇把话接上：**并发编排中，类型系统不负责让代码跑得快，但负责让每一种失败都有一席之地**。以 LLM Agent 的工具调用循环为例——模型返回的 JSON 工具调用是信任边界（先 `unknown` 再守卫）；并发执行用 `Promise.all` + 超时（注意：超时是竞态不是过滤器）；部分失败必须用可辨识联合占位（`{ok:true}|{ok:false}`），否则"成功一半"无法表达；`never` 穷尽检查把"新增工具忘了处理"变成编译错误。全文 20 段可编译代码，一次真实运行输出附在末尾——包括一个真实发生在演示里的 timeout 竞态。
+**TL;DR：** 系列第一篇讲的是"TS 能减少写错的范围"，这篇把话接上：**并发编排中，类型系统不负责让代码跑得快，但负责让每一种失败都有一席之地**。以固定 seed 的 LLM Agent 工具循环模拟为例——模型返回的 JSON 工具调用是信任边界（先 `unknown` 再守卫）；并发执行用 `Promise.all` + 超时（注意：超时是竞态不是过滤器）；部分失败必须用可辨识联合占位（`{ok:true}|{ok:false}`），否则"成功一半"无法表达；`never` 穷尽检查把"新增工具忘了处理"变成编译错误。固定 seed 让本文输出可复现，但不证明真实模型成功率或外部服务延迟。
 
 ## 一、场景：工具循环里，信任边界不止一处
 
@@ -104,15 +104,15 @@ await sleep(timeoutMs).then(() => ({ ok: false, error: "timeout" }) as ToolResul
 - 工具函数 **不会被打断**：`sleep` 赢了 race，报告 timeout，但 `runTool` 仍在后台跑，最后结果被丢弃。对只读工具（查库存）尚可，对**写操作工具（取消订单）这是灾难**——你报告"超时"，用户重试，结果第一次调用其实成功了，订单被取消两次。
 - 正确姿势是 `AbortSignal`（`AbortSignal.timeout()`）贯穿到底层 I/O，让真正的取消能传播；或至少给写入类工具加幂等键。
 
-这个坑不是理论——首次运行本演示（timeoutMs=100，工具延迟 50–130ms）就出现了：
+这个坑不是理论——在固定 seed 的本演示中（timeoutMs=100，工具延迟模拟为 50–130ms）会出现：
 
 ```
 ── round 1
-  c1 lookup_order → ok {"status":"PROCESSING","items":3}
-  c2 get_stock → FAIL timeout
+  c1 lookup_order → FAIL timeout
+  c2 get_stock → ok {"available":12}
 ```
 
-`get_stock` 只是慢在 100ms 竞态线上，被误报 timeout。真实 Agent 循环里，这会让模型误判"库存服务挂了"并开始降级流程。
+在这次固定 seed 中，`lookup_order` 的模拟延迟赢了 timeout 竞态，而 `get_stock` 先完成。真实 Agent 循环里，这会让模型把“仍在后台运行的工具”误判为失败并开始降级流程。
 
 ## 五、结果收集与模型回喂：联合类型替你把分支写全
 
@@ -171,15 +171,15 @@ await agentLoop(2, 100);
 2. **穷尽检查**：`ToolResult` 只有两个分支，`if (r.ok)` 就够；但若以后给 `ToolResult` 加第三个分支（如 `{ok:"retry"}`），所有 `if (r.ok)` 处立即报错——新增失败类别 = 全流程重新审查。
 3. **`unknown` 端口的纪律**：模型回喂处，把 `ToolResult[]` 序列化前要脱敏——工具值里可能夹带内部字段（Go 背景：序列化结构体时漏 `json:"-"` 的同类问题），类型不帮你裁剪，见系列第一篇的"结构化赋值不会删除多余字段"。
 
-## 六、运行它：一次真实输出
+## 六、运行它：一次固定 seed 输出
 
-完整可运行代码在 `experiments/ts-agent/main.ts`（零依赖：`tsc --strict` + `node`，模拟模型按脚本返回工具调用，工具 30% 随机失败，超时 100ms）。本机一次输出：
+完整可运行代码在 `experiments/ts-agent/main.ts`（零依赖：`tsc --strict` + `node`，模拟模型按脚本返回工具调用，固定 seed 为 `20260817`，失败阈值为 30%，超时 100ms）。本机一次固定输出：
 
 ```
 ── round 1
   预算消耗：lookup_order=2 get_stock=1（合计 3）
   c1 lookup_order → FAIL timeout
-  c2 get_stock → FAIL timeout
+  c2 get_stock → ok {"available":12}
   模型：补一轮重试
 ── round 2
   预算消耗：cancel_order=5（合计 5）
@@ -188,15 +188,15 @@ await agentLoop(2, 100);
 done
 ```
 
-这一轮两个失败形态各占一个：`timeout`（竞态误报）与 `exploded`（工具真炸）——都在类型里显式占位，模型能区分"还没完成"与"出错了"。同一次演示的上一轮（见第四节）两个工具都 `ok`。两种形态、三种结果，`ToolResult` 联合都接得住：**失败不是异常，是数据**。
+这一轮两个失败形态各占一个：`timeout`（竞态误报）与 `exploded`（工具真炸）——都在类型里显式占位，模型能区分"还没完成"与"出错了"。固定 seed 只证明这份模拟管线的输出可重放，不证明真实模型 30% 失败率或线上工具延迟。两种形态、三种结果，`ToolResult` 联合都接得住：**失败不是异常，是数据**。
 
-## 结论：类型系统负责让部分失败和并发竞态显式化
+## 七、结论：类型系统负责让部分失败和并发竞态显式化
 
 Agent 工具循环把系列第一篇的语法点串成了生产代码：信任边界（`unknown` + 守卫）、协议建模（可辨识联合）、并发编排（`Promise.all` / `race`）、失败建模（`ToolResult` 联合 + 穷尽检查）。类型系统在这里的职责不是"让代码跑得快"，而是**让每一种可能的结果都有人处理**——包括"一半成功一半失败"这种 Go 的 `(val, err)` 二元组表达不了的形状。
 
-下一步：把 `AbortSignal.timeout` 从"竞态降级"换成真取消（`fetchListener` 传入 AbortSignal），并给写工具加幂等键；然后参考 zod 的 `z.discriminatedUnion` 重写 `parseToolCall`，你会看到运行时校验与类型定义在 schema 库里如何合二为一。
+下一步：把 `AbortSignal.timeout` 从"竞态降级"换成真取消（将 `AbortSignal` 传入实际 I/O），并给写工具加幂等键；然后参考 zod 的 `z.discriminatedUnion` 重写 `parseToolCall`，你会看到运行时校验与类型定义在 schema 库里如何合二为一。固定模拟的 raw 与环境记录在 `evidence/typescript-llm-tool-loop/2026-08-17-local/`。
 
-## 七、参考资料：异步组合与运行时校验
+## 八、参考资料：异步组合与运行时校验
 
 - [MDN：Promise.all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all)：任一 Promise reject 时的组合语义。
 - [MDN：Promise.allSettled](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled)：收集部分成功与部分失败。

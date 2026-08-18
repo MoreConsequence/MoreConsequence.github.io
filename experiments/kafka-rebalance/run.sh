@@ -44,18 +44,27 @@ docker compose exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server "
   --create --topic "$TOPIC" --partitions "$PARTITIONS" --replication-factor 1
 
 echo "==> 起生产者 (${RATE} msg/s, 持续 ${DURATION}s)"
-docker compose run -d --name producer kafka /opt/kafka/bin/kafka-producer-perf-test.sh \
-  --topic "$TOPIC" --num-records $((RATE * DURATION)) --throughput "$RATE" --record-size 100 \
-  --producer-props bootstrap.servers="$BROKER"
+# perf-test 会以最快速度发完全部记录，无法"匀速持续"，那样消费端追平后没有稳态流量可测。
+# 用 console-producer 配合节流前台循环产生持续背压（每 100 条 sleep 0.1s ≈ RATE=1000/s）。
+docker compose run -d --name producer kafka bash -c "
+  while true; do
+    seq 1 100 | sed 's/.*/payload-$(date +%s%N)/' | \
+      /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server '$BROKER' --topic '$TOPIC' >/dev/null 2>&1
+    sleep 0.1
+  done
+" && sleep 3
 
 echo "==> 起 $MEMBERS 个消费者 (session.timeout.ms=$SESSION_MS, 心跳=$(($SESSION_MS / 3))ms)"
+# 不用 --from-beginning：从 latest 加入，组稳定后消费速率≈生产速率，挂死窗口才有可比基线。
 for i in $(seq 1 "$MEMBERS"); do
   docker compose run -d --name "consumer-$i" kafka /opt/kafka/bin/kafka-console-consumer.sh \
-    --bootstrap-server "$BROKER" --topic "$TOPIC" --group "$GROUP" --from-beginning \
+    --bootstrap-server "$BROKER" --topic "$TOPIC" --group "$GROUP" \
     --consumer-property "session.timeout.ms=$SESSION_MS" \
     --consumer-property "heartbeat.interval.ms=$((SESSION_MS / 3))" \
     --consumer-property "max.poll.interval.ms=15000"
 done
+# 等组形成 + 消费进入稳态（跳过开头的 JoinGroup 与追赶窗口）
+sleep 5
 
 echo "==> 采样消费速率/组状态, ${KILL_AFTER}s 时 SIGSTOP consumer-2 模拟挂死"
 python3 measure.py "$SAMPLE_MS" "$KILL_AFTER" "$WATCH" "$MEMBERS"

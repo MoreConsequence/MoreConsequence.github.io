@@ -1,15 +1,15 @@
 ---
 title: "channel 的容量边界：同一条 send 从 34.91ns 走到 139.0ns"
-description: "一次本机 Go 1.25.1/arm64 基线测量同一条阻塞 send、由独立 goroutine drain：cap=256 为 34.91ns，cap=16 为 40.33ns，cap=1 为 104.8ns，无缓冲为 139.0ns；8 个并发 sender 共享 cap=256 为 78.25ns。文章从 hchan、buffer 与 sudog 路径解释容量改变的同步语义，不拿 send-only 数字冒充 ping-pong 或 Mutex 对照。"
+description: "一次本机 Go 1.25.1/arm64 基线测量同一条 send 路径，由独立 goroutine drain：cap=256 为 34.91ns，cap=16 为 40.33ns，cap=1 为 104.8ns，无缓冲为 139.0ns；8 个并发 sender 共享 cap=256 为 78.25ns。文章从 hchan、buffer 与 sudog 路径解释容量改变的同步语义，不拿 send-only 数字冒充阻塞往返或 Mutex 对照。"
 publishedAt: "2026-08-12"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["Go", "并发", "性能优化"]
 draft: false
 featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** channel 的成本首先由容量和是否需要交接决定。本次统一基准只测同一条阻塞 `send`，由一个独立 goroutine 持续 drain，避免把 send、recv 和 ping-pong 混成一个数字：`cap=256` 为 **34.91ns/op**，`cap=16` 为 **40.33ns/op**，`cap=1` 为 **104.8ns/op**，无缓冲为 **139.0ns/op**；8 个并发 sender 共享 `cap=256` 为 **78.25ns/op**。hchan 的 `lock`、环形 buffer、sendq/recvq 和元素拷贝解释了这些路径，但这组数字只代表当前机器、输入类型和 benchmark 形状，不证明 channel 永远比 Mutex 快。
+**TL;DR：** channel 的成本首先由容量和是否需要交接决定。本次统一基准只测同一条 `send` 路径，由一个独立 goroutine 持续 drain，避免把 send、recv 和 ping-pong 混成一个数字：`cap=256` 为 **34.91ns/op**，`cap=16` 为 **40.33ns/op**，`cap=1` 为 **104.8ns/op**，无缓冲为 **139.0ns/op**；8 个并发 sender 共享 `cap=256` 为 **78.25ns/op**。hchan 的 `lock`、环形 buffer、sendq/recvq 和元素拷贝解释了这些路径，但这组数字只代表当前机器、输入类型和 benchmark 形状，不证明 channel 永远比 Mutex 快。
 
 ## 一、hchan 解剖：一把锁、两个队列、一个环形 buffer
 

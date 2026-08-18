@@ -2,13 +2,13 @@
 title: "理解 Go Context 的边界"
 description: "context.Context 不是参数口袋：取消、期限与跨边界元数据各自有边界，业务参数永远不该走 Value。从四种实现到工程决策树。"
 publishedAt: "2026-07-21"
-updatedAt: "2026-08-02"
+updatedAt: "2026-08-17"
 tags: ["Go", "并发", "工程实践"]
 featured: true
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** `context.Context` 只该回答三个问题：这次工作取消了吗（`Done`/`Err`）、最晚什么时候结束（`Deadline`）、请求链路上有哪些跨进程的元数据（`Value`）。它由四种实现嵌套成一条链，取消沿树向下传播、期限是越传越短的预算、Value 只放 trace ID 这类基础设施元数据。业务参数走显式参数，资源清理走 `defer`——这三条边界划清楚，代码的诚实程度就上来了。
+**TL;DR：** `context.Context` 只该回答三个问题：这次工作取消了吗（`Done`/`Err`）、最晚什么时候结束（`Deadline`）、当前进程内有哪些请求范围的基础设施元数据（`Value`）。跨进程传播不能靠 `Value` 自动完成，还需要显式编码到 HTTP header、RPC metadata 或消息字段。Context 由四种实现嵌套成一条链，取消沿树向下传播、期限是越传越短的预算；业务参数走显式参数，资源清理走 `defer`，这几条边界划清楚，代码的诚实程度就上来了。
 
 ## 一、Context 只回答三个问题
 
@@ -27,7 +27,7 @@ type Context interface {
 
 1. **这次工作是否已经取消？**——`Done()` 关闭、`Err()` 是 `context.Canceled` 还是 `context.DeadlineExceeded`。
 2. **最晚应该在什么时候结束？**——`Deadline()` 给出时间点，超过它就该停下来。
-3. **请求链路上有哪些真正属于基础设施的元数据？**——`Value()` 取 trace ID、认证主体这类跨进程信息。
+3. **当前进程里有哪些请求范围的基础设施元数据？**——`Value()` 可以取 trace ID、认证主体等信息；如果它们要跨进程传递，必须由 tracing/RPC middleware 显式序列化和恢复。
 
 业务参数不在这份清单里。订单号、分页大小和权限策略应该以明确的参数或类型出现。这句话不是风格偏好，是接口设计的结果：Context 的传递是隐式的，而函数签名里的参数是显式的；把业务参数塞进 Context，等于给每个函数藏了一个编译器看不见的入参。
 
@@ -106,7 +106,7 @@ func (s *Service) LoadProfile(ctx context.Context, id string) (Profile, error) {
 
 不要在调用链中某处用 `context.Background()` 重新开始——那会切断上游的超时和取消信号，让已经失去意义的工作继续消耗资源。`Background()` 的正确使用场景只有两个：main 函数的根、以及库函数在调用方没传 Context 时的兜底。
 
-**关键认知：取消是协作式的。** `cancel()` 做的唯一一件事是 `close(done)`。真正停止工作的是每个 goroutine 自己对 `Done()` 的监听。如果一段代码接收了 Context 却从不检查它，那么取消对它毫无作用，资源照常泄漏。最典型的泄漏是这种"信号发了没人听"：
+**关键认知：取消是协作式的，但取消传播不是“只关一个 channel”。** `cancel()` 会记录取消错误与 cause、关闭或标记 `Done()`，递归取消子节点，并清理父子关系；它不会强行中断正在执行的业务函数。真正停止工作的是每个 goroutine 自己对 `Done()` 的监听。如果一段代码接收了 Context 却从不检查它，那么取消对它的工作循环毫无作用，资源照常泄漏。最典型的泄漏是这种“信号发了没人听”：
 
 ```go
 // 泄漏版：错误写法——worker 没有任何退出分支,ctx 取消对它毫无作用
@@ -362,7 +362,7 @@ func (s *Service) DoWork(ctx context.Context, id string) error {
 
 ## 八、Value 要克制：元数据通道，不是参数口袋
 
-适合放进 Context 的值通常满足两个条件：**横跨进程边界**（HTTP 层注入、DB/日志/下游服务都要读），**不属于业务输入**（没有它业务照样能算，只是日志不完整）。典型例子是 trace ID、认证主体、区域信息。官方文档的语义是：Context 适合承载请求作用域的数据，这些数据跨越进程或 API 边界。
+适合放进 Context 的值通常满足两个条件：**属于请求作用域，并需要沿当前进程的调用链传播**；它的来源或去向可能位于 HTTP/RPC 等进程边界，但序列化和恢复必须由 middleware 或客户端库完成。第二个条件是它**不属于业务输入**，没有它业务照样能算，只是日志或鉴权上下文不完整。典型例子是 trace ID、认证主体、区域信息。官方文档说这些值可以随请求跨越进程或 API 边界，但 `Context` 本身不负责跨进程传输。
 
 真正容易踩的坑是把业务参数塞进去：
 
@@ -389,7 +389,7 @@ service.ListOrders(ctx, ListOrdersInput{
 flowchart TD
     Q{"这个值是什么？"} --> Q1{"业务输入？<br/>订单号 / 分页 / 角色"}
     Q1 -->|是| A["显式参数<br/>签名里写清楚"]
-    Q1 -->|否| Q2{"请求作用域且跨进程？<br/>trace ID / 认证主体 / 区域"}
+    Q1 -->|否| Q2{"请求作用域且需跨 API 传播？<br/>由 middleware 序列化"}
     Q2 -->|是| B["context.WithValue<br/>私有 key 类型 + 封装函数"]
     Q2 -->|否| Q3{"需要取消或期限？"}
     Q3 -->|是| C["Done / Deadline<br/>不占 Value"]
@@ -474,13 +474,13 @@ checklist 靠人记，机器检查才靠得住。三个工具把前面几节的�
 
 ## 十一、一个常见的误解：超时一到，下游并不会自动停下
 
-`WithTimeout` 到期后，cancel 做的只是把 `DeadlineExceeded` 写进 err 并 close(done)——**它不会中断任何正在执行的代码**。下游 goroutine 是否真的退出，取决于它是否 select `Done()`；而每次 select 都是瞬时的，它只是"这一刻查一次信号"，不是"持续被打断"。
+`WithTimeout` 到期后，cancel 会把 `DeadlineExceeded` 写进 err、关闭或标记 `Done()`，并沿 Context 树传播；**它不会中断任何正在执行的业务代码**。下游 goroutine 是否真的退出，取决于它是否 select `Done()`；而每次 select 都是瞬时的，它只是"这一刻查一次信号"，不是"持续被打断"。
 
 最典型的反例是阻塞在同步 I/O 上的 goroutine：`net.Conn.Read` 不会因为 ctx 取消而返回——cancel 只是关了一个 channel，内核的 socket 缓冲区并没有监听它。要让阻塞的 Read 被打断，必须显式设 deadline：`conn.SetReadDeadline(time.Now())`。`http.Request.Context()` 之所以"看起来"能打断请求，是因为 http.Server 在连接层做了额外工作（客户端断开时主动 cancel 请求 ctx，见 `Request.Context` 的文档），不是 Context 自己会魔法；`database/sql` 的 `QueryContext` 能响应取消，同样是驱动的配合。
 
 结论：**ctx 取消是"信号到达"，不是"指令执行"。** 信号之后还停在阻塞 I/O 上的 goroutine，该交给 deadline 管——这与[优雅停机](/writing/graceful-shutdown-in-go)里"Shutdown 只等请求自然完成、不强制打断"是同一个原则。
 
-可运行演示：go run ./context-leak，观察泄漏版 goroutine 数（修复版随 ctx 取消全部退出，泄漏版一个都不少）。
+可运行演示（从仓库根目录）：`cd experiments && go run ./context-leak`，观察泄漏版 goroutine 数（修复版随 ctx 取消全部退出，泄漏版一个都不少）。
 
 ## 十二、阻塞 I/O 与驱动配合：取消是怎么穿过去的
 
@@ -517,7 +517,7 @@ case <-ctx.Done():
 ## 参考资料
 
 1. Go 官方博客：Context and Cancellation —— https://go.dev/blog/context-and-cancellation
-2. Go 官方文档：context 包（Value 的"跨进程边界"定位与 key 使用建议）—— https://pkg.go.dev/context
+2. Go 官方文档：context 包（Value 的请求作用域语义、API 边界定位与 key 使用建议）—— https://pkg.go.dev/context
 3. Go 官方博客：Go Concurrency Patterns: Pipelines and Cancellation —— https://go.dev/blog/pipelines
 4. Go 官方博客：Go Concurrency Patterns: Context —— https://go.dev/blog/context
 5. Go 标准库源码：context/context.go（cancelCtx / timerCtx / valueCtx 实现）—— https://github.com/golang/go/blob/master/src/context/context.go

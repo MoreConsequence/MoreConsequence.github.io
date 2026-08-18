@@ -1,0 +1,27 @@
+# postgres-bloat 实验:2026-08-18 本机复现
+机器: Apple Silicon(M1 Pro), macOS 25.5.0
+环境: docker postgres:16-alpine(PostgreSQL 16.4?),容器 blog-pg
+依赖: 01_create_and_seed.sql(10万行,关表级 autovacuum) → 02_generate_dead_tuples.sh → 03 → 04 → 05
+
+## 关键:为什么必须是两会话
+autocommit 单条 UPDATE 后旧版本被插入路径 HOT prune 即时回收,pgstattuple dead=0、free=48%(第一次实测)。
+REPEATABLE READ 快照事务拖住 → UPDATE 提交后旧版本仍可见 → 快照提交后变死元组,只能等 VACUUM。
+
+## 02(长事务拖快照 + 全表 UPDATE)
+snapshot-established
+UPDATE 100000
+table_len=20062208, tuple_count=100000, dead_tuple_count=100000, dead_tuple_percent=44.3, free_percent=0.8
+
+## 03(测量)
+n_live_tup=200000(统计视图:live+dead), n_dead_tup=100000, dead_pct_est=33.3(统计口径)
+pgstattuple: dead_tuple_percent=44.3, free_percent=0.8
+xid_age=5, table_size=19MB
+
+## 04(VACUUM 后)
+dead_tuple_count=0, dead_tuple_percent=0.0
+table_size=19MB(不变:普通 VACUUM 只清页内死元组、不缩文件)
+vacuum_count=1
+
+## 05(重开 autovacuum + 3轮全表 UPDATE = 30万死元组)
+n_dead_tup=299770, dead_pct=75.0, autovacuum_count=0
+65 秒后: last_autovacuum=2026-08-18 16:29:17, autovacuum_count=1, n_dead_tup=0, n_live_tup=100000

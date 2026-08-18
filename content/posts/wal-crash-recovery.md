@@ -2,7 +2,7 @@
 title: "WAL 是数据库的命根子"
 description: "从写路径、LSN、崩溃恢复到 checkpoint，讲透 Write-Ahead Logging 为什么是现代数据库崩溃安全的基石，并横向对比 PostgreSQL、MySQL InnoDB 与 LevelDB/RocksDB 的实现取舍。"
 publishedAt: "2026-07-31"
-updatedAt: "2026-08-02"
+updatedAt: "2026-08-17"
 tags: ["数据库", "存储引擎", "原理"]
 draft: false
 featured: false
@@ -243,7 +243,7 @@ PostgreSQL 的 WAL 在 `pg_wal` 目录下，切成 16MB 的段文件，物理上
 
 InnoDB 的 redo log 是一个**环形缓冲区**：默认容量 100MB（MySQL 8.0.30 起由 `innodb_redo_log_capacity` 控制，拆成 32 个文件放在 `#innodb_redo` 目录；8.0.30 之前是 `innodb_log_file_size` 48MB 乘以 2 个文件）。写指针在前推进，checkpointer 在后面追赶、决定可覆盖水位；写指针绕回起点时若 checkpointer 尚未清账，写会阻塞。
 
-环形结构带来一个 PostgreSQL 没有的约束：**checkpoint 不是可选项，是强制项**。日志空间用尽时，写指针被迫停下，等待 checkpoint 把脏页刷掉、推进"可覆盖水位"（checkpoint age），否则整个数据库的写入就阻塞了。这也是 MySQL 运维中"刷脏页导致抖动"的根源：日志环太小，账期太短，结账的压力变成间歇性 IO 尖峰。我在生产环境里见过不止一次：日志环设得太小，checkpointer 追不上写指针，高峰时段 IO 利用率顶满、QPS 周期性下探，直到把 `innodb_redo_log_capacity` 调大几个量级才压下去。
+环形结构带来一个 PostgreSQL 没有的约束：**checkpoint 不是可选项，是强制项**。日志空间用尽时，写指针被迫停下，等待 checkpoint 把脏页刷掉、推进"可覆盖水位"（checkpoint age），否则整个数据库的写入就阻塞了。这也是 MySQL 中一种可复现的故障形状：日志环太小、账期太短，checkpointer 追不上写指针，刷脏页压力可能在高峰时段造成 IO 尖峰和 QPS 下探。是否发生、幅度多大必须由目标 MySQL 版本、存储设备和原始监控验证，不能把它写成当前环境已经发生过的生产事故。
 
 torn page 的对策，InnoDB 选择了与 PostgreSQL 相反的方向：**默认不写整页镜像，而是用 doublewrite buffer**。页要落盘时，先顺序写进一块专门的 doublewrite 区域，再写回实际位置；如果实际位置写撕裂了，恢复时从 doublewrite 副本重建整页。同样是防 torn page：PostgreSQL 把副本存在日志里，InnoDB 把副本存在单独的区域，前者日志膨胀，后者每次刷页多一次写。
 
@@ -292,7 +292,7 @@ graph TD
 
 ## 四、 fsync 与性能：持久性是一笔可以欠的账
 
-这一节的结论先行：**所有现代数据库的持久性权衡，本质都是同一个问题：多久结一次账**。结账动作是 fsync，一次 fsync 的延迟取决于设备与负载，量级通常是亚毫秒到几毫秒（NVMe 上常接近亚毫秒，机械盘上往往到毫秒级）；而把账期从"每次提交"放宽到"每秒一次"，吞吐可以提升一个数量级。放宽账期不是免费的：省下的 fsync 开销，兑换成档位表里写明的丢失窗口，每一档能丢多久都标了价。
+这一节的结论先行：**所有现代数据库的持久性权衡，本质都是同一个问题：多久结一次账**。结账动作是 fsync，一次 fsync 的延迟取决于设备与负载；不要把某个 NVMe、机械盘或虚拟磁盘上的量级当作通用常数。把账期从“每次提交”放宽到“每秒一次”，可能提高吞吐，但收益必须用目标设备压测。放宽账期不是免费的：省下的 fsync 开销，兑换成档位表里写明的丢失窗口，每一档能丢多久都标了价。
 
 第一个优化是 **group commit（组提交）**：把一批事务的 fsync 合并成一次。原理不复杂：多个事务同时提交时，它们的日志记录在缓冲区里本来就挨在一起，只需一个人执行 fsync，其余人等这一下完成就好：
 
@@ -444,7 +444,7 @@ LOG:    checkpointer process (PID 10799) was terminated by signal 6
 
 这五个值不是性能竞速，是同一份契约的不同签署方式。`pg_test_fsync` 能告诉你哪个值在你这台机器上最快，但它测不出哪个值更诚实——诚实与否取决于设备和文件系统，文档把它归到 Reliability 章节讨论，不是性能章节。
 
-## 回到开头那个问题
+## 五、结论：WAL 把断电损失圈在恢复边界内
 
 开头那个 8KB 写到一半断电的问题，现在答案确定：在 WAL 正常工作的数据库里，断电损失被 WAL 圈定在一条边界内，checkpoint 决定这条边界有多宽，fsync 档位决定最多欠多久的账。已确认的事务按日志重放补齐，未提交的由恢复流程回滚或遮蔽，torn write 会被校验和发现、页从镜像重建，这个文件绝不会以半页状态对外服务。
 
@@ -473,8 +473,8 @@ $ pg_controldata $PGDATA | grep "Latest checkpoint"   -- 恢复起点
 11. RocksDB Wiki：WAL Recovery Modes —— https://github.com/facebook/rocksdb/wiki/WAL-Recovery-Modes
 12. RocksDB 源码：options.h（WriteOptions.sync、recycle_log_file_num、disableWAL 的注释与默认值）—— https://github.com/facebook/rocksdb/blob/main/include/rocksdb/options.h
 13. LevelDB 实现文档：doc/impl.md（日志文件与 memtable 的关系）—— https://github.com/google/leveldb/blob/main/doc/impl.md
-14. PostgreSQL 17 官方文档：Write-Ahead Logging (WAL)（WAL 核心概念与 group commit 原文）—— https://www.postgresql.org/docs/17/wal-intro.html
-15. PostgreSQL 17 官方文档：WAL Configuration（XLogInsertRecord/XLogFlush、checkpoint 与 redo record、checkpoint_completion_target、commit_delay 原文）—— https://www.postgresql.org/docs/17/wal-configuration.html
+14. PostgreSQL 17 官方文档（本文源码语义固定参考版本）：Write-Ahead Logging (WAL)（WAL 核心概念与 group commit 原文）—— https://www.postgresql.org/docs/17/wal-intro.html
+15. PostgreSQL 17 官方文档（本文源码语义固定参考版本）：WAL Configuration（XLogInsertRecord/XLogFlush、checkpoint 与 redo record、checkpoint_completion_target、commit_delay 原文）—— https://www.postgresql.org/docs/17/wal-configuration.html
 16. PostgreSQL 官方文档：Continuous Archiving and Point-in-Time Recovery (PITR) —— https://www.postgresql.org/docs/current/continuous-archiving.html
 17. PostgreSQL 官方文档：pg_basebackup —— https://www.postgresql.org/docs/current/app-pgbasebackup.html
 18. PostgreSQL 官方文档：pg_test_fsync —— https://www.postgresql.org/docs/current/pgtestfsync.html

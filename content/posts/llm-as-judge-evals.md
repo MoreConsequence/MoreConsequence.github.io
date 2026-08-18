@@ -3,7 +3,7 @@ title: "LLM-as-judge 不是免费裁判：三笔偏差税与 token 成本"
 description: "用 LLM 给 LLM 打分是主流 eval 手段，但裁判自己会错：位置偏好、冗长偏好、自我偏好三笔系统性偏差，加格式崩塌与校准漂移。eval 不是跑个 prompt，是度量偏差、对照人工标注、控制变量。"
 publishedAt: "2026-08-16"
 tags: ["AI 工程", "LLM", "eval", "质量"]
-draft: true
+draft: false
 featured: false
 series: "AI 工程"
 ---
@@ -76,7 +76,7 @@ flowchart LR
 
 **校准漂移 → 对照人工标注，算一致率与 Cohen's kappa。** 抽几十条样本做人工标注（A/B/tie），和 judge 的判定对照：一致率看"判重了多少"，kappa 看"扣除随机一致后还剩多少"。kappa 的经验刻度：<0.2 几乎不可用，0.2–0.4 一般，0.4–0.6 中等，0.6 以上才算强。注意一致率高不等于裁判对——裁判可能是在精确复刻人工的偏见（同样偏好长答案、同样偏心某个风格）。所以 anchor 要选"你觉得正确"的标注，不是"你觉得流行"的标注。
 
-**实验入口**（stub 管线可运行；真实模型数字尚未取得）：
+**实验入口**（stub 管线已在本机实测闭环，见 `evidence/llm-as-judge-evals/2026-08-16-local/`；真实模型数字不属于本文范围）：
 
 ```bash
 python3 experiments/llm-judge/llm_judge_position_bias.py --judge stub
@@ -94,7 +94,7 @@ python3 experiments/llm-judge/llm_judge_position_bias.py --judge api
 Cohen's kappa: 0.556
 ```
 
-stub 刻意模拟"位置偏好 + 冗长偏好"，翻盘恰好发生在两个候选长度相近（tie）的样本上——位置偏差在可比候选上最明显，这个最小演示和论文的结论方向一致。真实模型的偏差率、与人工的一致率和 kappa 尚未取得；`--judge api` 只有接入固定版本、固定参数的本地模型并保存 raw 输出后，才能把这三项写成数字。当前的 25.0%、75.0% 和 0.556 只属于 stub。
+stub 刻意模拟"位置偏好 + 冗长偏好"，翻盘恰好发生在两个候选长度相近（tie）的样本上——位置偏差在可比候选上最明显，这个最小演示和论文的结论方向一致。25.0%、75.0%、0.556 是 stub 的实测输出（本机已复跑）；`--judge api` 的接口已预留，但真实模型的偏差率、一致率与 kappa 取决于所选模型、版本与提示词，需要固定参数并保存 raw 输出才能写数字，本文不做承诺——这正是度量项该有的姿态：数字跟着配置走，不跟着文章走。
 
 ## 五、 成本账：judge token × 样本量，以及三招降本
 

@@ -1,15 +1,15 @@
 ---
 title: "TCP 超时与重传：丢包后网络在赌什么"
-description: "RTO 是 TCP 里最被低估的组件：重传二义性逼它'不敢快'，Karn 算法让它'忘了上次的重传'。拆开 RTO 计算、快速重传与 SACK 的分工，用 tc netem 注入丢包看 RTO 退避的实测曲线。"
+description: "RTO 是 TCP 里最被低估的组件：重传二义性逼它'不敢快'，Karn 算法让它'忘了上次的重传'。拆开 RTO 计算、快速重传与 SACK 的分工，用仓库内固定输入的 RFC 6298 风格时间线模型演示退避，并明确 Linux tc 抓包仍需独立验证。"
 publishedAt: "2026-08-06"
-updatedAt: "2026-08-06"
+updatedAt: "2026-08-17"
 tags: ["网络", "TCP", "Linux", "硬核底层"]
 draft: false
 featured: false
 series: "硬核底层原理"
 ---
 
-**TL;DR：** 丢一个包，TCP 无法立即知道是"丢了"还是"只是慢"。它唯一确凿的证据链是**按时重传**——但重传又带来一个新问题：**重传二义性**——收到确认时，你分不清它确认的是第一次发送还是重传的那次（RTT 算错了，RTO 就永远不准）。为解决这个自指难题，TCP 用了三条规则：**Karn 算法**（重传样本不参与 RTO 计算，且强制 RTO 翻倍）、**快速重传**（收到 3 个重复 ACK 就不等超时）、**SACK**（告诉对端"到底哪几段丢了"）。本文把这三板斧拆开，用 `tc netem` 注入可控丢包，看 RTO 退避的时间线。
+**TL;DR：** 丢一个包，TCP 无法立即知道是“丢了”还是“只是慢”。它唯一确凿的证据链是**按时重传**，但重传又带来**重传二义性**：收到确认时，分不清它确认的是第一次发送还是重传的那次。本文把 RTO 计算、Karn 规则、快速重传与 SACK 分开，用固定输入的 RFC 6298 风格时间线模型展示 180ms → 360ms → 720ms 的退避；这个模型解释协议关系，不冒充 Linux `tc netem` 的实测曲线。
 
 ## 一、重传二义性：TCP 为自己设计的死循环
 
@@ -62,37 +62,31 @@ sequenceDiagram
 | 快速重传 | 连续 3 个重复 ACK | 不等超时，提前重发 |
 | SACK | 对端开启（默认） | 精确定位丢失段，避免整段重传 |
 
-## 四、实测：tc netem 注入丢包看退避
+## 四、固定输入模型：把 RTO 退避的顺序算出来
 
-在 Linux 上给本地回环设备加 5% 丢包，跑一个大文件传输，抓包看时间线：
+旧版本曾给出 `tc netem`/`tcpdump` 的精确时间线，但当前 checkout 没有对应的 Linux 内核版本、服务端、抓包原始文件和运行命令闭环；这些数字不能继续作为当前实测。本节使用 `experiments/tcp-rto-timeline/sim.py`，只验证 RFC 6298 风格的“超时 → RTO 翻倍 → 本轮 RTT 样本因重传作废”关系：
 
 ```bash
-# 给 lo 注入 5% 丢包
-sudo tc qdisc add dev lo root netem loss 5%
-# 收一个大文件
-curl -s -o /dev/null http://localhost:8080/bigfile
-# 抓包（另一终端）
-sudo tcpdump -i lo tcp port 8080 -n -ttt
-
-# 清理
-sudo tc qdisc del dev lo root
+python3 experiments/tcp-rto-timeline/sim.py \
+  --srtt-ms 100 --rttvar-ms 20 --timeouts 3
 ```
 
-tcpdump 输出的关键信号：
-
+```text
+srtt_ms=100.0 rttvar_ms=20.0 initial_rto_ms=180.0
+event attempt wait_ms next_rto_ms rtt_sample
+timeout       1    180.0       360.0 discarded_by_karn
+timeout       2    360.0       720.0 discarded_by_karn
+timeout       3    720.0      1440.0 discarded_by_karn
+fast_retransmit       3       0.0           - triggered_by_duplicate_ack
 ```
- 0.000000  客户端→服务端   PSH 后续数据
- 8.462312  客户端→服务端   TCP DUP ACK 1-5 (快速重传触发)
-  8.462320  客户端→服务端   TCP Retransmission  ← 快速重传(由 DUP ACK 触发)
-```
 
-观察点：
+| 事件 | 触发 | 时间模型里的动作 | 能否从这段模型推出 |
+| --- | --- | --- | --- |
+| 超时 | ACK 未在 RTO 内到达 | 立即重传，下一次 RTO 乘 2 | 退避顺序与 Karn 的样本丢弃关系 |
+| 快速重传 | 3 个重复 ACK | 不等待 RTO，立即重传 | 机制上早于超时 |
+| SACK | 接收端报告非连续块 | 发送端精确选择缺失范围 | 需要真实协议栈/抓包验证的块选择行为 |
 
-1. **DUP ACK 出现 → 快速重传**比 RTO（几百 ms 量级）快一个数量级。对照组实验：把丢包率设为 2% 且模拟不支持 SACK 的对端（`sysctl net.ipv4.tcp_sack=0`），观察"拖尾重传"明显变长——因为发送方只能回退整段重发。
-2. 抓包里的 `Retransmission` 前面的时间差 ≈ 你观察 RTO 退避：丢了 1 个包，后一份的等待往往明显比前一份多一倍，**那正是 Karn 的 RTO 翻倍**。
-3. 全链路：`network = 丢包 5%` → RTO 退避有没有丢能直接看到最后；一段时间后网络恢复 → 曲线回拉。
-
-**诚实注明**：这个实验在 lo 上是"伪网络"（没有真实传播延迟），RTO 的量级会被内核参数（`initial_rto`，默认 1s 起）主导。看趋势、看分工，别把数字本身当真。
+模型没有实现拥塞窗口、ACK 生成、SACK block、丢包随机性、内核时钟粒度或真实网络。因此 `180/360/720ms` 是输入参数的派生结果，不是 Linux 默认 RTO，也不能替代 `tc netem` 抓包。
 
 ## 五、RTO 参数：TCP 为什么不喜欢太快
 
@@ -104,11 +98,13 @@ tcpdump 输出的关键信号：
 
 这个"慢"是设计正确的：**把 RTO 调小 10 倍，重传触发提前，但重传二义性惹的祸（RTT 估错、拥塞没恢复就重传）会成比例放大。** 生产里看到"快重传 + SACK 都触发了还慢"，通常不是 RTO 参数的问题，而是**重传被拥塞控制踩了刹车**（因为重传把 cwnd 减半）——见[TCP 拥塞控制](/writing/tcp-congestion-control-bbr)。把两者放一起才是 TCP 丢包后的完整响应：**先减 cwnd 再重传，重传按退避时间算**。
 
-## 结论：RTO 是在重传二义性下买出的保守时间
+## 六、结论：RTO 是在重传二义性下买出的保守时间
 
 TCP 丢包后的完整动作是"三件套"：**超时重传（保底）+ 快速重传（提前）+ SACK（精准）**，外加 Karn 的两条互锁规则（重传样本作废、RTO 翻倍）。RTO"不敢快"不是因为工程师保守，而是**重传二义性让"快"的代价高于"慢"**——RTO 是 TCP 里最被低估的组件，它等于这整个协议的试错成本。
 
-下一步：把 netem 实验跑一遍，在 tcpdump 里同时数一数 `DUP ACK`、`Retransmit`、`SACK` 三类帧——你会发现 TCP 的重传不是"碰运气重发"，是一台按账本决策的机器。然后把丢包率从 5% 提到 20%，看快速重传如何被 DEFER 在恢复窗口里消耗。
+下一步：先运行仓库内模型确认事件顺序；如果需要 Linux 实证，再固定内核、RTT、丢包模型、SACK 开关和传输负载，保存 `tcpdump` 原始输出，同时数 `DUP ACK`、`Retransmit`、`SACK` 三类帧。没有这些条件，不能把一次抓包的时间点写成通用 RTO。
+
+模型 raw 与环境记录在 `evidence/tcp-retransmit-timeout-rto/2026-08-17-local/`。
 
 ## 参考资料
 

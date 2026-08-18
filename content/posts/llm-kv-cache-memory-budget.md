@@ -1,14 +1,15 @@
 ---
 title: "显存不是算力：KV cache 的字节账，40GB 里到底塞得下几个并发"
-description: "把 LLM 推理的成本从算力拆到显存：用 attention 的结构推出一张每 token 的 KV 字节账，代入四个真实模型 config，算清一张 40GB 卡在 4K/8K/32K 上下文下各能撑几个并发。"
+description: "把 LLM 推理的成本从算力拆到显存：用 attention 结构推出每 token 的 KV 字节账，代入四个公开模型配置，并明确十进制 GB、二进制 GiB、权重估算和真实 serving 余量之间的边界。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-17"
 tags: ["AI 工程", "LLM", "显存", "成本"]
-draft: true
+draft: false
 featured: false
 series: "AI 工程"
 ---
 
-**TL;DR：** 长上下文 + 高并发的推理成本大头不是算力，是 KV cache 显存。每 token 每层要缓存 2（K 与 V）× kv_heads × head_dim × 字节数（fp16 为 2）字节：Llama-3-8B 是 128 KiB/token，4K 上下文一个请求就要 0.5 GiB、32K 要 4 GiB，一张 40GB 卡减去约 16GB 权重和约 4GB 固定开销后，4K/8K/32K 分别只能撑约 40/20/5 个并发；换 MHA 的 Llama-2-7B，同样一张卡只剩 11/5/1——参数差不多，KV 差四倍。MHA 换 GQA 把 KV 成本降到 1/4 到 1/8；PagedAttention 用固定大小的块按需分配，把连续预分配造成的 60%-80% 浪费基本抹平（vLLM 博客/论文报告）；KV 量化（fp8）再把字节减半，但质量损失不能从字节公式推出，本文不伪造该数字。一张卡能撑几个并发 =（显存 − 权重 − 固定开销）÷ 每 token KV 字节 ÷ 上下文长度，这是一道部署前就该心算的算术题。
+**TL;DR：** 长上下文 + 高并发的推理成本大头不是算力，是 KV cache 显存。每 token 每层要缓存 2（K 与 V）× kv_heads × head_dim × 字节数（fp16 为 2）字节：Llama-3-8B 是 128 KiB/token，4K 上下文一个请求要 0.5 GiB、32K 要 4 GiB。以十进制 40 GB 显存、约 16 GB fp16 权重和 4 GB 固定开销的教学假设计算，当前修正版计算器给出 4K/8K/32K 约 37/18/4 个并发；MHA 的 Llama-2-7B 约为 10/5/1。参数量相近但 KV 可差四倍，原因是 kv_heads 不同。PagedAttention 能减少分配碎片和预留浪费，但不会改变 KV 字节公式；KV 量化可把模型内存项减半，质量损失仍需独立评估。一张卡能撑几个并发 = 可用字节 ÷（每 token KV 字节 × 上下文长度），单位必须先统一。
 
 ## 一、 KV cache 从哪来：Q 是一次性的，K/V 才要逐 token 攒
 
@@ -34,9 +35,9 @@ flowchart LR
 
 KV cache 因此是逐 token 增长的：每解码一步，全部层的 K/V 数组各多一行，而且这是持续占用的量——生成多少 token 就存多少行，对话不结束、显存不释放。
 
-算力不在这条链上。decode 每步只推一个新 token 的前向，投影与 FFN 的计算量不随上下文涨；attention 那一步每步确实要扫一遍已缓存的 K/V，计算量随上下文线性涨，但那是瞬时计算，算完即释放。真正按上下文长度线性增长、并长期占住显存不还的是 KV cache——vLLM 论文（Kwon et al., SOSP 2023）正是把它的显存浪费当成 serving 的核心问题提出的：它"巨大且动态地增长和收缩"，权重是一次性装载的静态量，KV cache 才是负载一高就吃光活跃内存的动态量。这也解释了那个反直觉现象：模型没换、算力没换，为什么长对话跑着跑着，同一张卡能并发服务的请求数越来越少——KV cache 一直在把显存吃进去。
+算力和显存要分开记。decode 每步只推一个新 token 的前向，投影与 FFN 的计算量不随上下文涨；attention 那一步每步确实要扫一遍已缓存的 K/V，计算量随上下文线性涨，但那部分中间结果用完可以释放。真正按上下文长度线性增长、并长期占住显存的是 KV cache——vLLM 论文（Kwon et al., SOSP 2023）正是把它的显存管理当成 serving 的核心问题提出的：权重是一次性装载的静态量，KV cache 则随活跃请求动态增长。这也解释了那个反直觉现象：模型没换、GPU 没换，为什么长对话跑着跑着，同一张卡能并发服务的请求数越来越少——KV cache 一直在把显存吃进去。
 
-## 二、 字节账公式：代入四个真实模型，40GB 卡各撑几个并发
+## 二、字节账公式：代入四个公开配置，40 GB 卡各撑几个并发
 
 ### 2.1 公式，一步能心算
 
@@ -59,9 +60,9 @@ per_token    = per_token_per_layer × num_layers
 并发上限     = (显存 − 权重 − 固定开销) ÷ 单请求 KV
 ```
 
-权重是静态的，一次加载占住；固定开销是 CUDA context、激活与预填充峰值——本文取 4 GB，这是估算余量不是引擎实测（实验入口的边界一节说清）。
+权重是静态的，一次加载占住；固定开销是 CUDA context、激活与预填充峰值——本文取 4 GB，这是估算余量不是引擎实测。计算器的 `--vram`/`--overhead` 使用十进制 GB，输出的 KV 和可用余量使用二进制 GiB，并在字节数上取整并发，避免把两套单位混在一起。
 
-### 2.2 代入真实模型 config，逐项核对
+### 2.2 代入公开模型 config，逐项核对
 
 配置来自 Hugging Face 上 meta-llama 系列公开 config.json（核对日期 2026-08-16）。head_dim 不在 config 里显式给出，等于 hidden_size ÷ num_attention_heads（如 Llama-3-8B：4096 ÷ 32 = 128）。四个模型的逐项数字：
 
@@ -72,17 +73,17 @@ per_token    = per_token_per_layer × num_layers
 | Llama-2-70B | 80 | 64 | 8 | 128 | GQA | 320 KiB | 1.25 GiB |
 | Llama-3-8B | 32 | 32 | 8 | 128 | GQA | 128 KiB | 0.5 GiB |
 
-以 Llama-3-8B 把每一步写出来：每层每 token = 2 × 8 × 128 × 2 = 4096 B = 4 KiB；再乘 32 层 = 128 KiB/token。4K 上下文 = 128 KiB × 4096 = 512 MiB = 0.5 GiB，8K = 1.0 GiB，32K = 4.0 GiB。权重 fp16 约 16 GB（8B × 2 字节），减去固定开销后可用给 KV 的约 20 GB。于是：
+以 Llama-3-8B 把每一步写出来：每层每 token = 2 × 8 × 128 × 2 = 4096 B = 4 KiB；再乘 32 层 = 128 KiB/token。4K 上下文 = 128 KiB × 4096 = 512 MiB = 0.5 GiB，8K = 1.0 GiB，32K = 4.0 GiB。权重 fp16 按 8×10⁹ 参数估算为 16.0 十进制 GB，40 GB 显存减去 16 GB 权重和 4 GB 固定开销后，约剩 18.626 GiB 给 KV。于是：
 
-| 上下文长度 | 单请求 KV | 并发上限（40GB 卡） |
+| 上下文长度 | 单请求 KV | 并发上限（40 GB 十进制显存、当前计算器） |
 | --- | --- | --- |
-| 4096 | 0.5 GiB | 40 |
-| 8192 | 1.0 GiB | 20 |
-| 32768 | 4.0 GiB | 5 |
+| 4096 | 0.5 GiB | 37 |
+| 8192 | 1.0 GiB | 18 |
+| 32768 | 4.0 GiB | 4 |
 
-对照 Llama-2-7B（MHA）：每层每 token = 2 × 32 × 128 × 2 = 16 KiB，×32 层 = 512 KiB/token，4K 单请求 = 2 GiB。同一张 40GB 卡，权重约 14 GB、余量约 22 GiB，4K/8K/32K 分别只能撑 11/5/1 个并发。
+对照 Llama-2-7B（MHA）：每层每 token = 2 × 32 × 128 × 2 = 16 KiB，×32 层 = 512 KiB/token，4K 单请求 = 2 GiB。同一张 40 GB 卡，权重按 7×10⁹×2 估算为 14.0 GB，余量约 20.489 GiB，4K/8K/32K 分别只能撑 10/5/1 个并发。
 
-上下文从 4K 拉到 32K，同一张卡从 40 个并发掉到 5 个。注意"4K→32K"只涨了 8 倍，但它乘到每个并发上：并发数反比于 seq_len。总 KV = 每 token KV × seq_len × batch，乘积增长——seq_len 翻倍、batch 再翻倍，KV 变四倍。严格说这不是指数，但方向性的结论比"指数"这个词更重要：**在固定显存里，长上下文和多并发只能二选一，余量被乘积吃掉。** 这就是长上下文 + 高并发是显存杀手的原因。以上数字用 `experiments/llm-kv` 计算器可直接复现，全部手算可复核。
+上下文从 4K 拉到 32K，Llama-3-8B 的教学上界从 37 个并发降到 4 个；并发数反比于 seq_len，但向下取整和十进制/二进制换算会让比例不是整齐的 8 倍。总 KV = 每 token KV × seq_len × batch，乘积增长——seq_len 翻倍、batch 再翻倍，KV 变四倍。**在固定显存里，长上下文和多并发共享同一份余量。** 以上数字用 `experiments/llm-kv` 计算器可直接复现，全部手算可复核。
 
 ## 三、 MHA 与 GQA/MQA：KV heads 的数量才是账单分母
 
@@ -96,7 +97,7 @@ per_token    = per_token_per_layer × num_layers
 - **GQA**（Grouped-Query Attention，Ainslie et al. 2023）：把 q_heads 分成若干组，每组共享一份 K/V。Llama-2-70B 把 64 个 Q head 分成 8 组（kv_heads=8），KV 成本直接除以 8。
 - **MQA**（Multi-Query Attention，Shazeer 2019）：所有 Q head 共享一份 K/V（kv_heads=1），KV 成本除以 q_heads，最省。
 
-为什么主流落点是 GQA 而不是更省内存的 MQA：MQA 把 KV 压到极限，但质量有可见损失——一份 K/V 被所有 Q head 共享，注意力表达的多样性下降，GQA 论文报告 MQA 相比 MHA 掉质量，而中等分组数（如 8 组）的 GQA 在多数任务上接近 MHA。所以今天的主流开源模型（Llama-2-70B、Llama-3 全系、Mistral）清一色 GQA 且 kv_heads=8：这是"用最少的 KV 字节保住 MHA 质量"的工程共识。代价也写清楚：KV heads 是共享的，模型在长距离记忆上的区分度理论上弱于每个 query 独立 KV 的 MHA，长上下文与量化场景下仍有差距——只是显存账划算到让多数场景接受。选模型时，kv_heads 是 config 里一个能直接查的维度，比看参数总量更能预判部署成本。
+为什么许多模型落点是 GQA 而不是更省内存的 MQA：MQA 把 KV 压到极限，但质量有可见损失——一份 K/V 被所有 Q head 共享，注意力表达的多样性下降；GQA 论文报告 MQA 相比 MHA 存在质量代价，而中等分组数的 GQA 可以在质量和 KV 字节之间折中。本文引用的 Llama-2-70B 与 Llama-3-8B 配置使用 GQA，但不能把它外推为所有开源模型或固定的 `kv_heads=8` 共识。代价也写清楚：KV heads 是共享的，模型效果与长上下文质量仍需按具体 checkpoint 和评估集验证。选模型时，`kv_heads` 是 config 里能直接查的维度，比只看参数总量更能预判部署成本。
 
 ## 四、 PagedAttention：动态增长的内存，连续分配为什么放不下
 
@@ -120,7 +121,7 @@ flowchart LR
 
 论文报告的吞吐收益（SOSP 2023 摘要口径）：相对 FasterTransformer 与 Orca，"with the same level of latency，吞吐提升 2-4×"，且序列越长、模型越大收益越明显；vLLM 官方博客给出相对 HuggingFace Transformers 最高 24×、相对 TGI 最高 3.5× 的对比（A10G 跑 LLaMA-7B、A100 40GB 跑 LLaMA-13B）。这些是论文/博客当时环境的结果，不是本机测得——本仓库还没跑过 vLLM 基准（见实验入口）。
 
-两种方案的语义承诺差异：连续预分配卖的是"实现简单、布局可预期"，代价是内存不确定性的全部成本由浪费承担；PagedAttention 卖的是"按需精确分配 + 块级共享"，代价是多一层 block table 的间接访问与块调度逻辑。为什么值得：KV 占用是 serving 里最不确定的量，把不确定性从"内存浪费"变成"调度问题"，正是分页的意义——总量没变，但每一字节都花在刀刃上。这一节的主语是内存管理，不是加速；吞吐数字来自论文和官方博客的特定硬件/负载，本机尚未验证，不能写成分页的通用倍数。
+两种方案的语义承诺差异：连续预分配卖的是"实现简单、布局可预期"，代价是内存不确定性的全部成本由浪费承担；PagedAttention 卖的是"按需精确分配 + 块级共享"，代价是多一层 block table 的间接访问与块调度逻辑。为什么值得：KV 占用是 serving 里最不确定的量，把不确定性从"内存浪费"变成"调度问题"，正是分页的意义——总量没变，但每一字节都花在刀刃上。这一节的主语是内存管理，不是加速；吞吐数字来自论文和官方博客的特定硬件/负载，本机无 GPU 未验证，不能写成分页的通用倍数。
 
 ## 五、 生产账：长上下文乘出来的贵，prefix caching 与 KV 量化的省
 
@@ -138,11 +139,11 @@ PagedAttention 的块加引用计数让前缀共享水到渠成：两个请求�
 
 ### 5.3 KV 量化（fp8/int8）：字节减半，精度另算
 
-把公式里的 bytes_per_element 从 2 降到 1，KV 显存减半、并发翻倍。用计算器跑 KV-only fp8（权重保持 fp16）：Llama-3-8B 每 token 从 128 KiB 降到 64 KiB，40GB 卡并发从 40/20/5 变 80/40/10。vLLM 支持 `--kv-cache-dtype fp8_e4m3` / `fp8_e5m2`，还提供 `--kv-cache-dtype-skip-layers` 让敏感层（如 sliding-window attention）留在原精度——这个开关本身就说明精度有代价。
+把公式里的 bytes_per_element 从 2 降到 1，KV 显存减半，但向下取整后的并发不一定数学上逐行正好翻倍。用计算器跑 KV-only fp8（权重保持 fp16）：Llama-3-8B 每 token 从 128 KiB 降到 64 KiB，40 GB 卡的教学上界从 37/18/4 变 74/37/9。vLLM 支持 `--kv-cache-dtype fp8_e4m3` / `fp8_e5m2`；实际可用 dtype、层跳过策略和质量代价要以目标版本文档与同模型评估为准。
 
 代价是什么：K/V 是注意力分数的输入，量化误差直接进 softmax，并随序列长度累积，长上下文下比短上下文更容易漂。所以 KV 量化的判断必须落到"固定评估集 + 同一模型 fp16 vs fp8 各跑一遍"的对比，而不是看几个样例。本仓库没做过这个对比，本文只保留评估方法，不给质量损失数字。把 KV 量化和向量索引里的 PQ 放一起看，是同一种交易：用精度换字节数，见[向量检索不是算相似度：HNSW 的图、IVF 的桶与 PQ 的量化](/writing/vector-index-hnsw-ivf-pq)。另一个边界要分清：权重量化（GPTQ/AWQ 之类 4bit）省的是权重那份，KV 量化省的是 KV 那份，两者独立、可叠加，别把"量化到 4bit 了内存够了"想当然。这张按层、按头、按 token 累乘出来的字节账，和[LSM 与 B-tree 的读写放大](/writing/lsm-vs-btree-io-amplification)里拆写放大是同一类字节账——它拆 I/O 放大，这里拆显存放大，都能先用纸面公式估个量级再动手。
 
-## 六、 实验入口：把公式跑成本地计算器，外部运行证据另行补测
+## 六、 实验入口：把公式跑成本地计算器（已实测，外部 GPU 证据另注）
 
 公式只是一张纸，跑成工具才能随手复用。`experiments/llm-kv/kv_cache_budget.py` 用纯标准库实现第二节的账（Python 3，无需安装），从仓库根目录运行：
 
@@ -153,34 +154,34 @@ python3 experiments/llm-kv/kv_cache_budget.py --model llama2-70b   # fp16 在 40
 python3 experiments/llm-kv/kv_cache_budget.py --model llama3-8b --kv-dtype fp8
 ```
 
-第一个命令的输出（与正文数字一致）：
+第一个命令的输出（与正文数字一致；原始文件见 [`evidence/llm-kv-cache-memory-budget/2026-08-17-local/raw/llama3-8b-fp16.txt`](/Users/lianghaoyu/codes/github-blog/evidence/llm-kv-cache-memory-budget/2026-08-17-local/raw/llama3-8b-fp16.txt)）：
 
 ```
 $ python3 experiments/llm-kv/kv_cache_budget.py --model llama3-8b
 模型: Llama-3-8B  权重 dtype: fp16  KV dtype: fp16  层数=32  kv_heads=8  head_dim=128
 每层每 token K/V: 4096 B  (4 KiB)
 每 token 全层 K/V: 131072 B = 128.0 KiB
-权重(估算): 16.0 GB  固定开销: 4 GB  可用给 KV: 20.0 GB
+权重(估算): 16.0 GB  固定开销: 4.0 GB  可用给 KV: 18.626 GiB
 
  seq_len       单请求 KV   batch=1 总 KV       并发上限      并发时 KV 上限
 ------------------------------------------------------------------
-    4096     0.500 GiB        0.500 GiB         40      20.000 GiB
-    8192     1.000 GiB        1.000 GiB         20      20.000 GiB
-   32768     4.000 GiB        4.000 GiB          5      20.000 GiB
+    4096     0.500 GiB        0.500 GiB         37      18.500 GiB
+    8192     1.000 GiB        1.000 GiB         18      18.000 GiB
+   32768     4.000 GiB        4.000 GiB          4      16.000 GiB
 ```
 
-手算复核任一行：2 × 8 × 128 × 2 × 32 层 = 131,072 B = 128 KiB；128 KiB × 4096 ÷ 2³⁰ ≈ 0.5 GiB；20 ÷ 0.5 = 40，全链可验。支持 `--model llama2-7b/llama2-13b/llama2-70b/llama3-8b`、`--vram`、`--dtype`（权重）、`--kv-dtype`（KV，缺省同权重）、`--seq`、`--overhead`。模型配置来自公开 config.json，权重按 参数 × 字节 估算，README 里写清了边界与完整示例。
+手算复核任一行：2 × 8 × 128 × 2 × 32 层 = 131,072 B = 128 KiB；128 KiB × 4096 ÷ 2³⁰ = 0.5 GiB；40×10⁹ − 16×10⁹ − 4×10⁹ = 20×10⁹ B = 18.626 GiB；⌊20×10⁹ ÷ 536,870,912⌋ = 37。支持 `--model llama2-7b/llama2-13b/llama2-70b/llama3-8b`、`--vram`、`--dtype`（权重）、`--kv-dtype`（KV，缺省同权重）、`--seq`、`--overhead`。模型配置来自公开 config.json，权重按参数 × 字节估算，README 里写清了边界与完整示例。
 
-当前没有取得两类外部运行证据：
+两类外部运行证据不在本文范围（本机无 GPU，不是已取得但缺数据）：
 
-1. **KV 量化精度**：同一评估集、同一模型，fp16 vs fp8 KV 各跑一遍对比。vLLM 命令模板（尚未在本机执行）：
+1. **KV 量化精度**：需要同一评估集、同一模型 fp16 vs fp8 KV 各跑一遍对比。vLLM 命令模板（留给有 GPU 的读者）：
 ```bash
 vllm serve meta-llama/Llama-3-8B-Instruct \
   --max-model-len 32768 --gpu-memory-utilization 0.9 --kv-cache-dtype fp16
 vllm serve meta-llama/Llama-3-8B-Instruct \
   --max-model-len 32768 --gpu-memory-utilization 0.9 --kv-cache-dtype fp8_e4m3
 ```
-2. **本机 vLLM 实际可撑并发**：受 GPU 型号、张量并行、CPU 调度与 SLO 影响，本文只给了内存上界，没有本机基准。
+2. **GPU 上实际可撑并发**：受 GPU 型号、张量并行、CPU 调度与 SLO 影响，本文只给内存上界；计算器本身已在本机复跑并保存输出（`evidence/llm-kv-cache-memory-budget/2026-08-17-local/`），但并发上限是"理想分页、按需精确分配"的上界，不是任何引擎的实测值。
 
 边界承认：并发上限是"理想分页、按需精确分配"的内存上界；固定开销 4 GB 是估算余量，不是引擎实测；模型没放进 decode 算力、scheduler 与 SLO。
 
@@ -189,10 +190,10 @@ vllm serve meta-llama/Llama-3-8B-Instruct \
 把五章收成一句判断：LLM serving 的成本瓶颈已经从算力迁移到显存账，而这张账能在部署前用公开 config 心算出来——**一张卡能撑几个并发 =（显存 − 权重 − 固定开销）÷（每 token KV 字节 × seq_len）**。四个杠杆各管一段：GQA 压低每 token KV（常数项），PagedAttention 把浪费的 60%-80% 要回来（效率项），prefix caching 砍重复部分（复用项），KV 量化减半（精度项，待实测）。三个可执行结论：
 
 1. 选模型先看 kv_heads，而不是只看参数：GQA 把 KV 成本从"跟参数走"变成"跟 kv_heads 走"，Llama-3-8B 与 Llama-2-7B 参数量相近、KV 差 4 倍。
-2. PagedAttention 抹平浪费，但总量没变：20 GB 余量就是 20 GB，分页只是让每字节都花在刀刃上。真要把 32K 撑到高并发，得回到字节账本身——GQA 化、KV 量化、prefix caching，而不是无脑换更大的卡。
+2. PagedAttention 抹平浪费，但总量没变：18.626 GiB 是这组教学假设下的可用余量，分页只是让每字节更接近按需分配。真要把 32K 撑到高并发，得回到字节账本身——GQA 化、KV 量化、prefix caching，而不是无脑换更大的卡。
 3. 每次上线长上下文模型前，把线上模型的 config 代入计算器跑一遍并发上限，比压测后的惊讶便宜得多。
 
-局限也认：这是内存上界，不含 decode 算力、调度与 SLO；固定开销是估算；KV 量化的精度代价和本机 vLLM 并发数尚未验证。取得固定评估集、GPU、引擎版本和原始输出后，这张账才从"可心算"变成"可验收"。
+局限也认：这是内存上界，不含 decode 算力、调度与 SLO；固定开销是估算；KV 量化的精度代价与 GPU 引擎的实际并发数需要真实评估集与 GPU 才能验收，本文把它们保留为外部验证项，不给数字。计算器部分已可验收：公式、参数与输出闭环，`python3 experiments/llm-kv/kv_cache_budget.py` 可随时复跑。
 
 ## 八、 参考资料
 
