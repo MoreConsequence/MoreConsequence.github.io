@@ -1,8 +1,8 @@
 ---
 title: "重试会放大错误：幂等性工程的键、状态与未知结果"
-description: "把条件重试放大、唯一约束、状态机、保留期和结果未知放在同一张决策图里；区分单库原子事务、跨服务副作用与只能靠对账的边界。"
+description: "把条件重试放大、唯一约束、状态机、保留期和结果未知放在同一张决策图里；本机 MySQL 8 三幕实测唯一约束裁决（100 并发→1 次执行、异指纹冲突、重连后重放）；单库原子事务与跨服务/账本边界区分清楚。"
 publishedAt: "2026-08-01"
-updatedAt: "2026-08-17"
+updatedAt: "2026-08-19"
 tags: ["系统设计", "分布式", "工程实践"]
 draft: false
 featured: false
@@ -153,6 +153,22 @@ return nil, err // 其它错误:结果未知 → 按重试语义处理,不是重
 把非 1062 错误误判成"键已存在"，重试会走上"查表重放"路径，而表中根本没有这行——该执行的操作永远没执行完；反过来把 1062 误判成其它错误，客户端换新键重试，同一笔业务会真的执行两遍。**1062 → 重放；其余 → 结果未知（重试，不重放）。**
 
 本地演示：从仓库根目录运行 `cd experiments && go run ./idempotency`。它用一个互斥锁模拟“唯一约束 + 结果重放”，20 个并发调用中只有 1 次首次执行；它没有数据库、进程崩溃、重启、外部支付或多实例证据，只能证明这个教学模型的输出。2026-08-17 本机原始输出保存在 `evidence/idempotency-engineering/2026-08-17-local/`。
+
+真实数据库版在 `experiments/idempotency-db/main.go` 里复用同一套 `HandleDebit` 流程（INSERT 占位 → 执行 → 回填 → 提交），连博客本机的 MySQL 8（`blog-mysql`，端口 13306，库 `idemtest`，`UNIQUE KEY uk_idem_scope_key (scope, idem_key)`）。从仓库根目录运行：
+
+```bash
+cd experiments && go run ./idempotency-db
+```
+
+2026-08-19 本机三幕实测：
+
+```text
+幕1 并发100同key同指纹: created=1 replayed=99 in_progress=0 幂等表行数=1 扣款次数=1
+幕2 同key异指纹: conflict（期望 conflict）
+幕3 重建连接后同指纹重放: replayed 扣款次数=1（期望保持 1）
+```
+
+三幕分别验证了文章里三个论断：并发重试下唯一约束只放行 1 次首次执行（1062 裁决，其余 99 个重放同一结果）；同键配不同 `request_hash` 被显式拒绝而不是静默重放（第四节指纹合同的运行时执行）；进程重启（重建连接池）后幂等记录仍在，重放不重复扣款。原始输出、逐步命令与 go-sql-driver/mysql 版本见 `evidence/idempotency-engineering/2026-08-19-local/`。这个实验证明的是单库同事务模型（占位、扣款、回填同事务提交）；它仍然不证明跨库/外部支付方原子性、多实例并发或真实扣款通道语义。
 
 ## 四、请求指纹的工程细节：同键不同请求体，怎么才算"不同"
 
@@ -374,6 +390,6 @@ flowchart TD
 6. RFC 9110：HTTP Semantics §9.2.2（幂等方法定义与自动重试规则）—— https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2
 7. Apache Kafka 官方文档：Message Delivery Semantics（幂等生产者、exactly-once 边界与 at-least-once）—— https://kafka.apache.org/documentation/#semantics
 8. Redis 官方文档：SET 命令（NX/EX 原子占位）—— https://redis.io/docs/latest/commands/set/
-9. 本机教学模型原始输出：`evidence/idempotency-engineering/2026-08-17-local/`；只覆盖单进程互斥锁，不覆盖数据库、Redis、支付方或多实例。
+9. 本机教学模型（互斥锁）与 MySQL 8 实测分别落盘：`evidence/idempotency-engineering/2026-08-17-local/`（单进程模拟）与 `2026-08-19-local/`（真实唯一约束三幕）；数据库实验不覆盖 Redis、第三方支付方或多实例。
 
 > 延伸阅读：重试放大的超时视角来自停机排空,见[SIGTERM 之后发生了什么:把优雅停机做成一件确定的事](/writing/graceful-shutdown-in-go)；主从延迟导致读旧数据时,幂等校验正是"读从 + 版本校验"的兜底,见[主从复制延迟 300ms 的账单:读路径设计的三种姿势](/writing/replication-lag-read-paths)；时钟回拨造成的重复与逆序,最终也靠幂等兜底,见[时间戳会骗人:时钟回拨与分布式系统的顺序幻觉](/writing/clock-skew-distributed-systems)。

@@ -814,7 +814,7 @@ evidence/<slug>/<run-date>/
 | P0-04 | 事故复盘 | 可启动的三阶段历史版本 | 容量与映射一致性回归 | wrk/RSS/heap/profile 原始输出 | 历史事实未修；构造演练可重跑 |
 | P0-05 | event loop/GMP | 等价实验程序 | 多轮延迟分布 | Go/Node 官方资料、环境快照 | **2026-08-19 已补 30 轮多轮延迟分布**：`evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt`（Go 唤醒 p50=1ms/max=2ms；Node 基线 p50=11.2ms；busy 阻塞后 p50=61.0ms，数据链与 raw 落盘）；语义/实验/分布均本机验证，跨机器吞吐常数未覆盖 |
 | P0-06 | streams | 独立模式、队列/峰值采样 | HWM/slow consumer/drain 对照 | Node/Go 规范、raw memory series | **2026-08-19 已补完整下游链路对照**：`evidence/typescript-streams-downstream/2026-08-19-local/run.out`（同 generator→慢 Writable 三路径：A 直接 for-await Lag=0、B pipe HWM=16 Lag=1/缓冲15B、C pipe HWM=2 Lag=1/缓冲1B，drain 节流一致）；独立进程/HWM/慢下游/raw 均已本机验证，真实 socket 链路未覆盖 |
-| P0-07 | Agent 成本/幂等 | 正确单位、定点金额、原子语义 | 并发/失败/预算测试 | 模型价格来源或模拟声明 | 本地公式/并发/预算已修；持久化待补 |
+| P0-07 | Agent 成本/幂等 | 正确单位、定点金额、原子语义 | 并发/失败/预算测试 | 模型价格来源或模拟声明 | **2026-08-19 已补 MySQL 8 持久化幂等实测**：`evidence/idempotency-engineering/2026-08-19-local/run.out`（并发 100 同 key→created=1/扣款=1、异指纹 conflict、重建连接重放不重扣）；公式/并发/预算/持久化均本机验证，跨进程租约与真实账单未覆盖 |
 | P0-08 | Zod | 可编译代码块、bundle script | fence compile、bundle regression | esbuild metafile/raw outputs | **2026-08-19 已补同语义性能 benchmark**：`evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`（2M 次/轮、预热 10 万、连续两次；合法 zod/v4≈0.09–0.10x、非法≈0.19–0.20x）；bundle 体积与性能数字均本机实测，生产全链路未覆盖 |
 | P1-01 | 测试证据 | `verify:experiments`、独立 configs | 全实验入口 | 按篇 evidence snapshot | 根入口与本批快照已补；全库仍待补 |
 | P1-02 | 生产边界 | DB/观测/安全/生命周期 | 故障与恢复矩阵 | staging/production 运行记录 | 已明确降级为本地原型；生产证据未完成 |
@@ -1714,3 +1714,46 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 | `npm test` | 11 files / 41 tests 通过 |
 | `npm run lint` | 0 error；保留既有 mermaid-renderer 1 warning |
 | `npm run build` | 静态生成成功 |
+
+## 二十九、2026-08-19 继续修订：P0-07 幂等持久化证据本机闭合
+
+### 29.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/idempotency-db/main.go` | 新增真实 MySQL 幂等实验：复用文章 `HandleDebit` 流程（INSERT 占位→执行→回填→提交），连 blog-mysql（mysql:8、13306、库 idemtest），`UNIQUE(scope,idem_key)` 做原子 claim；三幕：并发 100 同 key、同 key 异指纹、重建连接后重放 | `evidence/idempotency-engineering/2026-08-19-local/main.go.txt` |
+| `content/posts/idempotency-engineering.md` | 第二节补"真实数据库版"段落：命令、三幕实测输出、与文章三个论断的对应；参考资料第 9 条拆分为 17/19 两份 evidence；description 同步 | 同上 `run.out` |
+| `review.md` 第 16 节矩阵 | P0-07 状态改为"已补 MySQL 8 持久化幂等实测" | 跨进程租约（确认框）与真实供应商账单仍待补 |
+
+### 29.2 实测输出（`run.out`）
+
+```
+幕1 并发100同key同指纹: created=1 replayed=99 in_progress=0 幂等表行数=1 扣款次数=1
+幕2 同key异指纹: conflict（期望 conflict）
+幕3 重建连接后同指纹重放: replayed 扣款次数=1（期望保持 1）
+```
+
+限制：单库同事务模型（占位、扣款、回填同一事务），证明唯一约束原子 claim 与持久化重放；不证明跨库/外部支付方、多实例并发或真实扣款通道。
+
+### 29.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `cd experiments && go run ./idempotency-db` | 连续多次运行输出一致（created=1/replayed=99/conflict/重放保持 1） |
+| `go vet ./idempotency-db` | 通过 |
+| `npm test` / `npm run lint` / `npm run build` | 待本批完成统一跑 |
+
+## 三十、2026-08-19 P0-03 关键节点：Pages deploy 失败 run 32257040131
+
+### 30.1 事实
+
+- 2026-08-19 13:15Z，push 到 main 触发 `Deploy GitHub Pages` run 32257040131（commit `feat(blog): 08-19 批 10 篇续发`）。
+- **结果：build job 失败**，卡在 `Test` 步：`Error: Test timed out in 5000ms` @ `tests/layout.test.tsx:9`（首页全量渲染，135 篇后 >5s）。
+- 失败后站点回退到上一成功 run（32189519931，2026-08-18 21:47Z），线上仍是 135 篇版本。
+- 本会话已修复：`tests/layout.test.tsx` 首页用例 timeout 5s→15s（单跑实测 4.65s、全量并行更慢），修复在本地未 push 的 `19128cf` 中。
+- 失败 run 详情：https://github.com/MoreConsequence/MoreConsequence.github.io/actions/runs/32257040131
+
+### 30.2 对 P0-03 的意义
+
+- P0-03 的 "Actions run" 证据是**真实存在的**：Service CI 两次 success（31961323285、31958651737）；Pages deploy 既有 success 也有 failure，failur 反例完整可追溯（超时用例+日志）。
+- 下一步：push `19128cf` + P0-07 提交后，等待新 Pages run 转绿，把 run URL 与 Pages 部署 URL 登记为 P0-03 的最终验收证据。

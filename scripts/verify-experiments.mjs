@@ -48,6 +48,12 @@ const checks = [
     args: ["scripts/pg-idempotency.ts", "--skip-if-unreachable"],
   },
   {
+    name: "MySQL idempotency smoke (needs blog-mysql, skips if unreachable)",
+    cwd: "experiments",
+    executable: "go",
+    args: ["run", "./idempotency-db", "--skip-if-unreachable"],
+  },
+  {
     name: "service SLO port probe smoke",
     cwd: "experiments/service",
     executable: node,

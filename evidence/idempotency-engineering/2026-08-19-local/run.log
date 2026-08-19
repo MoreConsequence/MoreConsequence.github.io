@@ -1,0 +1,24 @@
+# idempotency-engineering MySQL 幂等实验 (P0-07)
+
+## 环境
+- date: 2026-08-19 (local, darwin arm64)
+- go: 1.25.1 darwin/arm64
+- mysql driver: go-sql-driver/mysql v1.10.0
+- 容器: blog-mysql (mysql:8.0.x, host port 13306), 库 idemtest
+- 表: idempotency_keys(scope,idem_key,request_hash,status,response) UNIQUE(scope,idem_key) + debit_ledger
+
+## 命令
+`cd experiments && go run ./idempotency-db`
+
+## 输出
+```
+幕1 并发100同key同指纹: created=1 replayed=99 in_progress=0 幂等表行数=1 扣款次数=1
+幕2 同key异指纹: conflict（期望 conflict）
+幕3 重建连接后同指纹重放: replayed 扣款次数=1（期望保持 1）
+
+```
+
+## 边界
+- 单库同事务模型：占位+扣款+回填在同一事务，1062=重放/冲突、其余=未知;
+- 证明唯一约束原子 claim 与持久化重放（重建连接后仍命中）;
+- 不证明跨库/外部支付方、多实例或真实扣款通道。
