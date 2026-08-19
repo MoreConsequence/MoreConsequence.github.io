@@ -84,7 +84,7 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 | browser 体积敏感 | 比较入口 + 实测 bundle | named import 是否有效由 bundler 和库的导出结构决定 |
 | 热路径性能敏感 | 先 benchmark | 本机同语义 benchmark 见第四节，倍数有边界地使用 |
 
-## 四、性能不能空口说：同语义 benchmark 的结果
+## 五、性能不能空口说：同语义 benchmark 的结果
 
 上一版没有性能数字，结尾留了“先用 benchmark 再下结论”。`experiments/ts-interface-schema/bench/run-bench.mjs` 用同一批输入（合法 `lookup_order`、orderId 类型错误）分别跑手写守卫和 `zod/v4` named import 的分离式解析，每轮 2,000,000 次、预热 100,000 次，Node 24.19.0、Zod 4.4.3 本机连续两次：
 
@@ -95,7 +95,7 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 
 合法路径 zod 比手写慢约一个数量级；非法路径两者都受 throw/错误构造主导，差距缩到约 5 倍。这个差异本身不是“Zod 不好”的结论——它买的是结构化 path/code/错误对象和多语言互操作，不是单对象解析的绝对吞吐。取舍落在：解析频率 × 解析成本 是否值得热路径上省掉 schema。如果每秒只解析几百个对象，20M ops/s 远够用；如果 inner-loop 每秒解析百万级对象，这 10 倍差距就该写进设计评审。原始输出、脚本与环境见 `evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`；单核同步解析、不含 JSON.parse 与网络/IO，倍数不是跨机器常数。
 
-## 五、结论：单一事实源成立，性能结论需要自己的证据
+## 六、结论：单一事实源成立，性能结论需要自己的证据
 
 当前工件支持的判断只有这些：
 

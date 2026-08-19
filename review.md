@@ -818,7 +818,7 @@ evidence/<slug>/<run-date>/
 | P0-08 | Zod | 可编译代码块、bundle script | fence compile、bundle regression | esbuild metafile/raw outputs | **2026-08-19 已补同语义性能 benchmark**：`evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`（2M 次/轮、预热 10 万、连续两次；合法 zod/v4≈0.09–0.10x、非法≈0.19–0.20x）；bundle 体积与性能数字均本机实测，生产全链路未覆盖 |
 | P1-01 | 测试证据 | `verify:experiments`、独立 configs | 全实验入口 | 按篇 evidence snapshot | **2026-08-19 全库扫描完成**：28 篇引用实验无同名 evidence 的文章逐篇核对，8 篇判定为目录名差异、1 篇实验内自带、1 篇浏览器演示；5 篇真缺口全部落盘（go-nethttp/jwt/k8s/outbox/seckill，§31）；含 3 篇数字漂移修订 |
 | P1-02 | 生产边界 | DB/观测/安全/生命周期 | 故障与恢复矩阵 | staging/production 运行记录 | 已明确降级为本地原型；生产证据未完成 |
-| P2-01 | 编辑质量 | 按文型重组 | 逐篇终审 | 一手引用闭合 | 受影响文章已重构；全库终审待补 |
+| P2-01 | 编辑质量 | 按文型重组 | 逐篇终审 | 一手引用闭合 | **2026-08-19 结构层扫描清零**（裸标题/编号/死链/路径/锚点/兑现承诺/缺图全部检查，§32，修 zod 编号与 redis-intset 路径）；逐篇全文审校仍为开放项，按批进行 |
 
 任何条目标成“完成”时，应在本表把“当前状态”改成日期 + commit/evidence 路径，而不是只写“已修”。
 
@@ -1802,3 +1802,29 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 | `go run ./go-nethttp/cmd/bench` 全家 | 与文章 claim 一致（默认池 ~76% 复用、99.7%、826→813 req/s、p50 235ms） |
 | `go run -race` outbox/seckill | 无数据竞争；结构结论不变 |
 | `npm test` / `npm run lint` / `npm run build` | 待本批全部修订完成后统一跑 |
+
+## 三十二、2026-08-19 P2-01 结构扫描：可脚本化项清零
+
+### 32.1 扫描结论
+
+| 检查项 | 结果 |
+| --- | --- |
+| 裸弱标题（`## 结论/背景/架构/结果` 无信息后缀） | 0 篇 |
+| 章节编号重复/乱序 | 1 处：`typescript-interface-schema-zod.md` 曾有两个「四」（08-19 P0-08 加性能章时产生），已重排为 一~六 |
+| 站点内死链（`/writing/<slug>` 全部可解析） | 0 |
+| 无 description / 无 TL;DR | 0 |
+| 引用不存在的 `experiments/` 路径 | 1 处：`redis-intset-encoding-memory.md` 指 `experiments/redis-intset-encoding-memory/`（目录不存在，证据实际在 `evidence/redis-intset-encoding-memory/`）→ 已改指正确路径 |
+| 引用不存在的 `evidence/` 路径 | `sse-vs-websocket-streaming.md` 的命中是 `experiments/sse-vs-ws/evidence/...` 前缀吞掉的误报，路径真实存在 |
+| TODO/占位/待续残留 | 0（`rg` 命中全部是"占位/URN"等业务术语或技术术语） |
+| 空锚点 `](#)` | 0 |
+| 未落地"下一篇/敬请期待"承诺 | 0（5 处钩子全部指向已发布文章或系列路线图） |
+| 多组件文章缺图 | 重筛后无强制项；`sse-vs-websocket-streaming` 为横向对比文型，已有五条对比表 |
+
+### 32.2 本次修订
+
+- `content/posts/typescript-interface-schema-zod.md`：章节重排（四=取舍、五=性能、六=结论）；
+- `content/posts/redis-intset-encoding-memory.md`：命令证据路径改指 `evidence/redis-intset-encoding-memory/2026-08-19-local/`。
+
+### 32.3 剩余
+
+P2-01 的"逐篇终审 + 一手引用闭合"仍是大批量的编辑级检查（08-16 批 9 篇 + 08-16 批 7 篇 + 08-19 批 20 篇 + 更早文章的代表样本），按 AGENTS.md 分批执行，本批只完成结构层；逐篇全文审校继续作为开放项。

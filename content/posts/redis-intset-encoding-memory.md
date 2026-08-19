@@ -34,7 +34,7 @@ intset 是**自适应宽度**的:1..512 这类小整数用 int16(每元素 2B),�
 
 为什么差这么多:intset 是**连续数组**,512 个小整数按 int16 宽度(每元素 2B)只占 1KB 出头;hashtable 要为每个元素准备 dictEntry(24B)+ 指针 + bucket 数组——整体重建且空间占位按规模分配。实测中间态:同样 512 个整数,若值域超过 int32(写入 2^32),intset 升级为 int64 宽度,内存从 1328B 变 5168B——这是 intset 内部的宽度升级,仍是 intset,还没到 hashtable 的 24712B。
 
-运行环境:redis:7-alpine,默认配置。命令证据全记录在 `experiments/redis-intset-encoding-memory/`。
+运行环境:redis:7-alpine,默认配置。命令证据与原始输出全记录在 `evidence/redis-intset-encoding-memory/2026-08-19-local/`。
 
 ## 三、工程启示:什么场景会被这一跳打脸
 
