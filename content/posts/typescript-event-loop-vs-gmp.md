@@ -1,15 +1,15 @@
 ---
 title: "Go 的 goroutine 和 Node 的事件循环：先把两种等待分开"
-description: "用同语义边界重写 Go/Node 并发对照：Go runtime 在用户态调度 goroutine，Node 主线程上的同步 CPU 工作会推迟 timer；time.Sleep 与 busy loop 不是同一种阻塞，setImmediate 与 setTimeout(0) 的顶层顺序也不能写成无条件规则。"
+description: "用同语义边界重写 Go/Node 并发对照：再多轮延迟分布（各 30 轮）下，Go 10ms 睡眠唤醒 p50=1ms，Node 10ms timer 基线 p50=11.2ms、被 50ms busy loop 阻塞后 p50=61ms；time.Sleep 与 busy loop 不是同一种阻塞，顶层 timer 顺序不能写成无条件规则。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-17"
+updatedAt: "2026-08-19"
 tags: ["TypeScript", "Node", "事件循环", "并发"]
 draft: false
 featured: false
 series: "从 Go 到 TypeScript"
 ---
 
-**TL;DR：** “Go 的 goroutine 是内核级线程，Node 是单线程”是一个方便但错误的类比。goroutine 由 Go runtime 在用户态调度，并复用到操作系统线程；Node 的 JavaScript 主线程确实不能被同步 CPU 代码抢占，但 Node 仍可通过 libuv 与 `worker_threads` 使用其他执行资源。当前实验把两个问题分开：Go `time.Sleep` 期间另一个 goroutine 约 10ms 触发，Node 主线程 busy loop 会让 10ms timer 在本机一次运行中于 52.6ms 才执行。前者说明可等待操作会让出 runtime，后者说明同步 CPU 工作占住了事件循环，它们不是同一场景的对照。
+**TL;DR：** “Go 的 goroutine 是内核级线程，Node 是单线程”是一个方便但错误的类比。goroutine 由 Go runtime 在用户态调度，并复用到操作系统线程；Node 的 JavaScript 主线程确实不能被同步 CPU 代码抢占，但 Node 仍可通过 libuv 与 `worker_threads` 使用其他执行资源。当前实验把两个问题分开，并用 30 轮分布替代单次输出：Go `time.Sleep(10ms)` 唤醒延迟 p50=1ms、max=2ms；Node 10ms timer 基线 p50=11.2ms，前置 50ms busy loop 后 p50=61ms。前者说明可等待操作会让出 runtime，后者说明同步 CPU 工作占住了事件循环，它们不是同一场景的对照。
 
 ## 一、先纠正调度层级：runtime 调度 goroutine，内核调度线程
 
@@ -62,6 +62,16 @@ Node 24.19.0 本机一次输出（不是固定延迟）：
 
 这组数字是当前机器的一次观察，不是 Node timer 的固定延迟。它证明的是同步工作阻塞了主线程，timer 没有抢占当前 JavaScript 调用栈。JSON 解析、同步加密和失控正则都可能触发同类问题；Agent 的超时和取消也只能在事件循环重新获得执行机会后处理。
 
+单次输出只证明控制流，不提供分布。`experiments/ts-event-loop/multi-round.ts` 对三组场景各跑 30 轮，用子进程隔离每轮计时，避免主进程自身负载污染样本：
+
+```text
+A Go 10ms 唤醒延迟(30 轮, GOMAXPROCS=1): n=30 min=0.0ms p50=1.0ms p95=1.0ms max=2.0ms
+B Node 10ms timer 基线延迟:               n=30 min=10.2ms p50=11.2ms p95=11.3ms max=11.3ms
+C Node 10ms timer + 50ms busy loop 延迟:  n=30 min=59.6ms p50=61.0ms p95=61.5ms max=64.7ms
+```
+
+三组分布给出比单次输出更硬的判断：Go 的 `time.Sleep(10ms)` 唤醒延迟集中在 0–2ms（runtime 在睡眠期间把执行权交给其他 goroutine，唤醒后回队列很快）；Node 空事件循环下 10ms timer 的 p50 是 11.2ms；同一个 timer 前插 50ms busy loop 后 p50 变成 61.0ms——多出的约 50ms 正是 busy loop 完整占住主线程的代价，timer 必须等当前调用栈结束才有执行机会。p95 与 p50 相差不到 0.5ms，说明这是结构性推迟，不是随机抖动。30 轮原始样本、Node/Go 版本与命令见 `evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt` 与 `run.out`。
+
 本次 raw、Node/Go 版本和命令保存在 `evidence/typescript-event-loop-vs-gmp/2026-08-17-local/`；运行 `.ts` 文件需要 Node 24.19.0 这一执行环境，旧 Node 版本可能把 `.ts` 当作未知扩展名拒绝。
 
 ## 四、不要把 `time.Sleep`、busy loop 和系统调用混成“阻塞”
@@ -75,7 +85,7 @@ Node 24.19.0 本机一次输出（不是固定延迟）：
 | CPU 下放 | 多 goroutine + runtime 调度 | `worker_threads` | 如何获得真正的 CPU 并行 |
 | 阻塞系统调用 | 指定 syscall/文件场景 | 同 API 的同步与异步版本 | 哪一层承担等待成本 |
 
-当前仓库只保存了第一行和第二行的最小教学实验，没有把四行都伪装成完整 benchmark。要比较吞吐或尾延迟，必须固定核心数、版本、输入规模、预热和重复轮次；一次 52.6ms 输出只用来解释控制流，绝对时间会随机器和负载变化。
+当前仓库只保存了第一行和第二行的最小教学实验，没有把四行都伪装成完整 benchmark。多轮分布（上一节 30 轮三组）已经固定了版本、轮次和有界环境，可以较“唤醒/推迟”的相对结构；要断言绝对吞吐仍必须固定核心数、输入规模与预热，并且一次 52.6ms 输出只用来解释控制流，绝对时间会随机器和负载变化。
 
 ## 五、timer 顺序是阶段观察，不是业务合同
 

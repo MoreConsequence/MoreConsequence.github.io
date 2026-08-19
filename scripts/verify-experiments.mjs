@@ -42,6 +42,24 @@ const checks = [
     args: ["prod.ts"],
   },
   {
+    name: "service PG idempotency smoke (needs blog-pg, skips if unreachable)",
+    cwd: "experiments/service",
+    executable: "node_modules/.bin/tsx",
+    args: ["scripts/pg-idempotency.ts", "--skip-if-unreachable"],
+  },
+  {
+    name: "service SLO port probe smoke",
+    cwd: "experiments/service",
+    executable: node,
+    args: ["node_modules/tsx/dist/cli.mjs", "scripts/slo-port-probe.ts"],
+  },
+  {
+    name: "event-loop multi-round smoke",
+    cwd: "experiments/ts-event-loop",
+    executable: node,
+    args: ["multi-round.ts", "3"],
+  },
+  {
     name: "schema typecheck",
     cwd: "experiments/ts-interface-schema",
     executable: node,

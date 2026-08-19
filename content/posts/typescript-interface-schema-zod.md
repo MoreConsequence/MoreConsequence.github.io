@@ -1,15 +1,15 @@
 ---
 title: "接口边界三合一：schema 同时负责校验、类型与错误路径"
-description: "用同一份 ToolCall schema 对照手写守卫、Zod 根入口和 zod/v4 named imports：当前 esbuild 0.28.0 本机输出分别为 619B、327428B 和 68099B raw，并验证 Zod 的 path/code/message 错误结构；不再把未经 benchmark 的性能倍数写成事实。"
+description: "用同一份 ToolCall schema 对照手写守卫、Zod 根入口和 zod/v4 named imports：当前 esbuild 0.28.0 本机输出分别为 619B、327428B 和 68099B raw，并补上同语义性能 benchmark（合法路径 zod/v4 约慢一个数量级，非法路径约慢 5 倍）。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-19"
 tags: ["TypeScript", "后端", "接口", "schema"]
 draft: false
 featured: false
 series: "从 Go 到 TypeScript"
 ---
 
-**TL;DR：** schema 的价值不是“少写几行 `typeof`”，而是让运行时校验、静态类型和错误路径从同一个协议定义出来。当前实验用固定的 esbuild 0.28.0、browser/ESM、minify、ES2022 参数重算三种入口：手写守卫 619B raw，`zod` 根入口 327428B，`zod/v4` named imports 68099B。错误输出保留 `path`、`code` 和 message，但性能不能凭“通常快一个量级”推断；热路径是否值得 schema，需要另做同语义 benchmark。
+**TL;DR：** schema 的价值不是“少写几行 `typeof`”，而是让运行时校验、静态类型和错误路径从同一个协议定义出来。当前实验用固定的 esbuild 0.28.0、browser/ESM、minify、ES2022 参数重算三种入口：手写守卫 619B raw，`zod` 根入口 327428B，`zod/v4` named imports 68099B。错误输出保留 `path`、`code` 和 message，并用同语义 benchmark 实测：合法路径 zod/v4 约慢一个数量级（≈0.1x）、非法路径约慢 5 倍；这个倍数只约束本机单核解析，不约束生产全链路。
 
 ## 一、三份真相为什么会漂移
 
@@ -82,11 +82,20 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 | 多方共享协议 | schema + 自有错误合同 | 减少类型/校验/文档漂移 |
 | 进程内已验证对象 | 直接使用类型 | 再次解析只增加 CPU 和代码路径 |
 | browser 体积敏感 | 比较入口 + 实测 bundle | named import 是否有效由 bundler 和库的导出结构决定 |
-| 热路径性能敏感 | 先 benchmark | 本文没有测出“快/慢几倍”，不替读者做未经验证的外推 |
+| 热路径性能敏感 | 先 benchmark | 本机同语义 benchmark 见第四节，倍数有边界地使用 |
 
-不同 schema 库的 `parse`、异步校验、JSON Schema 互操作、错误模型和类型推导并不自动语义等价。迁移时应拿同一份 schema、同一批有效/无效输入和同一输出合同做 diff；“API 名字相似”不等于“可以只替换 import”。
+## 四、性能不能空口说：同语义 benchmark 的结果
 
-## 五、结论：单一事实源成立，性能结论仍需单独实验
+上一版没有性能数字，结尾留了“先用 benchmark 再下结论”。`experiments/ts-interface-schema/bench/run-bench.mjs` 用同一批输入（合法 `lookup_order`、orderId 类型错误）分别跑手写守卫和 `zod/v4` named import 的分离式解析，每轮 2,000,000 次、预热 100,000 次，Node 24.19.0、Zod 4.4.3 本机连续两次：
+
+| 输入 | 手写守卫 | zod/v4 | 倍数（zod/手写） |
+| --- | ---: | ---: | ---: |
+| 合法 | ~194–216M ops/s | ~20.2M ops/s | ≈0.09–0.10x |
+| 非法（type mismatch） | ~0.51M ops/s | ~0.10M ops/s | ≈0.19–0.20x |
+
+合法路径 zod 比手写慢约一个数量级；非法路径两者都受 throw/错误构造主导，差距缩到约 5 倍。这个差异本身不是“Zod 不好”的结论——它买的是结构化 path/code/错误对象和多语言互操作，不是单对象解析的绝对吞吐。取舍落在：解析频率 × 解析成本 是否值得热路径上省掉 schema。如果每秒只解析几百个对象，20M ops/s 远够用；如果 inner-loop 每秒解析百万级对象，这 10 倍差距就该写进设计评审。原始输出、脚本与环境见 `evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`；单核同步解析、不含 JSON.parse 与网络/IO，倍数不是跨机器常数。
+
+## 五、结论：单一事实源成立，性能结论需要自己的证据
 
 当前工件支持的判断只有这些：
 
@@ -94,9 +103,9 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 2. named imports 与 root import 在本次 esbuild 参数下产生不同 bundle，数字和压缩口径已保存。
 3. 文章代码块现在可通过独立 `tsc --noEmit`，不再引用未导入的 `z`。
 4. 错误 `path/code/message` 对 Agent 修正有用，但外层错误码仍需由服务自己稳定化。
-5. Zod 与手写守卫的性能差异没有在本实验中测量，不能用数量级形容词填空。
+5. 同语义 benchmark 数据已实测：合法路径 zod/v4 约慢一个数量级、非法路径约慢 5 倍（本机、单核、2M 次/轮）；它只约束本机同语义解析，不约束生产全链路。
 
-读者可以先运行 `npm run typecheck` 和 `npm run bundle:sizes`，再根据自己的 browser/Node target 添加 benchmark。先把输入边界钉住，再讨论库的成本。
+读者可以先运行 `npm run typecheck` 和 `npm run bundle:sizes`，再用 `node bench/run-bench.mjs` 复测性能；把输入边界、构建参数和 benchmark 口径钉住后，才能谈库的成本。
 
 ## 参考资料
 

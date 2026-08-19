@@ -1,0 +1,35 @@
+# service-observability-slo-port (P0-01 真实端口压测)
+
+## 环境
+- date: 2026-08-19 (local, darwin arm64)
+- node: v24.19.0
+- 服务: app.ts 起在 127.0.0.1:4111 (@hono/node-server)
+- 存储: BoundedInMemoryStore，无数据库
+
+## 命令
+`cd experiments/service && npx tsx scripts/slo-port-probe.ts`
+
+## 输出
+```
+listening on 127.0.0.1:4111
+端口压测: 120 个并发真实 HTTP 请求 耗时=558ms
+  状态分布: 2xx=30 404=30 400=30 409=30 5xx=0
+  分母口径A(所有业务分支=good): SLI=100.00%
+  分母口径B(仅2xx=good):       SLI=25.00%
+  SLI(good/total 口径B): 30/120 = 25.00% 窗口=3s（本机实时窗口，非月度）
+  分布 orders_create.ok: n=31 p50=0.08ms p99=6.02ms
+  分布 orders_create.validation_failed: n=30 p50=0.12ms p99=49.94ms
+  分布 orders_create.conflict: n=30 p50=0.10ms p99=38.12ms
+  分布 orders_get.not_found: n=30 p50=0.02ms p99=0.21ms
+验收1 404进orders_get分布: not_found样本数=30 (期望>=30)
+验收1b 409进orders_create.conflict分布: 30 (期望>=29)
+验收2 error budget(1-SLI口径B)=75.00% → 候选SLO 99%: 未达标 (仅当窗口覆盖足够样本时才有意义)
+验收3 orders_create.ok p99=6.02ms vs 候选阈值 100ms → 低于阈值（仅当前窗口，不构成月度承诺）
+server closed
+
+```
+
+## 边界
+- 这是真实 socket 端口压测，但仍是单进程内存服务 + 3 秒本机窗口；
+- 不是月度窗口、不是多实例、不是生产 API p99；
+- 409 需预创建 key 后同 key 异 body 触发，脚本内已处理。

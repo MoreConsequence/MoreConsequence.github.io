@@ -1,0 +1,21 @@
+# typescript-streams-downstream (P0-06 完整下游链路)
+
+## 环境
+- date: 2026-08-19 (local, darwin arm64)
+- node: v24.19.0
+- 慢下游: Writable highWaterMark=16, 每条处理 20ms
+
+## 命令
+`cd experiments/ts-streams && node downstream-pipe.ts`
+
+## 输出
+```
+A 直接 for-await → 慢 Writable (每步等 drain): 耗时=43406ms produced=2000 consumed=2000 maxLag=0 maxBuffered=0B drain=2000
+B Readable.from HWM=16 → pipe → 慢 Writable: 耗时=43999ms produced=2000 consumed=2000 maxLag=1 maxBuffered=15B drain=1999
+C Readable.from HWM=2  → pipe → 慢 Writable: 耗时=43622ms produced=2000 consumed=2000 maxLag=1 maxBuffered=1B drain=1999
+
+```
+
+## 边界
+- 2000 条/路径, 单进程, 无 OS 级 socket/SSE 传输;
+- drain 计数含 pipe 协议内部节流, 只证明背压沿链路生效, 不证明真实网络吞吐。

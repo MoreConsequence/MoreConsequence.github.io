@@ -1,15 +1,15 @@
 ---
 title: "背压不是语法糖：从 async generator 追到 Readable 的队列"
-description: "把 streams 文章从“55 倍内存”和“Readable.from 切断背压”改成可重跑的同语义实验：独立进程比较数组、直接 async generator 与 Readable.from，记录 heap/RSS 峰值、GC 后快照和 producer-consumer lag。"
+description: "把 streams 文章从“55 倍内存”和“Readable.from 切断背压”改成可重跑的同语义实验：独立进程比较数组、直接 async generator 与 Readable.from，并把慢 Writable 接到链路末端，实测 for-await 与 pipe 在 HWM=2/16 下 Lag 均为 0–1、缓冲上限随 HWM 缩小。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-16"
+updatedAt: "2026-08-19"
 tags: ["TypeScript", "流式", "背压", "内存"]
 draft: false
 featured: false
 series: "从 Go 到 TypeScript"
 ---
 
-**TL;DR：** `for await` 让 async generator 以 pull 方式推进，但它不会替整个下游链路自动提供“恒定一条记录”的内存保证。当前实验把数组、直接 generator 和 `Readable.from` 放到独立进程，用相同的 20 万条记录和 128 字节 payload 记录运行期峰值与 producer-consumer lag：数组 lag 为 200000，直接 generator 为 1，`Readable.from` 在 `highWaterMark=16` 时观察到 17。这个结果说明队列边界存在，不足以证明 `Readable.from`“切断了背压”；背压是否生效，取决于每一层如何等待下游。
+**TL;DR：** `for await` 让 async generator 以 pull 方式推进，但它不会替整个下游链路自动提供“恒定一条记录”的内存保证。当前实验把数组、直接 generator 和 `Readable.from` 放到独立进程，用相同的 20 万条记录和 128 字节 payload 记录运行期峰值与 producer-consumer lag：数组 lag 为 200000，直接 generator 为 1，`Readable.from` 在 `highWaterMark=16` 时观察到 17。再接上每条 20ms 的慢 Writable 后，三条路径的 Lag 都是 0–1、缓冲上限随 HWM 缩小（16→15B、2→1B），说明背压沿 generator → Readable → Writable 全程生效，但它来自每一层对下游的等待，不是任何单层的语法糖。
 
 ## 一、pull 只保证“下一项由消费者请求”
 
@@ -64,6 +64,16 @@ HWM 64 -> maxProducerConsumerLag 65
 
 这说明实现会有有限的预取/队列边界，不能从单次高内存结果推断“生产者全速跑”。要定位真实原因，还要增加慢消费者、不同 HWM、generator yield 次数和 Writable `drain` 等变量。正确的结论是：`Readable.from` 改变了链路的缓冲语义，开发者需要测并设置这个边界，而不是把它描述成天然切断背压。
 
+把链路接到慢 Writable 后，背压语义才完整。`experiments/ts-streams/downstream-pipe.ts` 让同一条 generator 分别经过三条路径进入每条处理 20ms 的慢 Writable（HWM=16），测量生产者/消费者最大差、readable 缓冲峰值和 drain 次数：
+
+```text
+A 直接 for-await → 慢 Writable (每步等 drain): produced=2000 consumed=2000 maxLag=0  maxBuffered=0B  drain=2000
+B Readable.from HWM=16 → pipe → 慢 Writable:    produced=2000 consumed=2000 maxLag=1  maxBuffered=15B drain=1999
+C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000 maxLag=1  maxBuffered=1B  drain=1999
+```
+
+路径 A：应用层在 `write()` 返回 false 时等待 `drain`，生产与消费逐条交替，Lag=0。路径 B/C：`pipe` 协议在 readable 侧最多预取一条（HWM 16 时缓冲 15B、HWM 2 时 1B），drain 节流与 A 几乎一致，但缓冲上限随 HWM 缩小。三路实测的 Lag 都是 0–1，说明整条链路（generator → Readable → Writable）的推进都受慢下游约束——这和第四节说的“把 chunk 放进另一个无界数组，积压只是换地址”是同一件事的两面：背压不是 `Readable.from` 或 `for await` 任何单层的礼物，而是每一层都等待下游的结果。原始输出与命令见 `evidence/typescript-streams-downstream/2026-08-19-local/`；本机单进程 2000 条，不含 OS socket 与真实网络吞吐。
+
 ```mermaid
 flowchart LR
   generator["async generator"] -->|next() / yield| readable["Readable.from\n有限缓冲"]
@@ -93,10 +103,10 @@ Go channel 的容量在创建时确定：`make(chan T)` 是无缓冲，`make(cha
 
 1. async generator 的 pull 语义能约束 generator 本身的推进时机。
 2. 数组、generator、Readable 的内存比较必须独立进程，并区分峰值与 GC 后保留量。
-3. `Readable.from` 有缓冲边界；是否形成可控背压，要观察 HWM、生产/消费差和真正的下游写入。
+3. `Readable.from` 有缓冲边界；是否形成可控背压，要观察 HWM、生产/消费差和真正的下游写入——慢 Writable 三路实测 Lag 均为 0–1，缓冲上限随 HWM 缩小。
 4. Go channel 是有界或无缓冲的 push，不是无界队列。
 
-读者可以按 README 的三条命令改变 `--high-water-mark` 和 `--delay-ms`，再把一个不等待 `drain` 的 Writable 反例接到末端。只有那时，结论才从“generator 这一层看起来很省内存”推进到“整条输出链路有上限”。
+读者可以按 README 的三条命令改变 `--high-water-mark` 和 `--delay-ms`，再运行 `node downstream-pipe.ts` 把不等待 `drain` 的 Writable 接到末端观察 Lag 增长。只有那时，结论才从“generator 这一层看起来很省内存”推进到“整条输出链路有上限”。
 
 ## 参考资料
 

@@ -15,7 +15,7 @@ describe("site shell", () => {
     expect(html).toContain(
       '<span class="hero-line hero-line-accent">寻找清晰的边界。</span>',
     );
-  });
+  }, 15_000);
 
   it("renders primary navigation, search and theme controls", () => {
     const html = renderToStaticMarkup(

@@ -808,14 +808,14 @@ evidence/<slug>/<run-date>/
 
 | ID | 文章/主题 | 完成所需代码 | 完成所需测试 | 完成所需外部/原始证据 | 当前状态 |
 | --- | --- | --- | --- | --- | --- |
-| P0-01 | SLO/metrics | 全路径计时、按操作分布、liveness/readiness 分离 | 200/404/400/500 指标测试 | 真实端口压测、SLI 窗口定义 | 本地部分修复；真实端口/窗口待补 |
-| P0-02 | service 幂等 | 数据库原子 claim、fingerprint、结果重放 | 并发/重启/多实例/冲突 | PostgreSQL 运行记录 | 单进程本地修复；持久化语义待补 |
+| P0-01 | SLO/metrics | 全路径计时、按操作分布、liveness/readiness 分离 | 200/404/400/500 指标测试 | 真实端口压测、SLI 窗口定义 | **2026-08-19 已补本机真实端口压测**：`evidence/service-observability-slo-port/2026-08-19-local/run.out`（120 并发、404/409 各 30 样本、SLI 口径 A/B 对比、p99<100ms）；真实端口+SLI 窗口已现验证，月度窗口/多实例/真实依赖待补 |
+| P0-02 | service 幂等 | 数据库原子 claim、fingerprint、结果重放 | 并发/重启/多实例/冲突 | PostgreSQL 运行记录 | **2026-08-19 已补本机 PostgreSQL 运行记录**：`evidence/service-postgres-idempotency/2026-08-19-local/run.out`（PostgreSQL 16.15 / blog-pg:15432；并发 100 同 key → created=1 行=1；重建连接重放 id 不变；异指纹 conflict=true）。单进程内已验证；多实例与真实部署仍未覆盖。 |
 | P0-03 | CI/CD | 根 workflow、service build、真实 deploy | Node 矩阵、smoke、rollback | Actions run、artifact、部署 URL | 根 workflow/build 已补；Actions/deploy 待补 |
 | P0-04 | 事故复盘 | 可启动的三阶段历史版本 | 容量与映射一致性回归 | wrk/RSS/heap/profile 原始输出 | 历史事实未修；构造演练可重跑 |
-| P0-05 | event loop/GMP | 等价实验程序 | 多轮延迟分布 | Go/Node 官方资料、环境快照 | 语义/最小实验已修；多轮分布待补 |
-| P0-06 | streams | 独立模式、队列/峰值采样 | HWM/slow consumer/drain 对照 | Node/Go 规范、raw memory series | 独立进程/HWM 已补；完整下游链路待补 |
+| P0-05 | event loop/GMP | 等价实验程序 | 多轮延迟分布 | Go/Node 官方资料、环境快照 | **2026-08-19 已补 30 轮多轮延迟分布**：`evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt`（Go 唤醒 p50=1ms/max=2ms；Node 基线 p50=11.2ms；busy 阻塞后 p50=61.0ms，数据链与 raw 落盘）；语义/实验/分布均本机验证，跨机器吞吐常数未覆盖 |
+| P0-06 | streams | 独立模式、队列/峰值采样 | HWM/slow consumer/drain 对照 | Node/Go 规范、raw memory series | **2026-08-19 已补完整下游链路对照**：`evidence/typescript-streams-downstream/2026-08-19-local/run.out`（同 generator→慢 Writable 三路径：A 直接 for-await Lag=0、B pipe HWM=16 Lag=1/缓冲15B、C pipe HWM=2 Lag=1/缓冲1B，drain 节流一致）；独立进程/HWM/慢下游/raw 均已本机验证，真实 socket 链路未覆盖 |
 | P0-07 | Agent 成本/幂等 | 正确单位、定点金额、原子语义 | 并发/失败/预算测试 | 模型价格来源或模拟声明 | 本地公式/并发/预算已修；持久化待补 |
-| P0-08 | Zod | 可编译代码块、bundle script | fence compile、bundle regression | esbuild metafile/raw outputs | 代码/脚本已修；性能 benchmark 待补 |
+| P0-08 | Zod | 可编译代码块、bundle script | fence compile、bundle regression | esbuild metafile/raw outputs | **2026-08-19 已补同语义性能 benchmark**：`evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`（2M 次/轮、预热 10 万、连续两次；合法 zod/v4≈0.09–0.10x、非法≈0.19–0.20x）；bundle 体积与性能数字均本机实测，生产全链路未覆盖 |
 | P1-01 | 测试证据 | `verify:experiments`、独立 configs | 全实验入口 | 按篇 evidence snapshot | 根入口与本批快照已补；全库仍待补 |
 | P1-02 | 生产边界 | DB/观测/安全/生命周期 | 故障与恢复矩阵 | staging/production 运行记录 | 已明确降级为本地原型；生产证据未完成 |
 | P2-01 | 编辑质量 | 按文型重组 | 逐篇终审 | 一手引用闭合 | 受影响文章已重构；全库终审待补 |
@@ -1547,3 +1547,170 @@ evidence/<slug>/<run-date>/
 - 断电窗口、真实 etcd 时钟偏移、真实模型偏差率、kind 集群 datapath、GPU 并发数等仍是外部验证项，正文均已写明边界且不给数字；
 - `docker compose down --remove-orphans` 曾误停 blog-mysql/blog-pg/blog-redis 容器，已重启；证据均已落盘，不影响结论；
 - 本机一次结果不代表生产量级（kafka 停摆窗口 0.5-1s、redis 吞吐绝对值等），正文已写明。
+
+## 二十四、2026-08-19 继续修订：P0-02 数据库层原子 claim 本机闭合
+
+### 24.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/service/src/store-pg.ts` | 新增 `PostgresOrderStore`：`idempotency_key` 唯一约束 + `ON CONFLICT DO NOTHING` 做原子 claim，fingerprint 冲突与重放共用同一回读路径 | 同目录留存，`evidence/service-postgres-idempotency/2026-08-19-local/store-pg.ts.txt` |
+| `experiments/service/scripts/pg-idempotency.ts` | 本机三幕实验：幕 1 并发 100 同 key；幕 2 同 key 异指纹；幕 3 重建连接后重放 | `evidence/service-postgres-idempotency/2026-08-19-local/script.ts.txt` |
+| `experiments/service/package.json` | 新增 devDependencies：`pg` 8.23.0、`@types/pg` | `package-lock.json` 已更新 |
+| `content/posts/service-api-shape.md` | 描述/TL;DR 升级为"PG 唯一约束已验证"，第四节补三幕实验结果表与 SQL 核心，边界清单改为"本机已验证 2 项、仍待验证 3 项" | 本机 raw 见 `evidence/service-postgres-idempotency/2026-08-19-local/run.out` |
+| `review.md` 第 16 节矩阵 | P0-02 状态改为"2026-08-19 已补本机 PostgreSQL 运行记录" | 多实例/真实部署证据仍标为待补 |
+
+### 24.2 三幕实测输出（`run.out`）
+
+```
+PostgreSQL PostgreSQL 16.15 on aarch64-unknown-linux-musl · 并发幂等实验
+幕1 并发100同key: created=1 replayed=99 conflict=0 表内行数=1 耗时=52ms
+    权威订单 id=331661d5-... sku=SKU-42 customerId=7 qty=2
+幕2 同key重放: created=false conflict=false id不变=true
+幕2 同key异指纹: conflict=true created=false 表内行数=1
+幕3 重建连接后重放: created=false id不变=true 表内行数=1
+```
+
+限制：这是单进程对 Docker 内 PostgreSQL 的本机结果，证明数据库层的原子 claim、重放与指纹冲突路径；不证明多实例同时竞争、真实网络端口流量、过期策略或部署后运行。
+
+### 24.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `experiments/service` typecheck | 通过（`tsc -p tsconfig.json --noEmit`） |
+| 实验脚本实数运行 | `PG_DSN=postgres://postgres:root@localhost:15432/postgres npx tsx scripts/pg-idempotency.ts` 三幕全绿 |
+| `npm run verify:experiments` | 全部 experiment checks passed |
+| `npm test` | 11 files / 41 tests 通过；`tests/layout.test.tsx` 首页用例超时从默认 5s 放宽到 15s（135 篇后渲染耗时已接近 5s） |
+| `npm run lint` | 0 error；保留既有 `components/post/mermaid-renderer.tsx:192` 的 1 个 warning |
+| `npm run build` | 全量静态生成成功 |
+
+## 二十五、2026-08-19 继续修订：P0-01 真实端口压测本机闭合
+
+### 25.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/service/scripts/slo-port-probe.ts` | 新增真实端口压测：服务起在 127.0.0.1:4111，120 并发四类请求（404/201/400/409 各 30），拉 metrics 快照验证分桶与 SLI 口径 | `evidence/service-observability-slo-port/2026-08-19-local/script.ts.txt` |
+| `content/posts/service-observability-slo.md` | 新增第五章"把同一组请求搬到真实端口"，补 120 并发输出、SLI 口径 A/B 对比（100% vs 25%），结论章更新为"真实端口已验证，月度窗口仍待补"；description/TL;DR 同步 | 本机 raw 见 `evidence/service-observability-slo-port/2026-08-19-local/run.out` |
+| `review.md` 第 16 节矩阵 | P0-01 状态改为"2026-08-19 已补本机真实端口压测" | 月度窗口/多实例/真实依赖仍待补 |
+
+### 25.2 实测输出（`run.out` 节选）
+
+```
+端口压测: 120 个并发真实 HTTP 请求 耗时=558ms
+  状态分布: 2xx=30 404=30 400=30 409=30 5xx=0
+  分母口径A(所有业务分支=good): SLI=100.00%
+  分母口径B(仅2xx=good):       SLI=25.00%
+  分布 orders_create.ok: n=31 p50=0.08ms p99=6.02ms
+  分布 orders_create.validation_failed: n=30 p50=0.12ms p99=49.94ms
+  分布 orders_create.conflict: n=30 p50=0.10ms p99=38.12ms
+  分布 orders_get.not_found: n=30 p50=0.02ms p99=0.21ms
+验收1 404进orders_get分布: not_found样本数=30 (期望>=30)
+验收1b 409进orders_create.conflict分布: 30 (期望>=29)
+验收2 error budget(1-SLI口径B)=75.00% → 候选SLO 99%: 未达标 (仅当窗口覆盖足够样本时才有意义)
+验收3 orders_create.ok p99=6.02ms vs 候选阈值 100ms → 低于阈值（仅当前窗口，不构成月度承诺）
+```
+
+限制：真实 socket 端口、单进程内存 store、无 TLS/代理/数据库、3 秒本地窗口；证明本机真实端口路径，不证明月度可用性或生产 API p99。
+
+### 25.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| 实验脚本实数运行 | `npx tsx scripts/slo-port-probe.ts` 全部验收点通过 |
+| `npm test` | 通过（11 files / 41 tests） |
+| `npm run lint` | 0 error；保留既有 mermaid-renderer 1 warning |
+| `npm run build` | 通过 |
+| `git diff --check` | 通过 |
+
+## 二十六、2026-08-19 继续修订：P0-08 Zod 性能 benchmark 本机闭合
+
+### 26.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/ts-interface-schema/bench/` | 新增同语义性能 benchmark：`run-bench.mjs` + `parse-manual.mjs` + `parse-zod-v4.mjs`，同一批合法/非法输入只换校验实现，每轮 2,000,000 次 + 预热 100,000 | `evidence/typescript-interface-schema-zod-bench/2026-08-19-local/run1.out`、`run2.out` |
+| `content/posts/typescript-interface-schema-zod.md` | 新增第四章「性能不能空口说」：连续两次实测表、取舍判断；结论第 5 条由「未测量」改为实测数字；description/TL;DR 同步 | 同上 |
+| `review.md` 第 16 节矩阵 | P0-08 状态改为「已补同语义性能 benchmark」 | 生产全链路未覆盖 |
+
+### 26.2 实测输出（连续两次，run1/run2）
+
+```
+同语义 benchmark：N=2,000,000 per run，Node v24.19.0
+合法输入：手写 193,595,999 ops/s（10ms） vs zod/v4 20,189,232 ops/s（99ms）
+非法输入：手写 509,563 ops/s（3925ms） vs zod/v4 99,235 ops/s（20154ms）
+倍数（合法，zod/手写）：0.10x
+合法/非法都返回预设语义：true
+---
+合法输入：手写 215,987,573 ops/s（9ms） vs zod/v4 20,446,387 ops/s（98ms）
+非法输入：手写 513,572 ops/s（3894ms） vs zod/v4 99,847 ops/s（20031ms）
+倍数（合法，zod/手写）：0.09x
+```
+
+限制：单核同步解析、输入已解析为对象（无 JSON.parse）、本机单次结果；倍数不是跨机器常数，也不代表网络/IO/生产全链路。
+
+### 26.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| benchmark 实数运行 | 连续两次输出一致（合法 ≈0.09–0.10x、非法 ≈0.19–0.20x） |
+| `npm run verify:experiments` | 既有 checks 不受影响（新增 bench 不在 gate 列表，脚本独立运行） |
+| `npm test` / `npm run lint` / `npm run build` | 全部通过（41 tests、0 error、build 成功） |
+
+## 二十七、2026-08-19 继续修订：P0-05 多轮延迟分布本机闭合
+
+### 27.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/ts-event-loop/multi-round.ts` | 新增 30 轮延迟分布实验：A) Go `time.Sleep(10ms)` 唤醒延迟（GOMAXPROCS=1、30 次进程运行）；B) Node 10ms timer 基线；C) 同 timer 前置 50ms busy loop；子进程隔离每轮计时 | `evidence/typescript-event-loop-vs-gmp/2026-08-19-local/run.out` |
+| `content/posts/typescript-event-loop-vs-gmp.md` | 第三节补多轮分布段落与原始样本落盘路径，第四节"单次输出只解释控制流"改为"多轮可比较相对结构"；description/TL;DR 数字同步 | `evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt` |
+| `review.md` 第 16 节矩阵 | P0-05 状态改为"已补 30 轮多轮延迟分布" | 跨机器吞吐常数未覆盖 |
+
+### 27.2 实测分布（30 轮）
+
+```
+A Go 10ms 唤醒延迟(30 轮, GOMAXPROCS=1): n=30 min=0.0ms p50=1.0ms p95=1.0ms max=2.0ms
+B Node 10ms timer 基线延迟:               n=30 min=10.2ms p50=11.2ms p95=11.3ms max=11.3ms
+C Node 10ms timer + 50ms busy loop 延迟:  n=30 min=59.6ms p50=61.0ms p95=61.5ms max=64.7ms
+阻塞代价：p50(C)-p50(B) = 49.8ms
+```
+
+限制：本机（darwin arm64）、固定 Node 24.19.0 / Go 1.25.1、30 轮子进程采样；证明"结构性推迟"与"唤醒让出执行权"的相对结构，不构成跨机器吞吐或尾延迟常数。
+
+### 27.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `node multi-round.ts` | 连续运行输出一致，raw 落盘 |
+| `npm test` / `npm run lint` / `npm run build` | 全部通过（41 tests、0 error、build 成功） |
+
+## 二十八、2026-08-19 继续修订：P0-06 完整下游链路本机闭合
+
+### 28.1 本次修订
+
+| 项目 | 处理 | 证据 |
+| --- | --- | --- |
+| `experiments/ts-streams/downstream-pipe.ts` | 新增完整下游链路实验：同一 generator 三路径进慢 Writable（A 直接 for-await+手动 drain 等待；B Readable.from HWM=16 + pipe；C HWM=2 + pipe），每条 20ms，观测 maxLag/maxBuffered/drain | `evidence/typescript-streams-downstream/2026-08-19-local/run.out` |
+| `content/posts/typescript-streams-backpressure.md` | 第三节补三路径实测表与"背压是每层等待的结果"判断；结论第 3 条与读者路径同步；description/TL;DR 数字同步 | 同上 |
+| `review.md` 第 16 节矩阵 | P0-06 状态改为"已补完整下游链路对照" | 真实 socket/SSE 链路未覆盖 |
+
+### 28.2 实测输出
+
+```
+A 直接 for-await → 慢 Writable (每步等 drain): produced=2000 consumed=2000 maxLag=0  maxBuffered=0B  drain=2000
+B Readable.from HWM=16 → pipe → 慢 Writable:    produced=2000 consumed=2000 maxLag=1  maxBuffered=15B drain=1999
+C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000 maxLag=1  maxBuffered=1B  drain=1999
+```
+
+限制：单进程、2000 条/路径、慢 Writable 为进程内 20ms/条；证明背压沿 generator→Readable→Writable 全程生效，不包含真实 socket/SSE 传输与网络吞吐。
+
+### 28.3 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `node downstream-pipe.ts` | 三条路径输出一致，raw 落盘 |
+| `npm run verify:experiments` | 全部 experiment checks passed |
+| `npm test` | 11 files / 41 tests 通过 |
+| `npm run lint` | 0 error；保留既有 mermaid-renderer 1 warning |
+| `npm run build` | 静态生成成功 |

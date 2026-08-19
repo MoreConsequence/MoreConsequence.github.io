@@ -1,15 +1,15 @@
 ---
 title: "API 形状是合同：错误、重试与冲突必须一起定义"
-description: "订单服务用 Zod 固定成功/失败形状，并用单进程原型验证 100 个并发同 key 请求只创建一个权威订单；同 key 不同 body 返回 409。这个结果只证明本地事件循环中的原子 claim，不冒充数据库幂等。"
+description: "订单服务用 Zod 固定成功/失败形状，并用 PostgreSQL 唯一约束验证同 key 并发只会产生一个权威订单；同 key 不同 body 返回 409。本机已验证数据库层原子 claim，仍未覆盖多实例与真实部署。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-17"
+updatedAt: "2026-08-19"
 tags: ["API 设计", "契约", "zod", "Hono"]
 draft: false
 featured: false
 series: "把原理变成服务"
 ---
 
-**TL;DR：** API 契约不只规定 200 的 JSON 长什么样，还要规定校验失败、重复请求和同 key 不同 payload 怎么结束。订单服务现在把错误统一成 `{error:{code,message,details?}}`，并让 `saveByKey` 在单个同步临界段返回权威结果：100 个并发同 key 请求得到 1 个 201、99 个相同订单的 200；同 key 携带不同 body 得到 409。这个实验修复的是进程内 check-then-act，不是 PostgreSQL、多实例或重启后的生产幂等。
+**TL;DR：** API 契约不只规定 200 的 JSON 长什么样，还要规定校验失败、重复请求和同 key 不同 payload 怎么结束。订单服务把错误统一成 `{error:{code,message,details?}}`，并让 `saveByKey` 返回权威结果：100 个并发同 key 请求得到 1 个 201、99 个相同订单的 200；同 key 携带不同 body 得到 409。进程内原型用同步临界段修复 check-then-act，PostgreSQL 实现用唯一约束做原子 claim——两版本机都通过了并发、冲突与重放实验，仍未验证多实例与真实部署。
 
 ## 一、先定失败形状，再定成功形状
 
@@ -97,10 +97,10 @@ flowchart LR
   claim -->|"首次成功"| created["持久化候选 + 201"]
   claim -->|"同 key 同指纹"| replay["权威结果 + 200"]
   claim -->|"同 key 不同指纹"| conflict["409 IDEMPOTENCY_CONFLICT"]
-  created -."当前原型仍是 Map".-> boundary["生产还需唯一约束/结果重放"]
+  created -."本机已验证：Map 同步临界段 + PG 唯一约束".-> boundary["未验证：多实例／真实部署"]
 ```
 
-路由只把 `created: true` 映射成 201；重放是 200；指纹不同是 409。这里的“原子”只在这个进程、这张 Map 和这次生命周期内成立。
+路由只把 `created: true` 映射成 201；重放是 200；指纹不同是 409。进程内版本的“原子”只在单个事件循环内成立；下面第四节用 PostgreSQL 唯一约束把同一个合同搬到数据库层。
 
 ## 四、反例先写进测试：100 个并发请求会怎样
 
@@ -112,16 +112,35 @@ flowchart LR
 | 同 key、同 body，并发 100 次 | 1 | 1 个 201，99 个 200，订单号全部相同 |
 | 同 key、不同 body | 1 | 后续请求 409，不静默复用 |
 
-这组测试证明了本地实现没有把“自己的临时 order”误当权威结果。它没有证明以下生产语义：
+这组测试证明了本地实现没有把“自己的临时 order”误当权威结果。测试只断言了协议形状，没有证明并发同 key 落在数据库层时也只产生一行——这一步用 PostgreSQL 唯一约束补齐：
 
-- 进程重启后幂等记录仍然存在；
-- 两个实例同时 claim 时只有一个成功；
-- 执行中连接断开后，未知结果能被安全重放；
-- 失败、TTL、请求指纹和业务副作用都由同一个数据库事务裁决。
+```sql
+INSERT INTO idem.orders
+  (id, idempotency_key, fingerprint, sku, customer_id, qty, status, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (idempotency_key) DO NOTHING
+RETURNING id
+```
 
-并发、冲突、状态码和指标路径的当前本机 raw 见 `evidence/service-testing-strategy/2026-08-16-local/`；该快照支持进程内原型的局部合同，不是 PostgreSQL、多实例或重启恢复证据。
+`idempotency_key` 的唯一约束让数据库裁决“谁先到”：并发 INSERT 同 key 时恰好一个事务成功，其余全部进入冲突分支，再回读已提交的权威行。`experiments/service/src/store-pg.ts` 是这个实现的完整文件，`scripts/pg-idempotency.ts` 是本机三幕实验，在 Docker 里的 PostgreSQL 16.15（`blog-pg`）上实际输出：
 
-生产实现需要数据库唯一约束、请求指纹、状态字段、最终响应和过期策略。把这份内存 Map 直接搬到多实例服务，只是把竞态从测试里搬到网络上。
+| 输入 | created | conflict | 表内行数 |
+| --- | ---: | ---: | ---: |
+| 100 个并发同 key、同指纹 | 1 | 0 | 1 |
+| 同 key、同指纹重放（重建连接后） | 0 | 0 | 1 |
+| 同 key、不同指纹 | 0 | 1 | 1 |
+
+同一份权威 order 在三幕里 id 始终不变，说明并发竞争时恰好一个请求创建，其余全部命中重放列。原始输出见 `evidence/service-postgres-idempotency/2026-08-19-local/run.out`，脚本与 store 实现同目录留存。
+
+本机证据覆盖了以下原本缺失的语义，但没有覆盖以下生产语义：
+
+- 已在本机验证：进程重启/重建连接后幂等记录仍然存在，重放仍返回同一权威订单；
+- 已在本机验证：两个请求同时 claim 同一 key 时只有一行 INSERT 成功；
+- 仍待验证：多实例同时运行（本机只测了单进程内的 100 并发）；
+- 仍待验证：真实端口流量、稳定部署、真实过期策略与 TTL 回收；
+- 仍待验证：业务副作用（发邮件、记账）与订单写入是否由同一个数据库事务裁决——本机实验只保证订单行的插入是原子的。
+
+生产实现仍然需要唯一约束、请求指纹、状态字段、最终响应和过期策略。把内存 Map 直接搬到多实例服务，只是把竞态从测试里搬到网络上；把这份 PostgreSQL 实现直接部署，也还缺多实例与部署层验证。
 
 ## 五、结论：合同必须覆盖冲突，而不是只覆盖 happy path
 
@@ -130,9 +149,7 @@ flowchart LR
 1. 校验错误必须有稳定外层形状和结构化 details。
 2. 幂等响应必须返回权威结果，不能返回一个没有被保存的临时订单。
 3. 同 key 不同 payload 必须显式冲突，不能把客户端 bug 伪装成重放。
-4. 进程内测试通过后仍要标记边界，数据库、多实例和重启证据尚不存在。
-
-下一步应把这份合同移到持久化存储测试，而不是继续给内存原型增加“生产级”形容词。
+4. 数据库层原子 claim 已用 PostgreSQL 唯一约束在本机验证；下一步是补多实例竞争与部署层证据，而不是再给内存原型增加“生产级”形容词。
 
 ## 参考资料
 

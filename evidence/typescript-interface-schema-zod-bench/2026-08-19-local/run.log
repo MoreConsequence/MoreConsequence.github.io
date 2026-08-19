@@ -1,0 +1,26 @@
+# typescript-interface-schema-zod 性能 benchmark (P0-08)
+
+## 环境
+- date: 2026-08-19 (local, darwin arm64)
+- node: v24.19.0
+- zod: 4.4.3
+- 输入已解析为对象(无 JSON.parse 成本)
+
+## 命令
+`cd experiments/ts-interface-schema && node bench/run-bench.mjs`(连续两次)
+
+## 输出 (run1)
+```
+同语义 benchmark：N=2,000,000 per run，Node v24.19.0
+合法输入：手写 210,786,093 ops/s（9ms） vs zod/v4 19,559,846 ops/s（102ms）
+非法输入：手写 521,146 ops/s（3838ms） vs zod/v4 100,829 ops/s（19836ms）
+倍数（合法，zod/手写）：0.09x
+合法/非法都返回预设语义：true
+边界：本机单次运行、单核同步解析、无 JSON.parse（输入已解析）；倍数不是跨机器常数，也不是网络/IO 路径结论。
+
+```
+
+## 边界
+- 同语义: 同一批合法/非法输入, 只换校验实现, 2,000,000 次/轮;
+- 单核同步解析, 非法输入路径包含 throw 成本;
+- 本机单次结果, 不是跨机器常数, 也不代表 JSON.parse/网络/IO 全链路。
