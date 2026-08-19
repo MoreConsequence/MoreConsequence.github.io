@@ -1757,3 +1757,16 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 
 - P0-03 的 "Actions run" 证据是**真实存在的**：Service CI 两次 success（31961323285、31958651737）；Pages deploy 既有 success 也有 failure，failur 反例完整可追溯（超时用例+日志）。
 - 下一步：push `19128cf` + P0-07 提交后，等待新 Pages run 转绿，把 run URL 与 Pages 部署 URL 登记为 P0-03 的最终验收证据。
+
+### 30.3 P0-03 闭环（2026-08-19 16:15Z push 后验证）
+
+- push `21a0cfc..dfcf93a` 后两个 workflow 均 success：
+  - `Service CI` run 32274895383（head dfcf93a3）：typecheck/test/build 全绿；
+  - `Deploy GitHub Pages` run 32274895358（head dfcf93a3）：Test（layout.test 超时修复生效）→ Lint → Build → 上传 artifact → Configure Pages → 部署全部通过。
+- Pages 状态：`status: built`，站点 https://moreconsequence.github.io/ HTTP 200。
+- 线上内容验证：idempotency-engineering 页已含「真实数据库版」段落与幕1/幕2/幕3 输出（curl 实测）。
+- 至此 P0-03 的「真实 Actions/deploy」证据补齐；失败反例（32257040131）与修复后的成功证据并存，闭环完整。
+
+### 30.4 关闭声明
+
+- P0-07、P0-03 已闭合。剩余：P0-04（历史事故原始输出本机不可取得，保留显式降级）、P1-01（全库 evidence snapshot 待补）、P1-02、P2-01 按既有边界执行。
