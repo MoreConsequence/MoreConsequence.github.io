@@ -1828,3 +1828,37 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 ### 32.3 剩余
 
 P2-01 的"逐篇终审 + 一手引用闭合"仍是大批量的编辑级检查（08-16 批 9 篇 + 08-16 批 7 篇 + 08-19 批 20 篇 + 更早文章的代表样本），按 AGENTS.md 分批执行，本批只完成结构层；逐篇全文审校继续作为开放项。
+
+## 三十三、2026-08-19 P2-01 逐篇终审第一批：08-16 批 9 篇 TS 系列
+
+### 33.1 逐篇结果
+
+| 文章 | 验证方式 | 结论 |
+| --- | --- | --- |
+| `typescript-interface-schema-zod` | 前批（P0-08）已深审：bench 2M 次/轮 + bundle 实测 | 通过；本批顺手修了章节编号（四/五/六 重排） |
+| `typescript-toolchain-rules` | 仓库工件逐项核对：Node v24.19.0 / npm 11.17.0 / TS 5.9.3 / esbuild 0.28.0 / zod `^4.4.3`→锁 4.4.3 / 顶层 497 条目 / deps 17+dev 7 / lockfileVersion 3 | 全部精确匹配 |
+| `typescript-dto-boundary` | `node main.ts` 实测：Omit 泄露 127B、DTO 47B、工具白名单输出 | 输出与文章逐字一致 |
+| `typescript-event-loop-vs-gmp` | 前批（P0-05）已审：multi-round 30 轮 p50 1.0/11.2/61.0ms | 通过 |
+| `typescript-streams-backpressure` | 前批（P0-06）已审：downstream-pipe 三路径 Lag/缓冲表 | 通过 |
+| `typescript-agent-state-machine` | `node fsm.ts`：隐式静默保留 vs 显式抛「非法转移: done x tool_result」 | 与文章一致；测试矩阵诚实标注"前四项验证、后两项生产合同" |
+| `typescript-errors-result-throw` | `node result-vs-throw.ts`：throw/Result 对照 + 定时器回调逃逸全局兜底 | 与文章一致 |
+| `typescript-type-gymnastics` | `tsc --noEmit` 通过 + `registry2.ts`/`literal.ts` 运行时输出 | 与文章一致 |
+| `typescript-agent-production` | `node prod.ts` 输出块 + `prod.test.mjs` 4 测试全过；P0-07 幂等另由 MySQL 三幕闭环 | 与文章一致 |
+
+### 33.2 批结论
+
+9 篇均「文章↔代码↔输出↔证据」对齐，无事实/代码漂移；本批未修改任何正文（zod 编号修复记录在第 32 节）。下一批可审 08-16 批 7 篇「把原理变成服务」系列（service-*）——其中 service-api-shape/observability-slo 已由 P0-01/02 审过，待审 service-design-adr、service-testing-strategy、service-ci-cd、service-incident-drama、service-release-checklist 五篇。
+
+## 三十四、2026-08-19 P2-01 逐篇终审第二批：08-16 批 7 篇「把原理变成服务」系列
+
+| 文章 | 验证方式 | 结论 |
+| --- | --- | --- |
+| `service-design-adr` | 结构/嵌入代码块审查：「决策/理由/没选什么/推翻条件」是 ADR 模板代码块内示例，非裸标题（误报澄清）；ADR 判断表与 `src/app.ts`/`store.ts` 工件对应 | 通过 |
+| `service-api-shape` | 前批（P0-02）已审：PostgresOrderStore 三幕 | 通过 |
+| `service-testing-strategy` | `vitest run --coverage` 复跑：18 tests、Stmts 80%(120/150)、Branch 71.62%(53/74)、Funcs 67.56%(25/37)、Lines 81.48%(110/135) | 与文章逐字一致（旧 11 tests/83.67% 已正确标为历史状态） |
+| `service-ci-cd` | workflow 真实存在且 P0-03 已闭环（Service CI + Pages 32274895383/32274895358 success）；matrix 与 eslint/tsconfig exclude 说明一致 | 通过 |
+| `service-incident-drama` | `store-growth.ts 500 100` 复跑：JSON 输出与文章逐字符一致；边界声明（不能证明 RSS/历史事故）诚实 | 通过 |
+| `service-observability-slo` | 前批（P0-01）已审：真实端口压测 p99=6.02ms | 通过 |
+| `service-release-checklist` | `experiments/service/docs/release-checklist.md` 存在；引用 evidence 路径有效；P0-03 闭环保释 checklist 勾选能力 | 通过 |
+
+本批未修改正文。至此 08-16 两批 16 篇全部逐篇终审完成（14 篇深读+复跑，2 篇此前已闭环）。
