@@ -810,7 +810,7 @@ evidence/<slug>/<run-date>/
 | --- | --- | --- | --- | --- | --- |
 | P0-01 | SLO/metrics | 全路径计时、按操作分布、liveness/readiness 分离 | 200/404/400/500 指标测试 | 真实端口压测、SLI 窗口定义 | **2026-08-19 已补本机真实端口压测**：`evidence/service-observability-slo-port/2026-08-19-local/run.out`（120 并发、404/409 各 30 样本、SLI 口径 A/B 对比、p99<100ms）；真实端口+SLI 窗口已现验证，月度窗口/多实例/真实依赖待补 |
 | P0-02 | service 幂等 | 数据库原子 claim、fingerprint、结果重放 | 并发/重启/多实例/冲突 | PostgreSQL 运行记录 | **2026-08-19 已补本机 PostgreSQL 运行记录**：`evidence/service-postgres-idempotency/2026-08-19-local/run.out`（PostgreSQL 16.15 / blog-pg:15432；并发 100 同 key → created=1 行=1；重建连接重放 id 不变；异指纹 conflict=true）。单进程内已验证；多实例与真实部署仍未覆盖。 |
-| P0-03 | CI/CD | 根 workflow、service build、真实 deploy | Node 矩阵、smoke、rollback | Actions run、artifact、部署 URL | 根 workflow/build 已补；Actions/deploy 待补 |
+| P0-03 | CI/CD | 根 workflow、service build、真实 deploy | Node 矩阵、smoke、rollback | Actions run、artifact、部署 URL | **2026-08-19 已闭环**：Service CI 32274895383 + Pages 32274895358 均 success（dfcf93a），站点 built + HTTP 200，线上含新证据段落；失败反例 32257040131 归档（§30） |
 | P0-04 | 事故复盘 | 可启动的三阶段历史版本 | 容量与映射一致性回归 | wrk/RSS/heap/profile 原始输出 | 历史事实未修；构造演练可重跑 |
 | P0-05 | event loop/GMP | 等价实验程序 | 多轮延迟分布 | Go/Node 官方资料、环境快照 | **2026-08-19 已补 30 轮多轮延迟分布**：`evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt`（Go 唤醒 p50=1ms/max=2ms；Node 基线 p50=11.2ms；busy 阻塞后 p50=61.0ms，数据链与 raw 落盘）；语义/实验/分布均本机验证，跨机器吞吐常数未覆盖 |
 | P0-06 | streams | 独立模式、队列/峰值采样 | HWM/slow consumer/drain 对照 | Node/Go 规范、raw memory series | **2026-08-19 已补完整下游链路对照**：`evidence/typescript-streams-downstream/2026-08-19-local/run.out`（同 generator→慢 Writable 三路径：A 直接 for-await Lag=0、B pipe HWM=16 Lag=1/缓冲15B、C pipe HWM=2 Lag=1/缓冲1B，drain 节流一致）；独立进程/HWM/慢下游/raw 均已本机验证，真实 socket 链路未覆盖 |
