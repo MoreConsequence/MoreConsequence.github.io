@@ -1,0 +1,42 @@
+# go-nethttp-connection-reuse 本机复跑证据（P1-01 补录）
+
+- date: 2026-08-19（本地，darwin arm64，macOS 25.5.0）
+- go: 1.25.1（go version go1.25.1 darwin/arm64）
+- 上游：本地 127.0.0.1:18765，handler 固定 5ms，keep-alive
+- 命令：cd experiments && go run ./go-nethttp/cmd/server（终端1）; bench 各场景（终端2）
+
+## 默认池（MaxIdleConnsPerHost=2）50 并发 × 300 请求
+
+new TCP connections dialed: 3671  (reuse ratio = 75.53%)
+server-side accepts: 3671  throughput: 7217 req/s
+latency avg=6.86ms p50=5.87ms p99=25.8ms
+
+## 调大池（perhost=100）
+
+new TCP connections dialed: 49  (reuse ratio = 99.67%)
+throughput: 7647 req/s latency avg=6.53ms p50=6.13ms p99=20.0ms
+
+## 200 并发默认池（震荡）
+
+new TCP connections dialed: 7668  (reuse ratio = 61.66%)
+throughput: 31525 req/s（单次观察，震荡区间见文章；非稳定分界线）
+
+## 200 并发调大池（稳定）
+
+new TCP connections dialed: 256  (reuse ratio = 98.72%)
+throughput: 35106 req/s latency avg=5.56ms p50=5.34ms p99=9.2ms
+
+## MaxConnsPerHost=5 硬上限
+
+new TCP connections dialed: 4  throughput: 813 req/s
+latency avg=245.0ms p50=235.4ms p99=374.0ms
+
+## IdleConnTimeout=2s 回收
+
+跑完等 5s 后 stats: {"accepts":61243,"open":0}（open 归 0）
+
+## 与文章一致性
+
+- 默认池 ~76% 复用（本次 75.53%）、调大池 99.7%（本次 99.67%）：一致
+- MaxConnsPerHost=5 → 826 req/s（本次 813）、p50 235ms（本次 235.4ms）：一致
+- IdleConnTimeout 回收 open→0：一致

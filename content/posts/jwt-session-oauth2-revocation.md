@@ -2,6 +2,7 @@
 title: "Token 的吊销税：JWT、Session 与 OAuth2 的状态两难"
 description: "JWT 的无状态是用吊销能力换来的：登录态要能踢人，就得在黑名单、短 TTL 与 introspection 三选一付税。从三种方案的机制差异、OAuth2 流程选型到生产决策矩阵，把认证的状态两难讲清楚。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-19"
 tags: ["安全", "认证", "JWT", "OAuth2"]
 draft: false
 featured: false
@@ -29,7 +30,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9 . {claims} . <RSA-SHA256 签名>
 
 `header` 声明算法（`alg`），`payload` 是 claims（`sub` 用户、`iat`、`exp`、`jti`），`signature` 是私钥对 `header.payload` 的 RSA 签名。验证方持有公钥：验签名通过 + `exp` 没过期，就信任 payload。关键在**验证不需要访问任何服务端状态**——签发者知道谁签的，但每个 API 只做本地 CPU 计算。TLS 那篇里讲过公钥验签的原理[^tls]，这里不重复：RSA 验签是数学运算，不是查库。
 
-这本机一次运行的量级是：Session 的 Map 查一次约 0.07µs（p50 0.08µs），本地 RSA 验签约 19–20µs 均值（p50 约 18µs，p99 约 29µs）[^bench]。即验签比查一次内存 Map 慢两个数量级，但仍远快于任何一次数据库查询（几百微秒到毫秒量级）或网络往返。「JWT 比 Session 快」在本地路径上大体成立，但差的不是安全，是存储访问换 CPU。
+这本机一次运行的量级是：Session 的 Map 查一次约 0.07µs（p50 0.08µs），本地 RSA 验签约 20–22µs 均值（p50 约 18µs）[^bench]。即验签比查一次内存 Map 慢两个数量级，但仍远快于任何一次数据库查询（几百微秒到毫秒量级）或网络往返。「JWT 比 Session 快」在本地路径上大体成立，但差的不是安全，是存储访问换 CPU。
 
 「无状态」省下的存储，换来了三笔税：
 
@@ -112,9 +113,9 @@ node experiments/auth-ledger/server.js            # 压测 + 踢人演示
 node experiments/auth-ledger/server.js --server   # 起真实 HTTP 服务，curl 验证
 ```
 
-本机一次输出（2026-08-16，Node v24.19.0）：Session 查 Map 约 0.07µs（p50 0.08µs）；本地 RSA 验签均值约 19µs（p50 18µs，p99 约 29µs）；进程内 introspection 与本地验签同量级。踢人演示：Session 删记录后同一 token 立即 401；裸 JWT 踢后依旧 200；JWT+introspection 的 jti 进黑名单后立即 401[^bench]。
+本机一次输出（2026-08-19，Node v24.19.0）：Session 查 Map 约 0.07µs（p50 0.08µs）；本地 RSA 验签均值约 20–22µs（p50 约 18µs）；进程内 introspection 与本地验签同量级（均值约 20µs）。踢人演示：Session 删记录后同一 token 立即 401；裸 JWT 踢后依旧 200；JWT+introspection 的 jti 进黑名单后立即 401[^bench]。
 
-以上是单次运行的本地量级，不是稳定分界线，也不能当线上结论：① 本机 p99 的两次差异（约 29µs vs 30µs）落在噪声内，不能推出「introspection 比 JWT 慢」；② introspection 的真实成本是网络 RTT，本实验只覆盖了端点本身的 CPU；③ 当前没有多实例、真实 Redis denylist 与跨机房压测。本文保持这些限制，若要发布网络结论，应先用 `--server` 加真实授权端点保存并发压测原始输出。
+以上是单次运行的本地量级，不是稳定分界线，也不能当线上结论：① 本机 p99 与均值在不同批次间都会波动（RSA p99 曾见 29–91µs），p99 落在噪声内，不能推出「introspection 比 JWT 慢」；② introspection 的真实成本是网络 RTT，本实验只覆盖了端点本身的 CPU；③ 当前没有多实例、真实 Redis denylist 与跨机房压测。本文保持这些限制，若要发布网络结论，应先用 `--server` 加真实授权端点保存并发压测原始输出。
 
 ## 参考资料
 
@@ -128,4 +129,4 @@ node experiments/auth-ledger/server.js --server   # 起真实 HTTP 服务，curl
 [^tls]: 见《TLS 握手全流程》[/writing/tls-handshake-deep-dive](/writing/tls-handshake-deep-dive)中公钥验签与证书部分的原理：验签是「用公钥验证私钥签名的数学运算」，验证方不需要持有任何会话状态。
 [^cache]: 见《缓存一致为什么比缓存命中难》[/writing/cache-consistency](/writing/cache-consistency)：denylist 本质是一张缓存，其 TTL 与失效窗口就是该篇讲的「一致性没有终点」问题。
 [^shape]: 见《API 形状是合同》[/writing/service-api-shape](/writing/service-api-shape)：校验失败、冲突与成功必须一起定义，introspection 端点的 `active` 字段就是 API 侧要稳定依赖的机器契约。
-[^bench]: 本机实验见 `experiments/auth-ledger/`，`server.js` 一次运行的输出记录在 `README.md`。数字是单次运行的本地量级，非稳定分界线。
+[^bench]: 本机实验见 `experiments/auth-ledger/`（`server.js` 一次运行的输出记录在 `README.md`），2026-08-19 原始输出见 `evidence/jwt-session-oauth2-revocation/2026-08-19-local/run.out`。数字是单次运行的本地量级，非稳定分界线。

@@ -2,6 +2,7 @@
 title: "双写必有一扇窗：Outbox 与 binlog CDC 的原子性取舍"
 description: "业务库和消息队列各写一份，中间永远隔着一扇窗：要么 DB 提交了 MQ 没发（丢事件），要么 MQ 发了 DB 回滚（脏事件）。事务性 Outbox 把事件塞进业务库同一事务，binlog CDC 把 binlog 当现成的 outbox——两条路的一致性承诺与代价各在哪。"
 publishedAt: "2026-08-16"
+updatedAt: "2026-08-19"
 tags: ["分布式", "消息队列", "Outbox", "CDC"]
 draft: false
 featured: false
@@ -145,7 +146,7 @@ cd experiments && go run ./outbox-demo
 
 预期输出四段：① 双写路径下订单已提交但事件丢失；② relay 第一轮 publish 后「崩溃」没标记，第二轮重发同一条，MQ 收到 2 条；③ 消费端幂等表命中，业务实际只执行 1 次；④ 末尾输出一次「业务+事件原子写」的开销量级。
 
-> 边界：demo 第 4 段输出的是内存状态机的量级参考（本机 2026-08-18 实测：10 万次原子写 53.96ms、单次约 539ns），证明的是失败形状与一致性语义，不是真实 MySQL/网络的延迟数字。真实环境的 relay 轮询间隔、事务 fsync 与 CDC 端到端延迟属于生产验证项，本文不据此下性能结论。
+> 边界：demo 第 4 段输出的是内存状态机的量级参考（本机 2026-08-19 复跑：10 万次原子写 75.31ms、单次约 753ns；2026-08-18 首次记录为 53.96ms/约 539ns，两次都在几百 ns 量级；原始输出见 `evidence/outbox-cdc-dual-write-atomicity/2026-08-19-local/run.out`），证明的是失败形状与一致性语义，不是真实 MySQL/网络的延迟数字。真实环境的 relay 轮询间隔、事务 fsync 与 CDC 端到端延迟属于生产验证项，本文不据此下性能结论。
 
 ## 六、结论：跨组件一致性的最小单元是同一事务
 

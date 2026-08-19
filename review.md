@@ -816,7 +816,7 @@ evidence/<slug>/<run-date>/
 | P0-06 | streams | 独立模式、队列/峰值采样 | HWM/slow consumer/drain 对照 | Node/Go 规范、raw memory series | **2026-08-19 已补完整下游链路对照**：`evidence/typescript-streams-downstream/2026-08-19-local/run.out`（同 generator→慢 Writable 三路径：A 直接 for-await Lag=0、B pipe HWM=16 Lag=1/缓冲15B、C pipe HWM=2 Lag=1/缓冲1B，drain 节流一致）；独立进程/HWM/慢下游/raw 均已本机验证，真实 socket 链路未覆盖 |
 | P0-07 | Agent 成本/幂等 | 正确单位、定点金额、原子语义 | 并发/失败/预算测试 | 模型价格来源或模拟声明 | **2026-08-19 已补 MySQL 8 持久化幂等实测**：`evidence/idempotency-engineering/2026-08-19-local/run.out`（并发 100 同 key→created=1/扣款=1、异指纹 conflict、重建连接重放不重扣）；公式/并发/预算/持久化均本机验证，跨进程租约与真实账单未覆盖 |
 | P0-08 | Zod | 可编译代码块、bundle script | fence compile、bundle regression | esbuild metafile/raw outputs | **2026-08-19 已补同语义性能 benchmark**：`evidence/typescript-interface-schema-zod-bench/2026-08-19-local/`（2M 次/轮、预热 10 万、连续两次；合法 zod/v4≈0.09–0.10x、非法≈0.19–0.20x）；bundle 体积与性能数字均本机实测，生产全链路未覆盖 |
-| P1-01 | 测试证据 | `verify:experiments`、独立 configs | 全实验入口 | 按篇 evidence snapshot | 根入口与本批快照已补；全库仍待补 |
+| P1-01 | 测试证据 | `verify:experiments`、独立 configs | 全实验入口 | 按篇 evidence snapshot | **2026-08-19 全库扫描完成**：28 篇引用实验无同名 evidence 的文章逐篇核对，8 篇判定为目录名差异、1 篇实验内自带、1 篇浏览器演示；5 篇真缺口全部落盘（go-nethttp/jwt/k8s/outbox/seckill，§31）；含 3 篇数字漂移修订 |
 | P1-02 | 生产边界 | DB/观测/安全/生命周期 | 故障与恢复矩阵 | staging/production 运行记录 | 已明确降级为本地原型；生产证据未完成 |
 | P2-01 | 编辑质量 | 按文型重组 | 逐篇终审 | 一手引用闭合 | 受影响文章已重构；全库终审待补 |
 
@@ -1770,3 +1770,35 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 ### 30.4 关闭声明
 
 - P0-07、P0-03 已闭合。剩余：P0-04（历史事故原始输出本机不可取得，保留显式降级）、P1-01（全库 evidence snapshot 待补）、P1-02、P2-01 按既有边界执行。
+
+## 三十一、2026-08-19 P1-01 补录：28 篇"引用 experiments 但无 evidence"审计与 5 篇落盘
+
+### 31.1 扫描与结论
+
+全文扫描 135 篇 production 文章，找「正文引用 `experiments/` 但 `evidence/<slug>/` 不存在」的文章，共 28 篇；逐篇比对后发现多数是证据目录名与文章 slug 不同（如 `evidence/mysql-ddl-mdlock/` 对 `mysql-online-ddl-mdl-lock`、`evidence/lock-math/` 对 `optimistic-vs-pessimistic-lock`、`evidence/mini-lsm-write-amplification/` 对 `lsm-vs-btree-io-amplification`、`evidence/vector-ann/` 对 `vector-index-hnsw-ivf-pq`、`evidence/mysql-optimizer/` 对 `mysql-optimizer-explain-cost`、`evidence/kafka-rebalance/` 对 `kafka-rebalance-stop-the-world`、`evidence/postgres-bloat/` 对 `postgres-bloat-autovacuum`、`evidence/redis-persistence/` 对 `redis-persistence-rdb-aof`）或实验结果本来就放在实验目录内（`sse-vs-ws/evidence/2026-08-16-local/output.txt`、`experiments/microtask/index.html` 为浏览器演示）。
+
+### 31.2 真缺口 5 篇，本轮全部落盘
+
+| 文章 | 缺口 | 处理 | 证据 |
+| --- | --- | --- | --- |
+| `go-nethttp-connection-reuse` | 数字只在 README，无独立 evidence | 起本地 5ms 上游 + 全场景复跑（默认池/调大池/200 并发震荡/调大稳定/MaxConnsPerHost=5/IdleConnTimeout 回收） | `evidence/go-nethttp-connection-reuse/2026-08-19-local/run.log` |
+| `jwt-session-oauth2-revocation` | 数字漂移（文章 0.07/19–20/29µs vs 当前 0.07/20–22/60.9µs p99） | 重跑三路延迟+踢人演示；正文改均值口径（p99 批次噪声，曾经 29–91µs）；锚点指向 evidence | `evidence/jwt-session-oauth2-revocation/2026-08-19-local/run.out` |
+| `k8s-iptables-ebpf-service` | 文章引用 `evidence/k8s-iptables-ebpf-service/2026-08-19-local/` 但目录不存在（发布时未落盘） | 复跑 rule-match-sim.go 落盘（N=1000: 228ns/包 vs 10ns/包；N=10000: 1709 vs 13） | `evidence/k8s-iptables-ebpf-service/2026-08-19-local/run.out` |
+| `outbox-cdc-dual-write-atomicity` | 内存 demo 数字漂移（文章 539ns vs 当前 753ns） | 复跑；边界段改"两次记录都在几百 ns 量级"+ 指向 evidence | `evidence/outbox-cdc-dual-write-atomicity/2026-08-19-local/run.out` |
+| `seckill-inventory-atomic-gates` | 每轮超卖数值随调度变化（文章 67~143/平均 107.7 vs 当前 163~222/平均 184.7） | 文章明确两个样本区间；数字块更新为 2026-08-19 输出 | `evidence/seckill-inventory-atomic-gates/2026-08-19-local/run.out` |
+
+另：`go run -race` 重跑 outbox（无 race）与 seckill（无 race，naive 仍超卖、cas/luascript 为 0）作闸门 6 反例过关；`understanding-event-loops` 判定为浏览器演示 + 规范引文为主，不涉及需落盘的数值证据。
+
+### 31.3 文章修订（均 updatedAt 2026-08-19）
+
+- `outbox-cdc-dual-write-atomicity.md`：数字回填句更新（539ns→753ns+历史值注明）；
+- `jwt-session-oauth2-revocation.md`：正文与"本机输出"口径改均值、p99 声明改为"批次间波动不可据此比较"、脚注指向 evidence；
+- `seckill-inventory-atomic-gates.md`：数字块替换 + 正文"67~143"改为"见过两种样本区间"。
+
+### 31.4 检查
+
+| 检查 | 结果 |
+| --- | --- |
+| `go run ./go-nethttp/cmd/bench` 全家 | 与文章 claim 一致（默认池 ~76% 复用、99.7%、826→813 req/s、p50 235ms） |
+| `go run -race` outbox/seckill | 无数据竞争；结构结论不变 |
+| `npm test` / `npm run lint` / `npm run build` | 待本批全部修订完成后统一跑 |
