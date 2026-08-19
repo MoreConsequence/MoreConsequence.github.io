@@ -1,0 +1,19 @@
+# memory-metrics: 2026-08-19 本机
+机器: Apple Silicon(M1 Pro), macOS, node v24.x
+脚本: experiments/memory-metrics/mem_probe.mjs(Buffer 外部内存)
+      experiments/memory-metrics/mem_probe2.mjs(堆内数组)
+运行: node --expose-gc <script>
+
+## 堆内对象版(关键)
+启动:      rss=44.5MB  heapUsed=3.6MB  heapTotal=6.0MB
+堆内200MB: rss=212.0MB heapUsed=156.5MB heapTotal=286.4MB
+释放不GC:  rss=212.0MB heapUsed=156.5MB (垃圾留在堆, 两层都不降)
+GC 之后:   rss=60.1MB  heapUsed=4.5MB  (V8 主动归还空闲页, rss 降 72%)
+再分配100: rss=136.8MB heapUsed=80.8MB (从归还后的水位重新申请)
+
+## Buffer 版(外部内存, 教学反例)
+分配 200MB Buffer: rss 44→248MB, 但 heapUsed 3.6→3.8MB 几乎不动
+→ Buffer/TypedArray 主体在 V8 堆外, heapUsed 看不见它
+
+结论: RSS=进程视角(含堆外); heapUsed=V8 堆内活对象; GC 后保留量(answer "有多少无法归还");
+监控至少要 RSS + heapUsed 两路, 只看 heapUsed 会漏掉 Buffer/原生模块内存。

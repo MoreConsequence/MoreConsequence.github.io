@@ -1,0 +1,24 @@
+# go-context vs AbortSignal: 2026-08-19 本机
+机器: Apple Silicon(M1 Pro), macOS; go1.25.1; node v24.19.0
+脚本: experiments/context-vs-abortsignal/{go_side.go,js_side.mjs}
+运行: go run go_side.go && node js_side.mjs
+
+Go 侧实测:
+- cancel 立即生效, ctx.Err()==context.Canceled
+- timeout 到点自动取消, Err()==DeadlineExceeded
+- 子 ctx 取消不影响父(实测 child canceled=true parent canceled=false)
+- WithValue 拿值 v
+- 取消不清理资源: 不看 Done 的 goroutine 永远活着
+
+JS 侧实测:
+- abort 触发 listener, reason = AbortError(DOMException)
+- AbortSignal.timeout(30) 后 aborted=true, reason.name=TimeoutError
+- 父 abort 手动 connect 后子 aborted=true(需要显式监听/转发)
+- 无关控制器: b.abort() 后 a.aborted=false(没有隐式父子关系)
+- fetch 传 signal 5ms 后 abort → 网络调用被取消(AbortError/拒绝)
+
+语义差异(关键):
+1. Go: cancel 是同步(select 立即可见); JS: abort 是事件(需要等待 dispatch)
+2. Go: 取消原因由 Err() 区分 Canceled/DeadlineExceeded; JS: reason 属性可以放任意值(DOMException/Error/自定义)
+3. 两者都要显式传播(Go 传 ctx 参数 / JS 手动 connect), 都不默认级联
+4. 两者都不负责资源清理: goroutine/回调要自己监听并退出

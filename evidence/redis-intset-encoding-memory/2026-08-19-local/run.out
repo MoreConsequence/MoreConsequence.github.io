@@ -1,0 +1,19 @@
+环境: docker redis:7-alpine (redis-server --port 6399, 默认配置)
+CONFIG GET set-max-intset-entries = 512
+CONFIG GET set-max-listpack-entries = 128
+
+1) SADD s_small 1 2 3 100          → OBJECT ENCODING = intset,  MEMORY USAGE = 72
+2) SADD s_str 1 2 3 "hello"        → OBJECT ENCODING = listpack, MEMORY USAGE = 72
+   (混合元素小集合: Redis 7 新版编码, 不是 hashtable!)
+3) 512 个整数                      → intset,  MEMORY USAGE = 1328
+4) 512+1 个整数(SADD 513)          → hashtable, MEMORY USAGE = 24712  (18.6x)
+5) 128 整数 + 1 字符串              → hashtable, MEMORY USAGE = 6280  (超 128 混合直接 hashtable)
+6) 10 整数 + 1 字符串               → listpack, MEMORY USAGE = 88
+
+--- 补充: intset 自适应宽度升级(2026-08-19 同一容器) ---
+512 个 1..32767 整数(含 32767)  → intset 1328B   (int16 宽度, 2B/元素)
++ 写入 32768(超 int16 域)       → intset 1328B? 否
+  实测: 512 个元素含 4294967296(2^32, 超 int32 域)
+   → 仍是 intset, 5168B (宽度升级到 int64, 8B/元素)
+对照: 513 个整数(超 512 上限)  → hashtable 24712B
+= 三条升级路径: 宽度(int16→32→64, 仍 intset) / 数量(>512 → hashtable) / 类型(非整数 → hashtable)

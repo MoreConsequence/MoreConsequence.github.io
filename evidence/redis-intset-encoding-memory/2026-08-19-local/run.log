@@ -1,0 +1,9 @@
+# redis-intset-encoding-memory: 2026-08-19 本机 docker
+容器: redis-intset-demo (redis:7-alpine), 端口 6399, 默认配置
+方法: `docker exec ... redis-cli -p 6399 <CMD>`
+证据: OBJECT ENCODING (无需 DEBUG 权限) + MEMORY USAGE
+结论:
+- 纯整数小集合(≤ set-max-intset-entries=512) → intset (内存压缩)
+- 混合/超阈值小集合(≤ set-max-listpack-entries=128) → listpack (Redis 7 引入)
+- 超 512 整数 / 超 128 混合 → hashtable (内存暴增 18.6x 实测)
+- MEMORY USAGE 为 512 整数 intset=1328B vs 513 整数 hashtable=24712B

@@ -1,0 +1,49 @@
+== exports 双文件分发 ==
+file:///Users/lianghaoyu/codes/github-blog/experiments/esm-cjs-dual-package/demo/esm-user.mjs:1
+import { kind, hi } from "dual-pkg";
+               ^^
+SyntaxError: The requested module 'dual-pkg' does not provide an export named 'hi'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:327:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:431:5)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.19.0
+/Users/lianghaoyu/codes/github-blog/experiments/esm-cjs-dual-package/demo/cjs-user.cjs:2
+console.log("CJS require:", kind, hi());
+                                  ^
+
+TypeError: hi is not a function
+    at Object.<anonymous> (/Users/lianghaoyu/codes/github-blog/experiments/esm-cjs-dual-package/demo/cjs-user.cjs:2:35)
+    at Module._compile (node:internal/modules/cjs/loader:1872:14)
+    at Object..js (node:internal/modules/cjs/loader:2003:10)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.19.0
+
+== 删 exports 只留 main: ESM 消费 CJS ==
+
+Node.js v24.19.0
+/Users/lianghaoyu/codes/github-blog/experiments/esm-cjs-dual-package/demo/cjs-user.cjs:2
+console.log("CJS require:", kind, hi());
+                                  ^
+
+TypeError: hi is not a function
+    at Object.<anonymous> (/Users/lianghaoyu/codes/github-blog/experiments/esm-cjs-dual-package/demo/cjs-user.cjs:2:35)
+    at Module._compile (node:internal/modules/cjs/loader:1872:14)
+    at Object..js (node:internal/modules/cjs/loader:2003:10)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.19.0
+
+== exports 双文件双实例(双包陷阱) ==
+ESM 实例 state: 2 | CJS 实例 state: 1
+两份实例, 状态互不可见: 是(双包陷阱)

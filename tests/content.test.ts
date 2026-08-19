@@ -46,6 +46,16 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "benchmark-one-variable",
+      "esm-cjs-dual-package",
+      "git-bisect-regression-hunt",
+      "go-context-vs-abortsignal",
+      "histogram-bucket-design",
+      "memory-metrics-rss-heapused",
+      "mysql-statistics-drift-plan",
+      "p99-sample-size-confidence",
+      "redis-eviction-policy",
+      "redis-intset-encoding-memory",
       "go-append-slice-growth",
       "go-closure-escape",
       "go-errors-is-unwrap-cost",

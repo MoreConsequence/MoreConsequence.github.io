@@ -1,0 +1,11 @@
+# redis-eviction-policy: 2026-08-19 本机 docker
+环境: redis:7-alpine, 每策略独立容器/端口, maxmemory=8mb, appendonly no
+模型: A) 4000 基础键(~1KB/键) B) 热键=k1..k1000 每键 GET 20 次(频次 20)
+      C) 新增 9000 键并全局 GET 一次(=顺序扫描流, 量大但频次 1) D) 查热键存活
+结果(原始输出见 run.out):
+  allkeys-lru:     evicted=8131  hot=319/1000  (31.9%) — 扫描流把缓存“最近”指针全部顶到扫描键上, 热键被挤出
+  allkeys-lfu:     evicted=7672  hot=999/1000  (99.9%) — 频次计数不受突发扫描影响, 热键稳居高位
+  allkeys-random:  evicted=8017  hot=309/1000  (30.9%) — 随机淘汰, 热键无优待
+  noeviction:      evicted=0     hot=1000/1000 (100%)  — 写失败 6257 条(OOM 语义), 但不淘汰任何键
+核心对比: LRU 对“突发顺序访问”(扫描式请求/冷数据拉流)非常脆弱; LFU 的频次计数天然免疫。
+判定方法: EXISTS 批量探测(非 --pipe, --pipe 不回内容)。

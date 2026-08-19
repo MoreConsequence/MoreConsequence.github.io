@@ -1,0 +1,11 @@
+# mysql-statistics-drift-plan: 2026-08-19 本机 docker
+方法: docker exec -i blog-mysql mysql -uroot -proot --table < 脚本
+关键事实(两次实验交叉验证):
+1. STATS_AUTO_RECALC=0 + STATS_PERSISTENT=1(默认)下, UPDATE 100% 行后:
+   等值查询 EXPLAIN 估算完全不变(5000 → 5000), 与实际(0 行)脱节
+2. 范围查询估算同样不变(98722 → 98722), 与实际(500000)差 5 倍
+3. 第一次实验(drift.sql)范围查询出现 ALL 形态 → 范围估算行为不稳定,
+   等值查询的"冻结"才是稳定可复现的核心现象
+4. ANALYZE 后估算仍可能是采样噪声(见 innodb_index_stats n_diff_pfx01=0 观察)
+5. join 实验(表 big+small): 崩塌后驱动表估算不变(5000), 实际 45 万行,
+   右侧成本低估 90 倍

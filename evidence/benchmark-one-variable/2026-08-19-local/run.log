@@ -1,0 +1,20 @@
+# benchmark 只改一个变量: 2026-08-19 本机
+机器: Apple Silicon(M1 Pro), macOS, go1.25.1 darwin/arm64
+脚本: experiments/benchmark-one-variable/main.go
+负载: 每个 benchmark 对 100 万随机 int 排序 + 分配 8MB 死亡内存, 5 次取 min
+变量设计:
+- clean: 3 轮预热 + 无 GC 压力 (唯一基线)
+- noWarmup: 去掉预热, 其余同 clean (只改一个变量)
+- withGc: 预热 + 额外滞留 256MB 堆水位 (改了第二个变量)
+
+3 轮实测 min:
+clean:    1.0997 / 1.0064 / 1.0138ms (稳定)
+noWarmup: 1.1440 / 1.0461 / 1.0420ms (min 接近 clean, 但每轮第 2 次有 40-70% 尖峰:
+          2.185/1.704/1.810ms — 冷启动分配器首个升档)
+withGc:   0.9710 / 0.9478 / 0.9820ms (min 反而比 clean 快 4-8%!
+          堆水位高 → 分配器直接复用大块, 多分配的"成本"被隐藏)
+
+结论:
+1. 单看 min, three 种模式几乎没差别(1.0-1.1ms) → "只改一个变量"的要求被 min 掩盖
+2. noWarmup 的污染在完整序列第 2 次的尖峰, withGc 的污染让结果"变好"
+3. 只有同进程交替 ABAB 或报告完整序列才能暴露第二个变量

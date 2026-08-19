@@ -1,0 +1,23 @@
+环境: 本机 docker blog-mysql (mysql:8.0.46-1.el9), root/root
+最终实验: experiments/mysql-stats-drift/clean-test.sql(同一会话一次性), 原始输出 clean-test.out
+表: clean_t (50 万行, a=x%100 均匀 0..99, idx_a, STATS_AUTO_RECALC=0)
+
+A. ANALYZE 后统计新鲜:
+  EXPLAIN a=5   → ref idx_a rows=5000   (实际 5000 ✓)
+  EXPLAIN a=55  → ref idx_a rows=5000   (实际 5000 ✓)
+  EXPLAIN BETWEEN 50..60 → range rows=98722 (实际 5.5 万, 量级对)
+
+B. UPDATE clean_t SET a=5 (100% 行), 不 ANALYZE, 同会话:
+  EXPLAIN a=55  → ref idx_a rows=5000  ← 冻结, 实际 0 行 (高估)
+  EXPLAIN a=5   → ref idx_a rows=249828 ← 部分更新, 实际 50 万 (低估 2 倍)
+  EXPLAIN BETWEEN 50..60 → range rows=98722 ← 冻结, 实际 0 行 (高估)
+  = 同一时刻同一表: 估算方向不可预测, 但都偏离真实
+
+C. 实际: a5=500000, a55=0, range5060=0
+
+交叉验证(本批较早实验, 亦在 run.out 中):
+- dive-test.sql: 同结构, 阶段2 等值 a=55 rows=5000 冻结, 实际 0
+- innodb_index_stats: 崩塌后 idx_a n_diff_pfx01 与真实 distinct(1) 脱节
+- drift3.sql join: big.a 崩塌后 rows=5000 不变, 实际 45.05 万行(90 倍低估)
+关键机制: AUTO_RECALC=0 只拒绝后台重算; 优化器部分估算(diving/sampling 时机)仍会
+变化, 但方向不可预测——"看起来没变"与"部分更新"都可能发生, 根因都是统计与数据脱节。

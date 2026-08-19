@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "experiments/**/*.js",
     // 实验代码：常含故意未使用的演示变量
     "experiments/**/*.ts",
+    // 演示 CJS/ESM 双包语义的故意 require/import 用例
+    "experiments/**/*.cjs",
+    "experiments/**/*.mjs",
   ]),
 ]);
 

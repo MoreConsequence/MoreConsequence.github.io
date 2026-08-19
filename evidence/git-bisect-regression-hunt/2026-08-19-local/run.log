@@ -1,0 +1,7 @@
+
+坑的演化(真实记录):
+v1: require("./repo/calc.js") — cwd=repo, 拼出 repo/repo/calc.js → MODULE_NOT_FOUND → 全坏
+v2: cd "$(dirname "$0")/repo" — 从 repo 出发再叠一层 → 仍坏的路径
+v3: SCRIPT_DIR 绝对化 + $PWD — 路径对了, 但 require 命中博客仓库根 package.json(type:module)
+    → calc.js 被当 ESM, module.exports 失效 → add undefined → 全坏
+v4: 源码 eval 判定(不依赖模块解析) → 4 步定位 c21 ✓

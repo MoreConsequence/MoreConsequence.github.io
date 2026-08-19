@@ -1,0 +1,13 @@
+# esm-cjs-dual-package: 2026-08-19 本机
+机器: Apple Silicon(M1 Pro), macOS, node v24.19.0
+脚本: experiments/esm-cjs-dual-package/demo/(node_modules/dual-pkg 手工构造)
+三种场景:
+1) exports 条件分发("." : { import: .mjs, require: .cjs }):
+   ESM import → ESM 版(kind=ESM), CJS require → CJS 版(kind=CJS) ✓
+2) 删掉 exports 只留 main: "./index.cjs" (+ type: module):
+   ESM 消费者具名导入报 SyntaxError: Named export 'hi' not found
+   (Node 把 CJS 当 default-only, 具名导出需静态分析, 失败)
+3) exports 双文件分发 + 可变状态:
+   ESM 实例 state=2(两次 inc), CJS 实例 state=1(一次 inc) —— 两份实例状态互不可见,
+   这就是"双包陷阱": 单例状态/单例连接在两份实例间不同步。
+   createRequire 是构造手段, 真实场景: 依赖树里同一个双包库被 CJS 依赖与 ESM 依赖各加载一次。
