@@ -2,7 +2,7 @@
 title: "Raft 的读也要过多数派：ReadIndex、Lease read 与 stale read 的三本账"
 description: "读 leader 本地内存并不线性一致——leader 可能已被分区、任期已过期。拆开三条读路径（写日志 / ReadIndex / Lease read）各自的往返次数与时钟假设，用迷你 Raft 实测复现分区下的 stale read 窗口，并对齐 etcd 的 linearizable（默认）与 serializable 两档语义。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-17"
+updatedAt: "2026-08-19"
 tags: ["分布式", "Raft", "一致性", "etcd"]
 draft: false
 featured: false
@@ -117,13 +117,13 @@ sequenceDiagram
 
 ## 五、实测与边界：三条路的量级与 Lease 的时钟假设
 
-本机实测（教学原型 `experiments/raft-read`，进程内 channel，RTT≈0，只反映往返次数排序）：
+本机实测（教学原型 `experiments/raft-read`，进程内 channel，RTT≈0，只反映往返次数排序；以下为 2026-08-18 落盘样本，原始输出见 `evidence/raft-linearizable-read-leases/2026-08-18-local/run.log`）：
 
 ```
 [phase A] leader = node 1 (term 1)
-serial read   : mean 1.7µs（0 次往返，本地读）
-readindex read: mean 8.6µs（1 次心跳往返 + commitIndex 追平）
-write-log read: mean 5.3µs（一轮提交：日志追加 + 多数确认）
+serial read   : mean 1.6µs（0 次往返，本地读）
+readindex read: mean 7.8µs（1 次心跳往返 + commitIndex 追平）
+write-log read: mean 4.4µs（一轮提交：日志追加 + 多数确认）
 ```
 
 上面的数值是一次运行的示例，只展示「往返次数」的排序：serial（0 次往返）明显低于 readindex 与 write-log；**readindex 与 write-log 在进程内都是一次往返，二者的相对顺序在多次运行间不稳定（本机重跑有 write-log 快于 readindex 的样本）**，不能据此下「哪个更贵」的结论——「写日志读最贵」是生产论证（多付一轮 fsync），不是这个教学原型能证实的。
@@ -132,16 +132,16 @@ write-log read: mean 5.3µs（一轮提交：日志追加 + 多数确认）
 
 生产量级按 Raft 论文与 etcd 文档的机制写（约）：串行读 ≈ 0 往返；ReadIndex ≈ 1 次心跳 RTT（局域网亚毫秒到几毫秒、跨机房/公网到几十毫秒量级，取决于网络）；写日志读 ≈ 1 轮提交（复制 + 多数派 fsync）。给不出通用毫秒数——所以实验只测"往返次数排序"，量级按文档。
 
-分区下的 stale 窗口（Phase B，本机实测；以下为节选并加注释，原文还含 t≈1.1s 一次 readindex 重试拒绝）：
+分区下的 stale 窗口（Phase B，本机实测，2026-08-18 样本，见 `evidence/raft-linearizable-read-leases/2026-08-18-local/run.log`；以下为节选并加注释）：
 
 ```
-t=352ms  readindex 读: 拒绝（超时，无法向多数派确认）—— 不吐旧值
+t=352ms  readindex 读: ok=false → 分区下拒绝，不吐旧值
 t=352ms  serial 读:   val="1" —— 旧值照常返回
 t=352ms  lease 读:    val="1" —— lease 窗口内照样吐旧值
-t=809ms  新 leader 提交 k=2（旧 leader 的 lease=2.5s 尚未到期）
-t=809ms  serial 读: k=1 —— STALE
-t=809ms  lease 读:  k=1 —— STALE（lease 固有风险窗口）
-t=2.9s   lease 过期 → 回落 ReadIndex → 拒绝，不再吐旧值
+t=658ms  新 leader node 2 提交 k=2（旧 leader 的 lease=2.5s 尚未到期）
+t=658ms  serial 读: k=1 —— STALE
+t=658ms  lease 读:  k=1 —— STALE（lease 固有风险窗口）
+t=2.902s lease 过期 → 回落 ReadIndex → 拒绝，不再吐旧值
 ```
 
 关键观察：ReadIndex 分区下拒绝（不吐旧值）；serial 与 lease 在窗口内吐旧值；lease 过期后自动回落 ReadIndex。实验里我把旧 leader 的 lease 刻意拉长到 2.5s，让"多数派选新 leader + 提交新值"发生在 lease 窗口内——正常配置下 lease=election timeout，这个窗口要窄得多，但**方向不变**：窗口存在，且由时钟与分区时机决定。

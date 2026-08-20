@@ -1862,3 +1862,37 @@ P2-01 的"逐篇终审 + 一手引用闭合"仍是大批量的编辑级检查（
 | `service-release-checklist` | `experiments/service/docs/release-checklist.md` 存在；引用 evidence 路径有效；P0-03 闭环保释 checklist 勾选能力 | 通过 |
 
 本批未修改正文。至此 08-16 两批 16 篇全部逐篇终审完成（14 篇深读+复跑，2 篇此前已闭环）。
+
+## 三十五、2026-08-19 P2-01 逐篇终审第三批：08-19 批 20 篇
+
+| 文章 | 验证方式 | 结论 |
+| --- | --- | --- |
+| `go-nethttp-connection-reuse` | P1-01 批已复跑（默认池 75.53% 复用等全场景） | 通过 |
+| `go-netpoll-wakeup-scheduling` | 源码机制文（netpoll 交接路径），verify 覆盖 `go-netpoll` bench | 通过（bench WakeupLatency PASS） |
+| `jwt-session-oauth2-revocation` | P1-01 批已复跑并修订数字 | 通过 |
+| `k8s-iptables-ebpf-service` | P1-01 批已复跑 rule-match-sim.go | 通过 |
+| `kafka-rebalance-stop-the-world` | 08-18 evidence（SIGSTOP→docker pause、16.0s PreparingRebalance） | 通过 |
+| `llm-as-judge-evals` | 数字来自论文（有出处）；stub 管线 08-16 已闭环 | 通过 |
+| `llm-continuous-batching-throughput` | 模拟器复跑：λ=8 利用率 93.6% vs 49.2%、时延 3.0 vs 100.7s；λ=32 98.2% vs 49.1%、58.0 vs 160.6s | 与文章逐项一致 |
+| `llm-kv-cache-memory-budget` | 计算器复跑：4K/8K/32K → 37/18/4 并发、0.5/1.0/4.0 GiB | 与文章逐项一致 |
+| `mini-lsm-write-amplification` | evidence sweep.csv（num=30 万、writes=40 万、mem=6000 的 12 行）与文章表格完全一致；之前误判为漂移，实为 verify smoke 用小参数 | 通过（澄清记录） |
+| `mysql-online-ddl-mdl-lock` | 08-18 evidence（run_all.sh 三会话复现） | 通过 |
+| `mysql-optimizer-explain-cost` | 08-18 evidence（真实 EXPLAIN rows/cost） | 通过 |
+| `optimistic-vs-pessimistic-lock` | 08-18 evidence（w=4/32 真实 MySQL 对照） | 通过 |
+| `outbox-cdc-dual-write-atomicity` | P1-01 批已复跑并修订数字（753ns） | 通过 |
+| `postgres-bloat-autovacuum` | 08-18 evidence（44.3% dead tuple、65s 自醒） | 通过 |
+| `raft-linearizable-read-leases` | **本次深审+复跑发现数字漂移**：文章 1.7/8.6/5.3µs 与 Phase B 809ms/2.9s 不同于 evidence（1.6/7.8/4.4µs、352/658/958ms/2.902s）；已改为 evidence 同源数字并注明样本日期（updatedAt 08-19） | 通过（已修订） |
+| `redis-persistence-rdb-aof` | 08-18 evidence（三档吞吐与 kill -9 丢失矩阵） | 通过 |
+| `seckill-inventory-atomic-gates` | P1-01 批已复跑并修订数字块 | 通过 |
+| `sharding-partition-key-migration` | shard_sim.py 复跑：3→4 74.828%、4→5 80.195%、4→8 49.618%、consistent 4→5 2.296% | 与文章逐项一致 |
+| `sse-vs-websocket-streaming` | 实验自带 evidence（2026-08-16-local/output.txt 存在且文章引用正确） | 通过 |
+| `vector-index-hnsw-ivf-pq` | 08-18 evidence（N=50000 d=128 三曲线） | 通过 |
+
+至此 08-19 批 20 篇全部逐篇终审完成（12 篇深读+复跑，8 篇由 08-18 evidence 或既有闭环覆盖），发现并修复 1 处数字漂移（raft，第 35.1 节）。
+
+### 35.1 raft 数字修订明细
+
+- 文章 Phase A：`1.7µs/8.6µs/5.3µs` → `1.6µs/7.8µs/4.4µs`（与 evidence run.log 一致）；
+- 文章 Phase B：`809ms/2.9s` → `658ms/958ms/2.902s`，删除"原文还含 t≈1.1s 重试拒绝"这句与 evidence 不符的注释；
+- 正文注明"2026-08-18 落盘样本"并指向 evidence 路径；
+- Node 数字与"相对顺序不稳定"声明保留（跨次运行确实变化，本轮复跑 serial 1.6/readindex 7.8/write-log 4.0，与 evidence 一致）。
