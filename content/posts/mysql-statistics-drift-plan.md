@@ -71,3 +71,8 @@ SELECT COUNT(*) FROM clean_t WHERE a = 55;        -- 实际 0 行
 复现：`experiments/mysql-stats-drift/clean-test.sql`（同一会话一次性完成"新鲜→崩塌→同会话 EXPLAIN"）于本机 docker `mysql:8.0.46`（另有 `drift2.sql`/`drift3.sql` 交叉验证）；EXPLAIN 原样输出与入库统计存于 `evidence/mysql-statistics-drift-plan/2026-08-19-local/`。基数估算的具体数值随采样页、表数据分布波动，但"统计过期→估算失真，方向不定→计划冻结在旧认知"的机制跨版本稳定。
 
 下一步可执行：挑一条你生产里"明明走了索引还是很慢"的查询，跑 `EXPLAIN` 对照实际 `COUNT(*)`——若 rows 偏差超 10 倍，先把这张表列入定期 ANALYZE 名单，再回头看统计采样页配置。
+
+## 参考资料
+
+- [MySQL Optimizer Statistics 文档（8.0）](https://dev.mysql.com/doc/refman/8.0/en/optimizer-statistics.html)
+- 本仓库实验：`experiments/mysql-stats-drift/`；原始输出：`evidence/mysql-statistics-drift-plan/`

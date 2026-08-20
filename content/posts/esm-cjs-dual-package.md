@@ -63,3 +63,8 @@ ESM 实例上了两次计数器、CJS 实例上一次，两者各回各家。**�
 三幕实验给同一个教训：**ESM/CJS 共存的正确性由 package.json 的 `exports` 决定，而它被省略时，Node 用 `main` + `type` 的旧默认值兜底——那个兜底恰好是各种坑的入口**（具名导出失败、双包陷阱）。把 `exports` 当作发行版本的必填项：写条件分发、白名单子路径、并把"单例状态只允许一份产物"写进包作者的 README。消费者侧则是另一种纪律：运行时出现"状态不一致"，第一反应查依赖树里有没有双包，而不是怀疑时序。
 
 下一步可执行：`node -e "console.log(require.resolve('<包名>/package.json'))"` 列一下你项目的关键单例库（连接池、orm、cache），确认它们没有被同时 import 和 require；给 package.json 的 exports 加 lint 规则（缺 exports 的库在 CI 报 warning），胜于事后再查。
+
+## 参考资料
+
+- [Node.js ESM 文档](https://nodejs.org/api/esm.html)（模块解析、双包 hazards）
+- 本仓库实验：`experiments/esm-cjs-dual-package/`；原始输出：`evidence/esm-cjs-dual-package/`

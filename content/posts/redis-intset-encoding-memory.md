@@ -55,3 +55,8 @@ intset 是**自适应宽度**的:1..512 这类小整数用 int16(每元素 2B),�
 集合编码是 Redis 给"大多数集合都小"的现实买的保险:intset/listpack 把常见小集合压到个位数 B/元素,代价是超阈值的整档重建。它不会让业务崩溃,但会在**无痕的一瞬间**把内存账单抬到 18 倍。工程上没有魔法:要么控制集合规模(用小集合/分割),要么默认按 hashtable 预算内存——把"阈值跳变"当成 Redis 集合的一等公民,写代码时就想清楚元素规模上限,而不是等监控告警。
 
 下一步可执行:`OBJECT ENCODING <key>` + `MEMORY USAGE <key>` 扫一遍生产里所有大集合,看有没有卡在阈值附近的;对会增长的集合,提前按 hashtable 档给内存配额。
+
+## 参考资料
+
+- [Redis Memory Optimization 官方文档](https://redis.io/docs/latest/develop/data-types/data-types-tutorial/) 中集合编码相关小节
+- 本仓库实验与原始输出：`evidence/redis-intset-encoding-memory/2026-08-19-local/`

@@ -82,3 +82,9 @@ Go 侧实测：子 ctx 取消后父 `parent.Err() == nil`——用 `context.With
 两种模型真正的共同智慧，是把取消拆成两条纪律：**信号怎么到**（Go 同步 select / JS 事件监听）与**到了之后怎么收**（goroutine 退出 / 回调清理）。跨语言写服务，最贵的 bug 不是"取消太慢"而是"取消了还在干活"——而这在两边都只有一种修法：创建副作用时同时定义它听什么信号、怎么还资源。把这句话写进代码评审清单，胜过背任何一方的 API 细节。
 
 下一步可执行：打开你最近写的异步代码，逐个问"它的取消信号是什么、到哪为止、漏传会不会静默"；把 `AbortSignal` 漏传的场景加一条 lint 规则或封装报错，比加注释有用。
+
+## 参考资料
+
+- [context 包文档](https://pkg.go.dev/context)（Go）
+- [AbortSignal / AbortController（MDN）](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+- 本仓库实验：`experiments/context-vs-abortsignal/go_side.go` 与 `js_side.mjs`；原始输出：`evidence/go-context-vs-abortsignal/2026-08-19-local/`

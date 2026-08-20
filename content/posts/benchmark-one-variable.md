@@ -56,3 +56,9 @@ noWarmup  0.996 1.763 1.167 1.199 1.301   ← 第 2 次 1.763ms (+77%)
 回到那句金律：只改一个变量是**实验设计**的要求，不是报告格式的要求。本文的演示说明它为什么难：min 会把冷启动和堆水位的污染全部洗掉，让错的设计得到"看起来正确"的数值。**验收标准不是"能复现某个数"，而是"换一种顺序、换一轮，结论不变"。** 给压测脚本加三样东西——进程内预热、交替顺序、完整序列报告——这三样都零成本，却是"结论可信"和"结论刚好"的分水岭。
 
 下一步可执行：把团队压测脚本从"每配置独立进程 × 3 次取 min"改成"同进程 ABAB × 5 轮、报告 min/中位/最大"；如果某次对照的结论在你换了顺序后翻转，先别下任何性能结论，去查第二个变量。
+
+## 参考资料
+
+- 本仓库实验：`experiments/benchmark-one-variable/main.go`（`go run . -mode clean|noWarmup|withGc`）
+- 原始输出：`evidence/benchmark-one-variable/2026-08-19-local/run.out`（3 轮 × 3 mode 共 9 组样本）与 `environment.txt`
+- Go testing 基准语义：[testing 包文档](https://pkg.go.dev/testing#hdr-Benchmarks)

@@ -1,6 +1,6 @@
 ---
 title: "atomic 与 Mutex：7ns 到约 128ns 的争用曲线，不要把原语当银弹"
-description: "统一 benchmark 在 Go 1.25.1/Darwin arm64 下测得 atomic.Add 无竞争约 7.4ns、Mutex Lock/Unlock 约 14.6ns；同一短临界区在 8 worker 时为 39.65ns vs 99.26ns，纯自旋锁为 250.1ns。文章把这些数字限定为当前 raw 的争用形状，重点回到 atomic 的单字语义、Mutex 的复合不变量和自旋等待的 CPU 代价。"
+description: "统一 benchmark 在 Go 1.25.1/Darwin arm64 下测得 atomic.Add 无竞争约 9–14ns、Mutex Lock/Unlock 约 18–30ns；同一短临界区在 8 worker 时为 39.65ns vs 99.26ns，纯自旋锁为 250.1ns。文章把这些数字限定为当前 raw 的争用形状，重点回到 atomic 的单字语义、Mutex 的复合不变量和自旋等待的 CPU 代价。"
 publishedAt: "2026-08-14"
 updatedAt: "2026-08-17"
 tags: ["Go", "并发", "性能优化"]
@@ -9,7 +9,7 @@ featured: false
 series: "Go 的设计边界"
 ---
 
-**TL;DR：** atomic 与 Mutex 的成本差距随竞争程度变化，不是常数。统一 benchmark（`experiments/go-runtime-boundary`，Go 1.25.1/Darwin arm64）测得：单线程 `atomic.Add` **约 7.4ns**、Mutex Lock/Unlock **约 14.6ns**；竞争 8 worker 为 **39.65ns vs 99.26ns**，纯自旋锁为 **250.1ns**。16 worker 时自旋锁升到 **572.8ns**。这些数字只证明当前实现、机器和短临界区的争用形状；稳定的工程判断是：atomic 只保护单个字，Mutex 保护组合不变量；高竞争时先拆共享状态。
+**TL;DR：** atomic 与 Mutex 的成本差距随竞争程度变化，不是常数。统一 benchmark（`experiments/go-runtime-boundary`，Go 1.25.1/Darwin arm64）测得：单线程 `atomic.Add` **约 9–14ns**（中位约 10ns）、Mutex Lock/Unlock **约 18–30ns**（中位约 19ns）；竞争 8 worker 为 **39.65ns vs 99.26ns**，纯自旋锁为 **250.1ns**。16 worker 时自旋锁升到 **572.8ns**。这些数字只证明当前实现、机器和短临界区的争用形状；稳定的工程判断是：atomic 只保护单个字，Mutex 保护组合不变量；高竞争时先拆共享状态。
 
 ## 一、本质差异：一条指令 vs 一个状态机
 
@@ -32,10 +32,10 @@ Lock 的完整路径：CAS 抢锁快路径 → 失败后按 runtime 条件短暂
 
 | 操作 | 本次基线 |
 |---|---|
-| `atomic.AddInt64` | **7.4ns** |
-| `sync.Mutex` Lock/Unlock（无竞争） | **14.6ns** |
+| `atomic.AddInt64` | **约 9–14ns** |
+| `sync.Mutex` Lock/Unlock（无竞争） | **约 18–30ns** |
 
-无竞争时 Mutex 的 14.6ns 是这组短临界区的快路径基线，已经比 atomic.Add 的 7.4ns 高约 2 倍。**单字段计数器单线程用 atomic 很便宜**；这不意味着应该用 atomic 拼装多个字段的事务。
+无竞争时 Mutex 是这组短临界区的快路径基线（两轮 6 样本中位约 19ns），仍比 atomic.Add（中位约 10ns）高约 2 倍。**单字段计数器单线程用 atomic 很便宜**；这不意味着应该用 atomic 拼装多个字段的事务。
 
 ## 三、竞争曲线：两者都会排队，等待路径不同
 
@@ -66,7 +66,7 @@ Go 的 Mutex 还自带 runtime 控制的自旋和等待路径；具体自旋次�
 
 | 场景 | 选择 | 依据 |
 |---|---|---|
-| 计数器、标志位、引用计数 | `atomic.Int64` / `atomic.Bool` | 当前无竞争基线约 7.4ns vs 14.6ns；先确认只有单值不变量 |
+| 计数器、标志位、引用计数 | `atomic.Int64` / `atomic.Bool` | 当前无竞争基线约 9–14ns vs 18–30ns；先确认只有单值不变量 |
 | 多字段一致性（状态机、缓存条目） | Mutex | atomic 一次一个字，组合一致性是锁的专利 |
 | 读多写少 | RWMutex | 见前作，读锁是共享路径 |
 | 临界区极短 + worker 接近核数 | 自旋锁只能作为候选 | 当前 raw 的 2/4/8/16 worker 曲线必须在目标机器重测 |

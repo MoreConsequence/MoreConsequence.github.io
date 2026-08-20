@@ -59,3 +59,8 @@ Prometheus `Histogram` 默认桶是 `{.005, .01, .025, .05, .1, .25, .5, 1, 2.5,
 回到核心：直方图 p99 的误差由桶边界决定，与"采样了 10 万还是 1 万"无关（那是样本量的事，见 [p99 的一次测量不可信](/writing/p99-sample-size-confidence)）。一张实用的桶表 = **范围覆盖到 100 倍 p99 + growth 1.5–2 + 越界桶留作计数**。三行代码验证你的桶：跑一次 10 万样本的真实请求分布，看 p99 落进哪个桶、桶宽多少——宽于目标精度的桶就是你的新桶方案的起点。
 
 复现：`experiments/histogram-bucket-design/hist_bucket.py`（标准库、seed 7），原始输出 `evidence/histogram-bucket-design/2026-08-19-local/`。本机模拟、合成分布，绝对值随真实分布而变；**桶原则（覆盖范围优先于密度、越界桶毁掉估计）与分布无关**，是可以在任何系统直接套用的判断。
+
+## 参考资料
+
+- [Prometheus Histogram 实践指南](https://prometheus.io/docs/practices/histograms/)
+- 本仓库实验：`experiments/histogram-bucket-design/`；原始输出：`evidence/histogram-bucket-design/2026-08-19-local/run.out`

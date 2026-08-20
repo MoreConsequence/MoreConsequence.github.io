@@ -61,3 +61,8 @@ LRU 的判定是"上次访问时间"。C 阶段 9000 个键被 GET 一遍后,它
 四个策略花了四轮实验,同一个教训像钉子一样钉在结论里:**maxmemory-policy 决定的是"内存不够时牺牲谁",而"谁"由访问语义判定**。把策略当开关选(lru 就行/无所谓),等于把缓存命中率交给运气;把策略当"业务访问模式"选,才能拿到 99.9% vs 31.9% 的差距。生产里值得为它过一个 check:列出所有 maxmemory 实例的淘汰策略与访问模式特征(是否批量拉取、是否容忍写失败),该换 LFU 的换,该换 noeviction 的换,并把 evicted_keys 曲线加进告警。
 
 下一步可执行:对每个 Redis 实例跑 `CONFIG GET maxmemory maxmemory-policy` + `INFO stats` 看 evicted_keys 是否持续增长;若增长且业务有批量扫描,把策略切到 allkeys-lfu(滚动实例逐步切换,避免重启闪断)。
+
+## 参考资料
+
+- [Redis Eviction 官方文档](https://redis.io/docs/latest/develop/reference/eviction/)（maxmemory 与淘汰策略）
+- 本仓库实验：`experiments/redis-eviction-policy/`；原始输出：`evidence/redis-eviction-policy/`

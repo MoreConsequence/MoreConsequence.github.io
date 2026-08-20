@@ -63,3 +63,8 @@ heapUsed 几乎不动。原因：Node 的 `Buffer` / `TypedArray` 底层数据�
 回到问题：内存指标不是"看哪个准"，而是"每个指标回答哪一层的问题"。RSS 回答 OS 视角的"吃了多少"，heapUsed 回答 V8 视角的"活对象多少"，GC 后保留量回答"没法还的下界"。一次 OOM 排查的正确起点是三路并读：RSS 高而 heapUsed 低 → 查 Buffer/原生模块/外部内存；heapUsed 高而 GC 后也高 → 查真泄漏；两者都低但进程被 OOM → 查堆外（线程栈、JIT、磁盘缓存）。**把三张表放一个面板，比任何单指标的告警规则都早发现失血。**
 
 下一步可执行：给服务内存面板加 RSS、heapUsed、gc 后保留量三路，heapUsed 采样对齐 GC 后；下一次"heapUsed 涨了"的告警，先回答它是垃圾、保留量还是 Buffer——再决定是否动手。
+
+## 参考资料
+
+- [Node.js process.memoryUsage() 文档](https://nodejs.org/api/process.html#process_process_memoryusage)
+- 本仓库实验：`experiments/memory-metrics/`（mem_probe.mjs / mem_probe2.mjs）；原始输出：`evidence/memory-metrics-rss-heapused/2026-08-19-local/`

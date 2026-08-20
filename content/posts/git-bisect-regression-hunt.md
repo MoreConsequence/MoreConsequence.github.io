@@ -67,3 +67,8 @@ if(typeof m.exports.add!=="function"||m.exports.add(2,3)!==5) process.exit(1);' 
 这次实验本身的价值不只在"学会了 bisect"——四个正确 commit 之间我浪费了四轮，全部死于判定脚本的脆弱。二分搜索的前提（好/坏单调、判定确定）不会自动满足，是工程纪律把它变成现实：**每次被测对象必须先写好独立、稳定、有明确退出码的判定器**。这个习惯迁移到任何"定位类"工作（A/B 回归、编译错误、性能劣化）都成立——先造出测量杆，再谈二分。
 
 下一步可执行：给你正在维护的模块写一条 1 秒内的回归判定脚本（单测/黑盒断言），写进 `package.json scripts` 或 CI；下次发现回归时，`git bisect start` + `git bisect run npm run regression:fast`，全程不用翻 diff。
+
+## 参考资料
+
+- [git-bisect 官方文档](https://git-scm.com/docs/git-bisect)
+- 本仓库实验：`experiments/git-bisect-regression/`（`test.sh` + 合成 repo）；原始输出：`evidence/git-bisect-regression-hunt/`
