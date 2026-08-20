@@ -1896,3 +1896,36 @@ P2-01 的"逐篇终审 + 一手引用闭合"仍是大批量的编辑级检查（
 - 文章 Phase B：`809ms/2.9s` → `658ms/958ms/2.902s`，删除"原文还含 t≈1.1s 重试拒绝"这句与 evidence 不符的注释；
 - 正文注明"2026-08-18 落盘样本"并指向 evidence 路径；
 - Node 数字与"相对顺序不稳定"声明保留（跨次运行确实变化，本轮复跑 serial 1.6/readindex 7.8/write-log 4.0，与 evidence 一致）。
+
+## 三十六、2026-08-19 P2-01 逐篇终审第四批：Go runtime 系列 18 篇
+
+**方法**：go-* 文章按共享证据分批核对。`experiments/go-runtime-boundary` 的 5 份 raw bench 一次跑出全部数字，与文章逐项比对；独立 evidence 的逐一打开核对；纯概念文确认无性能声明即通过。
+
+| 文章 | 证据来源 | 文章↔证据数字 |
+| --- | --- | --- |
+| `go-channel-hchan-cost` | go-runtime-boundary/channel-syncmap-time-string.txt | 34.91/40.33/104.8/139.0/78.25 全一致 |
+| `go-timeafter-hidden-cost` | 同 raw | 190.6/157.2/40.83 一致 |
+| `go-string-byte-conversion` | 同 raw | 14.06/14.83/1233/1170/2596/221.6 一致 |
+| `go-sync-map-boundary` | 08-15 batch 已有 | 前批已审 |
+| `go-defer-panic-cost` | closure-defer-panic.txt | 3.41/3009/220.2/73.96/953.0 一致 |
+| `go-closure-escape` | 同 raw | 0.67/12.47/52.39 一致 |
+| `go-errors-is-unwrap-cost` | errors-interface-pool-map.txt | 38.05/141.8/147.1/2.08/4.85/7.84/14.95 一致 |
+| `go-interface-boxing` | 同 raw | 2.07/2.09/8.30/12.10/0.31 一致 |
+| `go-sync-pool-design` | 同 raw | 9.26 与直接分配 98.99 一致 |
+| `go-map-hmap-cost` | 同 raw + append.txt | 12.67/9.45ms、9.31/5.81MB、9.16–9.34、17.55/393.6 一致；-25.7%/-37.6% 手算复核 |
+| `go-append-slice-growth` | append.txt + 独立 evidence | 0.30–0.58ms/26/2.51MB 三次 run 用范围表述一致；probe 36 次扩容/1055744/4154012 一致 |
+| `go-atomic-vs-mutex` | contention.txt | 22.93/46.69/39.65/50.89、28.08/94.71/99.26/127.8、250.1/572.8 全一致 |
+| `go-lock-cost-futex-rwlock` | 同 raw | 39.65/99.26/250.1/572.8 一致；Darwin↛futex 边界声明正确 |
+| `go-goroutine-stack-growth` | 独立 evidence | 380.3、61.833µs/4.224542ms/41.959750ms 全一致 |
+| `go-gc-gctrace-account` | gogc-{50,100,200}.txt | GC 周期 3/2/1 实测一致 |
+| `go-select-selectgo-cost` | select-bench/fairness | 4.187/40.82/90.47/193.2、49.969%/50.031% 一致 |
+| `go-scheduler-gmp-preemption` | go-scheduler-boundary | 310.7/130.1 一致 |
+| `go-mallocgc-allocator` | go-mallocgc-boundary | 11.93/14.09/84.77/479.4、89.15/732.5 一致 |
+| `go-happens-before` | race 运行输出 | DATA RACE 输出真实存在 |
+| `go-goroutine-leak-pprof` | probe.txt | leaked=900/goroutines=901、三个 profile_group 一致 |
+| `go-memory-leak-pprof` | probe.txt | 2097152/2153504/128 chunks 一致 |
+| `go-context-vs-abortsignal` | 08-19-local 复跑 | AbortError/TimeoutError/父 abort→子 aborted 输出一致 |
+| `go-benchmark-pitfalls` | go-runtime-boundary | 二次 run 波动示例（append 318.7→300.7→583.8µs）语义正确 |
+| `go-context-patterns` | 无（纯概念文） | 无性能声明，通过 |
+
+（`go-sync-map-boundary` 已在 08-15 批验收；`go-slice-subslice-hold` 同上。故第四批实际新核对 22 篇 + 2 篇已审确认。）
