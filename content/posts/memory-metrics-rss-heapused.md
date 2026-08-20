@@ -1,13 +1,14 @@
 ---
 title: "RSS、heapUsed 与 GC 后保留量：三张表各回答一个问题"
-description: "本机 Node 实验：200MB 堆内对象下 RRS 与 heapUsed 在分配、释放、GC、再分配四个阶段的行为，以及 Buffer 大对象为什么 heapUsed 永远看不到——内存监控要多路，不能只看一张表。"
+description: "本机 Node 实验：200MB 堆内对象下 RSS 与 heapUsed 在分配、释放、GC、再分配四个阶段的行为，以及 Buffer 大对象为什么 heapUsed 永远看不到——内存监控要多路，不能只看一张表。"
 publishedAt: "2026-08-19"
 tags: ["性能", "Node.js", "观测", "内存"]
 draft: false
 featured: false
+updatedAt: "2026-08-19"
 ---
 
-**TL;DR：** 内存监控不能只看一个数。本机 Node 实验（堆内 200MB 数组）四阶段实测：分配时 RSS 212MB / heapUsed 156.5MB 同步涨；**释放引用但不 GC，两层都不降**（垃圾还留在堆里，RSS 和 heapUsed 同时骗你）；**GC 后 RSS 60.1MB、heapUsed 4.5MB——都降了 70%+**（V8 会把空闲页还给 OS）；再分配时从归还后的水位重新申请。另一组实验暴露更隐蔽的坑：分配 200MB `Buffer` 时 RSS 涨到 248MB，**heapUsed 却几乎不动（3.6→3.8MB）**——Buffer/TypedArray 主体在 V8 堆外。结论：**RSS 回答"进程吃了多少"、heapUsed 回答"V8 堆里有多少活对象"、GC 后保留量回答"还有多少没法还"**——三张表各有一个主人，只盯一张必然漏。
+**TL;DR：** 内存监控不能只看一个数。本机 Node 实验（堆内 200MB 数组）四阶段实测：分配时 RSS 211.3MB / heapUsed 156.3MB 同步涨；**释放引用但不 GC，两层都不降**（垃圾还留在堆里，RSS 和 heapUsed 同时骗你）；**GC 后 RSS 59.4MB、heapUsed 4.4MB——都降了 70%+**（V8 会把空闲页还给 OS）；再分配时从归还后的水位重新申请。另一组实验暴露更隐蔽的坑：分配 200MB `Buffer` 时 RSS 涨到 247.4MB，**heapUsed 却几乎不动（3.6→3.7MB）**——Buffer/TypedArray 主体在 V8 堆外。结论：**RSS 回答"进程吃了多少"、heapUsed 回答"V8 堆里有多少活对象"、GC 后保留量回答"还有多少没法还"**——三张表各有一个主人，只盯一张必然漏。
 
 ## 一、三张表各回答什么问题
 
@@ -25,17 +26,17 @@ featured: false
 
 | 阶段 | RSS | heapUsed | heapTotal |
 | :--- | ---: | ---: | ---: |
-| 启动后 | 44.5MB | 3.6MB | 6.0MB |
-| 堆内 200MB（引用中） | 212.0MB | 156.5MB | 286.4MB |
-| **释放引用，未 GC** | 212.0MB | 156.5MB | 286.4MB |
-| **GC 之后** | **60.1MB** | **4.5MB** | 133.8MB |
-| 再分配 100MB（复用堆） | 136.8MB | 80.8MB | 210.4MB |
+| 启动后 | 44.3MB | 3.6MB | 5.3MB |
+| 堆内 200MB（引用中） | 211.3MB | 156.3MB | 285.9MB |
+| **释放引用，未 GC** | 211.3MB | 156.3MB | 285.9MB |
+| **GC 之后** | **59.4MB** | **4.4MB** | 133.3MB |
+| 再分配 100MB（复用堆） | 136.1MB | 80.7MB | 209.9MB |
 
 三个必然注意的点：
 
 1. **"释放引用"不是释放内存。** 阶段 2→3 两层都不动。堆里的垃圾只有 GC 才搬走；RSS 也只有 GC+归还才降。这在监控里意味着：heapUsed 平稳增长 ≠ 泄漏（可能是垃圾堆积且 GC 还没跑），把问题留到 GC 后校验。
-2. **GC 之后才能测"保留量"。** 本实验 GC 后 heapUsed 4.5MB（活跃对象本身极小）而 RSS 60.1MB——heapTotal 133.8MB 这个"已经圈了但没用完"的部分，正是"GC 后保留量"的另一种表述：V8 宁可留着 133MB 的堆空间（下次分配免了向 OS 要）也不马上还。**监控里真正代表"增长趋势"的是 GC 后的 heapUsed，而不是任意时刻的 heapUsed**。
-3. **再分配从归还水位起步。** 100MB 分配后 RSS 136.8MB，比 212MB 少了 75MB——堆高水位没有复现。如果监控只记"峰值 RSS"，会误以为一次 200MB 峰值是常驻。
+2. **GC 之后才能测"保留量"。** 本实验 GC 后 heapUsed 4.4MB（活跃对象本身极小）而 RSS 59.4MB——heapTotal 133.3MB 这个"已经圈了但没用完"的部分，正是"GC 后保留量"的另一种表述：V8 宁可留着 133MB 的堆空间（下次分配免了向 OS 要）也不马上还。**监控里真正代表"增长趋势"的是 GC 后的 heapUsed，而不是任意时刻的 heapUsed**。
+3. **再分配从归还水位起步。** 100MB 分配后 RSS 136.1MB，比 211.3MB 少了约 75MB——堆高水位没有复现。如果监控只记"峰值 RSS"，会误以为一次 200MB 峰值是常驻。
 
 ## 三、对照实验：Buffer 大对象为什么 heapUsed 看不见
 
@@ -44,7 +45,7 @@ featured: false
 | 阶段 | RSS | heapUsed |
 | :--- | ---: | ---: |
 | 启动后 | 44.4MB | 3.6MB |
-| 分配 Buffer 200MB | 248.1MB | **3.8MB** |
+| 分配 Buffer 200MB | 247.4MB | **3.7MB** |
 
 heapUsed 几乎不动。原因：Node 的 `Buffer` / `TypedArray` 底层数据块分配在 V8 堆外（ArrayBuffer 外部内存区），heapUsed 只统计 V8 堆内的 JS 对象外壳。**这个反例的价值：服务里凡是用 Buffer/流/原生模块（zlib、crypto、gRPC C++ 层）的，heapUsed 会系统性低估内存**——真实案例里"heapUsed 才 200MB 却 OOM"的通常就是这个原因。RSS 才有资格回答"进程吃了多少"。
 

@@ -1929,3 +1929,32 @@ P2-01 的"逐篇终审 + 一手引用闭合"仍是大批量的编辑级检查（
 | `go-context-patterns` | 无（纯概念文） | 无性能声明，通过 |
 
 （`go-sync-map-boundary` 已在 08-15 批验收；`go-slice-subslice-hold` 同上。故第四批实际新核对 22 篇 + 2 篇已审确认。）
+
+## 三十七、2026-08-19 P2-01 逐篇终审第五批：08-06 批含本地 evidence 的 31 篇
+
+**方法**：全库脚本扫描「文章数字 vs evidence raw 数字」，带单位口径精扫 + 人工解析全部候选；verify-experiments 覆盖的 smoke 在 CI 全绿兜底可复现性。
+
+**发现并修复 2 处真缺陷**：
+
+### 37.1 benchmark-one-variable：evidence 损坏，文章数字无源
+
+`evidence/benchmark-one-variable/2026-08-19-local/run.out` 落盘时误在错误 module 目录运行，全是 `main module (leakdemo) does not contain package...` 编译错误——文章表格与完整序列数字（1.100/1.006/1.014ms、「+63%/+74%/+60%」尖峰）没有任何真实输出支撑。修复：`cd experiments && go run ./benchmark-one-variable -mode clean|noWarmup|withGc` 复跑 3 轮×3 mode 记 9 组真实样本（首轮含首次编译冷启动被排除，取机器预热后的 round1-3，结构 3/3 稳定：noWarmup 第二拍 1.637/1.638/1.763ms 尖峰 = +68%/+68%/+77%；withGc min 0.920-0.933ms 整体低于 clean 0.987-0.991ms ≈ 快 6%）。文章修订：min 表、完整序列、尖峰比例、TL;DR/description、补 updatedAt 08-19。revised evidence run.out 已重写。
+
+### 37.2 memory-metrics-rss-heapused：文章数字 vs evidence 漂移
+
+evidence（2026-08-19 复跑 heap-objs-version.out / buffer-version.out）为 44.3/3.6/5.3、211.3/156.3/285.9、**59.4/4.4/133.3**、136.1/80.7/209.9、Buffer 247.4/3.7；文章旧值 44.5/6.0、212.0/286.4、**60.1/4.5/133.8**、136.8、248/3.8。全文修订为 evidence 同源（GC 后 rss 59.4MB/heapUsed 4.4MB、heapTotal 133.3MB、Buffer 247.4MB），理顺 description 的 "RRS" typo，补 updatedAt 08-19。
+
+### 37.3 其余候选全部解析为「派生比例/公共引用/已废弃」
+
+| 文章 | 数字 | 解析 |
+| --- | --- | --- |
+| btree-page-split | 1.427/1.435/1.437 | 派生比例（9306/6523 等），evidence sim.txt 精确含 70.0908% 等素材 |
+| tree-shaking-comparison-costs | 17.2 倍 | 派生（964/56 bytes，evidence tree-shaking.tsv） |
+| llm-token-economics | 17.1/18.3/2.5/3.5 | 派生比例，evidence cost-model.txt 精确含 $744/$1427/$4936/$13644 |
+| tcp-nagle-delayed-ack | 118.6/1.5ms | 已显式废弃降级（文章注明当前 checkout 无原始 tcpdump 证据，改固定参数模型），OK |
+| connection-pool / clock-skew / tcp-rto | 0.8 / 0.1 / 2.0 | λW=0.8 数学、chrony makestep 文档、RFC 6298，非实验值 |
+| consistent-hashing / histogram / llm-sampling | 14.553 / 85.00·24.94·7.346 / 22.5·57.7 | evidence raw 精确存在，文章四舍五入正确 |
+
+**验证覆盖**：consistent-hashing、btree、connection-pool、tcp-syn、tcp-nagle、tcp-rto、epoll、snowflake、k8s-scheduler、tree-shaking、llm-*、http-cache、http2、promise、tool-loop、leak-pprof、mesi、memory-metrics 等均有 evidence raw 且（除本轮修复两项外）精扫「文章单位数字 ⊂ evidence」全部通过；verify:experiments 在上边这些实验的 smoke 全绿。
+
+其余 08-06 批无本地 evidence 的 41 篇中，一部分为概念/观点文（无机器数字），一部分数字为公开事实（RFC/版本/价格），另一部分引用其他 evidence（如 lsm-vs-btree 指向 mini-lsm）；这些不在本批 evidence 对照范围，转第六批人工抽查或维持「结构层已扫描、事实靠一手来源」现状。
