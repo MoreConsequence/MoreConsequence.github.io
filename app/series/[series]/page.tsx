@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostList } from "@/components/post/post-list";
-import { getAllPosts } from "@/lib/content/posts";
+import { getAllPosts, getPostSources } from "@/lib/content/posts";
 import { collectSeries, decodeSeries, getPostsForSeries } from "@/lib/content/series";
 import { encodeRouteSegment } from "@/lib/site-links";
 
@@ -11,7 +11,7 @@ type PageProps = {
 };
 
 export async function generateStaticParams() {
-  const series = collectSeries(await getAllPosts());
+  const series = collectSeries(getPostSources());
   return series.map((item) => ({ series: encodeRouteSegment(item.name) }));
 }
 
