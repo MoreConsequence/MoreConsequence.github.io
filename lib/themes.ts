@@ -1,5 +1,11 @@
 export const themes = [
   {
+    id: "boundary",
+    label: "边界 · 雾蓝",
+    description: "雾白 × 深海蓝 × 信号橙 × 冷杉绿",
+    colors: ["#f3f5f7", "#17324d", "#e85d3f", "#2f7d75", "#7b8794"],
+  },
+  {
     id: "paper",
     label: "千本樱 · 白哉",
     description: "绯樱粉 × 藏青 × 银灰",
@@ -71,6 +77,48 @@ export const themes = [
     description: "灭却之蓝 × 天青 × 焦橙",
     colors: ["#f4f6f9", "#1d4ed8", "#60a5fa", "#d97706", "#6b7f9e"],
   },
+  {
+    id: "kami",
+    label: "紙 · 和纸",
+    description: "羊皮纸 #f5f4ed × 墨蓝 #1b365d × 墨青 #2d5a8a × 赭褐 × 石青",
+    colors: ["#f5f4ed", "#1b365d", "#2d5a8a", "#8a6f3c", "#6b6a64"],
+  },
+  {
+    id: "kamisha",
+    label: "紙 · 茶纸",
+    description: "陈茶纸 × 墨蓝 × 赭褐墨迹 × 石青",
+    colors: ["#f1ead9", "#1b365d", "#2d5a8a", "#8a6f3c", "#6b6a64"],
+  },
+  {
+    id: "kamiao",
+    label: "紙 · 青笺",
+    description: "青笺 × 墨蓝 × 赭褐 × 石青",
+    colors: ["#eef0ec", "#1b365d", "#2d5a8a", "#7d6a3c", "#6b6a64"],
+  },
+  {
+    id: "kamisumi",
+    label: "紙 · 墨笺",
+    description: "墨笺 · 深黑 #141413 × 亮天青墨蓝 × 赭金（暗夜纸）",
+    colors: ["#141413", "#9db4d6", "#8a9bb8", "#c8a06b", "#6b6a64"],
+  },
+  {
+    id: "kamisakura",
+    label: "紙 · 樱纸",
+    description: "樱纸 · 淡樱粉 × 墨蓝 × 山樱 × 石青（春纸）",
+    colors: ["#f7f2eb", "#1b365d", "#2d5a8a", "#9d6b5e", "#6b6a64"],
+  },
+  {
+    id: "kamitake",
+    label: "紙 · 竹纸",
+    description: "竹纸 · 淡青竹 × 墨蓝 × 竹绿 × 石青（夏纸）",
+    colors: ["#eef0e8", "#1b365d", "#2d5a8a", "#6f7a4c", "#6b6a64"],
+  },
+  {
+    id: "kamikaze",
+    label: "紙 · 风化纸",
+    description: "风化纸 · 风蚀沙色 × 墨蓝 × 赭褐 × 石青（秋纸）",
+    colors: ["#efe9dc", "#1b365d", "#2d5a8a", "#8a6f3c", "#6b6a64"],
+  },
 ] as const;
 
 export type ThemeId = (typeof themes)[number]["id"];
@@ -91,8 +139,7 @@ export function isThemePreference(value: unknown): value is ThemePreference {
 
 export function resolveTheme(preference: ThemePreference): ThemePreference {
   if (preference === "system") {
-    // 主角一护的暖橙默认底色
-    return "midnight";
+    return "boundary";
   }
 
   if (preference === "custom") {

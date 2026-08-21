@@ -24,7 +24,7 @@ describe("site shell", () => {
       </ThemeProvider>,
     );
 
-    expect(html).toContain("HaoYu");
+    expect(html).toContain("边界笔记");
     expect(html).toContain('href="/writing"');
     expect(html).toContain('href="/tags"');
     expect(html).toContain('href="/about"');

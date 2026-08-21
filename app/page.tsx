@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PostCard } from "@/components/post/post-card";
 import { getAllPosts } from "@/lib/content/posts";
+import { tagHref } from "@/lib/site-links";
 
 export default async function Home() {
   const posts = await getAllPosts();
@@ -23,58 +24,38 @@ export default async function Home() {
     <>
       <section className="home-hero">
         <div className="hero-inner">
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <p className="hero-eyebrow">
-                Software / Systems / Durable ideas
-              </p>
-              <h1>
-                <span className="hero-line">在复杂系统里，</span>
-                <span className="hero-line hero-line-accent">
-                  寻找清晰的边界。
-                </span>
-              </h1>
-              <p className="hero-intro">
-                这里记录软件工程、系统设计与工具实践。比起追逐每一次更新，我更关心那些经得住时间的判断。
-              </p>
-              <div className="hero-actions">
-                <Link className="button-primary" href="/writing">
-                  开始阅读 <span aria-hidden="true">↗</span>
-                </Link>
-                <Link className="text-link" href="/about">
-                  认识作者
-                </Link>
-              </div>
-            </div>
-            <aside className="hero-panel">
-              <div className="hero-panel-head">
-                <span className="panel-led" aria-hidden="true" />
-                <strong>SYSTEM</strong> / STATUS
-              </div>
-              <dl className="panel-stats">
-                {stats.map((stat) => (
-                  <div key={stat.label}>
-                    <dt>{stat.value}</dt>
-                    <dd>{stat.label}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="panel-note">
-                <strong>当前关注</strong>
-                <p>Agent 工程 · Go 服务设计 · 让工具服务于思考</p>
-              </div>
-              <span className="panel-scan" aria-hidden="true" />
-            </aside>
+          <div className="hero-copy">
+            <p className="hero-eyebrow">
+              Boundary Notes · 持续写作
+            </p>
+            <h1>
+              <span className="hero-line">在复杂系统里，</span>
+              <span className="hero-line hero-line-accent">
+                寻找清晰的边界。
+              </span>
+            </h1>
           </div>
-        </div>
-        <div className="hero-spec" aria-hidden="true">
-          <span><b>SYSTEM ONLINE</b></span>
-          <i>│</i>
-          <span>{posts.length} POSTS</span>
-          <i>│</i>
-          <span>GO / JS / SYSTEMS / AGENTS</span>
-          <i>│</i>
-          <span>EST. 2026</span>
+          <div className="hero-rail">
+            <p className="hero-intro">
+              这里记录软件工程、系统设计与工具实践。比起追逐每一次更新，我更关心那些经得住时间的判断。
+            </p>
+            <div className="hero-actions">
+              <Link className="button-primary" href="/writing">
+                开始阅读 <span aria-hidden="true">↗</span>
+              </Link>
+              <Link className="text-link" href="/about">
+                关于本站
+              </Link>
+            </div>
+          </div>
+          <dl className="hero-stats" aria-label="站点统计">
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <dt>{stat.value}</dt>
+                <dd>{stat.label}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -123,7 +104,7 @@ export default async function Home() {
           </div>
           <div className="topic-links">
             {tags.map((tag, index) => (
-              <Link key={tag} href={"/tags/" + encodeURIComponent(tag)}>
+              <Link key={tag} href={tagHref(tag)}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 {tag}
               </Link>
@@ -134,4 +115,3 @@ export default async function Home() {
     </>
   );
 }
-

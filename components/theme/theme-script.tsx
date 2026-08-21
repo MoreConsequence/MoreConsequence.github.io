@@ -24,12 +24,12 @@ export function createThemeBootstrapScript(themeIds: readonly string[]) {
   try {
     var stored = localStorage.getItem("haoyu-theme");
     var preference = ["system", ...${JSON.stringify([...themeIds, "custom"])}].includes(stored) ? stored : "system";
-    var theme = preference === "system" ? "midnight" : preference;
+    var theme = preference === "system" ? "boundary" : preference;
     if (preference === "custom") applyVars(${JSON.stringify(customThemeVarsKey)}, ${JSON.stringify(defaultCustomVars)});
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.themePreference = preference;
   } catch {
-    document.documentElement.dataset.theme = "midnight";
+    document.documentElement.dataset.theme = "boundary";
     document.documentElement.dataset.themePreference = "system";
   }
 })();
@@ -48,4 +48,3 @@ export function ThemeScript() {
     />
   );
 }
-

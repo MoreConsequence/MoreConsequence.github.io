@@ -2,13 +2,13 @@ import Link from "next/link";
 
 export function SiteLogo() {
   return (
-    <Link className="site-logo" href="/" aria-label="HaoYu 技术札记首页">
+    <Link className="site-logo" href="/" aria-label="边界笔记首页">
       <span className="site-logo-mark" aria-hidden="true">
-        H/Y
+        界
       </span>
       <span className="site-logo-type">
-        <strong>HaoYu</strong>
-        <small>技术札记</small>
+        <strong>边界笔记</strong>
+        <small>BOUNDARY NOTES</small>
       </span>
     </Link>
   );

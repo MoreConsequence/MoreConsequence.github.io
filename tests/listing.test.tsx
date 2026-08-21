@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PostCard } from "@/components/post/post-card";
 import { groupPostsByYear } from "@/components/post/post-list";
 import { parsePostSource } from "@/lib/content/posts";
+import { seriesHref, tagHref } from "@/lib/site-links";
 
 const makePost = (slug: string, date: string, featured = false) =>
   parsePostSource(
@@ -44,5 +45,14 @@ describe("post listings", () => {
     expect(html).toContain("2026.07.12");
     expect(html).toContain("架构");
     expect(html).toContain("分钟");
+    expect(html).toContain('class="post-card-arrow"');
   });
+
+ it("keeps secondary tag links static-export safe", () => {
+    expect(tagHref("架构")).toBe("/tags/x-~E6~9E~B6~E6~9E~84/");
+    expect(tagHref("测试")).toBe("/tags/x-~E6~B5~8B~E8~AF~95/");
+    expect(seriesHref("Go 的设计边界")).toBe(
+      "/series/x-Go~20~E7~9A~84~E8~AE~BE~E8~AE~A1~E8~BE~B9~E7~95~8C/",
+    );
+ });
 });

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/content/posts";
 import { collectTags } from "@/lib/content/tags";
+import { tagHref } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "主题标签",
@@ -23,7 +24,7 @@ export default async function TagsPage() {
       </header>
       <div className="tag-index">
         {tags.map((tag, index) => (
-          <Link key={tag.name} href={`/tags/${encodeURIComponent(tag.name)}`}>
+          <Link key={tag.name} href={tagHref(tag.name)}>
             <span className="tag-index-number">
               {String(index + 1).padStart(2, "0")}
             </span>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PostMeta } from "./post-meta";
 import type { CompiledPost, PostSource } from "@/lib/content/types";
+import { tagHref } from "@/lib/site-links";
 
 function estimateReadingMinutes(post: PostSource | CompiledPost) {
   if ("readingTimeMinutes" in post) {
@@ -34,12 +35,15 @@ export function PostCard({
         <p>{post.meta.description}</p>
         <ul className="tag-list" aria-label="文章标签">
           {post.meta.tags.map((tag) => (
-            <li key={tag}>
-              <Link href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>
-            </li>
+           <li key={tag}>
+              <Link href={tagHref(tag)}>{tag}</Link>
+           </li>
           ))}
         </ul>
       </div>
+      <span className="post-card-arrow" aria-hidden="true">
+        ↗
+      </span>
     </article>
   );
 }

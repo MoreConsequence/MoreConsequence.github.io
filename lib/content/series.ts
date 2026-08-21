@@ -1,4 +1,5 @@
 import type { PostSource } from "./types";
+import { decodeRouteSegment } from "@/lib/site-links";
 
 export type SeriesSummary = {
   name: string;
@@ -32,11 +33,7 @@ export function collectSeries(posts: PostSource[]): SeriesSummary[] {
 }
 
 export function decodeSeries(value: string) {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
+  return decodeRouteSegment(value);
 }
 
 export function getPostsForSeries(posts: PostSource[], series: string) {

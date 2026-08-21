@@ -1,4 +1,5 @@
 import type { PostSource } from "./types";
+import { decodeRouteSegment } from "@/lib/site-links";
 
 export type TagSummary = {
   name: string;
@@ -33,11 +34,7 @@ export function collectTags(posts: PostSource[]): TagSummary[] {
 }
 
 export function decodeTag(value: string) {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
+  return decodeRouteSegment(value);
 }
 
 export function getPostsForTag(posts: PostSource[], tag: string) {

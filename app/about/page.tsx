@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "关于",
-  description: "关于 HaoYu、这个博客和持续写作。",
+  description: "关于边界笔记、这个博客和持续写作。",
 };
 
 export default function AboutPage() {
@@ -14,7 +14,7 @@ export default function AboutPage() {
         <h1>
           你好，
           <br />
-          我是 <span>HaoYu。</span>
+          这里是 <span>边界笔记。</span>
         </h1>
         <p>
           一名喜欢把复杂问题拆回清晰边界的软件开发者。这里不是知识库，也不是更新日志，而是一份持续生长的工程手记。

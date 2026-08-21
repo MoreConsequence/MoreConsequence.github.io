@@ -12,8 +12,31 @@ import {
 } from "@/lib/themes";
 import { useTheme } from "./theme-provider";
 
-const systemSwatch = ["#e7e3d9", "#a8b2bd", "#5b6472", "#141416", "#8f979f"];
+const systemSwatch = ["#f3f5f7", "#17324d", "#e85d3f", "#2f7d75", "#7b8794"];
 const slotLabels = ["底色", "撞色一", "撞色二", "撞色三", "撞色四"];
+const editorialThemeIds = new Set([
+  "boundary",
+  "kami",
+  "kamisha",
+  "kamiao",
+  "kamisumi",
+  "kamisakura",
+  "kamitake",
+  "kamikaze",
+]);
+
+const themeGroups = [
+  {
+    label: "编辑主题",
+    description: "清晰、克制，适合长时间阅读",
+    themes: themes.filter((theme) => editorialThemeIds.has(theme.id)),
+  },
+  {
+    label: "角色主题",
+    description: "更强的色彩、纹理与界面性格",
+    themes: themes.filter((theme) => !editorialThemeIds.has(theme.id)),
+  },
+];
 
 export function ThemeSwitcher() {
   const { preference, setPreference } = useTheme();
@@ -123,26 +146,46 @@ export function ThemeSwitcher() {
                 <span key={color} style={{ backgroundColor: color }} />
               ))}
             </span>
-            <span>自动</span>
-            <small>跟随系统</small>
+            <span className="theme-option-copy">
+              <span>自动</span>
+              <small>使用本站默认主题</small>
+            </span>
+            <span className="theme-option-check" aria-hidden="true">
+              {preference === "system" ? "✓" : ""}
+            </span>
           </button>
-          {themes.map((theme) => (
-            <button
-              key={theme.id}
-              className="theme-option"
-              data-active={preference === theme.id}
-              type="button"
-              title={theme.description}
-              onClick={() => pick(theme.id as ThemePreference)}
-            >
-              <span className="theme-swatches" aria-hidden="true">
-                {theme.colors.map((color) => (
-                  <span key={color} style={{ backgroundColor: color }} />
+          {themeGroups.map((group) => (
+            <section className="theme-group" key={group.label}>
+              <div className="theme-group-heading">
+                <span>{group.label}</span>
+                <small>{group.description}</small>
+              </div>
+              <div className="theme-option-grid">
+                {group.themes.map((theme) => (
+                  <button
+                    key={theme.id}
+                    className="theme-option"
+                    data-active={preference === theme.id}
+                    type="button"
+                    title={theme.description}
+                    onClick={() => pick(theme.id as ThemePreference)}
+                  >
+                    <span className="theme-swatches" aria-hidden="true">
+                      {theme.colors.map((color) => (
+                        <span key={color} style={{ backgroundColor: color }} />
+                      ))}
+                    </span>
+                    <span className="theme-option-copy">
+                      <span>{theme.label}</span>
+                      <small>{theme.description}</small>
+                    </span>
+                    <span className="theme-option-check" aria-hidden="true">
+                      {preference === theme.id ? "✓" : ""}
+                    </span>
+                  </button>
                 ))}
-              </span>
-              <span>{theme.label}</span>
-              <small>{theme.description}</small>
-            </button>
+              </div>
+            </section>
           ))}
           <button
             className="theme-option"
@@ -155,8 +198,13 @@ export function ThemeSwitcher() {
                 <span key={color} style={{ backgroundColor: color }} />
               ))}
             </span>
-            <span>自定义配色</span>
-            <small>{editing ? "正在编辑" : "我的五色"} · 点按编辑</small>
+            <span className="theme-option-copy">
+              <span>自定义配色</span>
+              <small>{editing ? "正在编辑" : "我的五色"} · 点按编辑</small>
+            </span>
+            <span className="theme-option-check" aria-hidden="true">
+              {preference === "custom" ? "✓" : ""}
+            </span>
           </button>
 
           {editing && draft ? (

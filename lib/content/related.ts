@@ -11,18 +11,26 @@ export function getArticleNeighbors(posts: PostSource[], slug: string) {
 export function getRelatedPosts(
   posts: PostSource[],
   current: PostSource,
-  limit = 2,
+  limit = 3,
 ) {
   const currentTags = new Set(current.meta.tags);
+  const series = current.meta.series;
 
   return posts
     .filter((post) => post.slug !== current.slug)
-    .map((post, index) => ({
-      post,
-      index,
-      score: post.meta.tags.filter((tag) => currentTags.has(tag)).length,
-    }))
-    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((post, index) => {
+      // 系列内文章优先，其次同标签重合度，最后按时间序保底
+      let score = 0;
+      if (series && post.meta.series === series) score += 100;
+      score += post.meta.tags.filter((tag) => currentTags.has(tag)).length;
+      return { post, index, score };
+    })
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.post.meta.publishedAt.localeCompare(a.post.meta.publishedAt) ||
+        a.index - b.index,
+    )
     .slice(0, limit)
     .map(({ post }) => post);
 }

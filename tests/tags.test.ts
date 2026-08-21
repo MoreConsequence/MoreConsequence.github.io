@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { generateStaticParams as generateTagStaticParams } from "@/app/tags/[tag]/page";
 import { collectTags, getPostsForTag } from "@/lib/content/tags";
 import { parsePostSource } from "@/lib/content/posts";
 
@@ -37,5 +38,10 @@ describe("tag index", () => {
       "service",
     ]);
     expect(getPostsForTag(posts, "不存在")).toEqual([]);
+  });
+
+  it("generates ASCII-safe params for non-ASCII tag routes", async () => {
+    const params = await generateTagStaticParams();
+    expect(params).toContainEqual({ tag: "x-~E6~80~A7~E8~83~BD" });
   });
 });

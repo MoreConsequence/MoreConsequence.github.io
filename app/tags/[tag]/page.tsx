@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { PostList } from "@/components/post/post-list";
 import { getAllPosts } from "@/lib/content/posts";
 import { collectTags, decodeTag, getPostsForTag } from "@/lib/content/tags";
+import { encodeRouteSegment } from "@/lib/site-links";
 
 type PageProps = {
   params: Promise<{ tag: string }>;
 };
 
 export async function generateStaticParams() {
-  const tags = collectTags(await getAllPosts("production"));
-  return tags.map((tag) => ({ tag: tag.name }));
+  const tags = collectTags(await getAllPosts());
+  return tags.map((tag) => ({ tag: encodeRouteSegment(tag.name) }));
 }
 
 export async function generateMetadata({
@@ -33,7 +34,7 @@ export default async function TagPage({ params }: PageProps) {
   return (
     <div className="archive-page">
       <header className="tag-page-header">
-        <Link href="/tags">← 所有标签</Link>
+        <Link href="/tags/">← 所有标签</Link>
         <p className="eyebrow">Topic / {posts.length} essays</p>
         <h1>{tag}</h1>
         <p>围绕这个主题的全部记录，按发布时间由新到旧排列。</p>

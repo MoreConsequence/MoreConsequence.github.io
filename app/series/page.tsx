@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/content/posts";
 import { collectSeries } from "@/lib/content/series";
+import { seriesHref } from "@/lib/site-links";
 
 export const metadata: Metadata = {
   title: "文章系列",
@@ -25,7 +26,7 @@ export default async function SeriesPage() {
         {series.map((item, index) => (
           <Link
             key={item.name}
-            href={`/series/${encodeURIComponent(item.name)}`}
+            href={seriesHref(item.name)}
           >
             <span className="tag-index-number">
               {String(index + 1).padStart(2, "0")}

@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
+import "./kami-global-layer.css";
+import "./editorial-ui.css";
 
 export function generateMetadata(): Metadata {
   return {
@@ -32,7 +34,7 @@ export function generateMetadata(): Metadata {
           url: `${siteConfig.url}/og.png`,
           width: 1200,
           height: 630,
-          alt: "HaoYu 技术札记：在复杂系统里，寻找清晰的边界。",
+          alt: "边界笔记：在复杂系统里，寻找清晰的边界。",
         },
       ],
     },

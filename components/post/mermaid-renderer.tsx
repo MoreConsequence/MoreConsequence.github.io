@@ -65,6 +65,75 @@ const themeVars = (dark: boolean) =>
         sequenceNumberColor: "#64748b",
       };
 
+/* kami 技能 mermaid-theme.json 角色映射：
+   bg 羊皮纸 / fg 近黑 / line 暖橄榄 / accent 墨蓝（唯一彩色）
+   / muted 石青 / surface 象牙 / border 暖沙 */
+const kamiThemeVars = (dark: boolean) =>
+  dark
+    ? {
+        darkMode: true,
+        background: "#141413",
+        primaryColor: "#222420",
+        primaryTextColor: "#e6e4dc",
+        primaryBorderColor: "#9db4d6",
+        lineColor: "#8a9bb8",
+        secondaryColor: "#282a26",
+        tertiaryColor: "#1c1d1b",
+        clusterBkg: "#1c1d1b",
+        clusterBorder: "#3a3d36",
+        edgeLabelBackground: "#222420",
+        nodeBorder: "#9db4d6",
+        mainBkg: "#222420",
+        nodeTextColor: "#e6e4dc",
+        titleColor: "#f1efe8",
+        actorBorder: "#9db4d6",
+        actorBkg: "#222420",
+        actorTextColor: "#e6e4dc",
+        signalColor: "#c8a06b",
+        signalTextColor: "#e6e4dc",
+        labelBoxBkgColor: "#222420",
+        labelBoxBorderColor: "#9db4d6",
+        labelTextColor: "#8b8a83",
+        loopTextColor: "#8b8a83",
+        noteBkgColor: "#2a2c28",
+        noteBorderColor: "#c8a06b",
+        sequenceNumberColor: "#8b8a83",
+      }
+    : {
+        darkMode: false,
+        background: "#f5f4ed",
+        primaryColor: "#faf9f5",
+        primaryTextColor: "#141413",
+        primaryBorderColor: "#1b365d",
+        lineColor: "#504e49",
+        secondaryColor: "#faf9f5",
+        tertiaryColor: "#e8e6dc",
+        clusterBkg: "#faf9f5",
+        clusterBorder: "#e8e6dc",
+        edgeLabelBackground: "#f5f4ed",
+        nodeBorder: "#1b365d",
+        mainBkg: "#faf9f5",
+        nodeTextColor: "#141413",
+        titleColor: "#141413",
+        actorBorder: "#1b365d",
+        actorBkg: "#faf9f5",
+        actorTextColor: "#141413",
+        signalColor: "#1b365d",
+        signalTextColor: "#141413",
+        labelBoxBkgColor: "#faf9f5",
+        labelBoxBorderColor: "#1b365d",
+        labelTextColor: "#6b6a64",
+        loopTextColor: "#6b6a64",
+        noteBkgColor: "#f0e0d8",
+        noteBorderColor: "#8a6f3c",
+        sequenceNumberColor: "#6b6a64",
+      };
+
+const kamiFontStack =
+  'Charter, Georgia, "TsangerJinKai02", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", serif';
+const defaultFontStack =
+  'ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+
 function escHtml(text: string) {
   const d = document.createElement("div");
   d.textContent = text;
@@ -83,15 +152,18 @@ export function MermaidRenderer() {
       if (busy.current) return;
       busy.current = true;
       try {
-        const midnight =
-          document.documentElement.getAttribute("data-theme") === "midnight";
+        const theme =
+          document.documentElement.getAttribute("data-theme") ?? "";
+        const isKami = ["kami", "kamisha", "kamiao", "kamisumi"].includes(
+          theme,
+        );
+        const dark = theme === "kamisumi";
         mermaid.initialize({
           startOnLoad: false,
           theme: "base",
           securityLevel: "loose",
-          fontFamily:
-            'ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif',
-          themeVariables: themeVars(midnight),
+          fontFamily: isKami ? kamiFontStack : defaultFontStack,
+          themeVariables: isKami ? kamiThemeVars(dark) : themeVars(dark),
         });
         await mermaid.run({ querySelector: ".mermaid" });
 

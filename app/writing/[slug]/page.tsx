@@ -7,6 +7,7 @@ import { ReadingProgress } from "@/components/post/reading-progress";
 import { TableOfContents } from "@/components/post/table-of-contents";
 import { getAllPosts, getPostSources } from "@/lib/content/posts";
 import { getPostsForSeries } from "@/lib/content/series";
+import { seriesHref } from "@/lib/site-links";
 import {
   getArticleNeighbors,
   getRelatedPosts,
@@ -17,7 +18,7 @@ type PageProps = {
 };
 
 export async function generateStaticParams() {
-  return getPostSources("production").map((post) => ({ slug: post.slug }));
+  return getPostSources().map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
@@ -52,11 +53,14 @@ export default async function ArticlePage({ params }: PageProps) {
 
   if (!post) notFound();
 
-  const neighbors = getArticleNeighbors(posts, slug);
-  const related = getRelatedPosts(posts, post, 2);
   const seriesPosts = post.meta.series
     ? getPostsForSeries(posts, post.meta.series)
     : [];
+  // 系列文章按系列顺序翻页，非系列按发布时间翻页
+  const isSeries = seriesPosts.length > 1;
+  const navPool = isSeries ? seriesPosts : posts;
+  const neighbors = getArticleNeighbors(navPool, slug);
+  const related = getRelatedPosts(posts, post, 3);
 
   return (
     <>
@@ -68,7 +72,7 @@ export default async function ArticlePage({ params }: PageProps) {
             <span>/</span>
             {post.meta.series ? (
               <>
-                <Link href={`/series/${encodeURIComponent(post.meta.series)}`}>
+                <Link href={seriesHref(post.meta.series)}>
                   {post.meta.series}
                 </Link>
                 <span>/</span>
@@ -95,7 +99,7 @@ export default async function ArticlePage({ params }: PageProps) {
             {seriesPosts.length > 1 ? (
               <div className="article-fact">
                 <p>
-                  <Link href={`/series/${encodeURIComponent(post.meta.series!)}`}>
+                  <Link href={seriesHref(post.meta.series!)}>
                     系列：{post.meta.series}
                   </Link>
                 </p>
@@ -128,16 +132,18 @@ export default async function ArticlePage({ params }: PageProps) {
           <div className="neighbor-cell">
             {neighbors.newer ? (
               <Link href={`/writing/${neighbors.newer.slug}`}>
-                <small>上一篇 / NEWER</small>
+                <small>{isSeries ? "上一章" : "上一篇"}</small>
                 <span>{neighbors.newer.meta.title}</span>
+                <time>{neighbors.newer.meta.publishedAt.replaceAll("-", ".")}</time>
               </Link>
             ) : null}
           </div>
           <div className="neighbor-cell">
             {neighbors.older ? (
               <Link href={`/writing/${neighbors.older.slug}`}>
-                <small>下一篇 / OLDER</small>
+                <small>{isSeries ? "下一章" : "下一篇"}</small>
                 <span>{neighbors.older.meta.title}</span>
+                <time>{neighbors.older.meta.publishedAt.replaceAll("-", ".")}</time>
               </Link>
             ) : null}
           </div>
@@ -150,9 +156,12 @@ export default async function ArticlePage({ params }: PageProps) {
             <div>
               {related.map((item) => (
                 <Link key={item.slug} href={`/writing/${item.slug}`}>
-                  <span className="related-tag">{item.meta.tags[0]}</span>
+                  <span className="related-tags" aria-label="文章标签">
+                    {item.meta.tags.map((tag) => (
+                      <span className="related-tag" key={tag}>{tag}</span>
+                    ))}
+                  </span>
                   <strong>{item.meta.title}</strong>
-                  <p>{item.meta.description}</p>
                   <time>{item.meta.publishedAt.replaceAll("-", ".")}</time>
                 </Link>
               ))}
@@ -163,4 +172,3 @@ export default async function ArticlePage({ params }: PageProps) {
     </>
   );
 }
-

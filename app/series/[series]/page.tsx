@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { PostList } from "@/components/post/post-list";
 import { getAllPosts } from "@/lib/content/posts";
 import { collectSeries, decodeSeries, getPostsForSeries } from "@/lib/content/series";
+import { encodeRouteSegment } from "@/lib/site-links";
 
 type PageProps = {
   params: Promise<{ series: string }>;
 };
 
 export async function generateStaticParams() {
-  const series = collectSeries(await getAllPosts("production"));
-  return series.map((item) => ({ series: item.name }));
+  const series = collectSeries(await getAllPosts());
+  return series.map((item) => ({ series: encodeRouteSegment(item.name) }));
 }
 
 export async function generateMetadata({
@@ -33,7 +34,7 @@ export default async function SeriesDetailPage({ params }: PageProps) {
   return (
     <div className="archive-page">
       <header className="tag-page-header">
-        <Link href="/series">← 所有系列</Link>
+        <Link href="/series/">← 所有系列</Link>
         <p className="eyebrow">Series / {posts.length} essays</p>
         <h1>{name}</h1>
         <p>这条路线上的全部记录，按发布时间由新到旧排列。</p>

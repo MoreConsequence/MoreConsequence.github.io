@@ -5,7 +5,7 @@ import { TableOfContents } from "@/components/post/table-of-contents";
 import { getArticleNeighbors, getRelatedPosts } from "@/lib/content/related";
 import { parsePostSource } from "@/lib/content/posts";
 
-const makePost = (slug: string, date: string, tags: string[]) =>
+const makePost = (slug: string, date: string, tags: string[], series?: string) =>
   parsePostSource(
     `${slug}.md`,
     `---
@@ -13,6 +13,7 @@ title: "${slug}"
 description: "${slug} 的摘要"
 publishedAt: "${date}"
 tags: ${JSON.stringify(tags)}
+${series ? `series: "${series}"` : ""}
 ---
 
 正文。
@@ -37,6 +38,21 @@ describe("article experience", () => {
     expect(getRelatedPosts(posts, posts[1]!, 2).map((post) => post.slug)).toEqual(
       ["newest", "older"],
     );
+  });
+
+  it("puts same-series posts ahead of tag matches", () => {
+    const series = [
+      makePost("series-a", "2026-06-10", ["Go"], "测试系列"),
+      makePost("current", "2026-06-21", ["Go", "系列：测试"], "测试系列"),
+      makePost("series-b", "2026-06-30", ["Go"], "测试系列"),
+      makePost("tag-hit", "2026-07-01", ["Go", "系列：测试"]),
+    ];
+    const result = getRelatedPosts(series, series[1]!, 3);
+    expect(result.map((post) => post.slug)).toEqual([
+      "series-b",
+      "series-a",
+      "tag-hit",
+    ]);
   });
 
   it("renders compiled article HTML and an accessible contents list", () => {
