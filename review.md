@@ -1958,3 +1958,33 @@ evidence（2026-08-19 复跑 heap-objs-version.out / buffer-version.out）为 44
 **验证覆盖**：consistent-hashing、btree、connection-pool、tcp-syn、tcp-nagle、tcp-rto、epoll、snowflake、k8s-scheduler、tree-shaking、llm-*、http-cache、http2、promise、tool-loop、leak-pprof、mesi、memory-metrics 等均有 evidence raw 且（除本轮修复两项外）精扫「文章单位数字 ⊂ evidence」全部通过；verify:experiments 在上边这些实验的 smoke 全绿。
 
 其余 08-06 批无本地 evidence 的 41 篇中，一部分为概念/观点文（无机器数字），一部分数字为公开事实（RFC/版本/价格），另一部分引用其他 evidence（如 lsm-vs-btree 指向 mini-lsm）；这些不在本批 evidence 对照范围，转第六批人工抽查或维持「结构层已扫描、事实靠一手来源」现状。
+
+## 三十八、2026-08-23 AGENTS.md 重构：迁移阶段状态，长期规则不再保存流水账
+
+本节保存此前写在 `AGENTS.md` 末尾的可变状态。迁移只改变信息归属，不把以下记录升级为新的生产或外部环境证据。
+
+### 38.1 迁移时的 frontmatter 快照
+
+- frontmatter-only 扫描：150 篇 source，其中 136 篇 production、14 篇 draft。
+- `tests/content.test.ts` 当时列出 136 个 production slug。
+- 这些数字是 2026-08-23 工作区快照，不再复制到 `AGENTS.md`；后续必须从当前 checkout 实测。
+- 历史发布批次仍以本文件此前各日期化章节为准，包括 08-06、08-08、08-15、08-16 与 08-19 批，不在长期指令中重复完整 slug 清单。
+
+### 38.2 08-23 五篇草稿批次
+
+| slug | 当时状态与直接工件 | 范围边界 |
+| --- | --- | --- |
+| `review-idempotent-pr-concurrency` | `draft: true`；绑定 `experiments/service/src/pr-review/` 红绿证据 | 幂等 PR 并发反例评审 |
+| `characterization-test-refactor-safety-net` | `draft: true`；store 行为保持重构与 off-by-one 突变演示 | 含 `conflictWith` / `writeNew` 提取 |
+| `rebuild-incident-evidence-chain` | `draft: true`；`experiments/evidence-audit/audit.mjs` v1→v4 自举闭环 | 当时扫描 91 个 evidence 目录，PASS 24/26.4%；仅为该次本地扫描 |
+| `latency-attribution` | `draft: true`；loopback 三段归因实验 | 本机链路结果，不外推网络或生产延迟 |
+| `lamport-vector-clocks` | `draft: true`；固定种子模拟 1770 个事件对 | 新系列「分布式故障模型」开篇 |
+
+其中 `review-idempotent-pr-concurrency`、`characterization-test-refactor-safety-net` 当时归入「把原理变成服务」扩展位。原拟 10 个选题中的 `context-vs-abortsignal`、`esm-cjs`、`benchmark-one-variable`、`histogram/p99`、`rss-heapused` 与既有文章重合，因此本批放弃；选题状态后续统一由 `docs/topic-backlog.md` 维护。
+
+### 38.3 仍然有效的验证边界
+
+- `tsconfig.json` 排除 `experiments`；根 `npm test` / `npm run build` 不证明实验正确。
+- `eslint.config.mjs` 忽略 `experiments/**/*.js` 与 `experiments/**/*.ts`。
+- 实验结论必须运行目标实验入口，或在适用时运行 `npm run verify:experiments`；evidence 继续按 `evidence/<slug>/<date>/` 落盘。
+- 真实断电、etcd 时钟偏移、GPU 并发、kind datapath、生产账单等外部证据缺口仍按本文件对应条目管理；正文标为范围外不等于证据已取得。
