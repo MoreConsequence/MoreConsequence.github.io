@@ -46,6 +46,7 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "select-poll-epoll-deep-dive",
       "benchmark-one-variable",
       "esm-cjs-dual-package",
       "git-bisect-regression-hunt",
