@@ -145,7 +145,36 @@ export function MermaidRenderer() {
     type: "svg" | "image";
     content: string;
   } | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
+
+  const openModal = (next: { type: "svg" | "image"; content: string }) => {
+    setZoom(1);
+    setModal(next);
+  };
+
+  const closeModal = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    }
+    setIsFullscreen(false);
+    setZoom(1);
+    setModal(null);
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await modalRef.current?.requestFullscreen?.();
+      }
+    } catch {
+      // Fullscreen can be denied by an embedded browser; the modal remains useful.
+    }
+  };
 
   useEffect(() => {
     const render = async () => {
@@ -177,17 +206,25 @@ export function MermaidRenderer() {
             const svg = el.innerHTML;
 
             el.innerHTML = [
-              `<div class="mt-bar">`,
-              `<button class="mt-tab active" data-v="p">Diagram</button>`,
-              `<button class="mt-tab" data-v="c">Source</button>`,
+              `<div class="mt-bar" role="toolbar" aria-label="Mermaid 图示工具">`,
+              `<div class="mt-tabs">`,
+              `<button type="button" class="mt-tab active" data-v="p">Diagram</button>`,
+              `<button type="button" class="mt-tab" data-v="c">Source</button>`,
+              `</div>`,
+              `<button type="button" class="mt-open" aria-label="放大查看 Mermaid 图">放大查看</button>`,
               `</div>`,
               `<div class="mt-view mt-pv">${svg}</div>`,
               `<div class="mt-view mt-cd" style="display:none"><pre>${escHtml(src)}</pre></div>`,
             ].join("");
 
             el.querySelector(".mt-pv")!.addEventListener("click", () =>
-              setModal({ type: "svg", content: svg }),
+              openModal({ type: "svg", content: svg }),
             );
+
+            el.querySelector(".mt-open")!.addEventListener("click", (event) => {
+              event.stopPropagation();
+              openModal({ type: "svg", content: svg });
+            });
 
             el.querySelector(".mt-bar")!.addEventListener("click", (e) => {
               const btn = (e.target as HTMLElement).closest(
@@ -220,7 +257,7 @@ export function MermaidRenderer() {
         img.dataset.mz = "1";
         img.style.cursor = "zoom-in";
         img.addEventListener("click", () =>
-          setModal({ type: "image", content: img.src }),
+          openModal({ type: "image", content: img.src }),
         );
       });
 
@@ -242,27 +279,109 @@ export function MermaidRenderer() {
     return () => obs.disconnect();
   }, []);
 
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!modal) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeModal();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [modal]);
+
   if (!modal) return null;
 
   return createPortal(
     <div
       className="mt-backdrop"
-      onClick={() => setModal(null)}
+      onClick={closeModal}
       role="dialog"
       aria-modal="true"
+      aria-label="Mermaid 图示放大查看"
     >
-      <div className="mt-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="mt-close" onClick={() => setModal(null)}>
-          ✕
-        </button>
+      <div
+        className="mt-modal"
+        ref={modalRef}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mt-modal-head">
+          <strong>图示放大查看</strong>
+          <div className="mt-modal-actions">
+            <button
+              type="button"
+              onClick={() => setZoom((value) => Math.max(0.75, value - 0.25))}
+              aria-label="缩小图示"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              aria-label="重置图示大小"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom((value) => Math.min(3, value + 0.25))}
+              aria-label="放大图示"
+            >
+              ＋
+            </button>
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? "退出全屏" : "全屏显示图示"}
+            >
+              {isFullscreen ? "退出全屏" : "全屏"}
+            </button>
+            <button
+              type="button"
+              className="mt-close"
+              onClick={closeModal}
+              aria-label="关闭图示"
+              autoFocus
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+        <div className="mt-stage">
         {modal.type === "svg" ? (
           <div
-            className="mt-svg"
-            dangerouslySetInnerHTML={{ __html: modal.content }}
-          />
+            className="mt-zoom-canvas mt-svg-canvas"
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <div
+              className="mt-svg"
+              dangerouslySetInnerHTML={{ __html: modal.content }}
+            />
+          </div>
         ) : (
-          <img src={modal.content} alt="" className="mt-img" />
+          <div
+            className="mt-zoom-canvas mt-image-canvas"
+            style={{ transform: `scale(${zoom})` }}
+          >
+            <img src={modal.content} alt="放大查看的图示" className="mt-img" />
+          </div>
         )}
+        </div>
       </div>
     </div>,
     document.body,

@@ -3907,3 +3907,261 @@ body::before {
     font-size: clamp(2.5rem, 11vw, 3.4rem);
   }
 }
+
+/* ============================================================================
+   Mermaid reading controls · wide diagrams stay legible
+
+   Keep the inline view scrollable instead of shrinking a wide graph into a
+   thumbnail. The visible action opens a keyboard-friendly, zoomable canvas.
+   ============================================================================ */
+
+.article-prose .mermaid {
+  position: relative;
+  max-width: 100%;
+  margin: 1.8rem 0;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.article-prose .mt-bar {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0.45rem 0.25rem 0.7rem;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-strong);
+  font-family: var(--font-ui);
+}
+
+.article-prose .mt-tabs {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.article-prose .mt-tab,
+.article-prose .mt-open,
+.mt-modal-actions button {
+  min-height: 28px;
+  padding: 0.25rem 0.58rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
+.article-prose .mt-tab:hover,
+.article-prose .mt-open:hover,
+.article-prose .mt-tab.active,
+.mt-modal-actions button:hover {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.article-prose .mt-open {
+  margin-left: auto;
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.article-prose .mt-view.mt-pv {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  cursor: zoom-in;
+  scrollbar-width: thin;
+}
+
+.article-prose .mt-view.mt-pv svg {
+  display: block;
+  width: max(100%, 680px) !important;
+  max-width: none !important;
+  height: auto !important;
+  margin: 0 auto;
+}
+
+.article-prose .mt-view.mt-cd {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.article-prose .mt-view.mt-cd pre {
+  min-width: max-content;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.78rem;
+}
+
+.mt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  background: color-mix(in srgb, var(--foreground) 54%, transparent);
+}
+
+.mt-modal {
+  display: flex;
+  width: min(1240px, 100%);
+  height: min(88vh, 920px);
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+
+.mt-modal:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  border-radius: 0;
+}
+
+.mt-modal-head {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.65rem 0.45rem 1rem;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-strong);
+  font-family: var(--font-ui);
+}
+
+.mt-modal-head strong {
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.mt-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.mt-modal-actions button {
+  border-color: var(--border-soft);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.mt-modal-actions .mt-close {
+  margin-left: 0.3rem;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.mt-stage {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: clamp(0.8rem, 2vw, 1.5rem);
+  background: var(--background);
+  scrollbar-width: thin;
+}
+
+.mt-zoom-canvas {
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.mt-svg-canvas {
+  width: 100%;
+  transform-origin: top left;
+}
+
+.mt-svg {
+  width: 100%;
+  min-width: 100%;
+}
+
+.mt-svg svg {
+  display: block;
+  width: max(100%, 680px) !important;
+  max-width: none !important;
+  height: auto !important;
+  margin: 0 auto;
+}
+
+.mt-image-canvas {
+  width: max-content;
+  min-width: 100%;
+  transform-origin: top left;
+}
+
+.mt-img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0 auto;
+}
+
+@media (max-width: 620px) {
+  .article-prose .mt-bar {
+    min-height: 42px;
+  }
+
+  .article-prose .mt-tab,
+  .article-prose .mt-open {
+    min-height: 32px;
+    padding-inline: 0.62rem;
+  }
+
+  .mt-backdrop {
+    padding: 0;
+  }
+
+  .mt-modal {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .mt-modal-head {
+    min-height: 54px;
+    padding-left: 0.85rem;
+  }
+
+  .mt-modal-head strong {
+    max-width: none;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+
+  .mt-modal-actions button {
+    min-width: 32px;
+    padding-inline: 0.42rem;
+  }
+
+  .mt-modal-actions .mt-close {
+    margin-left: 0.1rem;
+  }
+}
