@@ -1,0 +1,140 @@
+
+ RUN  v4.1.10 /Users/lianghaoyu/codes/github-blog/experiments/service
+
+ ✓ src/store.test.ts > BoundedInMemoryStore > get 未命中返回 undefined 1ms
+ ✓ src/store.test.ts > BoundedInMemoryStore > create 后可 get 1ms
+ ✓ src/store.test.ts > BoundedInMemoryStore > saveByKey 后按 key 可查 + 幂等 1ms
+ ✓ src/store.test.ts > BoundedInMemoryStore > 同 key 不同请求指纹 → 冲突,不写入第二个订单 0ms
+ ✓ src/store.test.ts > BoundedInMemoryStore > 500 次插入后两张表都不超过容量上限 1ms
+ ✓ src/store.test.ts > BoundedInMemoryStore > 并发 claim 同一个 key → 只有一个调用创建 2ms
+ × src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 容量上限是精确等式：150 笔进 cap=100，恰好剩 100 7ms
+   → expected 99 to be 100 // Object.is equality
+ × src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 驱逐按插入顺序 FIFO：最老的订单和它的幂等键一起消失 0ms
+   → expected undefined to be defined
+ × src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > get 不续命：读操作不改变驱逐顺序（不是 LRU） 0ms
+   → expected undefined to be defined
+ × src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 重复 save 同 key：权威结果保持原对象，且不改变其驱逐位次 10ms
+   → expected true to be false // Object.is equality
+ ✓ src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 指纹怪癖：首次无指纹时，后续不同指纹不算冲突 0ms
+ ✓ src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 构造参数校验：0、负数、非整数、NaN 都拒绝 1ms
+ × src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > create 路径计入容量；无键订单被驱逐时不触碰幂等表（当前真实行为） 0ms
+   → expected 1 to be 2 // Object.is equality
+ ✓ src/store-characterization.test.ts > characterization: UnboundedInMemoryStore 基线 > 只进不出：500 笔后 size 与 keySize 都是 500 5ms
+ ✓ src/store-characterization.test.ts > characterization: UnboundedInMemoryStore 基线 > 同 key 不同指纹的冲突判定与有界版一致 0ms
+ ✓ src/pr-review/concurrent.test.ts > 幂等 PR 并发评审 > RacyIdempotencyStore：100 个同 key 并发请求只允许创建 1 个订单 15ms
+ ✓ src/pr-review/concurrent.test.ts > 幂等 PR 并发评审 > BoundedInMemoryStore：同一测试通过（claim 是单个同步动作） 0ms
+ ✓ src/orders.test.ts > OrderSchema 契约 > 接受合法订单 2ms
+ ✓ src/orders.test.ts > OrderSchema 契约 > 拒绝非法 qty 1ms
+ ✓ src/orders.test.ts > OrderSchema 契约 > 拒绝未知 status 1ms
+ ✓ src/app.test.ts > 订单 API 集成 > GET 已存在订单 → 200 + 形状 9ms
+ ✓ src/app.test.ts > 订单 API 集成 > GET 不存在 → 404 + 契约错误形状 1ms
+ ✓ src/app.test.ts > 订单 API 集成 > POST 非法 body → 400 + details 数组 3ms
+ ✓ src/app.test.ts > 订单 API 集成 > POST 同幂等键两次 → 同一订单(第二次命中已建,不新建) 39ms
+ ✓ src/app.test.ts > 订单 API 集成 > POST 同幂等键并发 100 次 → 只创建一次,其余重放权威结果 45ms
+ ✓ src/app.test.ts > 订单 API 集成 > POST 同幂等键不同 body → 409,不静默复用订单 1ms
+ ✓ src/app.test.ts > 订单 API 集成 > POST 合法 → 201 + CREATED 状态 1ms
+ ✓ src/app.test.ts > 订单 API 集成 > 四条退出路径都留下按操作/结果分组的延迟样本 1ms
+stderr | src/app.test.ts > 订单 API 集成 > store 抛错 → 500,仍记录 error 延迟且不泄漏内部消息
+Error: database password should not be returned
+    at Object.get (/Users/lianghaoyu/codes/github-blog/experiments/service/src/app.test.ts:96:32)
+    at /Users/lianghaoyu/codes/github-blog/experiments/service/src/app.ts:55:31
+    at dispatch (file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/compose.js:22:23)
+    at file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/compose.js:22:46
+    at /Users/lianghaoyu/codes/github-blog/experiments/service/src/app.ts:31:13
+    at dispatch (file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/compose.js:22:23)
+    at file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/compose.js:5:12
+    at file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/hono-base.js:307:31
+    at Hono.#dispatch (file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/hono-base.js:317:7)
+    at Hono.fetch (file:///Users/lianghaoyu/codes/github-blog/experiments/service/node_modules/hono/dist/hono-base.js:331:26)
+
+ ✓ src/app.test.ts > 订单 API 集成 > store 抛错 → 500,仍记录 error 延迟且不泄漏内部消息 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 容量上限是精确等式：150 笔进 cap=100，恰好剩 100
+AssertionError: expected 99 to be 100 // Object.is equality
+
+- Expected
++ Received
+
+- 100
++ 99
+
+ ❯ src/store-characterization.test.ts:23:24
+     21|       await store.saveByKey(`k-${i}`, order(`A-${i}`), `fp-${i}`);
+     22|     }
+     23|     expect(store.size).toBe(100);
+       |                        ^
+     24|     expect(store.keySize).toBe(100);
+     25|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 驱逐按插入顺序 FIFO：最老的订单和它的幂等键一起消失
+AssertionError: expected undefined to be defined
+ ❯ src/store-characterization.test.ts:33:34
+     31|     await store.saveByKey("k-C", order("C")); // 触发驱逐 A
+     32|     expect(await store.get("A")).toBeUndefined();
+     33|     expect(await store.get("B")).toBeDefined();
+       |                                  ^
+     34|     // 双表联动：订单被驱逐后，幂等键也不许残留
+     35|     expect(await store.findByKey("k-A")).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > get 不续命：读操作不改变驱逐顺序（不是 LRU）
+AssertionError: expected undefined to be defined
+ ❯ src/store-characterization.test.ts:46:34
+     44|     await store.saveByKey("k-C", order("C"));
+     45|     expect(await store.get("A")).toBeUndefined(); // A 仍被驱逐
+     46|     expect(await store.get("B")).toBeDefined();
+       |                                  ^
+     47|   });
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > 重复 save 同 key：权威结果保持原对象，且不改变其驱逐位次
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/store-characterization.test.ts:55:28
+     53|     await store.saveByKey("k-B", order("B"));
+     54|     const replay = await store.saveByKey("k-A", order("A-dup"), "same-…
+     55|     expect(replay.created).toBe(false);
+       |                            ^
+     56|     expect(await store.findByKey("k-A")).toBe(first); // 同一引用，不是 dup
+     57|     expect(await store.get("A-dup")).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/store-characterization.test.ts > characterization: BoundedInMemoryStore 行为快照 > create 路径计入容量；无键订单被驱逐时不触碰幂等表（当前真实行为）
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/store-characterization.test.ts:83:24
+     81|     await store.create(order("C")); // 驱逐最老的 A
+     82|     expect(await store.get("A")).toBeUndefined();
+     83|     expect(store.size).toBe(2); // B、C 留存
+       |                        ^
+     84|     expect(store.keySize).toBe(1); // 只有 B 有键：无键订单不参与双表联动
+     85|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  5 failed | 23 passed | 1 expected fail (29)
+   Start at  02:46:32
+   Duration  604ms (transform 260ms, setup 0ms, import 498ms, tests 158ms, environment 0ms)
+

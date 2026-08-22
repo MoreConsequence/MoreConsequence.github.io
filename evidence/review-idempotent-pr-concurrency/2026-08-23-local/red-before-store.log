@@ -1,0 +1,33 @@
+
+ RUN  v4.1.10 /Users/lianghaoyu/codes/github-blog/experiments/service
+
+ ❯ src/pr-review/concurrent.test.ts (2 tests | 1 failed) 8ms
+     × RacyIdempotencyStore：100 个同 key 并发请求只允许创建 1 个订单 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pr-review/concurrent.test.ts > 幂等 PR 并发评审 > RacyIdempotencyStore：100 个同 key 并发请求只允许创建 1 个订单
+AssertionError: expected 100 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 100
+
+ ❯ src/pr-review/concurrent.test.ts:37:34
+     35|     async () => {
+     36|       const stats = await concurrentSameKey(new RacyIdempotencyStore()…
+     37|       expect(stats.createdCount).toBe(1);
+       |                                  ^
+     38|       expect(stats.distinctOrders).toBe(1);
+     39|       expect(stats.storedSize).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  03:03:21
+   Duration  156ms (transform 24ms, setup 0ms, import 35ms, tests 8ms, environment 0ms)
+

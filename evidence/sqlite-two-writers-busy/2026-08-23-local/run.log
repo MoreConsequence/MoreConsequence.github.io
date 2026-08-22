@@ -1,0 +1,8 @@
+Node v24.19.0 · node:sqlite · db=/var/folders/v5/t3391gtn18g24kz3239j_m4r0000gn/T/sqlite-busy-ZPRCju/t.db
+| 场景 | 结果 | 实测耗时(ms) |
+| --- | --- | --- |
+| S1 journal: B 抢写(A持锁, busy_timeout=0) [mode=delete] | ERR_SQLITE_ERROR database is locked | 0.38 |
+| S1 journal: C 读(A持写锁) | 读成功 | 0.09 |
+| S2 WAL: B 抢写(A持锁) | ERR_SQLITE_ERROR database is locked | 0.07 |
+| S2 WAL: C 读(A持写锁) | 读成功(2 行快照) | 0.06 |
+| S3 WAL: B busy_timeout=200 且 A 不释放 | ERR_SQLITE_ERROR database is locked | 224.39 |

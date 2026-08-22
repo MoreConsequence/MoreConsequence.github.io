@@ -23,6 +23,16 @@ type IdempotencyEntry = {
   requestFingerprint?: string;
 };
 
+// 冲突判定是两个实现共享的语义合同：仅当双方指纹都存在且不同才算冲突。
+// 缺一边就不比——这是当前对外行为，改动它属于合同变更而非重构。
+const conflictWith = (
+  existingFingerprint: string | undefined,
+  incomingFingerprint: string | undefined,
+): boolean =>
+  incomingFingerprint !== undefined &&
+  existingFingerprint !== undefined &&
+  existingFingerprint !== incomingFingerprint;
+
 // 事故修复终版(06 篇):orders 与 byKey 双表同驱逐——修一半是事故的延续
 export class BoundedInMemoryStore implements OrderStore {
   private orders = new Map<string, Order>();
@@ -75,18 +85,20 @@ export class BoundedInMemoryStore implements OrderStore {
       return {
         order: existing.order,
         created: false,
-        conflict: requestFingerprint !== undefined
-          && existing.requestFingerprint !== undefined
-          && existing.requestFingerprint !== requestFingerprint,
+        conflict: conflictWith(existing.requestFingerprint, requestFingerprint),
       };
     }
+    this.writeNew(idempotencyKey, order, requestFingerprint);
+    return { order, created: true, conflict: false };
+  }
 
-    this.byKey.set(idempotencyKey, { order, requestFingerprint });
+  // 三张表 + 驱逐位次的唯一写入口：新增写入路径时从这里走，避免双表漂移。
+  private writeNew(idempotencyKey: string, order: Order, fingerprint?: string) {
+    this.byKey.set(idempotencyKey, { order, requestFingerprint: fingerprint });
     this.keyByOrderId.set(order.orderId, idempotencyKey);
     this.orders.set(order.orderId, order);
     this.accessOrder.push(order.orderId);
     this.evict();
-    return { order, created: true, conflict: false };
   }
 
   async ready() { return true; }
@@ -117,9 +129,7 @@ export class UnboundedInMemoryStore implements OrderStore {
       return {
         order: existing.order,
         created: false,
-        conflict: requestFingerprint !== undefined
-          && existing.requestFingerprint !== undefined
-          && existing.requestFingerprint !== requestFingerprint,
+        conflict: conflictWith(existing.requestFingerprint, requestFingerprint),
       };
     }
     this.byKey.set(idempotencyKey, { order, requestFingerprint });
