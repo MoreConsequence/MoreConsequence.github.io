@@ -46,6 +46,17 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "abort-signal-tool-side-effects",
+      "agent-session-budget",
+      "characterization-test-refactor-safety-net",
+      "eval-set-leakage",
+      "lamport-vector-clocks",
+      "latency-attribution",
+      "rebuild-incident-evidence-chain",
+      "review-idempotent-pr-concurrency",
+      "sqlite-two-writers-busy",
+      "two-phase-commit-vs-saga-outbox",
+      "app-speed-test-architecture-cost",
       "select-poll-epoll-deep-dive",
       "benchmark-one-variable",
       "esm-cjs-dual-package",

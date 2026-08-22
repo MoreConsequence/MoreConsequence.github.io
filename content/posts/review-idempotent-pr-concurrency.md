@@ -3,7 +3,7 @@ title: "评审幂等 PR：先让 100 个相同请求同时到达"
 description: "一个顺序用例全绿的幂等实现，在并发反例下 100 个请求创建了 100 个订单；评审要做的第一件事是把'同时到达'写成断言。"
 publishedAt: "2026-08-23"
 tags: ["工程实践", "并发", "代码评审", "Node.js"]
-draft: true
+draft: false
 featured: false
 series: "把原理变成服务"
 ---
@@ -89,15 +89,21 @@ sequenceDiagram
 | 应用层锁 | 进程内 mutex 包住查写 | 只护住单实例；多实例部署即失效 |
 | 存储层 | claim 是存储的一个原子动作 | 当前原型的选择 |
 
-合并后的实现把检查和写入收缩成**一个不含 `await` 的方法**（`experiments/service/src/store.ts:70`）：
+合并后的实现把检查和写入收缩成**一个不含 `await` 的方法**（`experiments/service/src/store.ts:80`）：
 
 ```ts
 async saveByKey(...) {
   // 这个方法没有 await：在单个 JS 事件循环中，检查和写入不会被另一个
   // handler 插入。它只证明单进程原型内的原子性，不能替代数据库唯一约束。
   const existing = this.byKey.get(idempotencyKey);
-  if (existing) { return { order: existing.order, created: false, conflict }; }
-  this.byKey.set(...); this.orders.set(...);
+  if (existing) {
+    return {
+      order: existing.order,
+      created: false,
+      conflict: conflictWith(existing.requestFingerprint, requestFingerprint),
+    };
+  }
+  this.writeNew(idempotencyKey, order, requestFingerprint);
   return { order, created: true, conflict: false };
 }
 ```
@@ -116,13 +122,7 @@ async saveByKey(...) {
 
 ## 六、结论：反例是评审里的议价筹码
 
-顺序用例证明"作者想的那条路走得通"，并发反例证明"别人会走的路也走得通"。评审幂等 PR 时，diff 通读三遍不如先跑一把 100 并发同 key：红灯一出来，讨论就从"风格偏好"变成"事实裁决"。可执行的流程只有三步：
-
-1. 合并前先写并发反例测试（同 key、同 payload、`Promise.all` 打满）；
-2. 让它对被评审实现红，记录原始输出；
-3. 要求修复让同一测试绿，并把反例用 `it.fails` 留在套件里站岗。
-
-下一步可执行的事：把你仓库里最近一个幂等相关的 PR 翻出来，问一句"两个相同请求同时到达会怎样"——答不上来就先补测试再谈合并。
+顺序用例证明"作者想的那条路走得通"，并发反例证明"别人会走的路也走得通"。评审幂等 PR 时，diff 通读三遍不如先跑一把 100 并发同 key：红灯一出来，讨论就从"风格偏好"变成"事实裁决"。整个流程收敛成三句话：反例先行、红灯留档、修复后用 `it.fails` 让它永久站岗。下次合入幂等改动前，先把"两个相同请求同时到达会怎样"变成一条能跑的断言——答不出来的 PR，还没有到讨论合并的阶段。
 
 ## 参考资料
 
