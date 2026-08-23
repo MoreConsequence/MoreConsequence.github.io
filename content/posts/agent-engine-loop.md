@@ -1,14 +1,15 @@
 ---
-title: "Agent 不会自己停：796 行循环里的三个终止闸门"
-description: "读 Pi 的 agent-loop.ts（796 行）回答 Agent 的核心工程问题：循环如何收敛、模型喋喋不休时谁叫停、输出截断和工具失败怎么处理、为什么「全部工具都要求停」才停。"
+title: "Agent 不会自己停：805 行循环里的三个终止闸门"
+description: "读 Pi 的 agent-loop.ts（805 行）回答 Agent 的核心工程问题：循环如何收敛、模型喋喋不休时谁叫停、输出截断和工具失败怎么处理、为什么「全部工具都要求停」才停。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "架构", "开源"]
 draft: false
 featured: false
 series: "Agent 的方方面面"
 ---
 
-**TL;DR：** 把 Agent 想成"会思考的对话"会漏掉最关键的工程面：它其实是一个循环，且**这个循环没有天然的终点**——模型每轮都能要求再调用一次工具，谁是闸门？Pi 的答案在 [`packages/agent/src/agent-loop.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/agent-loop.ts)（796 行）里：外层 turn 循环 + 内层工具执行循环，三个终止闸门把它收敛——**错误/中止立即终止**、**输出被截断则整批工具调用作废重发**、**只有一批工具结果全部声明 `terminate: true` 才提前停**。本文把三个闸门和一个关键细节（并行工具批如何保持结果顺序）逐行讲透。
+**TL;DR：** 把 Agent 想成"会思考的对话"会漏掉最关键的工程面：它其实是一个循环，且**这个循环没有天然的终点**——模型每轮都能要求再调用一次工具，谁是闸门？Pi 的答案在 [`packages/agent/src/agent-loop.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/agent-loop.ts)（805 行，@b23741269 复测；08-20 首测为 796 行）里：外层 turn 循环 + 内层工具执行循环，三个终止闸门把它收敛——**错误/中止立即终止**、**输出被截断则整批工具调用作废重发**、**只有一批工具结果全部声明 `terminate: true` 才提前停**。本文把三个闸门和一个关键细节（并行工具批如何保持结果顺序）逐行讲透。
 
 ## 一、为什么 Agent 的核心是循环，不是对话
 
@@ -16,7 +17,7 @@ Claude Code、Codex、Pi 这类工具的共同结构是一条消息流水线之�
 
 这一层循环就是 harness 与"聊天机器人"的分界线。聊天机器人只有一个 turn；Agent 的 turn 数由模型自己决定，**模型在收尾前没有任何机制保证它一定会停**。所以每个 Agent harness 的第一工程问题不是"提示词怎么写"，而是：**这个循环靠什么条件收敛？**
 
-Pi 把答案收进一个文件：`agent-loop.ts` 共 796 行（commit 5cd93f6 实测），注释第一行就标明了设计定位——"循环内部统一用 AgentMessage，只在 LLM 调用边界转换为 Message"。
+Pi 把答案收进一个文件：`agent-loop.ts` 共 805 行（2026-08-23 复测 @b23741269；首篇基线 796 行 @5cd93f6），注释第一行就标明了设计定位——"循环内部统一用 AgentMessage，只在 LLM 调用边界转换为 Message"。
 
 ## 二、双层循环：外层管 turn，内层管工具
 
@@ -49,11 +50,11 @@ while (true) {                                    // 外层：一轮 Agent 运�
 
 **闸门一：error / aborted——立即终止，不补救。** 行 196-200：只要模型回复的 `stopReason` 是错误或被 AbortSignal 中止，立刻发 `turn_end` + `agent_end` 并 `return`。没有重试、没有降级——循环是"检查点之后可重跑"的设计，状态全部在 context 里，所以失败时优雅退场比重试更省事（这正是本系列 04 篇会话持久化的前提）。
 
-**闸门二：length 截断——整批工具调用作废，重发。** 行 207-214 是最容易被忽略也最值得抄回自己项目的一处：如果 `stopReason === "length"`（输出撞上 token 上限被截断），模型这条消息里的**所有**工具调用不会被执行，而是全部返回一个错误结果："响应撞到输出上限，参数可能不完整，请重新发出完整的工具调用"（`failToolCallsFromTruncatedMessage`，行 381-406）。
+**闸门二：length 截断——整批工具调用作废，重发。** 行 212-214 是最容易被忽略也最值得抄回自己项目的一处：如果 `stopReason === "length"`（输出撞上 token 上限被截断），模型这条消息里的**所有**工具调用不会被执行，而是全部返回一个错误结果："响应撞到输出上限，参数可能不完整，请重新发出完整的工具调用"（`failToolCallsFromTruncatedMessage`，行 390 起）。
 
-为什么这么狠？源码注释（行 374-380）给出了原因：流式工具调用的参数在结束时经过 JSON 修复解析，**截断的消息可能产生"能解析、能通过 schema 校验、但内容静默不全"的参数**。执行这种调用比拒绝它还危险——`edit` 的位置参数截断一半，可能改错文件而不是报错。宁可让模型重来，也不执行可疑参数。这是"fail-safe"优于"fail-fast"的实例：对不完整输入，最快的失败（整批作废）比最准的猜测更安全。
+为什么这么狠？failToolCallsFromTruncatedMessage 上方的源码注释给出了原因：流式工具调用的参数在结束时经过 JSON 修复解析，**截断的消息可能产生"能解析、能通过 schema 校验、但内容静默不全"的参数**。执行这种调用比拒绝它还危险——`edit` 的位置参数截断一半，可能改错文件而不是报错。宁可让模型重来，也不执行可疑参数。这是"fail-safe"优于"fail-fast"的实例：对不完整输入，最快的失败（整批作废）比最准的猜测更安全。
 
-**闸门三：terminate——只有「全部」都要停才停。** 这是收敛规则里反直觉的一条（行 216 + 行 582-584）：
+**闸门三：terminate——只有「全部」都要停才停。** 这是收敛规则里反直觉的一条（shouldTerminateToolBatch，行 591 起）：
 
 ```ts
 function shouldTerminateToolBatch(finalizedCalls: FinalizedToolCallOutcome[]): boolean {
@@ -67,9 +68,9 @@ function shouldTerminateToolBatch(finalizedCalls: FinalizedToolCallOutcome[]): b
 
 ## 四、工具批处理：默认并行，顺序保真
 
-一个消息里可以带多个工具调用。执行策略（`executeToolCalls`，行 411-426）：默认并行，唯一例外是全局 `toolExecution: "sequential"` 或某个工具声明了 `executionMode: "sequential"`（比如 `git` 系列命令之间有依赖）。
+一个消息里可以带多个工具调用。执行策略（`executeToolCalls`，行 420 起）：默认并行，唯一例外是全局 `toolExecution: "sequential"` 或某个工具声明了 `executionMode: "sequential"`（比如 `git` 系列命令之间有依赖）。
 
-并行执行的代码路径（行 489-554）有个容易做错的细节：**结果回填必须保持调用顺序**。实现方式是先把所有调用"准备"（`prepareToolCall`，行 600-668：查工具定义 → schema 校验参数 → 跑 `beforeToolCall` 钩子），把真正要执行的项包装成 thunk，`Promise.all` 并发跑完，再按原数组顺序逐个把结果写入上下文。模型侧看到的工具结果永远和它发出的调用顺序一致，即使某个工具实际先返回。顺序一致性是上下文可复现的基础——模型依赖"第 N 个结果对应第 N 个调用"来推理下一步。
+并行执行的代码路径（`executeToolCallsParallel`，行 498 起）有个容易做错的细节：**结果回填必须保持调用顺序**。实现方式是先把所有调用"准备"（`prepareToolCall`：查工具定义 → schema 校验参数 → 跑 `beforeToolCall` 钩子），把真正要执行的项包装成 thunk，`Promise.all` 并发跑完，再按原数组顺序逐个把结果写入上下文。模型侧看到的工具结果永远和它发出的调用顺序一致，即使某个工具实际先返回。顺序一致性是上下文可复现的基础——模型依赖"第 N 个结果对应第 N 个调用"来推理下一步。
 
 每个工具执行还带两个钩子：`beforeToolCall` 可以 `block`（携带 reason，甚至 `terminate`），是权限门禁/路径保护的挂点（0.84 系列扩展示例里的 permission-gate、protected-paths 就是用它实现的）；`afterToolCall` 可以改写结果内容、用量和 terminate 标记（行 724-751）。**权限策略不是散落在工具代码里，而是统一钩在循环上**——这是"刻意不做权限弹窗"却能由扩展补上的关键（08 篇展开）。
 
@@ -81,12 +82,12 @@ function shouldTerminateToolBatch(finalizedCalls: FinalizedToolCallOutcome[]): b
 
 ## 六、结论：收敛是设计出来的，不是模型自带的
 
-回到开头的命题。这个 796 行的文件回答了"Agent 怎么停下来"的完整答案，而答案不是"模型说停就停"：错误要立刻停，截断要作废重来，成功要全体确认；工具并行跑但结果必须按序；循环的每一步都有钩子可以让外部策略介入。**stopReason 是模型的，闸门是 harness 的。**
+回到开头的命题。这个 805 行的文件回答了"Agent 怎么停下来"的完整答案，而答案不是"模型说停就停"：错误要立刻停，截断要作废重来，成功要全体确认；工具并行跑但结果必须按序；循环的每一步都有钩子可以让外部策略介入。**stopReason 是模型的，闸门是 harness 的。**
 
 下一步你可以打开自己的 clone，在 `packages/agent/src/agent-loop.ts` 里做三件事：把 `executeToolCallsParallel` 中"按序回填"的那段（行 540-548）改成真正的乱序回填，跑一遍测试看会不会爆；给 `beforeToolCall` 加一个永远 `block` 的钩子，观察 `terminate` 如何让循环立刻收工；数一遍 `emit` 的调用点，验证 11 种事件没有遗漏。全部亲手验证后，你就能回答面试里那道"Agent 死循环了怎么办"——因为你知道闸门在哪里。
 
 ## 参考资料
 
-- `packages/agent/src/agent-loop.ts`（796 行）与 `packages/agent/src/types.ts`，earendil-works/pi @ commit 5cd93f6（2026-08-20 浅克隆）
+- `packages/agent/src/agent-loop.ts`（805 行 @ b23741269，2026-08-23 复测；796 行 @ 5cd93f6 基线）；全系列实测数字存档于本仓库 `evidence/agent-engine-series/2026-08-23-local/`
 - `AgentTool.execute` 的抛错约定与 `AgentToolResult.terminate` 语义：`types.ts` 行 66-68 注释
 - Pi 扩展示例中的权限门禁挂点：`packages/coding-agent/examples/extensions/permission-gate.ts`（07 篇展开）

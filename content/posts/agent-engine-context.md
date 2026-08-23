@@ -1,14 +1,15 @@
 ---
 title: "上下文是吃预算的大户：Pi 如何把装配权交给文件和钩子"
-description: "拆 Pi 的上下文工程：system prompt 模板只有 1288 字符、AGENTS.md 从全局到父目录逐层继承、compaction 的 16384/20000 token 闸门、skills 的渐进披露——为什么「谁进上下文」必须由确定性规则决定。"
+description: "拆 Pi 的上下文工程：system prompt 模板的克制与漂移（08-20 首测主体约 322 tokens，08-23 复测已涨到约 1.2k）、AGENTS.md 从全局到父目录逐层继承、compaction 的 16384/20000 token 闸门、skills 的渐进披露——为什么「谁进上下文」必须由确定性规则决定。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "上下文工程", "开源"]
 draft: false
 featured: false
 series: "Agent 的方方面面"
 ---
 
-**TL;DR：** Databricks 基准里 Pi 每轮少喂约 3 倍上下文的秘密不在"压缩技术"，而在装配纪律：默认 system prompt 模板只有 1288 个字符（约 322 tokens），AGENTS.md 按「全局 → 逐级父目录 → 当前目录」的确定性顺序装载，会话超限时按 `16384 reserve / 20000 keep` 两个数字闸门自动压缩，skills 只在被需要时按名加载（渐进披露）。本文把这四个机制在源码里的落点逐一定位——上下文工程的本质是"谁有资格进上下文"这件事不能由模型和直觉决定，只能由文件与规则决定。
+**TL;DR：** Databricks 基准里 Pi 每轮少喂约 3 倍上下文的秘密不在"压缩技术"，而在装配纪律：首篇基线（@5cd93f6）测得模板主体 1288 个字符、约 322 tokens；但 2026-08-23 在新 commit（@b23741269）复测，整文件已是 5877 字符 / 1415 tokens，去注释主体 4823 字符 / **1197 tokens**——「小于 1000 token」的承诺已被上游演进打破，AGENTS.md 按「全局 → 逐级父目录 → 当前目录」的确定性顺序装载，会话超限时按 `16384 reserve / 20000 keep` 两个数字闸门自动压缩，skills 只在被需要时按名加载（渐进披露）。本文把这四个机制在源码里的落点逐一定位——上下文工程的本质是"谁有资格进上下文"这件事不能由模型和直觉决定，只能由文件与规则决定。
 
 ## 一、每轮少 3 倍上下文，靠的不是魔法
 
@@ -16,9 +17,16 @@ series: "Agent 的方方面面"
 
 Pi 的装配规则全部写死在少量确定性的源码和文档里，本系列把它拆成四块：系统提示词模板（本节）、项目上下文文件（第三节）、会话压缩（第四节）、skills 渐进披露（第五节）。
 
-## 二、系统提示词：1288 字符的模板，两个纪律
+## 二、系统提示词：从 322 到 1197 tokens，纪律还在吗
 
-`packages/coding-agent/src/core/system-prompt.ts`（162 行）是默认系统提示词的唯一来源。实测：默认模板主体（不含项目上下文与 skills 段）1288 个字符，按 4 字符/token 粗估约 322 tokens——整个提示词模板连同工具清单、准则行加起来仍显著小于 1000 token。
+`packages/coding-agent/src/core/system-prompt.ts`（162 行）是默认系统提示词的唯一来源。两次实测对比（口径：tiktoken cl100k_base）：
+
+| 时点 | commit | 整文件 | 去注释主体 |
+| --- | --- | --- | --- |
+| 2026-08-20 | 5cd93f6 | 1288 字符 ≈ 322 tokens（粗估） | — |
+| 2026-08-23 | b23741269 | 5877 字符 / 1415 tokens | 4823 字符 / **1197 tokens** |
+
+结论要诚实地改写：模板在三天内涨了约四倍 token，已经越过千线。「装配纪律」是否还成立，要看涨的部分是什么——这正是把承诺数字写进文章的理由：没有基线，你根本无法察觉上游悄悄打破了它。
 
 模板本身不长，但它的装配逻辑包含两条值得抄的纪律：
 
@@ -33,19 +41,19 @@ let prompt = `You are an expert coding assistant operating inside pi, a coding a
 
 模型知道"有什么工具、大概能干嘛"，需要精确用法时再通过 docs 路径去读（模板里让模型必要时翻 `docs/*.md` 而不是把文档灌进上下文）。
 
-**纪律二：project context 有显式的 XML 标签包裹。** 项目指令（AGENTS.md 内容）以 `<project_instructions path="...">` 包裹插入（system-prompt.ts 行 88-98），skills 段单独成节。位置、边界、来源路径全部显式——模型能区分"这行是我该听的全局指令"和"这是某个文件里的局部指令"。可追溯性是上下文工程的地基。
+**纪律二：project context 有显式的 XML 标签包裹。** 项目指令（AGENTS.md 内容）以 `<project_instructions path="...">` 包裹插入（project_instructions 的包裹逻辑现见于 system-prompt.ts 两处模板分支），skills 段单独成节。位置、边界、来源路径全部显式——模型能区分"这行是我该听的全局指令"和"这是某个文件里的局部指令"。可追溯性是上下文工程的地基。
 
 （02 篇提到 streamAssistantResponse 在每次调模型时应用 `transformContext` 钩子——扩展可以在此时改写整个消息历史，这就是"动态上下文"的扩展点，07 篇展开。）
 
 ## 三、AGENTS.md：一个文件，三段继承，一个替代规则
 
-项目指令的装载有专属实现 `packages/coding-agent/src/core/resource-loader.ts`。`loadProjectContextFiles`（行 126-149）的顺序是：
+项目指令的装载有专属实现 `packages/coding-agent/src/core/resource-loader.ts`。`loadProjectContextFiles`（行 118 起）的顺序是：
 
 1. **全局层**：`~/.pi/agent/` 下的上下文文件（agentDir）；
 2. **祖先层**：从当前目录向根目录逐级向上（`while (true) { ...; parentDir = dirname(currentDir); }`），每级取第一个命中的文件；
 3. **当前目录层**：cwd 自己的文件最后叠加上来。
 
-每级目录内的候选文件名有先后次序（行 19）：
+每级目录内的候选文件名有先后次序（candidates 数组）：
 
 ```ts
 const candidates = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md", "CLAUDE.MD"];
@@ -53,11 +61,11 @@ const candidates = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md",
 
 即 `AGENTS.override.md` 可以顶替同目录的 `AGENTS.md`（0.84.0 新增的 per-directory override，官方发布说明原文："replace AGENTS.md or CLAUDE.md in the same directory while preserving context from other directories"），且 Pi 顺带兼容 CLAUDE.md——跨 harness 迁移时项目不用改名。
 
-这段代码还处理了一个少见的坑：`findShadowedContextFile`（行 90-104）专门识别 git worktree 场景——主仓库与 linked worktree 的上下文文件指向同一个逻辑仓库，两个都加载会重复注入，所以被遮蔽的那个会被跳过。**上下文装配的边界问题已经细到"同仓库跨 worktree 不重复"**，这提醒我们：指令文件的继承链是状态，必须显式建模。
+这段代码还处理了一个少见的坑：`findShadowedContextFile` 专门识别 git worktree 场景——主仓库与 linked worktree 的上下文文件指向同一个逻辑仓库，两个都加载会重复注入，所以被遮蔽的那个会被跳过。**上下文装配的边界问题已经细到"同仓库跨 worktree 不重复"**，这提醒我们：指令文件的继承链是状态，必须显式建模。
 
 ## 四、compaction：两个数字闸门加一道 LLM 摘要
 
-会话总有超窗的一天。`packages/coding-agent/docs/compaction.md`（416 行）把自动压缩定义成三个步骤，全部是确定性计算 + 一次模型调用：
+会话总有超窗的一天。`packages/coding-agent/docs/compaction.md`（418 行，08-23 复测）把自动压缩定义成三个步骤，全部是确定性计算 + 一次模型调用：
 
 **触发**：`contextTokens > contextWindow - reserveTokens`，默认 `reserveTokens = 16384`（给模型回复留的余量，可在 settings.json 改）。contextWindow 由模型元数据决定——不同模型同一会话的压缩时机不同。
 
@@ -83,7 +91,7 @@ const candidates = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md",
 
 ## 参考资料
 
-- `packages/coding-agent/src/core/system-prompt.ts`（162 行，默认模板 1288 字符 ≈ 322 tokens，实测 @ commit 5cd93f6）
+- `packages/coding-agent/src/core/system-prompt.ts`（162 行；token 实测见上文对照表，evidence 存档 `evidence/agent-engine-series/2026-08-23-local/`）
 - `packages/coding-agent/src/core/resource-loader.ts`（AGENTS.md 继承链与 worktree 去重）
 - `packages/coding-agent/docs/compaction.md`（16384/20000 数字）与 `docs/skills.md`
 - pi.dev 官网 Context engineering 一节与 0.84.0 发布说明（AGENTS.override.md）

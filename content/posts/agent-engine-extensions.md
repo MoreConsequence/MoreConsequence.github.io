@@ -2,6 +2,7 @@
 title: "34 行写出权限弹窗：Pi 的「不内置功能」宣言背后的扩展 API"
 description: "拆 Pi 的扩展面：79 个示例覆盖 subagents/plan-mode/permission-gate/sandbox/ssh，核心只留 4 个工具，其余全是 TypeScript 扩展模块 + 全生命周期事件钩子——为什么「功能可以后装」比「功能内置」更便宜，以及自修改（/reload）的闭环。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "扩展", "开源"]
 draft: false
 featured: false
@@ -55,7 +56,7 @@ pi.on("tool_call", async (event, ctx) => {
 });
 ```
 
-拆开看它的工程含金量：`tool_call` 事件钩在 02 篇的 `beforeToolCall`（agent-loop.ts 行 619-647）上——拦截点在工具 schema 校验之后、执行之前；危险模式用正则而非黑名单字符串（`rm -rf`、`sudo`、`chmod/chown 777` 三个家族的宽松匹配）；**无 UI 环境下默认 block 而不是默认放行**（`ctx.hasUI` 分支——脚本/CI 场景最危险，所以默认拒绝）；返回 `{ block: true, reason }` 让模型看到被拒原因从而改走安全路径。整个功能不碰核心一行代码。
+拆开看它的工程含金量：`tool_call` 事件钩在 02 篇的 `beforeToolCall`（agent-loop.ts 行 628 起，08-23 复测）上——拦截点在工具 schema 校验之后、执行之前；危险模式用正则而非黑名单字符串（`rm -rf`、`sudo`、`chmod/chown 777` 三个家族的宽松匹配）；**无 UI 环境下默认 block 而不是默认放行**（`ctx.hasUI` 分支——脚本/CI 场景最危险，所以默认拒绝）；返回 `{ block: true, reason }` 让模型看到被拒原因从而改走安全路径。整个功能不碰核心一行代码。
 
 同批示例还有 `protected-paths.ts`（文件路径保护）、`sandbox/`（沙箱执行）、`plan-mode/`（计划模式）、`subagent/`（子 Agent）、`ssh.ts`（SSH 执行）、`custom-compaction.ts`（换压缩算法）、`todo.ts`（to-do 列表）、`confirm-destructive.ts`（破坏性操作确认）——**01 篇清单的每一项都能在 examples 里找到对应物**。
 
@@ -67,7 +68,7 @@ pi.on("tool_call", async (event, ctx) => {
 
 ## 四、结论：功能的默认状态是「可后装」，不是「没有」
 
-回到「刻意不做」：Pi 不是功能穷，而是**功能仓库**。权限弹窗 34 行、plan mode 是目录示例、子 Agent 是 tmux 或扩展——每个被砍的功能都有官方示例和文档锚点。这种"extensibility as default"的代价是：你需要会写 TypeScript 才能拿到这些能力，学习曲线从"开开关"变成"读 79 个例子"。收益是：核心 4 工具 + 1288 字符提示词 + 12.6k 行 agent-core 保持可读（01 篇的规模承诺），且任何团队都可以把策略层（权限、路径保护、命令审批）做成自己的扩展，而不是被厂商锁进内置功能。
+回到「刻意不做」：Pi 不是功能穷，而是**功能仓库**。权限弹窗 34 行、plan mode 是目录示例、子 Agent 是 tmux 或扩展——每个被砍的功能都有官方示例和文档锚点。这种"extensibility as default"的代价是：你需要会写 TypeScript 才能拿到这些能力，学习曲线从"开开关"变成"读 79 个例子"。收益是：核心 4 工具保持极简，但规模承诺需要盯住：2026-08-23 复测 agent-core 已从 12.6k 涨到 15.3k 行，提示词主体从约 322 tokens 涨到约 1.2k（03 篇对照表）——「可读」仍是事实，「不再长大」不是，且任何团队都可以把策略层（权限、路径保护、命令审批）做成自己的扩展，而不是被厂商锁进内置功能。
 
 验证三步：在 clone 的 `examples/extensions/` 里把 `permission-gate.ts` 复制成自己的扩展，用 `pi --extension` 加载，对一个 `rm -rf` 命令验证 block 与 reason；读 `dynamic-tools.ts` 的 `registerTool`，跑 `/add-echo-tool` 看运行中注册；打开 `docs/extensions.md` 的事件表，对照 `agent-loop.ts` 的 emit 调用点，数一数哪些事件是"扩展 API 独有"、哪些是"loop 原生事件"的直接透传。
 
@@ -76,4 +77,4 @@ pi.on("tool_call", async (event, ctx) => {
 - `packages/coding-agent/docs/extensions.md`（3001 行）：五组事件、能力面、Quick Start
 - `packages/coding-agent/examples/extensions/`（79 个示例）：permission-gate.ts（34 行）、protected-paths.ts、plan-mode/、subagent/、sandbox/、ssh.ts、custom-compaction.ts、dynamic-tools.ts
 - `packages/agent/src/agent-loop.ts`：`beforeToolCall`/`afterToolCall` 钩子（行 619-647、724-751）——tool_call 事件的挂点
-- earendil-works/pi @ commit 5cd93f6（2026-08-20 浅克隆实测）
+- earendil-works/pi @ b23741269（2026-08-23 复测；extensions.md 3001 行、permission-gate.ts 34 行均复测一致；顶层示例 .ts 69 个，含子目录示例官方口径 79）

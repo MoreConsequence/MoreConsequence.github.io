@@ -2,6 +2,7 @@
 title: "94k stars 的 Agent 只有 4 个工具：Pi 的五层架构与「刻意不做」"
 description: "以 Pi（earendil-works/pi）为例拆解 Agent harness：五层职责分界（telemetry/ai/agent-core/coding-agent/tui）、为什么 4 个工具 + 千 token 提示词能赢过全能 harness，以及六项刻意不做的取舍。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "工程", "开源"]
 draft: false
 featured: false
@@ -16,7 +17,7 @@ series: "Agent 的方方面面"
 
 同一模型、同一思考档位，跑在 Claude Code 和 Pi 两个 harness 上，成本差异超过 2 倍，通过率持平——差异来自"每个 turn 喂给模型多少上下文"：Pi 平均每轮约少 3 倍。GLM 5.2 跑在 Pi 上（$1.25/任务）和 Opus 4.8 high 跑在 Claude Code 上（$2/任务）通过率都是约 87.5%；全场最高通过率 90% 则是 Opus 4.8 xhigh 跑在 Pi 上拿到的。
 
-这不是广告。Databricks 的目的恰恰是论证"harness 与模型可以解耦"（他们为此做了 Omnigent 元 harness），Pi 只是被测试的对象之一。但对我们要理解的问题，这个实验是完美的入口：**一个只卖 4 个工具、系统提示词不足 1000 token 的极简 harness，在同一模型上赢了功能最全的竞品。** 为什么？答案要从它的分层开始。
+这不是广告。Databricks 的目的恰恰是论证"harness 与模型可以解耦"（他们为此做了 Omnigent 元 harness），Pi 只是被测试的对象之一。但对我们要理解的问题，这个实验是完美的入口：**一个只卖 4 个工具、提示词以千级 token 计的极简 harness，在同一模型上赢了功能最全的竞品。** 为什么？答案要从它的分层开始。
 
 ## 二、五层地图：每层回答一个问题
 
@@ -47,17 +48,17 @@ flowchart TB
 
 *图注：四条竖线是"谁调用谁"；虚线是横切依赖。注意整张图里没有"模型"这个实体——模型是 pi-ai 之上可替换的供货源，这正是 harness 与框架的分水岭。*
 
-五层各自回答一个问题：
+五层各自回答一个问题（LOC 为 2026-08-23 复测，@commit b23741269；括号内为 08-20 首测 @5cd93f6）：
 
-| 层 | 包 | 回答的问题 | 规模（实测 LOC，@5cd93f6） |
+| 层 | 包 | 回答的问题 | 规模（实测 TS LOC，不含测试） |
 | --- | --- | --- | --- |
-| 界面 | `pi-tui` | 终端怎么把状态画出来 | 16,772 |
-| 入口 | `pi-coding-agent` | 用户/脚本/进程怎么进到这个系统 | 59,900 |
-| 核心 | `pi-agent-core` | Agent 怎么循环、怎么调工具、状态放哪 | 12,635 |
-| 模型 | `pi-ai` | 15+ 供应商的 API 差异怎么抹平 | 23,555 |
-| 横切 | `pi-telemetry` | 遥测怎么跨供应商中立 | 935 |
+| 界面 | `pi-tui` | 终端怎么把状态画出来 | 19,841（16,772） |
+| 入口 | `pi-coding-agent` | 用户/脚本/进程怎么进到这个系统 | 87,470（59,900） |
+| 核心 | `pi-agent-core` | Agent 怎么循环、怎么调工具、状态放哪 | 15,280（12,635） |
+| 模型 | `pi-ai` | 15+ 供应商的 API 差异怎么抹平 | 30,870（23,555） |
+| 横切 | `pi-telemetry` | 遥测怎么跨供应商中立 | 935（935） |
 
-（README 声称"agent-core 3-4k、pi-ai 5-7k LOC"，实测分别是 12.6k 与 23.6k——README 的口径大约只说了核心循环文件，此处以实测为据。）
+（README 声称"agent-core 3-4k、pi-ai 5-7k LOC"，实测分别是 15.3k 与 30.9k——README 的口径大约只说了核心循环文件，此处以实测为据。另外 monorepo 在两次测量之间长出了 client / evals / protocol / server / session-backends / storage 六个目录（合计约 2.7 万行），五层叙事不变，但"核心一周读完"的承诺需要盯着这些新邻居。）
 
 这只是一个规模的骨架。五个包让"Agent 的工程问题"第一次有了坐标：loop 的问题去 `pi-agent-core` 找，供应商的差异去 `pi-ai` 找，上下文装配去 `pi-coding-agent` 找。接下来的系列每一篇对应一层深挖；本文先把四道分界线讲清楚。
 
@@ -65,11 +66,11 @@ flowchart TB
 
 `pi-ai` 是唯一认识 OpenAI/Anthropic/Google/Mistral/Bedrock/Groq 等 15+ 供应商的包。它对外暴露统一的流式消息 API、把各家模型清单折进一份 catalog、把重试/退避/限流/多供应商路由做成 pi-ai 内部的事（`retry.ts`、`backoff.ts`、`rate-limit.ts`、`multi-vendor.ts` 都在它的 src 里）。
 
-这条分界线的代价是 23.5k 行——比整个核心层还大。而这恰恰是买点：**核心层（以及所有 extension 作者）永远只对着 pi-ai 的接口编程，不需要知道"今天的模型是谁"**。Databricks 的 Omnigent、Pi 的 `/model` 会话中途换模型，依赖的都是这条边界。没有这层抽象，换模型就等于改 harness，我们开头说的"2 倍价差实验"根本做不出来——因为实验的前提就是同一模型能跑在两个 harness 上。
+这条分界线的代价是 30.9k 行（2026-08-23 复测）——比整个核心层还大。而这恰恰是买点：**核心层（以及所有 extension 作者）永远只对着 pi-ai 的接口编程，不需要知道"今天的模型是谁"**。Databricks 的 Omnigent、Pi 的 `/model` 会话中途换模型，依赖的都是这条边界。没有这层抽象，换模型就等于改 harness，我们开头说的"2 倍价差实验"根本做不出来——因为实验的前提就是同一模型能跑在两个 harness 上。
 
 ## 四、分界线二：核心层只有 loop、工具与状态
 
-`pi-agent-core`（12.6k 行）只做三件事：[`agent-loop.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/agent-loop.ts)（796 行）是主循环，`工具执行`是它的内循环，`状态管理`（Session v4 API，0.84.0 起）决定消息树如何落盘。三个包里的其他职责都不属于它。
+`pi-agent-core`（15.3k 行）只做三件事：[`agent-loop.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/agent-loop.ts)（805 行）是主循环，`工具执行`是它的内循环，`状态管理`（Session v4 API，0.84.0 起）决定消息树如何落盘。三个包里的其他职责都不属于它。
 
 主循环的结构极其直白——外层 `while (true)` 处理每个 turn 与排队消息，内层 `while (hasMoreToolCalls || pendingMessages.length > 0)` 一直执行直到模型不再要求调工具（`hasMoreToolCalls = !executedToolBatch.terminate`）：
 
@@ -84,11 +85,11 @@ while (true) {
 }
 ```
 
-一个 coding agent 的生死问题——"模型喋喋不休地要求调工具怎么办、什么时候才能停"——在这 796 行里有一个显式答案：每轮由模型自己决定，`terminate` 是停止信号，收敛由外层 turn 结束接管。第二篇会完整走一遍这段代码。
+一个 coding agent 的生死问题——"模型喋喋不休地要求调工具怎么办、什么时候才能停"——在这 805 行里有一个显式答案：每轮由模型自己决定，`terminate` 是停止信号，收敛由外层 turn 结束接管。第二篇会完整走一遍这段代码。
 
 ## 五、分界线三：CLI 与 TUI 是壳，语义在 README 与扩展协议上
 
-`pi-coding-agent` 是最大的包（59.9k 行），但它承担的都不是"思考"而是"入口"：四种运行模式（interactive、`pi -p` 打印模式、`--mode json` 事件流、RPC、SDK 嵌入）、AGENTS.md/SYSTEM.md 装配、skills 加载、扩展系统与包管理。TUI 层（16.8k 行）只做差分渲染——状态变了才重画对应行，不重建整屏。
+`pi-coding-agent` 是最大的包（87.5k 行），但它承担的都不是"思考"而是"入口"：四种运行模式（interactive、`pi -p` 打印模式、`--mode json` 事件流、RPC、SDK 嵌入）、AGENTS.md/SYSTEM.md 装配、skills 加载、扩展系统与包管理。TUI 层（19.8k 行）只做差分渲染——状态变了才重画对应行，不重建整屏。
 
 这条边界的含义：**界面的职责是"把核心层的事件流翻译给人或脚本"，任何 UI 逻辑都不能渗进核心层**。反过来，`pi-coding-agent` 的文档（README、docs/ 下的 extensions.md、skills.md、compaction.md……）本身就是它的一部分——Pi 让模型去读自己的文档来理解自己，这一招在上下文装配篇展开。
 
@@ -128,7 +129,7 @@ Pi 官网有一节叫 What we didn't build[^piwhat]。六个刻意不做的功�
 
 - earendil-works/pi 仓库 README（五包表、权限与容器化、供应链加固节）：https://github.com/earendil-works/pi
 - Pi 五包源码 @ commit 5cd93f6（2026-08-20 浅克隆实测）：packages/{telemetry,ai,agent,coding-agent,tui}
-- `packages/agent/src/agent-loop.ts`（796 行）
+- `packages/agent/src/agent-loop.ts`（805 行 @ b23741269；796 行 @ 5cd93f6 基线）
 - `packages/coding-agent/src/core/system-prompt.ts`（162 行，默认模板主体 1288 字符 ≈ 322 tokens）
 - Databricks 基准：https://www.databricks.com/blog/benchmarking-coding-agents-databricks-multi-million-line-codebase
 - Shopify Engineering《Autoresearch isn't just for training models》(2026-04-15)：https://shopify.engineering/autoresearch

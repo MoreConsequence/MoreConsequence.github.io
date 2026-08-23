@@ -2,6 +2,7 @@
 title: "Agent 的手：为什么 4 个工具够用，以及 bash 沙箱的实质"
 description: "拆 Pi 的 4 个内建工具（read/bash/edit/write）设计：为什么多工具含金量低、50KB 输出滚动缓冲、进程树终止与超时、可插拔的 BashOperations 怎样在不改核心的前提下把 bash 换成 SSH 或容器。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "工具", "沙箱", "开源"]
 draft: false
 featured: false

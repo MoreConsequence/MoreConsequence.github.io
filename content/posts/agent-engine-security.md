@@ -2,6 +2,7 @@
 title: "权限边界与沙箱：为什么 Pi 不做应用层弹窗，而把隔离推给容器"
 description: "拆解 Pi 的安全与权限设计哲学：为什么应用层命令拦截存在本质漏洞、三种容器化沙箱（Gondolin/Docker/OpenShell）如何接入 BashOperations、以及单 monorepo 与 project_trust 怎样防御供应链与提示词注入攻击。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "安全", "沙箱", "开源"]
 draft: false
 featured: false
@@ -26,10 +27,10 @@ series: "Agent 的方方面面"
 
 ## 二、BashOperations 接口：把执行权推向容器
 
-在 05 篇中我们分析了 `packages/agent/src/tools/exec/` 的实现。Pi 将所有终端执行动作收敛在一个极薄的抽象接口 `BashOperations` 之后：
+在 05 篇中我们分析了 `packages/coding-agent/src/core/tools/bash.ts` 的实现。Pi 将所有终端执行动作收敛在一个极薄的抽象接口 `BashOperations` 之后：
 
 ```ts
-// packages/agent/src/tools/exec/types.ts（节选）
+// packages/coding-agent/src/core/tools/bash.ts（节选；字段按当前接口示意）
 export interface BashOperations {
   exec(command: string, options: ExecOptions): Promise<ExecResult>;
   spawn(command: string, options: SpawnOptions): ProcessHandle;
@@ -122,7 +123,7 @@ Pi 的安全设计是其“极简与工程克制”哲学的直接体现：
 
 ## 参考资料
 
-- `packages/agent/src/tools/exec/`：`BashOperations` 接口与进程树管理
+- `packages/coding-agent/src/core/tools/bash.ts:62`：`BashOperations` 接口定义（08-23 复测）
 - `packages/coding-agent/docs/containerization.md`：Pi 官方容器化沙箱接入指南（Docker / Gondolin / OpenShell）
 - `packages/coding-agent/examples/extensions/sandbox/`：官方沙箱扩展实现样例
-- earendil-works/pi @ commit `5cd93f6`（2026-08-20 源码基线）
+- earendil-works/pi @ `b23741269`（2026-08-23 复测基线；另见 `packages/agent/src/harness/tools/` 新出现的第二组工具目录，两层工具的关系是 05 篇的后续观察点）

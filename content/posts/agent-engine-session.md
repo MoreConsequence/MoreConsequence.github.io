@@ -2,6 +2,7 @@
 title: "会话是树不是日志：Pi 的分支、版本迁移与崩溃自愈"
 description: "拆 Pi 的会话层：JSONL 文件里的树结构（id/parentId）、五个版本跨代自动迁移、/tree 分支语义、branch summary，以及 crash 后如何原子地修复被拦腰截断的会话文件。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "会话", "开源"]
 draft: false
 featured: false
@@ -56,7 +57,7 @@ Pi 的答案就在 `packages/coding-agent/docs/sessions.md` 和 `docs/session-fo
 
 ## 五、崩溃自愈：半行 JSON 与原子 rename
 
-这是 Pi 会话层最值得抄回自己系统的细节，实现位于 [`packages/agent/src/harness/session/jsonl/storage.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/harness/session/jsonl/storage.ts)（277 行）。
+这是 Pi 会话层最值得抄回自己系统的细节，实现位于 [`packages/agent/src/harness/session/jsonl/storage.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/harness/session/jsonl/storage.ts)（277 行，08-23 复测未变）。
 
 写入路径本身是普通追加（`appendFile`），打不了一点：进程在写某行期间崩溃，文件尾部会留下"半个 JSON 行"——既不是合法 entry 也不是干净结尾。常规做法是"检测到坏行就丢整个文件"或"手动清理"，Pi 的做法分三步：
 
@@ -70,7 +71,7 @@ if (isTornTail) {
 }
 ```
 
-`publishFileAtomically`（storage.ts 行 24-41）的注释写得明明白白："先构建一个完整的兄弟临时文件，再原子地 rename 到目标位置；rename 提交前目标文件不受影响，所以进程崩溃最多留下一个可忽略的 `.tmp` 文件。"
+`publishFileAtomically`（storage.ts 行 33 起）的注释写得明明白白："先构建一个完整的兄弟临时文件，再原子地 rename 到目标位置；rename 提交前目标文件不受影响，所以进程崩溃最多留下一个可忽略的 `.tmp` 文件。"
 
 这里有一个优雅的语义选择：**只有"最后一行 + 语法错误"才被宽容地当作 torn tail 丢弃**；中间任何一行损坏则直接抛 `invalidFile`，绝不静默修复。为什么？尾部是唯一不可能被"已完成、已持久化"的位置——中间的坏行意味着前面的修复/写入承诺可能已经违反，这时候诚实报错比假装修好更安全。宽容与严格各自只在一个位置成立：尾部宽容，腰腹严格。
 
@@ -84,7 +85,7 @@ if (isTornTail) {
 
 ## 参考资料
 
-- `packages/coding-agent/docs/sessions.md`（145 行）与 `docs/session-format.md`（438 行），earendil-works/pi @ commit 5cd93f6
-- `packages/agent/src/harness/session/jsonl/storage.ts`（277 行）：torn-tail 修复（行 86-90）与 `publishFileAtomically`（行 24-41）
+- `packages/coding-agent/docs/sessions.md`（145 行）、`docs/session-format.md`（438 行）、`docs/compaction.md`（418 行），earendil-works/pi @ b23741269（2026-08-23 复测；基线 5cd93f6）
+- `packages/agent/src/harness/session/jsonl/storage.ts`（277 行）：torn-tail 判定（行 84-90）与 `publishFileAtomically`（行 33 起）
 - 0.84.0 发布说明：v4 Session API、`JsonlSessionRepo`、`FileSystem.renameFile()` 契约（pi.dev/news/releases/0.84.0）
 - `packages/session-backends/`（sqlite-node 实验后端）与 `packages/agent/src/harness/session/`（memory/jsonl 两个内置后端）

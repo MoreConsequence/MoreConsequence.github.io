@@ -2,6 +2,7 @@
 title: "少发 Token 才是硬道理：从 Databricks 与 Shopify 实测看 Harness 的经济性"
 description: "系列终篇拆解 Agent Harness 的经济学本质：Databricks 百万行基准与 Shopify 生产案例揭示的成本规律、pi-telemetry 如何实现跨供应商中立记账，以及全系列 9 篇从 Loop 到扩展的工程承诺矩阵。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "Token经济学", "基准评测", "开源"]
 draft: false
 featured: false
@@ -26,7 +27,7 @@ series: "Agent 的方方面面"
 *数据来源：Databricks Engineering Blog (2026-07-08)。外部实证数据，标注厂商基准。*
 
 为什么 Pi 能做到单轮上下文少约 3 倍？回顾本系列前几篇的核心机制：
-1. **03 篇系统提示词克制**：模板主体仅 1288 字符（~322 tokens），工具只保留单行简述；
+1. **03 篇系统提示词克制**：08-20 首测模板主体仅约 322 tokens，工具只保留单行简述（08-23 复测已涨至约 1.2k tokens，见 03 篇对照表——克制是纪律，需要持续监督而不是一次性认证）；
 2. **05 篇四工具极简主义**：没有臃肿的专用检索和状态查询工具，避免模型每轮调用产生大量冗余的 schema 与中间返回值；
 3. **03 篇 Compaction 严格闸门**：`16384 reserve / 20000 keep` 确定性压缩，防止无效历史轮次在上下文中无限滚雪球。
 
@@ -71,11 +72,11 @@ export interface UsageRecord {
 | 篇目 | 核心工程问题 | Pi 的架构解答 | 对应源码 / 规范依据 | 核心收益 |
 | --- | --- | --- | --- | --- |
 | **01 架构总览** | Harness 与模型的职责分界 | 5 个职责清晰的包 + 6 项刻意不做 | `pi/README.md`，LOC 实测 | 核心包一周可读完 |
-| **02 循环控制** | Agent 循环如何确定性收敛 | 外层 Turn + 内层工具，三大终止闸门 | `packages/agent/src/agent-loop.ts` (796行) | 杜绝死循环与静默截断 |
+| **02 循环控制** | Agent 循环如何确定性收敛 | 外层 Turn + 内层工具，三大终止闸门 | `packages/agent/src/agent-loop.ts` (805行) | 杜绝死循环与静默截断 |
 | **03 上下文装配** | 如何把每轮上下文减少 3 倍 | 1288 字符模板 + 确定性压缩闸门 | `packages/coding-agent/src/core/system-prompt.ts` | 极大降低单任务 Token 消耗 |
 | **04 会话持久化** | 状态如何跨进程存活与防损 | JSONL 树状结构 + 崩溃原子修复 | `docs/session-format.md`，v1-v4 迁移 | 支持历史分支与故障自愈 |
-| **05 工具设计** | 为什么 4 个工具足够写代码 | 万能 `bash` + 50KB 缓冲 + `edit` 替换 | `packages/agent/src/tools/` (1600行) | 降低 Schema 复杂度 |
-| **06 供应商层** | 47 家 API 如何抹平差异 | 统一流式 + 可取消的重试定时器 | `packages/ai/src/` (23.5k行) | 解耦模型厂商锁定 |
+| **05 工具设计** | 为什么 4 个工具足够写代码 | 万能 `bash` + 50KB 缓冲 + `edit` 替换 | `packages/coding-agent/src/core/tools/` (1603行) | 降低 Schema 复杂度 |
+| **06 供应商层** | 47 家 API 如何抹平差异 | 统一流式 + 可取消的重试定时器 | `packages/ai/src/` (30.9k行) | 解耦模型厂商锁定 |
 | **07 扩展与自修改** | 功能不内置如何满足复杂需求 | 5 组生命周期事件 + 34 行权限门禁 | `examples/extensions/` (79个示例) | 核心极简，业务能力可后装 |
 | **08 安全与沙箱** | 命令执行如何防注入与防逃逸 | `BashOperations` 接口对接 Gondolin/Docker | `docs/containerization.md`，`project_trust` | 把安全留给物理容器 |
 | **09 Token 经济** | 怎么花最少的钱跑出最高成功率 | 上下文纪律 + `pi-telemetry` 中立记账 | Databricks 2026 基准 / Shopify 案例 | 实现 2x+ 成本优势 |
@@ -92,4 +93,4 @@ export interface UsageRecord {
 - Databricks Engineering: *Benchmarking Coding Agents on Million-Line Codebases* (2026-07-08)
 - Shopify Engineering Blog: *Accelerating Liquid Engine with Pi Coding Agent* (2026-04-15)
 - `packages/telemetry/`：`pi-telemetry` 跨供应商遥测与成本跟踪
-- earendil-works/pi @ commit `5cd93f6`（2026-08-20 源码基线）
+- earendil-works/pi @ `b23741269`（2026-08-23 复测基线；首篇基线 `5cd93f6`，全部 LOC/token 数字存档 `evidence/agent-engine-series/2026-08-23-local/measure.log`）

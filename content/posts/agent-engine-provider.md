@@ -2,13 +2,14 @@
 title: "换模型不是换代码：pi-ai 如何把 47 家供应商折成一层 API"
 description: "拆 pi-ai 的供应商统一层：为什么 agent 不能直连各家 SDK、重试策略如何镜像官方 SDK 却保留可中断、rate-limit 与 retry-after 如何被尊重、以及 overflow 检测如何识别 20+ 家不同的「上下文超限」报错文案。"
 publishedAt: "2026-08-20"
+updatedAt: "2026-08-23"
 tags: ["Agent", "LLM", "供应商", "开源"]
 draft: false
 featured: false
 series: "Agent 的方方面面"
 ---
 
-**TL;DR：** 01 篇讲过 pi-ai 的定位：唯一认识供应商的层。这篇把"认识"拆成三个具体工程问题：**一个兼容模型**（47 个 provider 文件 + 流式统一）、**一次可信调用**（重试/退避/限流，但重试睡觉得能被取消）、**一个准确的失败分类**（20+ 家供应商的"上下文超限"文案长得完全不同，还有两家干脆静默）。agent 直连各家 SDK 的幻觉在于：每家 SDK 都帮你重试，但重试定时器不听你的 AbortSignal；每家都说自己错了，但错法各有各的方言。pi-ai 把这些全部抹平在 [`packages/ai`](https://github.com/earendil-works/pi/tree/main/packages/ai) 这一层（23.5k 行 LOC，本系列口径 @ commit 5cd93f6）。
+**TL;DR：** 01 篇讲过 pi-ai 的定位：唯一认识供应商的层。这篇把"认识"拆成三个具体工程问题：**一个兼容模型**（47 个 provider 文件 + 流式统一）、**一次可信调用**（重试/退避/限流，但重试睡觉得能被取消）、**一个准确的失败分类**（20+ 家供应商的"上下文超限"文案长得完全不同，还有两家干脆静默）。agent 直连各家 SDK 的幻觉在于：每家 SDK 都帮你重试，但重试定时器不听你的 AbortSignal；每家都说自己错了，但错法各有各的方言。pi-ai 把这些全部抹平在 [`packages/ai`](https://github.com/earendil-works/pi/tree/main/packages/ai) 这一层（30.9k 行 LOC，2026-08-23 复测 @ b23741269；08-20 首测 23.5k @ 5cd93f6）。
 
 ## 一、一个兼容模型：47 个 provider 文件背后的统一流式协议
 
@@ -62,13 +63,13 @@ series: "Agent 的方方面面"
 
 ## 五、结论：供应商抽象的价值在于把「不同」变成可测试的「同」
 
-回看三个问题：一个兼容模型（统一 `Api` 协议 + 可热更 catalog）、一次可信调用（镜像 SDK 但可中断 + 60s 上限 + 信号优先）、一个准确失败分类（文案表 + 两款静默特例）。**pi-ai 的 23.5k 行大多不是算法，而是各家方言的翻译与登记。** 这正是"换模型不是换代码"的机制：模型是 catalog 里的一行，供应商是其 provider 实现，agent 的业务代码从不需要知道"今天的模型是谁"。
+回看三个问题：一个兼容模型（统一 `Api` 协议 + 可热更 catalog）、一次可信调用（镜像 SDK 但可中断 + 60s 上限 + 信号优先）、一个准确失败分类（文案表 + 两款静默特例）。**pi-ai 的 30.9k 行大多不是算法，而是各家方言的翻译与登记。** 这正是"换模型不是换代码"的机制：模型是 catalog 里的一行，供应商是其 provider 实现，agent 的业务代码从不需要知道"今天的模型是谁"。
 
 验证三步：在 clone 里给 `isRetryableProviderError` 加一行 `status === 409 → false`，跑测试看哪些用例被破坏（注意 409 不是"重试无用"）；在 `OVERFLOW_PATTERNS` 里加一条假模式，验证溢出判定从哪一行被消费；读 `abortableSleep`，确认 abort 发生后 sleep 立刻 reject 而不是等满退避时间——这决定了"用户按 Ctrl+C 后 agent 多久能真正停下来"。
 
 ## 参考资料
 
-- `packages/ai/`（23.5k LOC 实测）：`src/providers/`（47 个 provider 实现）、`src/models.generated.ts`（模型目录）、`src/utils/provider-retry.ts`（125 行）、`src/utils/overflow.ts`（180 行）
+- `packages/ai/`（30.9k LOC 实测 @ b23741269；providers 目录 47 个实现文件、provider-retry.ts 125 行、overflow.ts 180 行均复测未变）：`src/providers/`（47 个 provider 实现）、`src/models.generated.ts`（模型目录）、`src/utils/provider-retry.ts`（125 行）、`src/utils/overflow.ts`（180 行）
 - `packages/agent/src/agent-loop.ts` 的 `convertToLlm` 边界（02 篇）
 - Databricks 官方基准（2026-07-08）中"token 单价≠任务成本"结论与 09 篇经济性关联
 - earendil-works/pi @ commit 5cd93f6（2026-08-20 浅克隆实测）
