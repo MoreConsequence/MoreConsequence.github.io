@@ -3,7 +3,7 @@ title: "Agent 不会自己停：796 行循环里的三个终止闸门"
 description: "读 Pi 的 agent-loop.ts（796 行）回答 Agent 的核心工程问题：循环如何收敛、模型喋喋不休时谁叫停、输出截断和工具失败怎么处理、为什么「全部工具都要求停」才停。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "架构", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---

@@ -12,6 +12,7 @@
 | Go 的设计边界 | 25 | ✅ 已发布 |
 | 从 Go 到 TypeScript | 11 | ✅ 已发布，有扩展位 |
 | 把原理变成服务 | 7 | ✅ 已发布，有扩展位 |
+| Agent 的方方面面（Pi Agent 架构） | 9 | 📝 草稿完成（全 9 篇已交付，见 `docs/agent-series-roadmap.md`） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 ---

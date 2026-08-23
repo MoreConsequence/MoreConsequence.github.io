@@ -15,14 +15,14 @@
 | # | slug | 本篇承诺 | 代码/证据源 | 当前状态 |
 | --- | --- | --- | --- | --- |
 | 01 | agent-engine-layers | 五层架构总览与"刻意不做"的清单哲学 | `pi/README.md` 五包表、pi.dev "What we didn't build"、agent-loop.ts / system-prompt.ts 实测 | 草稿（2026-08-20 本机 clone @ 5cd93f6 实测 LOC） |
-| 02 | agent-engine-loop | Agent 的骨架是 for 循环：turn/工具执行/收敛 | `packages/agent/src/agent-loop.ts`（796 行 while 双层循环）| 待写 |
-| 03 | agent-engine-context | 上下文装配：system prompt、AGENTS.md、SYSTEM.md、compaction、skills 的渐进披露 | `coding-agent/src/core/system-prompt.ts`、docs/compaction.md、docs/skills.md | 待写 |
-| 04 | agent-engine-session | 树状会话与状态：分支、/tree、JSONL 持久化、崩溃安全 | `packages/session-backends`、agent-core v4 Session API（0.84.0 改版） | 待写 |
-| 05 | agent-engine-tools | 工具设计：为什么只有 4 个工具；bash 沙箱与执行边界 | `packages/agent/src/` tools/exec、docs/containerization.md | 待写 |
-| 06 | agent-engine-provider | 统一 LLM 层：15+ 供应商、重试/退避/限流、多供应商路由 | `packages/ai/src/`（23.5k LOC，含 providers/retry/backoff/rate-limit/multi-vendor） | 待写 |
-| 07 | agent-engine-extensions | 扩展面：skills、extensions、自修改（改自己的工具再 /reload）、Pi packages | `packages/coding-agent/examples/extensions/`（50+ 例）、docs/extensions.md | 待写 |
-| 08 | agent-engine-security | 权限边界与供应链：无内建权限系统的取舍、三种容器化、npm 依赖加固 | `README.md`（permissions & containerization / supply-chain 两节）、Gondolin/Docker/OpenShell | 待写 |
-| 09 | agent-engine-economics | token 经济性：为什么"少发 token"是 harness 的核心竞争力 | Databricks 官方基准（2026-07-08）、Shopify 官方 blog（2026-04-15）、pi-telemetry 记账 | 待写（外部数字已核实） |
+| 02 | agent-engine-loop | Agent 的骨架是 for 循环：turn/工具执行/收敛 | `packages/agent/src/agent-loop.ts`（796 行 while 双层循环）| 草稿（2026-08-20） |
+| 03 | agent-engine-context | 上下文装配：system prompt、AGENTS.md、SYSTEM.md、compaction、skills 的渐进披露 | `coding-agent/src/core/system-prompt.ts`、docs/compaction.md、docs/skills.md | 草稿（2026-08-20） |
+| 04 | agent-engine-session | 树状会话与状态：分支、/tree、JSONL 持久化、崩溃安全 | `packages/session-backends`、agent-core v4 Session API（0.84.0 改版） | 草稿（2026-08-20） |
+| 05 | agent-engine-tools | 工具设计：为什么只有 4 个工具；bash 沙箱与执行边界 | `packages/agent/src/` tools/exec、docs/containerization.md | 草稿（2026-08-20） |
+| 06 | agent-engine-provider | 统一 LLM 层：15+ 供应商、重试/退避/限流、多供应商路由 | `packages/ai/src/`（23.5k LOC，含 providers/retry/backoff/rate-limit/multi-vendor） | 草稿（2026-08-20） |
+| 07 | agent-engine-extensions | 扩展面：skills、extensions、自修改（改自己的工具再 /reload）、Pi packages | `packages/coding-agent/examples/extensions/`（50+ 例）、docs/extensions.md | 草稿（2026-08-20） |
+| 08 | agent-engine-security | 权限边界与供应链：无内建权限系统的取舍、三种容器化、npm 依赖加固 | `README.md`（permissions & containerization / supply-chain 两节）、Gondolin/Docker/OpenShell | 草稿（2026-08-20） |
+| 09 | agent-engine-economics | token 经济性：为什么"少发 token"是 harness 的核心竞争力 | Databricks 官方基准（2026-07-08）、Shopify 官方 blog（2026-04-15）、pi-telemetry 记账 | 草稿（2026-08-20） |
 
 状态词含义：`已核实` 表示当前对话中存在一手来源（官方 blog / 源码 / 官方文档）；`待写` 表示篇目已定但正文未动笔；`草稿` 表示内容已交付但未翻 draft。
 

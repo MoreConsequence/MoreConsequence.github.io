@@ -3,7 +3,7 @@ title: "上下文是吃预算的大户：Pi 如何把装配权交给文件和钩
 description: "拆 Pi 的上下文工程：system prompt 模板只有 1288 字符、AGENTS.md 从全局到父目录逐层继承、compaction 的 16384/20000 token 闸门、skills 的渐进披露——为什么「谁进上下文」必须由确定性规则决定。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "上下文工程", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---

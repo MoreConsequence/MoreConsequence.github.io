@@ -3,7 +3,7 @@ title: "94k stars 的 Agent 只有 4 个工具：Pi 的五层架构与「刻意�
 description: "以 Pi（earendil-works/pi）为例拆解 Agent harness：五层职责分界（telemetry/ai/agent-core/coding-agent/tui）、为什么 4 个工具 + 千 token 提示词能赢过全能 harness，以及六项刻意不做的取舍。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "工程", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---

@@ -3,7 +3,7 @@ title: "会话是树不是日志：Pi 的分支、版本迁移与崩溃自愈"
 description: "拆 Pi 的会话层：JSONL 文件里的树结构（id/parentId）、五个版本跨代自动迁移、/tree 分支语义、branch summary，以及 crash 后如何原子地修复被拦腰截断的会话文件。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "会话", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---

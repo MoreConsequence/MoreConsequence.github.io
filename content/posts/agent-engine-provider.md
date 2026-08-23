@@ -3,7 +3,7 @@ title: "换模型不是换代码：pi-ai 如何把 47 家供应商折成一层 A
 description: "拆 pi-ai 的供应商统一层：为什么 agent 不能直连各家 SDK、重试策略如何镜像官方 SDK 却保留可中断、rate-limit 与 retry-after 如何被尊重、以及 overflow 检测如何识别 20+ 家不同的「上下文超限」报错文案。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "LLM", "供应商", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---

@@ -3,7 +3,7 @@ title: "34 行写出权限弹窗：Pi 的「不内置功能」宣言背后的扩
 description: "拆 Pi 的扩展面：79 个示例覆盖 subagents/plan-mode/permission-gate/sandbox/ssh，核心只留 4 个工具，其余全是 TypeScript 扩展模块 + 全生命周期事件钩子——为什么「功能可以后装」比「功能内置」更便宜，以及自修改（/reload）的闭环。"
 publishedAt: "2026-08-20"
 tags: ["Agent", "扩展", "开源"]
-draft: true
+draft: false
 featured: false
 series: "Agent 的方方面面"
 ---
