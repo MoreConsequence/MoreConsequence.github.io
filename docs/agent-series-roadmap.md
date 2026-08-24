@@ -30,7 +30,7 @@
 
 | 承诺 | 当前工件 | 已有证据 | 尚缺证据 |
 | --- | --- | --- | --- |
-| Pi 五层架构可读 | 本机 clone `pi` @ 5cd93f6（2026-08-20）| 各包 LOC 实测：agent 12,635 / ai 23,555 / coding-agent 59,900 / tui 16,772 / telemetry 935；五正式包名核对 | 各层接口级源码走读（随 02-08 补） |
+| Pi 五层架构可读 | 双基线：@ 5cd93f6（2026-08-20）与 @ b23741269（2026-08-23 复测）| 各包 LOC 双基线实测（08-23 复测：agent 15,280 / ai 30,870 / coding-agent 87,470 / tui 19,841 / telemetry 935；另新增 client/evals/protocol/server/session-backends/storage 六目录）；存档 `evidence/agent-engine-series/2026-08-23-local/measure.log` | 各层接口级源码走读（随 02-08 补）；monorepo 新目录未纳入五层叙事 |
 | Agent loop 二重循环 | `packages/agent/src/agent-loop.ts` | `while(true)` 外层 + `while(hasMoreToolCalls)` 内层（行 170/174）| 用真实会话事件流复现 turn 序列（02 篇实验） |
 | 系统提示词 <1000 tokens | `coding-agent/src/core/system-prompt.ts`（162 行）| 默认模板主体 1288 字符 ≈ 322 tokens（4 chars/token 估算） | 实测 token 计数（03 篇用 tokenizer 精确化） |
 | 外部实证（Databricks）| 官方 blog 2026-07-08 | Pi 每轮上下文约 3x 少、同档位成本差 >2x、Opus 4.8 xhigh+Pi 通过率 90% 最高、GLM 5.2+Pi $1.25/task vs Opus 4.8 high+CC $2/task（均 ~87.5%）| 无（厂商自述基准，明确标注即可） |
@@ -39,7 +39,7 @@
 ## 写作与验证规则
 
 1. **外部数字先定点**：Databricks / Shopify 数字必须引官方 URL；引第三方转述（explainx、composio 等）只作参考意见，不署名数据来源。
-2. **本机证据绑定 commit**：每篇标注调查所用 clone commit 与日期（首篇 5cd93f6，2026-08-20）；后篇如有 re-clone，数字以更新后的记录为准并在文中注明。
+2. **本机证据绑定 commit**：每篇标注调查所用 clone commit 与日期（首篇 5cd93f6，2026-08-20）；后篇如有 re-clone，数字以更新后的记录为准并在文中注明。2026-08-23 已全系列复测 @ b23741269，9 篇正文均改为双基线标注（system prompt 主体 tokens 精确化为 1197，「<1000」承诺已被上游打破并写入 03 篇）。
 3. **LOC 类数字以实测为准**：README 自称"agent-core 3-4k / pi-ai 5-7k LOC"与实测（12.6k / 23.5k）不符——写正文时以实测数字 + 注明 README 口径差异，不采信广告数字。
 4. **"刻意不做"与"做不到"分开**：Pi 声称的六项不做（MCP/sub-agents/权限弹窗/plan mode/to-dos/后台 bash）有替代路径；写取舍分析，不写"因为 todo 所以更好"。
 5. **终篇不是发布许可**：09 篇 publish 前需逐项过 review.md 证据闸门；外部厂商基准在文中标注"外部基准，非独立复现"。
