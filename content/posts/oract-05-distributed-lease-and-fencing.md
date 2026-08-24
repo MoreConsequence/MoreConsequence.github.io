@@ -8,19 +8,19 @@ featured: false
 series: "ORACT 架构全解"
 ---
 
-**TL;DR：** 当 Agent 系统从单机走向分布式集群时，最严峻的挑战是如何防止**脑裂（Split-Brain）**与**幽灵写（Zombie Write）**：如果主调度节点因 GC 停顿或短暂网络分区发生假死，备用节点抢占了执行权，随后假死节点苏醒并继续写入数据库，就会瞬间破坏状态机的确定性。ORACT 在分布式层设计了一套极其严谨的控制面：确立以 **Database-Time** 为单一权威时间源，采用 **分布式租约（Lease）** 与 **单调递增 Fencing Token（纪元栅栏）** 机制彻底阻断过期节点的无效写入；同时定义了 **OEP (ORACT Execution Protocol)** 跨语言安全协议，实现了 Go 高性能主控调度器与 Python 异构 Worker 之间的双向 mTLS 严密通信。
+**TL;DR：** 当 Agent 运行时从单机演进为高可用分布式调度集群时，最严峻的挑战是如何防止**脑裂（Split-Brain）**与**幽灵写（Zombie Write）**：如果旧主调度节点因 10 秒的 GC 停顿或短暂网络抖动发生假死，备用节点抢占了执行权，随后旧主节点苏醒并继续向数据库写入过期状态，就会瞬间破坏整个状态机的确定性。ORACT 在分布式控制面设计了一套极其严谨的高可用架构：确立以 **Database-Time** 为单一权威时间源，采用 **分布式租约（Lease）** 与 **单调递增 Fencing Token（纪元栅栏）** 机制彻底阻断过期节点的无效写入；同时定义了 **OEP (ORACT Execution Protocol)** 跨语言通信协议，实现了 Go 高性能主控调度器与 Python 异构 Worker 之间的双向 mTLS 严密互联。
 
 ---
 
-## 一、脑裂危机：分布式 Agent 的致命陷阱
+## 一、脑裂危机：分布式 Agent 的致命并发缺陷
 
 ```mermaid
 sequenceDiagram
-    participant P1 as 节点 Primary 1 (旧主)
+    participant P1 as 调度节点 Primary 1 (旧主)
     participant DB as 数据库集群 (Postgres/TiDB)
-    participant P2 as 节点 Primary 2 (新主)
+    participant P2 as 调度节点 Primary 2 (新主)
 
-    P1->>DB: 持有租约，正常推进 Run-100 的 Step 5
+    P1->>DB: 持有租约，推进 Run-100 的 Step 5
     Note over P1: ⚠️ 发生 15 秒 Stop-the-World GC 停顿或网络抖动
     Note over DB: 租约超时失效！
     P2->>DB: 抢占租约成功！接管 Run-100 并推进 Step 6
@@ -30,16 +30,16 @@ sequenceDiagram
     Note over DB: 🚨 若无 Fencing 保护：旧数据覆盖新数据，状态机全盘损坏！
 ```
 
-在分布式环境下，单纯依赖本地机器的 `time.Now()` 进行租约判定极度危险，因为不同物理服务器之间必然存在 **NTP 时钟漂移（Clock Drift）**。
+在分布式环境下，单纯依赖本地服务器的 `time.Now()` 进行租约超时计算极度危险，因为不同物理服务器之间必然存在不可消除的 **NTP 时钟漂移（Clock Drift）**。
 
 ---
 
 ## 二、Database-Time 权威时钟与租约机制
 
-ORACT 严格禁止使用应用服务器本地时钟，所有租约的生效与过期计算全部收敛在**数据库服务器事务时间（Database Time）**：
+ORACT 严格禁止使用应用节点本地时钟，所有租约的生效与过期计算全部收敛在**数据库服务器事务时钟（Database Time）**：
 
 ```sql
--- storage/postgres/lease.sql 原子续租与选主 SQL 范式
+-- storage/postgres/lease.sql 原子选主与心跳续租 SQL 范式
 UPDATE run_leases
 SET 
     owner_id = $1,
@@ -71,7 +71,7 @@ flowchart TD
     
     Grant --> WriteEvent["准备写入 Journal"]
     
-    WriteEvent --> CheckFencing{"数据库写入前置条件:<br/>WHERE current_fencing_token = 101"}
+    WriteEvent --> CheckFencing{"数据库写入前置门禁条件:<br/>WHERE current_fencing_token = 101"}
     
     CheckFencing -->|"匹配: 身份合法"| Commit["✅ 写入成功，推进状态机"]
     CheckFencing -->|"已被更新 (如 token 已被其他节点抢升到 102)"| Reject["❌ 拒绝写入并立即自毁退出 (Fail-Fast)"]
@@ -83,7 +83,15 @@ flowchart TD
 // storage/journal/postgres_journal.go
 package journal
 
-func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, token int64, event Event) error {
+import (
+    "context"
+    "errors"
+    "github.com/MoreConsequence/oract/runtime/core"
+)
+
+var ErrFencingTokenStale = errors.New("fencing token is stale; lease ownership lost")
+
+func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, token int64, event core.Event) error {
     query := `
         INSERT INTO run_events (run_id, fencing_token, event_type, payload, created_at)
         SELECT $1, $2, $3, $4, NOW()
@@ -99,7 +107,7 @@ func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, t
     
     rowsAffected, _ := res.RowsAffected()
     if rowsAffected == 0 {
-        // 核心保护：写入被栅栏拦截，说明当前节点已失去租约
+        // 核心保护：写入被栅栏拦截，说明当前节点已失去租约所有权
         return ErrFencingTokenStale
     }
     return nil
@@ -112,7 +120,7 @@ func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, t
 
 ## 四、跨语言执行协议 OEP (ORACT Execution Protocol)
 
-在真实的生产架构中，Agent 调度控制面通常由高并发的 Go 语言编写，而具体的深度学习计算、Python 代码分析或数据科学工具则运行在 Python 环境中。
+在企业级生产架构中，Agent 调度控制面通常由高并发的 Go 语言编写，而具体的深度学习计算、Python 代码分析或数据科学工具则运行在 Python 环境中。
 
 ORACT 设计了统一的 **OEP (ORACT Execution Protocol)** 跨语言协议：
 
@@ -123,13 +131,13 @@ flowchart LR
         Outbox["Transactional Outbox"]
     end
 
-    subgraph PythonWorkerPool["Python 异构执行节点 (Worker)"]
+    subgraph PythonWorkerPool["Python 异构执行节点 (Worker Pool)"]
         PyWorker1["Python ML Worker (mTLS)"]
         PyWorker2["Python Tool Worker (mTLS)"]
     end
 
-    Outbox <== "OEP v2 (双向 gRPC + mTLS + Receipt 签名)" ==> PyWorker1
-    Outbox <== "OEP v2 (双向 gRPC + mTLS + Receipt 签名)" ==> PyWorker2
+    Outbox <== "OEP v2 (双向 gRPC + mTLS + Receipt 密码学签名)" ==> PyWorker1
+    Outbox <== "OEP v2 (双向 gRPC + mTLS + Receipt 密码学签名)" ==> PyWorker2
 ```
 
 ### 4.1 OEP 协议核心设计点

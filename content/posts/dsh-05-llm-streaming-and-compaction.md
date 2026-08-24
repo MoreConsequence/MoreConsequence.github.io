@@ -8,25 +8,25 @@ featured: false
 series: "DeepSeek DSH 架构全解"
 ---
 
-**TL;DR：** 随着 DeepSeek-R1 等具备强推理能力模型的普及，Agent 框架面临两个全新的工程挑战：一是如何原生支持**深度思考链（Reasoning / Thinking Delta）**与文本生成的实时流式分离渲染；二是在长达数百轮的交互中，如何应对上下文窗口爆炸与昂贵的推理成本。DeepSeek Harness（`dsh`）在 LLM 传输层构建了统一的流式事件适配器，在提示词层采用了 **KV Cache 友好** 的静态前缀分段装配，并在存储与运行时引入了 **Compaction（智能压缩）** 与 **Spill（溢出外置）** 双引擎，既保障了大模型在超长对话下的逻辑连贯，又将 Token 成本与首字延迟压制在极致水平。
+**TL;DR：** 随着以 DeepSeek-R1 为代表的前沿强推理模型的普及，自主 Agent 框架在传输与上下文管理上面临着两项全新的系统级工程挑战：一是如何原生支持**深度思考链（Reasoning / Thinking Delta）**与正文文本、工具调用的多通道流式解耦与打字机分离渲染；二是在长程代码重构或长达数百轮的交互任务中，如何避免上下文窗口击穿（Context Window Overflow）与暴涨的 Token 计费。DeepSeek Harness（`dsh`）在 LLM 传输层构建了统一的多通道流式分发 Seam，在提示词层采用了 **KV Cache 友好** 的静态前缀分段装配法，并在运行时引入了 **Compaction（智能摘要压缩）** 与 **Spill（大输出外置落盘）** 双引擎，既保障了大模型在超长对话下的逻辑连贯，又将 Token 成本与首字延迟（TTFT）压制在极致水平。
 
 ---
 
 ## 一、DeepSeek-R1 思考链流式流控架构
 
-DeepSeek-R1 / V3 在流式响应时，通常输出两种截然不同的内容载荷：
-1. **`<think>` 内部思考链**：模型推导逻辑、假设验证与自我纠错过程；
-2. **正式回复 / 工具调用**：面向用户呈现的最终结论或发起的系统指令。
+DeepSeek-R1 与 DeepSeek-V3 等模型在流式输出时，数据载荷通常包含两种截然不同的信息流：
+1. **`<think>` 内部推导流**：模型自言自语的假设演算、逻辑回溯与自我纠错过程；
+2. **正式答复与工具调用提案**：面向最终用户展示的结论或发起的系统工具操作。
 
-`dsh` 在 `packages/llm/llm` 中设计了统一的流式分发协议：
+`dsh` 在 `packages/llm/llm` 中设计了统一的流式事件多路复用协议：
 
 ```mermaid
 flowchart LR
-    DeepSeekAPI["DeepSeek-R1 原始 SSE 流"] --> Adapter["dsh-llm 适配 Seam"]
+    DeepSeekSSE["DeepSeek-R1 流式 SSE 响应"] --> Adapter["dsh-llm 协议适配器"]
     
-    subgraph EventStream["标准流式事件流 (AssistantChunk)"]
+    subgraph MultiChannel["多通道 StreamChunk 解耦流"]
         TDelta["thinking_delta (思考链分块)"]
-        FDelta["text_delta (正文分块)"]
+        FDelta["text_delta (正文 Markdown 分块)"]
         ToolDelta["tool_call_delta (工具调用参数分块)"]
     end
     
@@ -34,119 +34,169 @@ flowchart LR
     Adapter --> FDelta
     Adapter --> ToolDelta
     
-    TDelta -->|"实时推流"| WebUIThinking["前端折叠式【思考过程】组件"]
-    FDelta -->|"打字机渲染"| WebUIMarkdown["前端正文 Markdown 渲染"]
-    ToolDelta -->|"流式 JSON 解析器"| ToolExecutor["工具准备流水线"]
+    TDelta -->|"实时广播 assistant/chunk"| WebUIThinking["前端可折叠【思考链】面板"]
+    FDelta -->|"实时广播 assistant/chunk"| WebUIMarkdown["前端正文打字机渲染"]
+    ToolDelta -->|"流式 JSON 参数累加器"| ToolExecutor["工具执行准备流水线"]
 ```
 
-### 1.1 核心流式事件模型
+### 1.1 核心流式分块协议定义
 
 ```ts
-// packages/llm/llm/src/types.ts 核心流式分块契约
-export interface AssistantChunk {
-  chunkId: string;
-  type: 'thinking' | 'text' | 'tool_call';
-  delta: string;
-  usageSnapshot?: {
-    promptTokens: number;
-    completionTokens: number;
-  };
+// packages/llm/llm/src/types.ts
+export type StreamChunk =
+  | {
+      type: 'thinking';
+      delta: string;
+      rawThoughtIndex?: number;
+    }
+  | {
+      type: 'text';
+      delta: string;
+    }
+  | {
+      type: 'tool_call';
+      callId: string;
+      toolName?: string;
+      argumentsDelta: string;
+    };
+
+export interface AssistantMessageEventStream {
+  [Symbol.asyncIterator](): AsyncIterator<StreamChunk>;
+  readonly usagePromise: Promise<TokenUsage>;
+  abort(reason?: string): void;
 }
 ```
 
-通过将 `thinking` 与 `text` 分流，前端可以实现优雅的“思考折叠面板”，用户不仅能清晰洞察 Agent 的决策思维路径，而且不会干扰正文输出的格式与复制体验。
+通过在传输层将 `thinking` 与 `text` 分流，Web 客户端能够实现丝滑的折叠动画，用户可以实时观察模型的推导过程，而在复制正文时完全不受内部思维标记的干扰。
 
 ---
 
 ## 二、KV Cache 命中优化：静态前缀对齐法则
 
-大模型 API（尤其是 DeepSeek 与 Anthropic）普遍支持 **Prompt Caching（前缀缓存）**。若两个请求的前 $N$ 个 Token 字符完全一致，命中缓存的输入 Token 费用可直降 50%~90%，且首字延迟（TTFT）降低数倍。
+在当今的大模型 API（尤其是 DeepSeek 官方 API）中，**Prompt Caching（前缀缓存）** 已经成为降低延迟与成本的最核心武器。若两个请求的前 $N$ 个 Token 保持完全一致，命中缓存部分的输入 Token 价格可直接下降 **90%**，且首字生成时间（TTFT）大幅缩短。
 
-很多开发者常犯的致命错误是在 System Prompt 头部插入动态变量（如动态时间戳、动态随机数、频繁变动的 Git 状态）：
+许多开发者常犯的致命错误，是在 System Prompt 头部插入动态时间戳或随机上下文：
 
 ```text
-❌ 错误写法（彻底破坏 KV Cache）：
+❌ 彻底破坏 KV Cache 的错误做法：
 [System Prompt 头部]
-当前时间是: 2026-08-24 08:30:15 (每秒都在变，导致缓存每次全量失效！)
-你的角色是...
+Current Time: 2026-08-24 08:35:12 (每秒都在变化，导致前缀哈希全盘失效！)
+Your role is a software architect...
 ```
 
-### 2.1 `dsh` 的分段装配器 (`ctx.systemPrompt`)
+### 2.1 `dsh` 的 Prompt 分段装配器 (`packages/core/system-prompt`)
 
-`dsh` 将 Prompt 拆解为多个具有明确缓存优先级的 Sections：
+`dsh` 将整个提示词拆分为具有严格缓存优先级的多段结构（`PromptAssembly`）：
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ 1. 静态核心指令 (Static System Instructions) - 100% 缓存命中   │
-│    - 角色定位、安全准则、基础响应格式规范                     │
-├─────────────────────────────────────────────────────────────┤
-│ 2. 工具声明集合 (Tool JSON Schemas) - 稳定缓存               │
-│    - 静态注册的工具参数定义与描述                           │
-├─────────────────────────────────────────────────────────────┤
-│ 3. 动态环境切片 (Dynamic Workspace Context) - 局部刷新       │
-│    - 工作区目录结构、活动文件路径、当前时间戳 (沉底放置)      │
-└─────────────────────────────────────────────────────────────┘
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ ┃ 1. 静态系统核心指令 (Static System Instructions) - 100% 稳定缓存            ┃
+ ┃    - Agent 核心角色定位、安全准则、输出规范、代码风格约定                    ┃
+ ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ ┃ 2. 工具声明清单 (Tool JSON Schemas) - 稳定缓存                              ┃
+ ┃    - 静态注册的全部工具名称、描述与 TypeBox 生成的标准 JSON Schema           ┃
+ ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ ┃ 3. 技能描述扩展 (Skill Definitions) - 低频变动缓存                          ┃
+ ┃    - 用户工作区中安装的自定义 Skills 提示词块                                ┃
+ ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ ┃ 4. 动态工作区切片 (Dynamic Environment Context) - 局部刷新 (严格沉底)        ┃
+ ┃    - 当前活动文件路径、Git 暂存区差异、当前时间戳 (放在最底部)               ┃
+ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ```
 
-把最高频变动的动态环境信息**严格沉底**，确保前 80% 的静态指令与工具 Schema 能够稳定命中服务端的 KV Cache。
+```ts
+// packages/core/system-prompt/src/index.ts
+export function renderPrompt(assembly: PromptAssembly): string {
+  // 按照缓存稳定性从高到低严格排序拼接
+  return [
+    assembly.staticInstructions,
+    assembly.toolSchemasPrompt,
+    assembly.skillPrompts,
+    assembly.dynamicEnvironmentContext, // 高频变动的动态环境信息严格置于末尾！
+  ].filter(Boolean).join('\n\n---\n\n');
+}
+```
+
+通过这一简单的架构分层，`dsh` 保证了 85% 以上的系统提示词能够永久稳定命中服务端的 KV Cache。
 
 ---
 
 ## 三、上下文治理双引擎：Compaction 与 Spill
 
-当自主 Agent 执行大型重构任务时，多轮对话可能迅速突破 64K 甚至 128K Token 上限。`dsh` 提供了两种互补的治理手段：
+当 Agent 连续执行复杂任务（如在一个包含 50 个文件的项目中进行全量重构）时，历史事件流会迅速膨胀至 10 万+ Token。`dsh` 通过 **Compaction（智能压缩）** 与 **Spill（大输出外置）** 双引擎解决该问题。
 
-### 3.1 引擎一：Compaction（智能摘要压缩）
+### 3.1 引擎一：Compaction（智能摘要压缩，`packages/compaction`）
 
-当当前会话的 Token 估算值接近设定的水位线（如达到窗口容量的 80%）时，`packages/compaction` 插件被自动激活：
+`dsh` 支持自动与手动两级压缩策略：
 
 ```mermaid
 flowchart TD
-    Log["海量历史事件流 (100+ 轮交互)"] --> Check{"Token 是否超过水位阈值?"}
-    Check -->|"是"| CompactAgent["启动后台微型 Agent / 摘要提示词"]
+    Log["海量历史事件流 (100+ 轮交互，消耗 100K Tokens)"] --> Watermark{"当前 Token 是否达到窗口 80% 水位线?"}
     
-    subgraph Summarization["语义压缩处理"]
-        CompactAgent --> KeyFacts["提取核心事实: 关键代码改动 / 用户原始目标 / 遗留待办"]
-        CompactAgent --> Prune["剔除中间冗余的大段报错日志与临时调试输出"]
+    Watermark -->|"是"| Pruner["1. compaction-tool-result-pruner<br/>(剪枝历史中已被后续成功步骤覆盖的早期巨量报错)"]
+    
+    Pruner --> Summarizer["2. compaction-basic<br/>(启动后台轻量模型，提炼结构化事实)"]
+    
+    subgraph StructuredSummary["提炼关键事实清单"]
+        Summarizer --> F1["已确认的用户核心需求与约束"]
+        Summarizer --> F2["已完成的文件修改列表与测试状态"]
+        Summarizer --> F3["尚未解决的当前阻碍与待办事项 (TODOs)"]
     end
     
-    Summarization --> NewAnchor["写入 compaction/event 截断锚点"]
-    NewAnchor --> ShortContext["全新紧凑上下文 (Token 骤降 75%)"]
+    StructuredSummary --> Anchor["3. 写入 compaction/summary 截断锚点事件"]
+    Anchor --> NewContext["全新投影上下文 (Token 瞬间释放 80%)"]
 ```
 
-`compaction/event` 在 Session Log 中作为一个新的快照锚点，后续的 `deriveMessages` 会从最新的压缩锚点开始投影，既保证了关键记忆不丢失，又释放了巨大的上下文空间。
+在 Session Log 中写入 `compaction/summary` 锚点后，后续的 `deriveMessages` 函数直接从该锚点开始向后投影，历史详细事件被安全归档，大模型上下文恢复到清爽轻量状态。
 
-### 3.2 引擎二：Spill（大内容外置存储）
+### 3.2 引擎二：Spill（大输出透明外置，`packages/spill`）
 
-如果某个工具输出了一条 5MB 的日志文件或 10 万行数据库查询结果，直接塞入 Context 会瞬间打爆模型上下文。
+如果某个工具输出了一条 10MB 的压测日志或包含了 5 万行编译输出，直接塞入 Context 会瞬间导致大模型报错 `context_length_exceeded`。
 
-`packages/spill` 实现了透明的大内容外置机制：
-1. **阈值拦截**：工具输出一旦超过指定大小（如 16KB）；
-2. **落盘保存**：自动将完整结果存入磁盘临时存储，生成唯一文件哈希 URI；
-3. **内容切片**：只将前 50 行和后 20 行摘要以及 `[Full output spilled to uri: spilt://xxx]` 回传给大模型；
-4. **按需检索**：模型如果需要深入分析细节，可调用专门的 `read_spill_chunk` 工具定向分页读取。
+`packages/spill` 实现了透明外置机制：
+
+```mermaid
+sequenceDiagram
+    participant Tool as 工具执行端
+    participant Spill as dsh-spill 引擎
+    participant Disk as 本地临时磁盘
+    participant LLM as 大模型 Context
+
+    Tool->>Spill: 产出 5MB 工具执行结果
+    Note over Spill: 检测到输出大小 > 16KB 阈值！
+    Spill->>Disk: 将完整 5MB 数据写入磁盘，计算 SHA-256
+    Disk-->>Spill: 返回唯一 URI: spilt://hash-99882233
+    Spill-->>LLM: 回填切片预览摘要:<br/>前 50 行日志...<br/>[... 4,800 行被截断 ...]<br/>后 20 行日志...<br/>👉 完整输出已外置: spilt://hash-99882233
+    Note over LLM: 模型如需分析详情，可发起 read_spill_chunk(uri, offset, limit)
+```
 
 ---
 
 ## 四、Token 计量与成本控制 (TokenMeter)
 
-在多租户与企业环境中，每一次大模型调用的成本必须清晰可见。`packages/telemetry` 提供了精确的 Token 计量器：
-- 每次 Step 结束时，记录真实计费数据：`prompt_tokens`, `completion_tokens`, `cached_tokens`；
-- 计算当前会话的实时累计开销（美元 / 人民币）；
-- 发射 `telemetry/usage` 事件，驱动前端实时仪表盘更新。
+在企业级部署中，每一次大模型调用的成本必须清晰透明。`packages/telemetry` 模块在每次 Step 完成时，精准汇总物理 Usage：
+
+```ts
+export interface TokenUsageReport {
+  promptTokens: number;
+  completionTokens: number;
+  cachedPromptTokens: number; // 命中 KV Cache 的 Token 数量
+  estimatedCostUsd: number;    // 基于模型阶梯单价自动计算的实时美元花费
+}
+```
 
 ---
 
 ## 五、架构启示与工程收获
 
-1. **协议层应当向未来模型看齐**：深度推理模型（如 DeepSeek-R1）已将“思考过程”变为一等公民，流式协议必须具备原生承载多通道 Delta 的能力；
-2. **缓存友好是免费的超能力**：通过简单的 Prompt 分层与静态前缀对齐，可以在不牺牲功能的前提下，让 API 响应速度倍增、调用成本折半；
-3. **永远防范上下文溢出**：没有自我压缩与溢出防护的 Agent 跑不过 50 轮；建立自动化 Compaction 与 Spill 机制，是 Agent 能够稳定运行长程任务的底层基石。
+1. **协议层应当向强推理模型看齐**：随着 DeepSeek-R1 时代的到来，流式协议必须原生支持思考链分流，方能提供顶级的开发者体验；
+2. **前缀对齐是免费的超能力**：严格将动态变量沉底，最大化静态前缀，是零成本将大模型 API 响应速度翻倍、费用折半的绝技；
+3. **长程任务必须有防洪闸门**：没有 Compaction 与 Spill 防护的 Agent 绝无可能稳定运行超过 50 轮；两道防洪堤是长程智能体走向生产的必备基础。
 
 ---
 
 ## 六、参考资料与延伸阅读
 
-1. [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](https://arxiv.org/abs/2501.12948)
-2. [DeepSeek 官方 Prompt Caching (KV Cache) 最佳实践指南](https://api-docs.deepseek.com/guides/kv_cache)
-3. [DeepSeek Harness Compaction 与 Spill 子系统源码](https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/compaction)
+1. [DeepSeek 官方 Prompt Caching (KV Cache) 最佳实践](https://api-docs.deepseek.com/guides/kv_cache)
+2. [DeepSeek-R1 论文: Incentivizing Reasoning Capability in LLMs](https://arxiv.org/abs/2501.12948)
+3. [DeepSeek Harness Compaction 与 Spill 子系统实现源码](https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/compaction)

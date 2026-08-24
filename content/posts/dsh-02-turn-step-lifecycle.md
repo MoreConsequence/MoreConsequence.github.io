@@ -1,6 +1,6 @@
 ---
 title: "DeepSeek Harness 架构解密（二）：Turn 与 Step 双层循环及事件状态机"
-description: "深入拆解 DeepSeek Harness (dsh) 的执行引擎调度内核：Turn 与 Step 双层状态机循环、瀑布流 (Waterfall) 中间件拦截机制、agent/pre-step 动态提示词重写与工具执行流水线。"
+description: "深入拆解 DeepSeek Harness (dsh) 的执行引擎调度内核：Turn 与 Step 双层状态机循环、瀑布流 (Waterfall) 中间件拦截机制、agent/pre-step 动态提示词重写与工具并发执行流水线。"
 publishedAt: "2026-08-24"
 tags: ["DeepSeek", "Agent", "状态机", "生命周期", "系统设计"]
 draft: false
@@ -8,156 +8,211 @@ featured: false
 series: "DeepSeek DSH 架构全解"
 ---
 
-**TL;DR：** 在自主 Agent 的运行时设计中，最容易混淆的概念是“单次大模型问答”与“一个完整的任务目标执行闭环”。DeepSeek Harness（`dsh`）在调度器内核中建立了严密的 **Turn（轮次）** 与 **Step（步骤）** 双层状态机。**Step** 是一次原子化的“模型请求 + 工具执行”操作；而 **Turn** 则是从接收用户输入开始、经过零次或多次 Step 工具交互、直到 Agent 彻底解决问题或无未尽工作时的完整闭环。`dsh` 通过在关键状态转移点引入瀑布流（Waterfall）事件总线，让外部插件可以在不修改调度器主循环的前提下，实现动态提示词重写、工具权限阻断、流式思考链分发与实时中断响应。
+**TL;DR：** 在自主 Agent 的运行时设计中，最容易混淆的概念是“单次大模型问答”与“一个完整的任务目标执行闭环”。DeepSeek Harness（`dsh`）在调度器内核（`packages/core/agent-loop`）中建立了严密的 **Turn（任务轮次）** 与 **Step（步骤）** 双层状态机。**Step** 是一次原子化的“模型请求 + 工具并发执行 + 结果收集”操作；而 **Turn** 则是从接收外部输入开始、经历 0 到 $N$ 次 Step 迭代、直至 Agent 彻底解决问题或无待办工作时的收敛闭环。`dsh` 通过在关键状态转移点引入洋葱模型式的**瀑布流（Waterfall）**中间件体系与**双级收件箱（Two-Tier Inbox）**，让插件系统能够在不修改核心调度循环的前提下，实现动态提示词装配、模型请求拦截、独占工具屏障并发调度与全链路级联取消。
 
 ---
 
-## 一、心智模型：Turn 与 Step 的精确边界
+## 一、心智模型：Turn 与 Step 的精确状态拓扑
 
-在 `dsh` 中，调度生命周期的层次关系如下图所示：
+在 `dsh` 中，调度驱动器 `ReactLoopAgent` 的核心状态机流转如下图所示：
 
 ```mermaid
 flowchart TD
-    subgraph TurnFlow["一个完整 Turn（任务轮次）"]
-        TStart["turn/start: 认领用户输入与排队消息"]
+    subgraph TurnLevel["Turn 宏观轮次 (从用户输入到任务完全收敛)"]
+        TStart["1. turn/start: 认领 Inbox 输入与排队上下文"]
         
-        subgraph StepFlow["Step 循环（1..N 次）"]
-            PreStep["agent/pre-step: 提示词装配与安全过滤"]
-            SStart["step/start: 写入持久化日志"]
-            Derive["deriveMessages: 从日志投影上下文"]
-            Req["agent/request ➔ llm/stream (流式推理)"]
+        subgraph StepLevel["Step 微观循环 (1..N 次迭代)"]
+            PreStep{"2. agent/pre-step 瀑布流<br/>(Prompt 装配与安全审查)"}
             
-            subgraph ToolPipe["工具执行流水线"]
-                TPre["tools/pre-execute (权限审查)"]
-                TExec["tools/execute (沙箱执行)"]
-                TPost["tools/post-execute (输出清洗)"]
+            PreStep -->|"Decision: reject / empty"| TurnClose["关闭 Turn (0 Step 消耗)"]
+            
+            PreStep -->|"Decision: enter"| SStart["3. step/start (事件落盘)"]
+            
+            SStart --> Derive["4. deriveMessages() 从只读事件流投影模型上下文"]
+            
+            Derive --> StreamReq["5. agent/request ➔ llm/stream<br/>(流式输出 text / thinking / tool_call)"]
+            
+            subgraph ToolDispatchPipeline["6. executeToolCalls 工具并发调度流水线"]
+                TBarrier["Exclusive 独占工具 ➔ 建立串行屏障"]
+                TParallel["Parallel 并发工具 ➔ 滑动并发池 (Rolling Pool)"]
+                TPolicy["tools/pre-execute ➔ 权限审批与参数清洗"]
+                TExec["tools/execute ➔ 沙箱物理执行"]
+                TPost["tools/post-execute ➔ 输出截断与脱敏"]
+                
+                TBarrier --> TPolicy --> TExec --> TPost
+                TParallel --> TPolicy --> TExec --> TPost
             end
             
-            Req -->|"产出 Tool Calls"| TPre
-            TPre --> TExec --> TPost
-            TPost --> SEnd["step/end: 产出 tool/result"]
+            StreamReq -->|"解析出 Tool Calls"| ToolDispatchPipeline
+            ToolDispatchPipeline --> SEnd["7. step/end: 写入 tool/result 与 step 审计"]
         end
         
         TStart --> PreStep
-        SEnd -->|"仍有后续工具调用或新输入"| PreStep
-        SEnd -->|"任务收敛 / 无待办"| TStop["agent/turn-stopping"]
-        TStop --> TEnd["turn/end: 释放 Turn 锁"]
+        SEnd -->|"模型返回 stop_reason == 'tool_use' 或新输入到达"| PreStep
+        SEnd -->|"模型返回 stop_reason == 'stop' 且 Inbox 为空"| TurnStopping["8. agent/turn-stopping"]
+        TurnStopping --> TEnd["9. turn/end: 释放 Turn 锁，回归 IDLE 态"]
     end
 ```
 
-### 1.1 关键定义对比
+### 1.1 Phase 状态机内部定义
 
-- **Step（单步）**：
-  - 发起一次 `llm/stream` 请求；
-  - 接收模型返回的文本 Delta 或工具调用提案；
-  - 并发/串行执行所有提案的工具并收集执行结果；
-  - 产出不可变的 `step/start` 与 `step/end` 日志事件。
-- **Turn（轮次）**：
-  - 在认领到外部输入（用户 Query、外部 Webhook、定时 Trigger）时开启；
-  - 驱动内部 Step 循环不断向前推进；
-  - 当模型不再调用工具（`stop_reason === 'stop'`）且没有新的排队输入时，优雅关闭 Turn。
+在 `ReactLoopAgent` 内部，实例的生命周期状态被严格定义为一个带判别联合类型的 `Phase`：
+
+```ts
+// packages/core/agent-loop/src/agent.ts
+type Phase =
+  | { kind: 'idle'; lastTurn: number }
+  | {
+      kind: 'maintenance';
+      abort: AbortController;
+      lastTurn: number;
+      wakeRequested: boolean;
+    }
+  | {
+      kind: 'running';
+      abort: AbortController;
+      turn: number;
+      step: number;
+      wakeRequested: boolean;
+    };
+```
+
+- **`idle`**：当前无任何活动任务，Agent 挂起等待 Inbox 唤醒；
+- **`maintenance`**：正在执行内部会话整理（如会话快照压缩 Compaction、数据迁移），若收到紧急 Wake 信号可平滑打断；
+- **`running`**：正在推进具体的 Turn 与 Step 循环，持有当前 Turn 级别的 `AbortController`。
 
 ---
 
-## 二、瀑布流 (Waterfall) 中间件设计：掌控每一次转移
+## 二、双级收件箱 (Two-Tier Inbox) 与并发唤醒机制
 
-在很多传统 Agent 框架中，生命周期钩子往往是简单的广播通知（如 `onMessage`）。而在 `dsh` 中，关键生命周期事件采用了类似 Koa / Express 中间件的 **Waterfall（瀑布流）** 模式。
+在真实的生产应用中，用户经常在 Agent 正在流式打字或正在执行长时间工具时追加文字，或者后台系统任务（如代码构建完成）需要给 Agent 注入上下文。
 
-### 2.1 什么是 Waterfall 事件？
+传统 Agent 往往由于单线程阻塞导致“用户输入丢失”或“引发状态机竞态崩溃”。`dsh` 创新性地引入了 **双级收件箱（Two-Tier Inbox）** 体系：
 
-监听 Waterfall 事件的插件接收一个 `next()` 回调函数：
-- **放行**：调用 `await next()`，控制权移交给下一个插件或默认执行器；
-- **改写**：修改输入参数后调用 `await next()`；
-- **短路阻断**：不调用 `next()` 直接返回自定义结果，终止后续流转。
+```mermaid
+flowchart LR
+    UserInput["用户新发送的紧急消息"] -->|"inbox.wake(msg)"| WakeQueue["1. Wake 队列 (立即抢占)"]
+    BgNotification["后台异步通知 / 临时环境切片"] -->|"inbox.inject(ctx)"| InjectQueue["2. Injected 上下文队列 (暂存)"]
+    
+    WakeQueue -->|"触发 AbortSignal / 唤醒 IDLE Agent"| ReactLoop["ReactLoopAgent 核心调度器"]
+    InjectQueue -->|"静默等待下一个 Step Boundary"| StepBoundary["Step 边界顺带装配"]
+```
+
+### 2.1 两类消息的精确语义
+
+1. **Wake 消息（唤醒消息）**：
+   - 如果 Agent 处于 `idle` 状态，立即触发状态转移进入 `running`；
+   - 如果 Agent 正在执行大模型推理，会向当前的 `stepSignal` 发出取消信号，优雅截断当前输出，迅速将用户最新输入合并到下一次 `agent/pre-step` 中进行思考；
+2. **Injected 上下文消息（注入消息）**：
+   - 绝不打断当前正在进行的流式输出；
+   - 暂存在内存收件箱中，直到当前 Step 结束、进入下一个 Step 的 `agent/pre-step` 阶段时，与系统提示词一同装配，保证大模型注意力不被随机碎片化信息打散。
+
+---
+
+## 三、瀑布流 (Waterfall) 中间件架构：控制每一次状态转移
+
+在 `dsh` 中，关键生命周期并非简单的发布/订阅（Pub/Sub）事件，而是采用了类似 Koa 洋葱模型的 **Waterfall（瀑布流）** 拦截机制。
+
+### 3.1 `agent/pre-step` 决策契约
+
+在 Step 真正发起前，调度器调用 `agent/pre-step` 瀑布流，允许所有挂载的插件做出 `PreStepDecision` 裁决：
 
 ```ts
-// packages/core/agent-loop/src/waterfall.ts 核心设计示意
-export type WaterfallHandler<TArgs, TResult> = (
-  args: TArgs,
-  next: (args?: TArgs) => Promise<TResult>
-) => Promise<TResult>;
+// packages/core/agent/src/types.ts
+export type PreStepDecision =
+  | { kind: 'reject'; reason: string }
+  | { kind: 'enter'; messages: UserMessage[]; assembly: PromptAssembly };
+```
 
-export async function composeWaterfall<TArgs, TResult>(
-  handlers: WaterfallHandler<TArgs, TResult>[],
-  initialArgs: TArgs,
-  terminalAction: (args: TArgs) => Promise<TResult>
-): Promise<TResult> {
-  let index = -1;
+```ts
+// 插件拦截示例：Token 配额保护插件
+ctx.on('agent/pre-step', async (args, next) => {
+  const currentCost = await ctx.telemetry.getSessionCost(args.agent.sessionId);
+  if (currentCost > MAX_BUDGET_LIMIT) {
+    // 短路拦截：直接拒绝进入大模型，不消耗任何 Token
+    return { kind: 'reject', reason: 'Session budget exceeded.' };
+  }
+  
+  // 放行并传递给下一个中间件
+  return next(args);
+});
+```
 
-  async function dispatch(i: number, currentArgs: TArgs): Promise<TResult> {
-    if (i <= index) throw new Error('next() called multiple times');
-    index = i;
-    const fn = handlers[i];
-    if (i === handlers.length) {
-      return terminalAction(currentArgs);
-    }
-    return fn(currentArgs, (nextArgs) => dispatch(i + 1, nextArgs ?? currentArgs));
+- **`reject`**：直接拒绝当前步骤，调度器将优雅关闭当前 Turn，不在日志中留下无效的空白 Step；
+- **`enter`**：放行并允许中间件就地改写即将进入大模型的 `messages` 列表或动态补充 `PromptAssembly` 切片。
+
+---
+
+## 四、工具并发流水线：Exclusive 屏障与 Rolling Pool
+
+当大模型单次输出了多个工具调用时（如同时调用 `read_file("a.ts")`, `read_file("b.ts")`, `execute_bash("npm test")`），调度器如何确保并发性能与执行安全？
+
+`packages/core/agent-loop/src/tool-calls.ts` 实现了业界领先的 **混合并发调度器（Hybrid Tool Scheduler）**：
+
+```mermaid
+flowchart TD
+    Calls["大模型输出工具调用列表:<br/>[read_file(a), read_file(b), git_commit(), read_file(c)]"] --> Classifier["1. 并发模式动态判定 (ToolExecutionMode)"]
+    
+    Classifier --> G1["Group 1: [read_file(a), read_file(b)] (Parallel 并发组)"]
+    Classifier --> G2["Group 2: [git_commit()] (Exclusive 独占屏障)"]
+    Classifier --> G3["Group 3: [read_file(c)] (Parallel 并发组)"]
+    
+    subgraph Pool["Rolling Pool 滑动窗口并发池 (最大并发数: 8)"]
+        G1 --> RunP["并发执行 a 与 b"]
+    end
+    
+    RunP --> Barrier["2. 遇到独占工具 ➔ 强制 Drain 等待前序全部完成"]
+    Barrier --> RunExclusive["3. 独占串行执行 git_commit()"]
+    RunExclusive --> RunNext["4. 放行后续并发组 G3"]
+```
+
+### 4.1 混合调度的核心原则
+
+1. **Exclusive 独占工具屏障**：涉及状态突变、Git 提交或 Shell 执行的高危工具被声明为 `exclusive`。调度器在遇到独占工具时，会暂停分发新任务，等待之前所有已启动的并行工具完全收敛后，再单独串行执行独占工具；
+2. **Model-Ordered 结果保序**：尽管底层的网络 I/O 可能因为响应耗时不同而发生乱序到达，调度器在向 Session Log 写入 `tool/result` 时，**严格按照大模型最初生成的顺序排序回填**，确保重放与上下文投影的绝对确定性；
+3. **合成取消回执 (Synthetic Abort Results)**：若在多工具执行期间收到取消信号，已发起的工具等待其优雅 Drain，尚未发起的工具自动写入包含 `TOOL_ABORTED_BEFORE_DISPATCH` 错误码的合成回执，保证 Session 日志的拓扑完整。
+
+---
+
+## 五、三段式工具执行流水线 (`tools/*`)
+
+每次具体工具执行时，必须经过严密的三段式管道：
+
+```ts
+// packages/core/tools/src/pipeline.ts 核心执行流
+export async function runToolPipeline(
+  ctx: Context,
+  input: ToolExecutionInput,
+  signal: AbortSignal
+): Promise<ToolExecutionResult> {
+  // 1. tools/pre-execute: 权限校验、HITL 人工审批、参数防注入过滤
+  const preResult = await ctx.waterfall('tools/pre-execute', { input, signal });
+  if (preResult.blocked) {
+    return { isError: true, output: `Tool call blocked: ${preResult.reason}` };
   }
 
-  return dispatch(0, initialArgs);
+  // 2. tools/execute: 派发给具体的 Provider (本地系统 / Linux 沙箱 / 远程 RPC)
+  const execResult = await ctx.waterfall('tools/execute', { input: preResult.input, signal });
+
+  // 3. tools/post-execute: 超大输出截断 (Spill 转移)、敏感凭据脱敏清洗
+  const postResult = await ctx.waterfall('tools/post-execute', { result: execResult, signal });
+
+  return postResult.result;
 }
 ```
 
 ---
 
-## 三、核心流转时序：从用户输入到工具落地的每一步
+## 六、架构启示与工程收获
 
-让我们跟随一个完整的 Step 走一遍 `dsh` 的核心调度时序：
-
-### 3.1 阶段一：认领输入与 `agent/pre-step`
-
-调度器从 Agent 的 Inbox 队列中拉取最新消息。此时触发 `agent/pre-step` 瀑布流：
-- **插件权限检查**：检测用户是否被限制（如 Token 配额耗尽）；
-- **动态上下文注入**：插件可以在进入模型前注入实时的外部环境信息（如当前 Git 分支状态、当前打开的文件路径）；
-- **静默拦截**：若插件判定该输入无需消耗 LLM（例如用户输入 `/help` 内部命令），可直接短路并返回空消息，关闭 Turn 而无需消耗大模型 Token。
-
-### 3.2 阶段二：上下文投影 `deriveMessages()`
-
-模型不能直接读全局内存对象，必须从历史不可变事件流中通过 `deriveMessages(sessionEvents)` 实时投影出满足 OpenAI / Anthropic 规范的上下文消息列表。这一步杜绝了历史记录被意外篡改的可能。
-
-### 3.3 阶段三：`agent/request` ➔ `llm/stream`
-
-调度器调用 `ctx.llm` 适配器发起流式请求：
-- 实时广播 `assistant/chunk`（供 Web UI 渲染打字机动画）；
-- 若大模型支持思考链（如 DeepSeek-R1），发射 `thinking_delta` 事件；
-- 聚合解析出 `tool/call` 事件对象。
-
-### 3.4 阶段四：工具三段式流水线 (`tools/*`)
-
-模型输出工具调用意图后，进入严格的三段式执行流水线：
-
-```text
-1. tools/pre-execute   --> 权限审查、用户人机交互确认 (HITL)、参数防注入清洗
-2. tools/execute       --> 派发给实际的 Provider (本地进程 / Docker 沙箱 / Remote API)
-3. tools/post-execute  --> 输出截断 (防止 10MB 大日志塞爆上下文)、敏感密钥脱敏
-```
-
-执行完毕后，工具输出被包装为持久化的 `tool/result` 消息存入 Session Log。
+1. **Turn 与 Step 的分离是状态机的定海神针**：模糊二者的界限是大部分 Agent 陷入死循环的元凶。将单步执行与任务收敛分层治理，才能构建出可预测、可审计的自主循环；
+2. **洋葱模型是拦截治理的最佳实践**：通过 Waterfall 中间件，权限审查、Prompt 动态注入、Token 预算熔断均能与调度核心彻底解耦；
+3. **并发必须以保序为前提**：在处理大模型生成的批量工具调用时，既要利用并发滑动池压榨 I/O 吞吐，又必须在日志落地时维持模型原始意图的绝对顺序。
 
 ---
 
-## 四、并发与取消：优雅打断的艺术
+## 七、参考资料与延伸阅读
 
-在真实的工业生产中，用户经常在大模型流式输出或工具长时间执行时点击【取消】或追加新的输入。
-
-`dsh` 在设计调度器时引入了严格的并发控制：
-1. **单一活动 Turn 互斥锁**：同一个 Session 在任意时刻只能有一个活动的 Turn，防止多请求导致状态机内部竞争脏写；
-2. **两级 Inbox 机制**：
-   - **Wake 消息**：如用户紧急发送的文字，会立即唤醒处于等待状态的 Agent，或给当前 Step 传入 `AbortSignal` 触发快速软中断；
-   - **Context 注入消息**：如后台编译完成的通知，暂存在 Inbox 中，静默等待下一次常规 Step 启动时顺带装配，不打扰当前正在流式生成的思考过程。
-
----
-
-## 五、架构启示与工程收获
-
-1. **状态机粒度决定了系统的可控性**：将执行划分为清晰的 Turn 与 Step，让状态回滚、重试和断点继续拥有了精确的原子锚点；
-2. **中间件洋葱模型是扩展的利器**：通过 Waterfall 机制，鉴权、计费、Prompt 注入、安全审计等横切关注点都可以独立解耦为独立插件，调度器核心保持绝对极简；
-3. **取消必须是级联的一等公民**：利用 `AbortController` 贯穿 HTTP 请求、LLM Stream 与底层子进程，杜绝由于网络断开或用户取消导致的“僵尸进程”消耗服务端算力。
-
----
-
-## 六、参考资料与延伸阅读
-
-1. [DeepSeek Harness 核心架构与状态机规范](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/architecture.md)
-2. [Koa 与 洋葱中间件架构设计原理](https://koajs.com/)
-3. [W3C AbortController 与 DOM 取消标准规范](https://dom.spec.whatwg.org/#abortcontroller)
+1. [DeepSeek Harness Agent Loop 源码实现](https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/core/agent-loop)
+2. [Reactive State Machine Patterns for Autonomous Agents](https://martinfowler.com/articles/patterns-of-distributed-systems/)
+3. [Concurrency in TypeScript: Promises, Cancellation, and Task Draining](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)

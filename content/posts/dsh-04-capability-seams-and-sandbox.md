@@ -1,6 +1,6 @@
 ---
 title: "DeepSeek Harness 架构解密（四）：三位一体能力缝隙 (Capability Seams) 与零信任沙箱"
-description: "深入拆解 DeepSeek Harness (dsh) 的系统级能力扩展与安全隔离防护：Service Definition / Provider / Consumer 三位一体能力缝隙设计、ctx.fs 与 ctx.subprocess 抽象层、Bubblewrap/Docker 零信任沙箱与动态权限审批流。"
+description: "深入拆解 DeepSeek Harness (dsh) 的系统级能力扩展与安全隔离防护：Service Definition / Provider / Consumer 三位一体能力缝隙设计、ctx.fs 与 ctx.subprocess 抽象层、Linux Landlock/Bubblewrap 与 macOS Seatbelt 跨平台零信任沙箱。"
 publishedAt: "2026-08-24"
 tags: ["DeepSeek", "Agent", "沙箱安全", "系统设计", "权限控制"]
 draft: false
@@ -8,139 +8,143 @@ featured: false
 series: "DeepSeek DSH 架构全解"
 ---
 
-**TL;DR：** 自主 Agent 要成为生产力工具，就必须具备读写文件、执行 Shell 脚本与调用网络工具的真实系统能力；但直接给大模型裸跑 `child_process.exec()` 或任意写盘无异于“引狼入室”。DeepSeek Harness（`dsh`）在架构设计中开创性地提出了**能力缝隙（Capability Seams）**范式，将系统能力严格解耦为 **Service Definition（契约定义）**、**Service Provider（能力提供者）** 与 **Consumer（消费调用端）** 三层。结合 Linux Bubblewrap、Docker 容器隔离与细粒度人机确认（HITL）审批守卫，`dsh` 做到了无论将 Agent 部署在本地开发机、云端多租户集群还是隔离无网沙箱，工具代码一行不改，底层安全防线牢不可破。
+**TL;DR：** 自主 Agent 要成为真正的生产力工具，就必须具备读写工作区、执行 Shell 脚本与派生子进程的真实操作系统能力；但直接给大模型裸跑 `child_process.exec()` 或任意写盘无异于“引狼入室”。DeepSeek Harness（`dsh`）在架构设计中开创性地提出了**三位一体能力缝隙（Capability Seams）**范式，将物理能力严格解耦为 **Service Definition（契约定义）**、**Service Provider（实现提供者）** 与 **Consumer（业务调用端）** 三层。在沙箱层（`packages/sandbox`），`dsh` 原生集成了 **Linux Landlock / Bubblewrap**、**macOS Seatbelt (`sandbox-exec`)** 与 **Windows Restricted Token / ACLs** 跨平台沙箱矩阵，配合细粒度人机确认（HITL）审批流，实现了“工具代码一行不改，底层安全物理封印”的企业级安全底座。
 
 ---
 
-## 一、心智模型：为什么需要“能力缝隙 (Capability Seam)”？
+## 一、心智模型：为什么需要“三位一体能力缝隙 (Capability Seam)”？
 
-在许多 Agent 实现中，工具（Tool）通常直接硬编码 `node:fs` 或 `child_process`：
+在许多开源 Agent 实现中，工具（Tool）通常直接硬编码宿主机的系统调用：
 
 ```ts
-// ❌ 传统紧耦合写法：工具直接操作本地系统
+// ❌ 传统紧耦合反模式：工具直接侵入本地物理系统
 export async function executeBash(cmd: string) {
-  return execSync(cmd).toString(); // 无法远程化，无法注入沙箱，无法跨平台
+  // 无法重定向到 Docker，无法无侵入注入沙箱，无法跨平台隔离
+  return execSync(cmd, { cwd: process.cwd() }).toString();
 }
 ```
 
-这种设计的致命缺陷在于：**工具与物理环境强绑定**。一旦要把 Agent 迁移到云端容器运行，或者限制 Agent 只能访问某一个特定目录，就必须修改所有工具源码。
+这种设计的致命缺陷在于：**工具与物理环境强耦合**。一旦要把 Agent 迁移到云端多租户容器，或者需要在严格断网的沙箱中执行不受信代码，就必须推倒重写所有工具源码。
 
-`dsh` 提出了**三位一体能力缝隙（Seam）**模型：
+`dsh` 确立了**三位一体能力缝隙（Seam）**模型：
 
 ```mermaid
 flowchart TD
     subgraph Seam["三位一体 Capability Seam 架构"]
-        Def["1. Service Definition (接口契约)<br/>FileSystem / Subprocess / Shell"]
+        Def["1. Service Definition (纯 TypeScript 接口契约)<br/>FileSystem / Subprocess / Shell / Terminals"]
         
-        subgraph Providers["2. Service Providers (可插拔实现)"]
-            P1["LocalFs / HostProcess (本地原生)"]
-            P2["BubblewrapSandbox (Linux 隔离)"]
-            P3["DockerContainer / E2B (云端沙箱)"]
+        subgraph Providers["2. Service Providers (可插拔环境实现)"]
+            P1["dsh-fs-local / dsh-subprocess-local (本地宿主)"]
+            P2["dsh-sandbox-local (Landlock / Bubblewrap / Seatbelt)"]
+            P3["dsh-sandbox-windows-acl (Windows Token / SID)"]
+            P4["dsh-e2b / dsh-docker (云端微虚拟机 MicroVM)"]
         end
         
-        subgraph Consumers["3. Consumers (上层业务工具)"]
-            C1["tool-file-read / write"]
-            C2["tool-bash / terminal"]
-            C3["tool-git / lsp"]
+        subgraph Consumers["3. Consumers (上层业务工具集)"]
+            C1["tool-file-read / write / edit"]
+            C2["tool-bash / terminal-session"]
+            C3["tool-git-lens / lsp-client"]
         end
         
-        Def -.->|"实现"| Providers
+        Def -.->|"规范实现"| Providers
         Consumers -->|"仅依赖接口"| Def
-        Providers ==>|"运行时注入"| Consumers
+        Providers ==>|"Cordis 运行时依赖注入"| Consumers
     end
 ```
 
 ### 1.1 Seam 的三要素
 
-1. **Service Definition**：声明纯 TypeScript 接口（如 `ctx.fs.readFile(path)`），不包含任何物理实现；
-2. **Service Provider**：实现具体的挂载逻辑（本地宿主、Linux cgroups/Bubblewrap、Docker 容器、或者远程 gRPC 沙箱）；
-3. **Consumer**：大模型面向的工具集（如 `read_file`, `execute_command`），只面向 `ctx.fs` 编程，完全感知不到底层是本地还是远端沙箱。
+1. **Service Definition**：声明纯接口抽象（如 `ctx.fs.readFile(path)`, `ctx.subprocess.spawn(spec)`），不包含任何物理实现代码；
+2. **Service Provider**：实现具体的挂载逻辑（本地文件、Linux Landlock 规则树、Docker 容器或远程 gRPC RPC 沙箱）；
+3. **Consumer**：大模型面向的业务工具集，仅面向 `ctx.fs` 与 `ctx.subprocess` 编程，对底层物理环境完全无感。
 
-只需在 Cordis 配置中替换一行 Provider，整个 Agent 的所有工具执行世界瞬间平移到隔离沙箱中。
-
----
-
-## 二、核心能力缝隙一览：操作系统与环境抽象
-
-在 `dsh` 中，操作系统的物理访问被收敛在以下几组核心 Seam 中：
-
-| Seam 抽象 (`ctx.*`) | 接口职责与定义 | 默认本地 Provider | 沙箱隔离 Provider |
-|---|---|---|---|
-| `ctx.fs` | 文件读写、Stat、移动、Glob 搜索 | `dsh-fs-local` | `dsh-fs-sandbox` (只读挂载与白名单限制) |
-| `ctx.subprocess` | 单次子进程派生、超时与退出码管理 | `dsh-subprocess-local` | `dsh-sandbox-bubblewrap` / `dsh-e2b` |
-| `ctx.terminals` | 维持长生命周期的 PTY 伪终端交互会话 | `dsh-terminal-local` | 容器内 PTY 桥接转发 |
-| `ctx.credentials` | 系统敏感凭据（API Keys、SSH Keys）安全管理 | `dsh-credentials-env` | OS Keychain / 内存受保护存储 |
+在 Cordis 配置文件中只需切换一行 Provider，整个 Agent 所有的文件读写与命令执行瞬间无缝平移至隔离沙箱。
 
 ---
 
-## 三、零信任沙箱防护：Bubblewrap 与权限物理隔离
+## 二、跨平台零信任沙箱矩阵 (`packages/sandbox`)
 
-当 Agent 需要执行不受信的 Python 脚本或由 LLM 自主生成的 Shell 管道时，`dsh` 提供了基于 Linux 原生 **Bubblewrap (`bwrap`)** 的超轻量无 root 沙箱方案。
+`dsh` 的沙箱并非简单的容器套壳，而是在操作系统内核级别实现了针对不同 OS 的原生轻量沙箱适配矩阵：
 
-### 3.1 Bubblewrap 隔离原理
+```text
+ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ │                     dsh 跨平台零信任沙箱适配矩阵                            │
+ ┣━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ │ 操作系统平台     │ 底层沙箱机制与内核隔离技术                                │
+ ┣━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ │ Linux (现代内核) │ Linux Landlock LSM (无需 root 权限的文件系统路径访问控制)  │
+ │ Linux (通用环境) │ Bubblewrap (bwrap Namespaces + 只读 bind-mount + 无网隔离)│
+ │ macOS           │ Apple Seatbelt 内核沙箱 (利用 sandbox-exec Scheme 描述符)  │
+ │ Windows         │ Restricted Token + 低完整性级别 (Low Integrity SID) + ACL │
+ │ 云端多租户       │ E2B Firecracker MicroVM / Docker Remote Sandbox          │
+ ┗━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
 
-Bubblewrap 利用 Linux User Namespaces 技术，无需 root 权限即可为子进程创建完全隔离的命名空间：
+### 2.1 Linux Bubblewrap 隔离原理与参数构造
+
+当在 Linux 下以非 root 权限启动沙箱子进程时，`dsh` 自动合成严格受限的 bwrap 命令链：
 
 ```ts
-// packages/sandbox/bubblewrap/src/index.ts 核心参数组装示意
-export function buildBubblewrapArgs(config: SandboxPolicy): string[] {
+// packages/sandbox/sandbox-local/src/profiles.ts
+export function buildBubblewrapArgs(policy: SandboxPolicy): string[] {
   return [
     'bwrap',
-    '--ro-bind', '/usr', '/usr',       // 系统目录只读绑定
+    '--unshare-all',                         // 隔离 IPC, PID, UTS, Cgroup 等全部命名空间
+    '--die-with-parent',                     // 父进程销毁时子进程同步自毁，防孤儿逃逸
+    '--ro-bind', '/usr', '/usr',             // 系统二进制与库文件严格只读
     '--ro-bind', '/lib', '/lib',
     '--ro-bind', '/lib64', '/lib64',
-    '--dir', '/tmp',                   // 独立私有 /tmp 目录
-    '--bind', config.workspaceDir, config.workspaceDir, // 仅放开工作区读写
-    '--unshare-all',                   // 隔离所有命名空间 (IPC, PID, Net, UTS)
-    '--die-with-parent',               // 父进程退出时子进程立即销毁
-    ...(config.allowNetwork ? [] : ['--unshare-net']), // 默认物理断网
+    '--ro-bind', '/etc/resolv.conf', '/etc/resolv.conf', // 最小网络配置只读
+    '--dir', '/tmp',                         // 独立私有 /tmp 内存盘
+    '--bind', policy.workspaceDir, policy.workspaceDir, // 仅放开当前工作区读写
+    ...(policy.allowNetwork ? [] : ['--unshare-net']), // 默认物理拔除网线
   ];
 }
 ```
 
-- **物理断网**：默认通过 `--unshare-net` 移除网络设备，阻断恶意反弹 Shell 与私密数据外发；
-- **只读根文件系统**：宿主机的 `/etc`, `/usr`, `/bin` 以只读（`--ro-bind`）挂载，防止 Agent 破坏系统；
-- **工作区局部读写**：Agent 只能在指定的 Workspace 目录下创建与修改文件。
+- **物理断网**：通过 `--unshare-net` 移除所有网络接口（仅保留 `lo` 回环），阻断恶意反弹 Shell 与窃取 Token 外发；
+- **文件系统白名单**：宿主机除 `/usr` 和 `/lib` 外对子进程完全不可见；
+- **资源限制**：通过 Linux cgroups v2 注入 `pids.max = 32` 与 `memory.max = 512MB`，防止 Fork 炸弹与 OOM 击穿宿主机。
 
 ---
 
-## 四、动态权限审批流 (Guard & HITL Policy)
+## 三、动态权限审批流 (Guard & HITL Policy)
 
-除了操作系统层面的硬隔离，`dsh` 还内置了应用层的人机协同确认（Human-in-the-Loop）防线。
+除了操作系统底层的物理沙箱，`dsh` 在应用层设计了严密的 **Human-in-the-Loop（HITL）** 权限守卫。
 
-在工具执行的 `tools/pre-execute` 阶段，Guard 模块会进行意图与风险评估：
+在工具执行的 `tools/pre-execute` 瀑布流拦截点，Guard 模块依据当前会话的权限预设（Permission Preset）进行风险评估：
 
 ```mermaid
 flowchart TD
-    ToolCall["模型发起工具调用<br/>tool: bash, command: 'rm -rf ./build'"] --> CheckPolicy{"检查当前会话<br/>Permission Preset"}
+    ToolCall["模型发起工具调用<br/>tool: 'write_file', path: 'src/core/auth.ts'"] --> CheckPreset{"检查当前会话 Permission Preset"}
     
-    CheckPolicy -->|"只读策略 (readonly)"| Block["❌ 立即阻断并向模型解释原因"]
-    CheckPolicy -->|"全自动策略 (unattended)"| Exec["✅ 直接放行执行"]
-    CheckPolicy -->|"受控策略 (prompt_on_write)"| AskUser["⚠️ 发射 approval/request 事件挂起任务"]
+    CheckPreset -->|"readonly 预设"| Block["❌ 立即阻断，向模型回填: 'Write operations are forbidden.'"]
+    CheckPreset -->|"unattended 预设"| AutoExec["✅ 信任模式: 直接放行执行"]
+    CheckPreset -->|"prompt_on_write (受控预设)"| EmitApproval["⚠️ 发射 approval/request 事件挂起当前 Turn"]
     
-    AskUser -->|"前端弹窗: 用户点击【同意】"| Exec
-    AskUser -->|"前端弹窗: 用户点击【拒绝】"| Reject["❌ 记录拒绝结果并回传 LLM 修正"]
-    AskUser -->|"用户点击【取消会话】"| Abort["🛑 AbortSignal 级联取消释放"]
+    EmitApproval -->|"前端弹窗: 用户点击【批准】"| ResumeExec["✅ 恢复 Promise，放行工具执行"]
+    EmitApproval -->|"前端弹窗: 用户点击【拒绝】"| UserDeny["❌ 回填: 'User rejected this operation.'"]
+    EmitApproval -->|"用户点击【取消任务】"| CascadeAbort["🛑 AbortSignal 级联取消，释放协程"]
 ```
 
-### 4.1 核心防护特性
+### 3.1 权限风控的核心防线
 
-1. **权限不可静默提权**：工具无法通过二次封装绕过权限检查；
-2. **异步挂起与非阻塞**：当等待用户人工点击确认时，当前 Turn 保持挂起，不占用系统工作线程；
-3. **取消联动**：若用户在确认弹窗等待期间点击了取消任务，`AbortSignal` 立即释放挂起的 Promise，杜绝死锁。
+1. **不可静默提权（No Silent Escalation）**：任何尝试修改 `.dsh/` 配置文件或尝试安装未授权全局包的行为会被硬编码拦截；
+2. **异步挂起与非阻塞**：等待用户审批时，当前 Turn 进入 `maintenance/suspended` 状态，不占用 Node.js 事件循环的 CPU 算力；
+3. **级联取消防死锁**：若用户在等待审批期间点击了取消按钮，`AbortSignal` 会立即触发并拒绝等待 Promise，彻底清理资源。
 
 ---
 
-## 五、架构启示与工程收获
+## 四、架构启示与工程收获
 
-1. **接口先行，抹平环境异构性**：在 Agent 项目第一天就建立 `ctx.fs` 与 `ctx.subprocess` 的 Seam 抽象，是系统未来能够平滑支持 WebContainer、Docker、E2B 和 Kubernetes 的最大底牌；
-2. **多层纵深防御 (Defense in Depth)**：单一维度的防护必然会被绕过。`dsh` 通过“应用层 Schema 校验 ➔ 中间件权限 Guard 审批 ➔ 内核级 Bubblewrap/cgroups 隔离”构建了三道纵深防线；
+1. **接口先行，抹平环境异构性**：在项目第一天就确立 `ctx.fs` 与 `ctx.subprocess` 的 Seam 契约，是系统未来能够平滑支持 Docker、E2B、Wasm 和 Kubernetes 的最大底牌；
+2. **纵深防御 (Defense in Depth)**：单一维度的防护必然会被绕过。`dsh` 通过“应用层 Schema 校验 ➔ 中间件权限 Guard 审批 ➔ 内核级 Bubblewrap/Seatbelt 物理隔离”构建了三道纵深防线；
 3. **给用户明确的掌控权**：Agent 不是脱缰的野马，可观察、可干预、可审批是 Agent 迈入企业级生产环境的必备准入条件。
 
 ---
 
-## 六、参考资料与延伸阅读
+## 五、参考资料与延伸阅读
 
-1. [Linux Bubblewrap (bwrap) 官方仓库与命名空间规范](https://github.com/containers/bubblewrap)
-2. [DeepSeek Harness Capability Seams 设计文档](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/capability-seams.md)
-3. [NIST SP 800-207: Zero Trust Architecture (零信任架构标准)](https://csrc.nist.gov/publications/detail/sp/800-207/final)
+1. [Linux Landlock: Unprivileged Access Control](https://landlock.io/)
+2. [Bubblewrap: Unprivileged Sandboxing Tool (GitHub)](https://github.com/containers/bubblewrap)
+3. [DeepSeek Harness Capability Seams 设计规范](https://github.com/deepseek-ai/deepseek-harness/blob/main/docs/capability-seams.md)

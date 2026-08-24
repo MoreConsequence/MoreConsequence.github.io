@@ -8,20 +8,20 @@ featured: false
 series: "ORACT 架构全解"
 ---
 
-**TL;DR：** 绝大多数 Agent 团队在研发阶段都经历过这样的痛苦：在本地演示时一切顺畅，一旦部署到生产环境，遇到模型超时、数据库死锁、节点 OOM 或网络短暂抖动，系统就频繁陷入假死、重复执行或状态损坏。为什么普通的单元测试无法发现这些问题？因为传统的单测无法模拟**不可预测的外部物理世界崩溃**。ORACT 在代码库中构建了完全无凭据依赖（Credential-Free）的 **Reliability Lab（可靠性混沌实验室）** 与 **CrashLab 确定性故障注入引擎**，在每一次 CI 构建中自动发起断电崩溃、网络分区、租约争抢与恶意对抗测试，为 Agent 系统提供无可争议的可信工程证据（Reliability Evidence）。
+**TL;DR：** 绝大多数 Agent 研发团队在开发阶段都经历过这样的痛苦：在本地调试时一切顺畅，一旦部署到生产环境，遇到外部模型响应超时、数据库行级锁等待、容器 OOM 或网络短暂抖动，系统就频繁陷入假死、重复执行或状态损坏。为什么普通的单元测试无法发现这些问题？因为传统的单测根本无法模拟**不可预测的物理世界瞬时崩溃**。ORACT 在代码库中构建了完全无外部凭据依赖（Credential-Free）的 **Reliability Lab（可靠性混沌实验室）** 与 **CrashLab 确定性故障注入引擎**，在每一次 CI 构建中自动发起瞬时断电、网络分区、租约争抢与恶意对抗测试，为 Agent 系统提供无可争议的确定性工程证据（Reliability Evidence）。
 
 ---
 
-## 一、Agent 系统的测试绝境：为什么常规单测失效了？
+## 一、Agent 系统的测试绝境：为什么常规单测彻底失效？
 
-在传统软件测试中，我们习惯于编写 Mock 对象来模拟外部接口。但对于自主 Agent 系统，常规测试方法存在三大致命盲区：
+在传统 Web 系统测试中，我们习惯于编写简单的 Mock 对象来模拟外部 HTTP 接口。但对于长链路自主 Agent 系统，常规测试方法存在三大致命盲区：
 
 ```mermaid
 flowchart TB
     subgraph FlakyTests["传统 Agent 测试的致命缺陷"]
         T1["直接调用真实 OpenAI / Claude API<br/>❌ 成本高昂、网络不稳定、CI 频繁 Flaky 误报"]
-        T2["忽略中间断电与崩溃<br/>❌ 只能测试从头到尾平稳运行的 Happy Path"]
-        T3["无法模拟分布式竞态<br/>❌ 测不出租约超时、主备脑裂与死锁"]
+        T2["忽略执行中途断电与瞬时崩溃<br/>❌ 只能测试从头到尾平稳运行的 Happy Path"]
+        T3["无法模拟分布式竞态与时钟漂移<br/>❌ 测不出租约超时、主备脑裂与死锁"]
     end
 
     subgraph ORACTLab["ORACT Reliability Lab 解决方案"]
@@ -72,9 +72,20 @@ func (c *CrashController) CheckFailpoint(loc FailpointLocation) {
 
 ```go
 // testkit/crashlab/recovery_crash_test.go
+package crashlab_test
+
+import (
+    "context"
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/MoreConsequence/oract/runtime"
+    "github.com/MoreConsequence/oract/runtime/core"
+    "github.com/MoreConsequence/oract/testkit/crashlab"
+)
+
 func TestCrashRecovery_AfterOutboxWriteBeforeAck(t *testing.T) {
     store := setupHermeticPostgres(t)
-    crashCtrl := &CrashController{targetLocation: BeforeOutboxAck}
+    crashCtrl := crashlab.NewController(crashlab.BeforeOutboxAck)
 
     // 1. 第一阶段：运行 Agent 直至触发崩溃注入点
     assert.Panics(t, func() {
@@ -107,7 +118,7 @@ sequenceDiagram
     participant Runtime as ORACT 运行时
     participant Model as Scripted Model (内存伪模型)
 
-    Test->>Runtime: 发起 Run 请求 "分析数据"
+    Test->>Runtime: 发起 Run 请求 "分析数据并输出报告"
     Runtime->>Model: 发送 Prompt + 上下文
     Note over Model: 依据预设脚本，确定性返回:<br/>1. 思考链: "首先需要读取 data.csv"<br/>2. ToolCall: read_file("data.csv")
     Model-->>Runtime: 流式输出 Chunk

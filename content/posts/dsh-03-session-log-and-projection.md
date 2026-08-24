@@ -14,7 +14,7 @@ series: "DeepSeek DSH 架构全解"
 
 ## 一、为什么放弃快照？事件溯源 (Event Sourcing) 的必然性
 
-在传统的 Agent 存储设计中，通常直接把 `messages: Message[]` 数组作为 JSON 存入数据库。当需要修改单条消息、插入工具结果或压缩上下文时，直接原地 `UPDATE` 数据库记录。
+在传统的 Agent 存储设计中，开发者习惯于直接把 `messages: Message[]` 数组作为 JSON 存入数据库。当需要修改单条消息、插入工具结果或压缩上下文时，直接原地 `UPDATE` 数据库记录。
 
 这种做法在工业级场景下存在三大致命缺陷：
 
@@ -26,8 +26,8 @@ flowchart LR
 
     subgraph DSHLog["dsh 方案：仅追加事件流 (Append-Only Event Stream)"]
         Stream["不可变 SessionEvent 事件序列<br/>(turn/start ➔ user/message ➔ assistant/chunk ➔ tool/call ➔ ...)"]
-        Stream -->|"纯函数 deriveMessages()"| LLMContext["大模型精准上下文"]
-        Stream -->|"流式广播 session/event"| WebUI["Web 前端打字机与思维链"]
+        Stream -->|"纯函数 deriveMessages()"| LLMContext["大模型精准上下文 (Model Context)"]
+        Stream -->|"流式广播 session/event"| WebUI["Web 前端打字机与思维链 (UI Projection)"]
         Stream -->|"时间切片截断"| Fork["会话分叉 (Fork & Time-Travel)"]
     end
 ```
@@ -36,13 +36,13 @@ flowchart LR
 2. **多端并发写入脏读**：当后台子 Agent 和用户同时交互时，原地修改消息数组极易造成数组下标错位或数据覆盖；
 3. **不可逆性**：一旦发生错误操作（如错误的上下文截断），历史数据永久丢失，无法回滚到任意历史步骤重新决策。
 
-`dsh` 采用 **Event Sourcing（事件溯源）** 模式：**Session 唯一的物理实体就是一条只增不减的事件序列文件**。
+`dsh` 采用 **Event Sourcing（事件溯源）** 模式：**Session 唯一的物理实体就是一条只增不减的事件序列文件（`.jsonl` 或持久化存储）**。
 
 ---
 
 ## 二、“模型所见必留痕”铁律 (Model-Visible Means Logged)
 
-在 `dsh` 源码中，有一条写入架构规范的绝对不变量：
+在 `dsh` 源码中，有一条写入架构规范的绝对不变量（Invariant）：
 
 > **Model-visible means logged.** 任何能够被大模型在 Prompt / Context 中感知到的信息，必须能够从 Session Log 中完整重构反解出来；系统在运行时通过断言保证该不变量不被打破。
 
@@ -50,20 +50,28 @@ flowchart LR
 - **禁止在内存中私藏隐式状态**：禁止在 Agent 类内部维护未持久化的私有上下文变量；
 - **新增输入类型必须扩展事件契约**：如果插件想要向大模型注入一种全新的环境感知数据（如摄像头截图、LSP 诊断信息），必须首先在 `SessionEventMap` 中声明对应的事件类型并落盘，再参与投影。
 
-### 2.1 SessionEvent 核心事件族
+### 2.1 SessionHeader 与 SessionEvent 核心数据结构
 
 ```ts
-// packages/core/session/src/types.ts 核心事件契约一览
-export interface SessionEventMap {
-  'turn/start': { turnId: string; timestamp: number };
-  'user/message': { messageId: string; content: string; attachments?: Attachment[] };
-  'assistant/chunk': { chunkId: string; textDelta?: string; thinkingDelta?: string };
-  'assistant/message': { messageId: string; content: string; usage: TokenUsage };
-  'tool/call': { callId: string; toolName: string; arguments: Record<string, unknown> };
-  'tool/result': { callId: string; toolName: string; output: unknown; isError?: boolean };
-  'step/start': { stepIndex: number };
-  'step/end': { stepIndex: number; durationMs: number };
-  'turn/end': { turnId: string; stopReason: string };
+// packages/core/session/src/types.ts
+export interface SessionHeader {
+  readonly version: number;            // 持久化协议版本号 (SESSION_FORMAT_VERSION)
+  readonly id: SessionId;              // Branded 唯一会话 ID
+  readonly createdAt: number;          // 会话创建时间戳 (Epoch ms)
+  readonly cwd?: string;               // 绑定的工作区绝对路径
+  readonly parentSession?: SessionId;  // 若为 Fork 会话，指向父会话 ID
+  readonly seedLength?: number;        // 继承自父会话的历史事件切片长度
+  readonly origin?: 'subagent';        // 若为子智能体，标记来源
+  readonly delegationDepth?: number;   // 递归委派深度 (防止子 Agent 无限循环生成)
+  readonly agentPreset?: string;       // 绑定的 Agent 预设配置指纹
+}
+
+export interface SessionEvent<T = unknown> {
+  readonly id: string;                 // 单调唯一事件 ID
+  readonly type: string;               // 事件类型标识
+  readonly timestamp: number;          // 事件发生物理时间
+  readonly data: T;                    // 结构化事件载荷
+  readonly ignorable?: boolean;        // 向后兼容标记 (旧版本读者遇到未知类型可安全跳过)
 }
 ```
 
@@ -76,14 +84,18 @@ export interface SessionEventMap {
 ### 3.1 核心投影算法逻辑
 
 ```ts
-// packages/core/session/src/derive-messages.ts 核心实现示意
-export function deriveMessages(events: SessionEvent[]): ModelMessage[] {
-  const messages: ModelMessage[] = [];
-  let currentAssistant: ModelMessage | null = null;
+// packages/core/session/src/derive-messages.ts 核心实现
+import type { SessionEvent } from './types.ts';
+import type { Message, AssistantMessage, ToolCallBlock } from '@deepseek-ai/dsh-llm';
+
+export function deriveMessages(events: readonly SessionEvent[]): Message[] {
+  const messages: Message[] = [];
+  let pendingAssistant: AssistantMessage | null = null;
 
   for (const event of events) {
     switch (event.type) {
       case 'user/message':
+        // 用户输入进入消息历史
         messages.push({
           role: 'user',
           content: event.data.content,
@@ -92,18 +104,19 @@ export function deriveMessages(events: SessionEvent[]): ModelMessage[] {
 
       case 'assistant/message':
         // 完整的 assistant 消息直接入列
-        messages.push({
+        pendingAssistant = {
           role: 'assistant',
           content: event.data.content,
-        });
+          tool_calls: event.data.toolCalls || [],
+        };
+        messages.push(pendingAssistant);
         break;
 
       case 'tool/call':
-        // 如果前一条是 assistant 消息，追加 tool_calls
-        if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-          const last = messages[messages.length - 1];
-          last.tool_calls = last.tool_calls || [];
-          last.tool_calls.push({
+        // 如果是流式逐步追加的工具调用，聚合到当前 assistant 消息中
+        if (pendingAssistant) {
+          pendingAssistant.tool_calls = pendingAssistant.tool_calls || [];
+          pendingAssistant.tool_calls.push({
             id: event.data.callId,
             type: 'function',
             function: {
@@ -115,13 +128,22 @@ export function deriveMessages(events: SessionEvent[]): ModelMessage[] {
         break;
 
       case 'tool/result':
-        // 投影为 tool 角色的回填消息
+        // 投影为 tool 角色的回填消息，绑定 tool_call_id
         messages.push({
           role: 'tool',
           tool_call_id: event.data.callId,
           content: typeof event.data.output === 'string'
             ? event.data.output
             : JSON.stringify(event.data.output),
+        });
+        break;
+
+      case 'compaction/summary':
+        // 遇到压缩摘要锚点：截断前序消息，仅保留系统核心指令与最新摘要
+        messages.length = 0;
+        messages.push({
+          role: 'system',
+          content: `[Previous conversation summary]: ${event.data.summary}`,
         });
         break;
     }
@@ -131,9 +153,10 @@ export function deriveMessages(events: SessionEvent[]): ModelMessage[] {
 }
 ```
 
-由于 `deriveMessages` 是**纯函数（Pure Function）**，它不产生任何副作用：
+由于 `deriveMessages` 是**纯函数（Pure Function）**，它不产生任何系统副作用：
 - 相同的事件序列在任何机器、任何时间计算，结果 100% 相同；
-- 单元测试极其简单，只需传入静态的 JSON 事件数组即可断言上下文构造是否准确。
+- 单元测试极其简单，只需传入静态的 JSON 事件数组即可断言上下文构造是否准确；
+- 内存开销极小，可以利用不可变切片实现 Zero-Copy 上下文重构。
 
 ---
 
@@ -143,17 +166,30 @@ export function deriveMessages(events: SessionEvent[]): ModelMessage[] {
 
 ```ts
 // 调用 sessions 服务快速分叉当前会话
-const childSession = await ctx.sessions.fork(
-  parentSessionId,
-  boundaryEventId // 指定在哪个历史事件节点分叉（时间旅行）
-);
+const childSession = await ctx.sessions.fork({
+  parentSessionId: sourceSession.id,
+  boundaryIndex: 42, // 在第 42 个事件处截断分叉 (时间旅行)
+  meta: {
+    origin: 'subagent',
+    delegationDepth: (sourceSession.header.delegationDepth || 0) + 1,
+  },
+});
 ```
 
-### 4.1 会话分叉的工作原理
+```mermaid
+sequenceDiagram
+    participant User as 用户 / 控制面
+    participant Store as Session 存储服务
+    participant Parent as 父会话 (Session-A)
+    participant Child as 子会话 (Session-B)
 
-1. 拷贝父 Session 在 `boundaryEventId` 之前的所有不可变事件流到新 Session 文件；
-2. 新 Session 分配独立的 `sessionId`；
-3. 子 Agent 可以在分叉节点探索另外的分支路径（如尝试另外一组修复方案），而父 Session 的上下文和后续记录保持绝对不受污染。
+    User->>Store: fork(Session-A, boundary = 42)
+    Store->>Parent: 读取 Event[0..42]
+    Store->>Child: 创建新 Session-B，写入 SessionHeader(parent = A, seedLength = 42)
+    Store->>Child: 克隆 Event[0..42] 作为前缀 Seed
+    Note over Child: 子会话在此基础上自由探索分支路径<br/>追加 Event[43..N]
+    Note over Parent: 父会话继续推进原有任务<br/>两者物理隔离，互不干扰
+```
 
 ---
 

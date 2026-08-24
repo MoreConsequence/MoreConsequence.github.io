@@ -8,46 +8,46 @@ featured: false
 series: "ORACT 架构全解"
 ---
 
-**TL;DR：** 在复杂的 AI Agent 系统中，最让工程师抓狂的莫过于线上用户的“偶发性 Bug 报告”：大模型在某一步给出了离奇的回答，或者在某一步发起了错误的工具调用。传统系统由于缺乏完整的历史切片，往往难以精准复现问题现场。ORACT 基于不可变 Event Journal，构建了**无副作用 Playback 回放引擎（Effect-Free Playback）**。通过将历史事件流输入纯函数投影器，ORACT 可以在毫秒级时间内重现任意历史时刻的模型 Context 与内部状态，支持单步时间旅行调试（Time-Travel Debugging），并能基于历史任意节点一键创建**会话分叉（Fork）**以探索替代路径。
+**TL;DR：** 在复杂的 AI Agent 系统中，最让工程师抓狂的莫过于线上用户的“偶发性 Bug 报告”：大模型在第 15 步时给出了异常离奇的回答，或者在第 20 步发起了错误的工具调用。传统系统由于缺乏完整的全状态历史切片，往往难以精准复现问题现场。ORACT 基于不可变 Event Journal，构建了**无副作用 Playback 回放引擎（Effect-Free Playback）**。通过将历史事件流输入纯函数投影器，ORACT 可以在毫秒级时间内重现任意历史时刻的模型 Context 与内部状态，支持单步时间旅行调试（Time-Travel Debugging），并能基于历史任意节点一键创建**会话分叉（Fork）**以探索替代路径。
 
 ---
 
 ## 一、心智模型：可回放性是复杂系统的生命线
 
-在传统 Agent 系统中，所谓的“排查问题”通常是去 ElasticSearch 中翻看杂乱的日志（Logs）。然而，日志只记录了只言片语，无法回答以下关键问题：
+在传统 Agent 系统中，所谓的“排障”通常是去日志平台翻看零散的字符串。然而，非结构化日志无法回答以下关键问题：
 
 ```mermaid
 flowchart TB
     subgraph Traditional["传统排障：残缺的日志碎片"]
-        Log1["[INFO] User said: hello"]
-        Log2["[ERROR] Tool failed: timeout"]
+        Log1["[INFO] User said: deploy service"]
+        Log2["[ERROR] Tool failed: invalid syntax"]
         Log1 -.->|"无法得知当时的完整 System Prompt"| Lost["无法精确 1:1 复现事故现场"]
-        Log2 -.->|"无法得知当时的上下文 Token 窗口"| Lost
+        Log2 -.->|"无法得知当时的上下文 Token 窗口与变量"| Lost
     end
 
     subgraph ORACTPlayback["ORACT: 纯函数 Playback 回放引擎"]
         EJ[(不可变 Event Journal)] --> Player["Playback 虚拟播放器"]
-        Player -->|"逐事件喂入 Reducer"| Timeline["时间轴切片 (Event 1..N)"]
-        Timeline --> View1["时刻 T1: 完整 System Prompt + 内存变量"]
-        Timeline --> View2["时刻 T2: 大模型流式输出 + 思考链"]
-        Timeline --> View3["时刻 T3: 工具实际输入 + 脱敏后 Receipt"]
-        Timeline --> Fork["一键 Fork: 从 T2 分叉出全新 Run 进行调试"]
+        Player -->|"逐事件喂入纯函数 Reducer"| Timeline["时间轴切片 (Event 1..N)"]
+        Timeline --> View1["时刻 T1: 完整 System Prompt + 内部状态机变量"]
+        Timeline --> View2["时刻 T2: 大模型流式思考链与 Token 消耗"]
+        Timeline --> View3["时刻 T3: 工具实际输入 + 脱敏后 Receipt 证据"]
+        Timeline --> Fork["一键 Fork: 从 T2 分叉出全新子 Run 进行调试"]
     end
 ```
 
-ORACT 确立了架构设计铁律：**系统中的任何状态变更，都必须是历史事件序列的确定性投影。**
+ORACT 确立了架构设计铁律：**系统中的任何状态变更，都必须是不可变历史事件序列的确定性投影。**
 
 ---
 
 ## 二、无副作用 Playback 引擎架构
 
-当我们要复现一个线上 Run 时，绝不能把历史上的工具调用（如发送 Slack 消息、重启 Pod）真的再执行一遍。
+当我们要复现一个线上 Run 时，绝不能把历史上的工具调用（如发送邮件、重启 Pod）真的在物理世界再执行一遍。
 
 ORACT 的 Playback 引擎具有**物理隔离无副作用（Effect-Free）**特性：
 
 ```mermaid
 sequenceDiagram
-    participant Dev as 开发者 / 自动化评测器
+    participant Dev as 开发者 / 自动化评测 CI
     participant PB as Playback 引擎
     participant Store as Journal 存储库
     participant Reducer as 确定性 Reducer
@@ -63,31 +63,36 @@ sequenceDiagram
     end
 ```
 
-### 2.1 核心回放器接口定义
+### 2.1 核心回放器接口设计
 
 ```go
 // observe/playback/verifier.go
 package playback
 
+import (
+    "fmt"
+    "github.com/MoreConsequence/oract/runtime/core"
+)
+
 type PlaybackSession struct {
     RunID     string
-    Events    []Event
-    Snapshots []RunState
+    Events    []core.Event
+    Snapshots []core.RunState
     cursor    int
 }
 
-func NewPlaybackSession(events []Event) (*PlaybackSession, error) {
+func NewPlaybackSession(events []core.Event) (*PlaybackSession, error) {
     session := &PlaybackSession{
         Events: events,
         cursor: 0,
     }
     
     // 初始化时预计算全量确定性状态切片
-    var current RunState
+    var current core.RunState
     for _, event := range events {
         next, err := core.Reduce(current, event)
         if err != nil {
-            return nil, fmt.Errorf("reducer integrity failed at event %s: %w", event.ID(), err)
+            return nil, fmt.Errorf("reducer integrity check failed at event %s: %w", event.ID(), err)
         }
         session.Snapshots = append(session.Snapshots, next)
         current = next
@@ -96,7 +101,7 @@ func NewPlaybackSession(events []Event) (*PlaybackSession, error) {
     return session, nil
 }
 
-func (p *PlaybackSession) StepTo(eventIndex int) RunState {
+func (p *PlaybackSession) StepTo(eventIndex int) core.RunState {
     if eventIndex < 0 || eventIndex >= len(p.Snapshots) {
         return p.Snapshots[p.cursor]
     }
@@ -109,7 +114,7 @@ func (p *PlaybackSession) StepTo(eventIndex int) RunState {
 
 ## 三、Conversation Snapshot 会话投影算法
 
-大模型需要的不是系统底层的状态机数据，而是符合 OpenAI / Anthropic 规范的 `[]Message` 结构。
+大模型需要的不是系统底层的状态机数据，而是符合 OpenAI / Anthropic 规范的标准 `[]Message` 结构。
 
 `agent/harness` 模块负责从 Journal 事件流中快速投影出会话快照：
 
@@ -117,30 +122,32 @@ func (p *PlaybackSession) StepTo(eventIndex int) RunState {
 // agent/harness/projection.go
 package harness
 
+import "github.com/MoreConsequence/oract/runtime/core"
+
 type ConversationMessage struct {
     Role       string            `json:"role"`
     Content    string            `json:"content"`
-    ToolCalls  []ToolCallSpec    `json:"tool_calls,omitempty"`
+    ToolCalls  []core.ToolCall   `json:"tool_calls,omitempty"`
     ToolCallID string            `json:"tool_call_id,omitempty"`
 }
 
-func ProjectConversation(events []Event) []ConversationMessage {
+func ProjectConversation(events []core.Event) []ConversationMessage {
     var messages []ConversationMessage
 
     for _, e := range events {
         switch evt := e.(type) {
-        case *EventUserMessageAdded:
+        case *core.EventUserMessageAdded:
             messages = append(messages, ConversationMessage{
                 Role:    "user",
                 Content: evt.Content,
             })
-        case *EventAssistantReplied:
+        case *core.EventAssistantReplied:
             messages = append(messages, ConversationMessage{
                 Role:      "assistant",
                 Content:   evt.Text,
                 ToolCalls: evt.ToolCalls,
             })
-        case *EventToolFinished:
+        case *core.EventToolFinished:
             messages = append(messages, ConversationMessage{
                 Role:       "tool",
                 ToolCallID: evt.InvocationID,
@@ -152,7 +159,7 @@ func ProjectConversation(events []Event) []ConversationMessage {
 }
 ```
 
-由于该函数没有任何外部状态依赖，其执行速度在 Go 中达到每秒数万次投影，内存开销极低。
+由于该函数没有任何外部状态依赖，其执行速度在 Go 中达到每秒数十万次投影，内存开销极低。
 
 ---
 
@@ -161,29 +168,35 @@ func ProjectConversation(events []Event) []ConversationMessage {
 当开发者在 Playback 中发现第 5 步时大模型理解有偏差，可以一键触发 **Session Fork**：
 
 ```go
-// runtime/fork/fork.go
+// runtime/fork/service.go
 package fork
 
-func (m *ForkManager) ForkRunAtEvent(ctx context.Context, sourceRunID string, boundaryEventID string) (string, error) {
-    // 1. 截取父 Run 在该边界事件之前的所有 Events
-    events, err := m.journalStore.ReadUntil(ctx, sourceRunID, boundaryEventID)
+import (
+    "context"
+    "time"
+    "github.com/MoreConsequence/oract/runtime/core"
+)
+
+func (s *ForkService) ForkRunAtEvent(ctx context.Context, sourceRunID string, boundaryEventID string) (string, error) {
+    // 1. 截取父 Run 在该边界事件之前的所有不可变 Events
+    events, err := s.journalStore.ReadUntil(ctx, sourceRunID, boundaryEventID)
     if err != nil {
         return "", err
     }
 
-    // 2. 生成全新子 RunID 并克隆历史事件
-    newRunID := generateRunID()
-    if err := m.journalStore.AppendBatch(ctx, newRunID, events); err != nil {
+    // 2. 生成全新子 RunID 并克隆历史事件切片
+    newRunID := core.GenerateRunID()
+    if err := s.journalStore.AppendBatch(ctx, newRunID, events); err != nil {
         return "", err
     }
 
     // 3. 在子 Run 中追加 Fork 溯源元数据事件
-    forkEvent := &EventForkCreated{
+    forkEvent := &core.EventForkCreated{
         ParentRunID:       sourceRunID,
         BoundaryEventID:   boundaryEventID,
         ForkedAt:          time.Now(),
     }
-    return newRunID, m.journalStore.Append(ctx, newRunID, forkEvent)
+    return newRunID, s.journalStore.Append(ctx, newRunID, forkEvent)
 }
 ```
 
