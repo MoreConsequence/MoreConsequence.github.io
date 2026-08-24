@@ -82,6 +82,7 @@ describe("Markdown content pipeline", () => {
       "pi-tutorial-09-evals-telemetry",
       "rebuild-incident-evidence-chain",
       "review-idempotent-pr-concurrency",
+      "speedtest-service-architecture",
       "sqlite-two-writers-busy",
       "two-phase-commit-vs-saga-outbox",
       "app-speed-test-architecture-cost",
