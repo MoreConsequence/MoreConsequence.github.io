@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "dsh-01-architecture-overview",
+      "dsh-02-turn-step-lifecycle",
+      "dsh-03-session-log-and-projection",
+      "dsh-04-capability-seams-and-sandbox",
+      "dsh-05-llm-streaming-and-compaction",
+      "dsh-06-plugin-development-and-mcp",
       "abort-signal-tool-side-effects",
       "agent-session-budget",
       "characterization-test-refactor-safety-net",
