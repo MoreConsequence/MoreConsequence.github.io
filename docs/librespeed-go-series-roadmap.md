@@ -10,14 +10,15 @@
 | 01 | librespeed-go-01-overview | 27 行 main.go 怎么长成一个完整服务：全景地图 + 本机运行取证 | ✅ 已发布 |
 | 02 | librespeed-go-02-endpoints | 下行/上行/延迟三端点的服务端真相（garbage/empty/ckSize 钳制） | ✅ 已发布 |
 | 03 | librespeed-go-03-client-ip | 五级代理头链、私网分类的位运算、ipinfo+MaxMind 双源回退 | ✅ 已发布 |
-| 04 | librespeed-go-04-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | 待写 |
-| 05 | librespeed-go-05-config-deploy | viper 默认值陷阱（database_type 默认 postgresql）、TLS/HTTP2 组合矩阵、proxy protocol | 待写 |
+| 04 | librespeed-go-04-contract | 客户端↔服务端交互合同全图：test_order 状态机/grace time/time_auto/抖动加权/计量权不对称 | ✅ 已发布 |
+| 05 | librespeed-go-05-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | 待写 |
+| 06 | librespeed-go-06-config-deploy | viper 默认值陷阱（database_type 默认 postgresql）、TLS/HTTP2 组合矩阵、proxy protocol | 待写 |
 
 ## 取证基线
 
 - 全部行号与数字实测于 commit 59cff12；运行取证存档 `evidence/librespeed-go-series/2026-08-26-local/`
 - 关键锚点：garbage 默认 4 chunks×1MiB=4,194,304 字节；ckSize 上限钳制 1024（实测恰好 1 GiB）；
-  while 循环无——单文件函数平铺；agent 无关
+  前端 Worker 协议参数：test_order 默认 IP_D_U（无 P！）、6+3 流、grace 1.5s/3s、overhead ×1.06
 
 ## 规则
 
