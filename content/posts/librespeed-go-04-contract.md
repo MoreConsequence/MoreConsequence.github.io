@@ -66,7 +66,7 @@ xhr[i].open("GET", url_dl + sep + (mpot?"cors=true&":"") + "r=" + Math.random() 
 | --- | --- | --- |
 | `r=Math.random()` | 每流每次不同 | 客户端缓存穿透；服务端无感知 |
 | `ckSize=100` | 默认 100 | 客户端要 100 MiB/请求；**服务端钳制上限 1024**（02 篇实测恰好 1 GiB） |
-| 流数 | 3 基础 / Chrome+fetch 5 / quirks 下 6 | 服务端对并发数完全无感——它只管每条连接 |
+| 流数 | **6**（enable_quirks 时按 UA 调整：Edge→3、Chrome+fetch→5；显式设置优先于 quirk） | 服务端对并发数完全无感——它只管每条连接 |
 
 计量与统计的三层机制（这是第二篇实验里"滚动窗口"思想的真实工程版）：
 

@@ -51,6 +51,7 @@ describe("Markdown content pipeline", () => {
       "librespeed-go-03-client-ip",
       "librespeed-go-04-contract",
       "librespeed-go-05-interface",
+      "librespeed-go-06-lifecycle",
       "dsh-01-architecture-overview",
       "dsh-02-turn-step-lifecycle",
       "dsh-03-session-log-and-projection",
