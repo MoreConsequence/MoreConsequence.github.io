@@ -11,8 +11,9 @@
 | 02 | librespeed-go-02-endpoints | 下行/上行/延迟三端点的服务端真相（garbage/empty/ckSize 钳制） | ✅ 已发布 |
 | 03 | librespeed-go-03-client-ip | 五级代理头链、私网分类的位运算、ipinfo+MaxMind 双源回退 | ✅ 已发布 |
 | 04 | librespeed-go-04-contract | 客户端↔服务端交互合同全图：test_order 状态机/grace time/time_auto/抖动加权/计量权不对称 | ✅ 已发布 |
-| 05 | librespeed-go-05-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | 待写 |
-| 06 | librespeed-go-06-config-deploy | viper 默认值陷阱（database_type 默认 postgresql）、TLS/HTTP2 组合矩阵、proxy protocol | 待写 |
+| 05 | librespeed-go-05-interface | 接口规格书：12 条路由的方法/参数/响应/错误码 + 完整会话 curl 序列 | ✅ 已发布 |
+| 06 | librespeed-go-06-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | 待写 |
+| 07 | librespeed-go-07-config-deploy | viper 默认值陷阱、TLS/HTTP2 组合矩阵、proxy protocol | 待写 |
 
 ## 取证基线
 
