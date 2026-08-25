@@ -46,6 +46,9 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "librespeed-go-01-overview",
+      "librespeed-go-02-endpoints",
+      "librespeed-go-03-client-ip",
       "dsh-01-architecture-overview",
       "dsh-02-turn-step-lifecycle",
       "dsh-03-session-log-and-projection",

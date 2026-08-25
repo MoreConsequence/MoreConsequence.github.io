@@ -1,0 +1,80 @@
+== LibreSpeed-go 本机运行取证 2026-08-26 commit 59cff12
+
+-- 1. garbage 默认(4 chunks):
+http=200 bytes=4194304 type=application/octet-stream
+实际字节: 4194304
+00000000: 56ea 7d06 7776 46f0 59c9 b6d4 59bb 6a6d  V.}.wvF.Y...Y.jm
+00000010: d4f8 c099 2810 82b4 8360 1571 3d25 bb83  ....(....`.q=%..
+
+-- 2. garbage?ckSize=1 (应恰好 1 MiB):
+bytes=1048576
+
+-- 3. garbage?ckSize=99999 (上限钳制):
+bytes=1073741824
+
+-- 4. ping 端点 /empty:
+0.001701s 0.000890s 0.000968s 
+-- 5. 上行 sink: POST 10MB 到 /empty:
+http=200 sent=10485760 time=0.006386s
+
+-- 6. getIP 本机回环 → 私网分类:
+{"processedString":"127.0.0.1 - localhost IPv4 access","rawIspInfo":{"ip":"","hostname":"","city":"","region":"","country":"","loc":"","org":"","postal":"","timezone":"","readme":""}}
+-- 7. 遥测上报:
+id 01M0WYDN7RMBHPT1BTQPV75J5P
+-- 8. stats 免密访问(应拒绝):
+200
+-- 9. 错误密码:
+<!DOCTYPE html>
+<html>
+<head>
+<title>LibreSpeed - Stats</title>
+<style type="text/css">
+	html,body{
+		margin:0;
+		padding:0;
+		border:none;
+		width:100%; min-height:100%;
+	}
+	html{
+		background-color: hsl(198,72%,35%);
+		font-family: "Segoe UI","Roboto",sans-serif;
+	}
+	body{
+		background-color:#FFFFFF;
+		box-sizing:border-box;
+		width:100%;
+		max-width:70em;
+		margin:4em auto;
+		box-shadow:0 1em 6em #00000080;
+		padding:1em 1em 4em 1em;
+		border-radius:0.4em;
+	}
+	h1,h2,h3,h4,h5,h6{
+		font-weight:300;
+		margin-bottom: 0.1em;
+	}
+	h1{
+		text-align:center;
+	}
+	table{
+		margin:2em 0;
+		width:100%;
+	}
+	table, tr, th, td {
+		border: 1px solid #AAAAAA;
+	}
+	th {
+		width: 6em;
+	}
+	td {
+		word-break: break-all;
+	}
+</style>
+</head>
+<body>
+<h1>LibreSpeed - Stats</h1>
+
+		Please set statistics_password in settings.toml to enable access.
+
+</body>
+</html>
