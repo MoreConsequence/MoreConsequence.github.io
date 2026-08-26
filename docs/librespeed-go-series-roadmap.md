@@ -13,8 +13,8 @@
 | 04 | librespeed-go-04-contract | 客户端↔服务端交互合同全图：test_order 状态机/grace time/time_auto/抖动加权/计量权不对称 | ✅ 已发布 |
 | 05 | librespeed-go-05-interface | 接口规格书：12 条路由的方法/参数/响应/错误码 + 完整会话 curl 序列 | ✅ 已发布 |
 | 06 | librespeed-go-06-lifecycle | 原理压轴:一次测速的完整一生——每一步算术的手算走查 | ✅ 已发布 |
-| 07 | librespeed-go-07-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | 待写 |
-| 08 | librespeed-go-08-config-deploy | viper 默认值陷阱、TLS/HTTP2 组合矩阵、proxy protocol | 待写 |
+| 07 | librespeed-go-07-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | ✅ 已发布（含混淆+脱敏实测） |
+| 08 | librespeed-go-08-config-deploy | viper 死键化石、TLS/HTTP2 矩阵、systemd activation、proxy protocol | ✅ 已发布，系列完 |
 
 ## 取证基线
 

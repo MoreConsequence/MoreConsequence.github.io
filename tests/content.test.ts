@@ -52,6 +52,8 @@ describe("Markdown content pipeline", () => {
       "librespeed-go-04-contract",
       "librespeed-go-05-interface",
       "librespeed-go-06-lifecycle",
+      "librespeed-go-07-telemetry",
+      "librespeed-go-08-config-deploy",
       "dsh-01-architecture-overview",
       "dsh-02-turn-step-lifecycle",
       "dsh-03-session-log-and-projection",
