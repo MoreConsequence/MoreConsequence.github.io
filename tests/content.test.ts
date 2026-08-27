@@ -53,6 +53,7 @@ describe("Markdown content pipeline", () => {
       "speedtest-05-protocol-overhead",
       "speedtest-06-edge-scheduling",
       "speedtest-07-10g-cost-architecture",
+      "speedtest-go-deep-dive-whitepaper",
       "librespeed-go-01-overview",
       "librespeed-go-02-endpoints",
       "librespeed-go-03-client-ip",
