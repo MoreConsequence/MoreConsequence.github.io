@@ -46,6 +46,13 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "speedtest-01-physical-essence",
+      "speedtest-02-zero-copy-downlink",
+      "speedtest-03-zero-alloc-uplink",
+      "speedtest-04-jitter-bufferbloat",
+      "speedtest-05-protocol-overhead",
+      "speedtest-06-edge-scheduling",
+      "speedtest-07-10g-cost-architecture",
       "librespeed-go-01-overview",
       "librespeed-go-02-endpoints",
       "librespeed-go-03-client-ip",
