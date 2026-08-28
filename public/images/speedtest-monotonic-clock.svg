@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="clock-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="arr-muted-clk" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arr-blue-clk" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#f8fafc" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#clock-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="34" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">TIME METRIC BASELINE · WALL CLOCK VS MONOTONIC CLOCK</text>
+  <text x="40" y="54" fill="#0f172a" font-size="16" font-weight="700">为什么计算网速严禁使用日历时间（Wall Clock）？</text>
+
+  <!-- ================= TOP: FLAWED CASE (WALL CLOCK / NTP DRIFT) ================= -->
+  <g transform="translate(40, 75)">
+    <rect width="880" height="125" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="16" y="14" width="220" height="20" rx="4" fill="#64748b"/>
+    <text x="126" y="28" fill="#ffffff" font-size="10" font-weight="700" class="mono" text-anchor="middle">日历时间 (UnixNano 减法)</text>
+
+    <!-- Node 1 [x: 16 ~ 246] -->
+    <g transform="translate(16, 45)">
+      <rect width="230" height="65" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="12" y="22" fill="#0f172a" font-size="11" font-weight="700">1. 读取系统墙上时间</text>
+      <text x="12" y="42" fill="#64748b" font-size="10" class="mono">t1 = time.Now().UnixNano()</text>
+    </g>
+
+    <!-- Arrow 1 -> 2 [x: 246 -> 286] -->
+    <path d="M 246,78 H 286" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arr-muted-clk)"/>
+
+    <!-- Node 2 [x: 286 ~ 566] -->
+    <g transform="translate(286, 45)">
+      <rect width="280" height="65" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="12" y="22" fill="#0f172a" font-size="11" font-weight="700">2. 后台触发 NTP 步进对时</text>
+      <text x="12" y="42" fill="#64748b" font-size="10" class="mono">系统时钟发生跳跃或向前回调 50ms</text>
+    </g>
+
+    <!-- Arrow 2 -> 3 [x: 566 -> 606] -->
+    <path d="M 566,78 H 606" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arr-muted-clk)"/>
+
+    <!-- Node 3 [x: 606 ~ 864] -->
+    <g transform="translate(606, 45)">
+      <rect width="258" height="65" rx="6" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.2"/>
+      <text x="12" y="22" fill="#0f172a" font-size="11" font-weight="700">3. Δt ≤ 0 或严重失真</text>
+      <text x="12" y="42" fill="#475569" font-size="10" font-weight="700" class="mono">速率异常暴涨、负数或除以零</text>
+    </g>
+  </g>
+
+
+  <!-- ================= BOTTOM: PRODUCTION CASE (MONOTONIC CLOCK) ================= -->
+  <g transform="translate(40, 220)">
+    <rect width="880" height="125" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+    <rect x="16" y="14" width="240" height="20" rx="4" fill="#2563eb"/>
+    <text x="136" y="28" fill="#ffffff" font-size="10" font-weight="700" class="mono" text-anchor="middle">Go 单调时钟 (time.Since)</text>
+
+    <!-- Node 1 [x: 16 ~ 246] -->
+    <g transform="translate(16, 45)">
+      <rect width="230" height="65" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="12" y="22" fill="#1e40af" font-size="11" font-weight="700">1. 记录起点单调读数</text>
+      <text x="12" y="42" fill="#2563eb" font-size="10" class="mono">start := time.Now() (含 monotonic)</text>
+    </g>
+
+    <!-- Arrow 1 -> 2 [x: 246 -> 286] -->
+    <path d="M 246,78 H 286" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue-clk)"/>
+
+    <!-- Node 2 [x: 286 ~ 566] -->
+    <g transform="translate(286, 45)">
+      <rect width="280" height="65" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="12" y="22" fill="#1e40af" font-size="11" font-weight="700">2. CPU 硬件 TSC 单调递增</text>
+      <text x="12" y="42" fill="#2563eb" font-size="10" class="mono">挂钩晶振计数器 · 免疫改时干扰</text>
+    </g>
+
+    <!-- Arrow 2 -> 3 [x: 566 -> 606] -->
+    <path d="M 566,78 H 606" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue-clk)"/>
+
+    <!-- Node 3 [x: 606 ~ 864] -->
+    <g transform="translate(606, 45)">
+      <rect width="258" height="65" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="12" y="22" fill="#1e40af" font-size="11" font-weight="700">3. time.Since(start) 精确</text>
+      <text x="12" y="42" fill="#1d4ed8" font-size="10" font-weight="700" class="mono">保证 Δt 严格正数 · 计算无懈可击</text>
+    </g>
+  </g>
+</svg>

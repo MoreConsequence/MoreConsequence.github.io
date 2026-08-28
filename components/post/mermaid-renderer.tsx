@@ -126,7 +126,7 @@ const kamiThemeVars = (dark: boolean) =>
         loopTextColor: "#6b6a64",
         noteBkgColor: "#f0e0d8",
         noteBorderColor: "#8a6f3c",
-        sequenceNumberColor: "#6b6a64",
+        sequenceNumberColor: "#64748b",
       };
 
 const kamiFontStack =
@@ -194,7 +194,17 @@ export function MermaidRenderer() {
           fontFamily: isKami ? kamiFontStack : defaultFontStack,
           themeVariables: isKami ? kamiThemeVars(dark) : themeVars(dark),
         });
-        await mermaid.run({ querySelector: ".mermaid" });
+
+        const elements = Array.from(
+          document.querySelectorAll<HTMLElement>(".mermaid:not([data-processed])"),
+        );
+        for (const el of elements) {
+          try {
+            await mermaid.run({ nodes: [el] });
+          } catch (err) {
+            console.warn("Mermaid diagram render error:", err);
+          }
+        }
 
         document
           .querySelectorAll<HTMLElement>(

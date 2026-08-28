@@ -1,4 +1,5 @@
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
+import katex from "katex";
 import readingTime from "reading-time";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
@@ -90,14 +91,110 @@ function rehypeMermaid() {
   };
 }
 
+function rehypeNormalizeImagePaths() {
+  return (tree: MarkdownNode) => {
+    function walk(node: MarkdownNode) {
+      if (node.type === "element" && node.tagName === "img" && node.properties?.src) {
+        const src = String(node.properties.src);
+        if (src.includes("public/images/")) {
+          node.properties.src = src.replace(/^.*public\/images\//, "/images/");
+        } else if (src.includes("public/diagrams/")) {
+          node.properties.src = src.replace(/^.*public\/diagrams\//, "/diagrams/");
+        }
+      }
+      node.children?.forEach(walk);
+    }
+    walk(tree);
+  };
+}
+
+function rehypeKatexNative() {
+  return (tree: MarkdownNode) => {
+    function walk(node: MarkdownNode) {
+      if (node.type === "element" && ["pre", "code", "script", "style"].includes(node.tagName ?? "")) {
+        return;
+      }
+
+      if (node.type === "element" && node.tagName === "p" && node.children) {
+        const text = node.children
+          .filter((c) => c.type === "text")
+          .map((c) => c.value ?? "")
+          .join("");
+        const blockMatch = text.trim().match(/^\$\$([\s\S]+?)\$\$$/);
+        if (blockMatch && node.children.length === 1) {
+          try {
+            const html = katex.renderToString(blockMatch[1].trim(), {
+              displayMode: true,
+              throwOnError: false,
+              strict: "ignore",
+            });
+            node.tagName = "div";
+            node.properties = { className: ["katex-block-wrapper"] };
+            node.children = [{ type: "raw", value: html }];
+            return;
+          } catch {
+            // fallback to default
+          }
+        }
+      }
+
+      if (node.children) {
+        const newChildren: MarkdownNode[] = [];
+        for (const child of node.children) {
+          if (child.type === "text" && child.value && !["pre", "code"].includes(node.tagName ?? "")) {
+            const val = child.value;
+            const mathRegex = /(\$\$[\s\S]+?\$\$|(?<!\\)\$[^\s\$](?:[^\$\n]*?[^\s\$])?\$)/g;
+            if (mathRegex.test(val)) {
+              let lastIndex = 0;
+              mathRegex.lastIndex = 0;
+              let match: RegExpExecArray | null;
+              while ((match = mathRegex.exec(val)) !== null) {
+                if (match.index > lastIndex) {
+                  newChildren.push({ type: "text", value: val.slice(lastIndex, match.index) });
+                }
+                const rawMath = match[0];
+                const isDisplay = rawMath.startsWith("$$");
+                const mathContent = isDisplay ? rawMath.slice(2, -2).trim() : rawMath.slice(1, -1).trim();
+                try {
+                  const html = katex.renderToString(mathContent, {
+                    displayMode: isDisplay,
+                    throwOnError: false,
+                    strict: "ignore",
+                  });
+                  newChildren.push({ type: "raw", value: html });
+                } catch {
+                  newChildren.push({ type: "text", value: rawMath });
+                }
+                lastIndex = mathRegex.lastIndex;
+              }
+              if (lastIndex < val.length) {
+                newChildren.push({ type: "text", value: val.slice(lastIndex) });
+              }
+            } else {
+              newChildren.push(child);
+            }
+          } else {
+            walk(child);
+            newChildren.push(child);
+          }
+        }
+        node.children = newChildren;
+      }
+    }
+    walk(tree);
+  };
+}
+
 export async function compileMarkdown(markdown: string) {
   const toc: TocItem[] = [];
   const highlighter = await createBlogHighlighter();
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
-    .use(remarkRehype, { allowDangerousHtml: false })
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeNormalizeImagePaths)
     .use(rehypeMermaid)
+    .use(rehypeKatexNative)
     .use(rehypeSlug)
     .use(collectHtmlHeadings(toc))
     .use(rehypeAutolinkHeadings, {
@@ -120,7 +217,7 @@ export async function compileMarkdown(markdown: string) {
       defaultColor: false,
       fallbackLanguage: "text",
     })
-    .use(rehypeStringify)
+    .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);
 
   return {

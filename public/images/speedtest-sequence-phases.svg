@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="seq-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="sq-arr-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="sq-arr-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#f8fafc" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#seq-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">FULL PROTOCOL SEQUENCE · FIVE-PHASE LIFECYCLE</text>
+  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">测速服务全流程五阶段交互时序图</text>
+
+
+  <!-- ================= PHASE 1 ================= -->
+  <g transform="translate(40, 125)">
+    <rect width="880" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="12" y="10" width="130" height="18" rx="3" fill="#f1f5f9"/>
+    <text x="77" y="22" fill="#475569" font-size="8" font-weight="700" class="mono" text-anchor="middle">阶段一：网络身份识别</text>
+    
+    <!-- Client -> Server [200 -> 760] (Group relative: x=160 -> 720) -->
+    <path d="M 160,24 H 720" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="19" fill="#1e40af" font-size="10" class="mono" text-anchor="middle">1. GET /backend/getIP (探测真实公网IP)</text>
+
+    <!-- Server -> Client [720 -> 160] -->
+    <path d="M 720,45 H 160" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="41" fill="#64748b" font-size="10" class="mono" text-anchor="middle">200 OK {"processedString": "222.128.1.1 - China Unicom"}</text>
+  </g>
+
+  <!-- ================= PHASE 2 ================= -->
+  <g transform="translate(40, 195)">
+    <rect width="880" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="12" y="10" width="130" height="18" rx="3" fill="#f1f5f9"/>
+    <text x="77" y="22" fill="#475569" font-size="8" font-weight="700" class="mono" text-anchor="middle">阶段二：空闲时延探针</text>
+
+    <path d="M 160,24 H 720" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="19" fill="#1e40af" font-size="10" class="mono" text-anchor="middle">2. loop 连续 20 次探针: GET /backend/empty (附带时间戳)</text>
+
+    <path d="M 720,45 H 160" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="41" fill="#0f172a" font-size="10" font-weight="600" class="mono" text-anchor="middle">200 OK (Content-Length:0) -> 客户端计算中位数与 RFC 3550 抖动基准</text>
+  </g>
+
+  <!-- ================= PHASE 3 ================= -->
+  <g transform="translate(40, 265)">
+    <rect width="880" height="65" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.2"/>
+    <rect x="12" y="10" width="130" height="18" rx="3" fill="#2563eb"/>
+    <text x="77" y="22" fill="#ffffff" font-size="8" font-weight="700" class="mono" text-anchor="middle">阶段三：下行带宽激发</text>
+
+    <path d="M 160,24 H 720" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="19" fill="#1e40af" font-size="10" class="mono" text-anchor="middle">3. 4~8 TCP 并发拉流: GET /backend/garbage?ckSize=100</text>
+
+    <path d="M 720,48 H 160" fill="none" stroke="#2563eb" stroke-width="2.2" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="44" fill="#1d4ed8" font-size="10" font-weight="700" class="mono" text-anchor="middle">持续倾泻 64MB 静态高随机数据流 (0堆分配 · 100ms采样 · P90滤波)</text>
+  </g>
+
+  <!-- ================= PHASE 4 ================= -->
+  <g transform="translate(40, 340)">
+    <rect width="880" height="65" rx="6" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.2"/>
+    <rect x="12" y="10" width="130" height="18" rx="3" fill="#ea580c"/>
+    <text x="77" y="22" fill="#ffffff" font-size="8" font-weight="700" class="mono" text-anchor="middle">阶段四：上行黑洞吸收</text>
+
+    <path d="M 160,26 H 720" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#sq-arr-orange)"/>
+    <text x="440" y="20" fill="#9a3412" font-size="10" font-weight="700" class="mono" text-anchor="middle">4. 2~4 TCP 并发推流: POST /backend/empty (上百兆不可压缩二进制流)</text>
+
+    <path d="M 720,48 H 160" fill="none" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#sq-arr-orange)"/>
+    <text x="440" y="44" fill="#9a3412" font-size="10" font-weight="600" class="mono" text-anchor="middle">服务端 64KB 栈内存极速循环读取 (0堆分配 · 40Gbps+ 零反压) -> 200 OK</text>
+  </g>
+
+  <!-- ================= PHASE 5 ================= -->
+  <g transform="translate(40, 415)">
+    <rect width="880" height="55" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="12" y="10" width="130" height="18" rx="3" fill="#f1f5f9"/>
+    <text x="77" y="22" fill="#475569" font-size="8" font-weight="700" class="mono" text-anchor="middle">阶段五：遥测归档与呈现</text>
+
+    <path d="M 160,28 H 720" fill="none" stroke="#2563eb" stroke-width="1.5" marker-end="url(#sq-arr-blue)"/>
+    <text x="440" y="23" fill="#1e40af" font-size="10" class="mono" text-anchor="middle">5. POST /backend/results (提交最终测速报告，固化归档并生成分享图)</text>
+  </g>
+
+  <!-- ================= LIFELINES (Rendered on top of phase cards for full continuity) ================= -->
+  <line x1="200" y1="112" x2="200" y2="495" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <line x1="760" y1="112" x2="760" y2="495" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Actor 1: Client [Center x=200] -->
+  <g transform="translate(100, 70)">
+    <rect width="200" height="42" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="100" y="26" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle">客户端 (Client SDK)</text>
+  </g>
+
+  <!-- Actor 2: Server [Center x=760] -->
+  <g transform="translate(660, 70)">
+    <rect width="200" height="42" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+    <text x="100" y="26" fill="#9a3412" font-size="12" font-weight="700" text-anchor="middle">测速服务端 (Go Server)</text>
+  </g>
+</svg>

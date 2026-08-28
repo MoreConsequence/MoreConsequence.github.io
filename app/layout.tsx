@@ -8,6 +8,7 @@ import { siteConfig } from "@/lib/site";
 import "./globals.css";
 import "./kami-global-layer.css";
 import "./editorial-ui.css";
+import "katex/dist/katex.min.css";
 
 export function generateMetadata(): Metadata {
   return {
