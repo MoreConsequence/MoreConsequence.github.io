@@ -28,15 +28,21 @@ export function TableOfContents({ items }: { items: TocItem[] }) {
   if (!items.length) return null;
 
   return (
-    <nav className="table-of-contents" aria-label="本文目录">
-      <p>
-        本文目录
-        <span className="toc-count">({String(items.length).padStart(2, "0")})</span>
-      </p>
-      <ol>
+    <nav className="table-of-contents sidebar-panel" aria-label="本文目录">
+      <div className="sidebar-panel-header">
+        <span className="sph-title">📑 本文目录</span>
+        <span className="sph-badge">
+          {String(items.length).padStart(2, "0")}
+        </span>
+      </div>
+      <ol className="sidebar-panel-list toc-list">
         {items.map((item) => (
           <li key={item.id} data-depth={item.depth}>
-            <a href={"#" + item.id} aria-current={activeId === item.id}>
+            <a
+              href={"#" + item.id}
+              aria-current={activeId === item.id}
+              title={item.title}
+            >
               {item.title}
             </a>
           </li>

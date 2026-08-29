@@ -38,5 +38,11 @@ export function decodeSeries(value: string) {
 
 export function getPostsForSeries(posts: PostSource[], series: string) {
   const normalized = decodeSeries(series);
-  return posts.filter((post) => post.meta.series === normalized);
+  return posts
+    .filter((post) => post.meta.series === normalized)
+    .sort(
+      (a, b) =>
+        a.meta.publishedAt.localeCompare(b.meta.publishedAt) ||
+        a.slug.localeCompare(b.slug),
+    );
 }

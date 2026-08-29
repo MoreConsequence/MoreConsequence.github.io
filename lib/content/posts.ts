@@ -45,8 +45,10 @@ export function parsePostSource(filename: string, source: string): PostSource {
 }
 
 export function sortPosts(posts: PostSource[]) {
-  return [...posts].sort((a, b) =>
-    b.meta.publishedAt.localeCompare(a.meta.publishedAt),
+  return [...posts].sort(
+    (a, b) =>
+      b.meta.publishedAt.localeCompare(a.meta.publishedAt) ||
+      a.slug.localeCompare(b.slug),
   );
 }
 
@@ -59,18 +61,30 @@ export function filterPublished(
     : posts;
 }
 
+function collectMarkdownFiles(dir: string): { filename: string; fullPath: string }[] {
+  const results: { filename: string; fullPath: string }[] = [];
+  const entries = readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectMarkdownFiles(fullPath));
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      results.push({ filename: entry.name, fullPath });
+    }
+  }
+
+  return results;
+}
+
 export function readPostSources(
   directory: string,
   environment = process.env.NODE_ENV,
 ) {
-  const posts = readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
-    .map((entry) =>
-      parsePostSource(
-        entry.name,
-        readFileSync(path.join(directory, entry.name), "utf8"),
-      ),
-    );
+  const files = collectMarkdownFiles(directory);
+  const posts = files.map(({ filename, fullPath }) =>
+    parsePostSource(filename, readFileSync(fullPath, "utf8")),
+  );
 
   return sortPosts(filterPublished(posts, environment));
 }

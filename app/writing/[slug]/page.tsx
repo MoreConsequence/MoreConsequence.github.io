@@ -56,10 +56,19 @@ export default async function ArticlePage({ params }: PageProps) {
   const seriesPosts = post.meta.series
     ? getPostsForSeries(posts, post.meta.series)
     : [];
-  // 系列文章按系列顺序翻页，非系列按发布时间翻页
   const isSeries = seriesPosts.length > 1;
-  const navPool = isSeries ? seriesPosts : posts;
-  const neighbors = getArticleNeighbors(navPool, slug);
+  const currentSeriesIndex = isSeries
+    ? seriesPosts.findIndex((item) => item.slug === slug)
+    : -1;
+  const prevChapter = isSeries && currentSeriesIndex > 0
+    ? seriesPosts[currentSeriesIndex - 1]
+    : undefined;
+  const nextChapter = isSeries && currentSeriesIndex >= 0 && currentSeriesIndex < seriesPosts.length - 1
+    ? seriesPosts[currentSeriesIndex + 1]
+    : undefined;
+
+  // 非系列文章走通用按发布时间翻页
+  const neighbors = !isSeries ? getArticleNeighbors(posts, slug) : { newer: undefined, older: undefined };
   const related = getRelatedPosts(posts, post, 3);
 
   return (
@@ -72,8 +81,13 @@ export default async function ArticlePage({ params }: PageProps) {
             <span>/</span>
             {post.meta.series ? (
               <>
-                <Link href={seriesHref(post.meta.series)}>
-                  {post.meta.series}
+                <Link href={seriesHref(post.meta.series)} className="kicker-series">
+                  📚 {post.meta.series}
+                  {isSeries ? (
+                    <span className="kicker-chapter">
+                      （{String(currentSeriesIndex + 1).padStart(2, "0")}/{seriesPosts.length}）
+                    </span>
+                  ) : null}
                 </Link>
                 <span>/</span>
               </>
@@ -97,30 +111,42 @@ export default async function ArticlePage({ params }: PageProps) {
           <aside className="article-aside">
             <TableOfContents items={post.toc} />
             {seriesPosts.length > 1 ? (
-              <div className="article-fact">
-                <p>
-                  <Link href={seriesHref(post.meta.series!)}>
-                    系列：{post.meta.series}
+              <div className="article-fact sidebar-panel" aria-label="专栏连载">
+                <div className="sidebar-panel-header">
+                  <Link href={seriesHref(post.meta.series!)} className="sph-title" title={`查看《${post.meta.series}》专栏全部目录`}>
+                    📚 {post.meta.series}
                   </Link>
-                </p>
-                <ol>
-                  {seriesPosts.map((item, index) => (
-                    <li
-                      key={item.slug}
-                      data-active={item.slug === post.slug || undefined}
-                    >
-                      <span className="af-index">
-                        {String(seriesPosts.length - index).padStart(2, "0")}
-                      </span>
-                      {item.slug === post.slug ? (
-                        <span className="af-title">{item.meta.title}</span>
-                      ) : (
-                        <a className="af-title" href={`/writing/${item.slug}`}>
-                          {item.meta.title}
-                        </a>
-                      )}
-                    </li>
-                  ))}
+                  <span className="sph-badge">
+                    {currentSeriesIndex + 1}/{seriesPosts.length}
+                  </span>
+                </div>
+                <ol className="sidebar-panel-list series-list">
+                  {seriesPosts.map((item, index) => {
+                    const isCurrent = item.slug === post.slug;
+                    return (
+                      <li
+                        key={item.slug}
+                        data-active={isCurrent || undefined}
+                      >
+                        <span className="af-index">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        {isCurrent ? (
+                          <span className="af-title" title={item.meta.title}>
+                            {item.meta.title}
+                          </span>
+                        ) : (
+                          <Link
+                            className="af-title"
+                            href={`/writing/${item.slug}`}
+                            title={item.meta.title}
+                          >
+                            {item.meta.title}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ol>
               </div>
             ) : null}
@@ -130,18 +156,34 @@ export default async function ArticlePage({ params }: PageProps) {
 
         <nav className="article-neighbors" aria-label="相邻文章">
           <div className="neighbor-cell">
-            {neighbors.newer ? (
+            {isSeries ? (
+              prevChapter ? (
+                <Link href={`/writing/${prevChapter.slug}`}>
+                  <small>上一章 · 第 {String(currentSeriesIndex).padStart(2, "0")} 篇</small>
+                  <span>{prevChapter.meta.title}</span>
+                  <time>{prevChapter.meta.publishedAt.replaceAll("-", ".")}</time>
+                </Link>
+              ) : null
+            ) : neighbors.newer ? (
               <Link href={`/writing/${neighbors.newer.slug}`}>
-                <small>{isSeries ? "上一章" : "上一篇"}</small>
+                <small>上一篇</small>
                 <span>{neighbors.newer.meta.title}</span>
                 <time>{neighbors.newer.meta.publishedAt.replaceAll("-", ".")}</time>
               </Link>
             ) : null}
           </div>
           <div className="neighbor-cell">
-            {neighbors.older ? (
+            {isSeries ? (
+              nextChapter ? (
+                <Link href={`/writing/${nextChapter.slug}`}>
+                  <small>下一章 · 第 {String(currentSeriesIndex + 2).padStart(2, "0")} 篇</small>
+                  <span>{nextChapter.meta.title}</span>
+                  <time>{nextChapter.meta.publishedAt.replaceAll("-", ".")}</time>
+                </Link>
+              ) : null
+            ) : neighbors.older ? (
               <Link href={`/writing/${neighbors.older.slug}`}>
-                <small>{isSeries ? "下一章" : "下一篇"}</small>
+                <small>下一篇</small>
                 <span>{neighbors.older.meta.title}</span>
                 <time>{neighbors.older.meta.publishedAt.replaceAll("-", ".")}</time>
               </Link>

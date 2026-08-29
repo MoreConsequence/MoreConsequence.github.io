@@ -5,6 +5,7 @@ publishedAt: "2026-08-27"
 tags: ["Go", "网络协议", "系统设计", "性能优化", "源码阅读"]
 draft: false
 featured: true
+series: "网络测速与极限吞吐工程"
 ---
 
 **TL;DR：** 很多人以为网络测速只是简单的“发起一个 HTTP 请求下载或上传大文件，再用字节数除以时间”。在千兆宽带和 5G 网络环境下，这种简陋的做法会踩遍网络栈中最隐蔽的技术陷阱：**运营商硬件透明压缩会导致百兆宽带测出上万兆虚标；服务端微小阻塞会触发 TCP 零窗口反压导致速率断崖归零；系统自动对时会让速率计算出现除以零或负数；单 TCP 慢启动会使千兆网络跑不满；堆内存频繁分配更会导致 GC 停顿引发速率锯齿**。本文旨在讲透测速服务的工作原理：先介绍**测速服务的核心架构与五阶段交互时序**；再剖析**下行防压缩、上行防反压、单调时钟等关键工程规范与选型权衡**；最后结合**开源标杆项目的 Go 语言实现逐段拆解源码**。
@@ -28,7 +29,7 @@ flowchart LR
     Server --> Goodput["端到端测速结果<br/>严格等于全链路最短板！"]
 ```
 
-![端到端物理链路木桶最短板模型](../../public/images/speedtest-pipeline-model.svg)
+![端到端物理链路木桶最短板模型](../../../public/images/speedtest-pipeline-model.svg)
 
 测速结果严格受限于整条链路上的“木桶最短板”。任何脱离端到端链路上下文的单点指标（例如“服务器网卡是 40G”，或“客户端签约了千兆宽带”），都不能直接代表实际测速结果。
 
@@ -64,7 +65,7 @@ flowchart LR
     end
 ```
 
-![测速系统核心架构：控制面与数据面解耦拓扑](../../public/images/speedtest-architecture.svg)
+![测速系统核心架构：控制面与数据面解耦拓扑](../../../public/images/speedtest-architecture.svg)
 
 - **控制面（Control Plane）**：轻量级、高可靠。负责识别客户端公网 IP、协商测试参数与 Token、交换最终的双侧计量数据；
 - **数据面（Data Plane）**：纯内存、高吞吐。专门用于在测试窗口内以最大负荷充满物理管道，并在内存中完成实时抽样计量。
@@ -108,7 +109,7 @@ sequenceDiagram
     C->>S: POST /results (提交测速报告并固化)
 ```
 
-![测速服务全流程五阶段交互时序](../../public/images/speedtest-sequence-phases.svg)
+![测速服务全流程五阶段交互时序](../../../public/images/speedtest-sequence-phases.svg)
 
 ---
 
@@ -132,7 +133,7 @@ flowchart LR
     end
 ```
 
-![运营商硬件透明压缩欺骗 vs 静态高随机内存池对比](../../public/images/speedtest-compression-defense.svg)
+![运营商硬件透明压缩欺骗 vs 静态高随机内存池对比](../../../public/images/speedtest-compression-defense.svg)
 
 #### （2）工程解法：静态预分配高随机内存池
 为了让数据无法被任何算法压缩，数据必须具备极高的随机性。
@@ -159,7 +160,7 @@ flowchart LR
     end
 ```
 
-![TCP 零窗口反压机制 vs 64KB 栈内存极速黑洞](../../public/images/speedtest-zero-window-sink.svg)
+![TCP 零窗口反压机制 vs 64KB 栈内存极速黑洞](../../../public/images/speedtest-zero-window-sink.svg)
 
 #### （2）极速黑洞（Sink Buffer）的选型权衡
 - **为什么不直接用 `io.ReadAll(r.Body)`？** `io.ReadAll` 会随数据到达在堆内存上动态扩容 byte slice，100MB 上传就会产生 100MB 垃圾对象，并发一高立刻引发 GC 频繁卡顿甚至 OOM；
@@ -189,7 +190,7 @@ flowchart LR
     end
 ```
 
-![单调时钟 vs 墙上日历时间对比](../../public/images/speedtest-monotonic-clock.svg)
+![单调时钟 vs 墙上日历时间对比](../../../public/images/speedtest-monotonic-clock.svg)
 
 **Go 语言规范**：必须使用 `time.Since(start)` 或 `t2.Sub(t1)` 提取 Go 内置的**单调时钟差值（Monotonic Clock）**，绝对不受系统改时和 NTP 漂移影响。严禁使用 `t2.UnixNano() - t1.UnixNano()`。
 
@@ -207,7 +208,7 @@ flowchart LR
    其中 $\frac{1}{16} (6.25\%)$ 为平滑增益系数，历史权重占 $93.75\%$，能稳健反映网络时延的波动程度；
 3. **满载缓冲膨胀（Bufferbloat）**：在下行/上行全力跑满带宽的稳态期间并行发送探针。如果满载时延比空闲时延高出 100ms 以上，说明本地路由器缺乏现代队列管理（如 FQ-CoDel），大流量下载时语音通话或游戏会发生严重卡顿。
 
-![时延、抖动与满载缓冲膨胀三维立体度量体系](../../public/images/speedtest-latency-dimensions.svg)
+![时延、抖动与满载缓冲膨胀三维立体度量体系](../../../public/images/speedtest-latency-dimensions.svg)
 
 ---
 
@@ -222,7 +223,7 @@ flowchart LR
     C --> D["取 P90 次序统计量<br/>(稳健抗毛刺带宽结果)"]
 ```
 
-![100ms 离散采样与 P90 稳态滤波流程](../../public/images/speedtest-sampling-p90.svg)
+![100ms 离散采样与 P90 稳态滤波流程](../../../public/images/speedtest-sampling-p90.svg)
 
 在稳态统计中，存在不同的指标选择：
 - **中位数（P50）**：容易受慢启动尾声和偶发丢包平摊影响，低估物理线路的最大承载力；
@@ -389,6 +390,15 @@ func emptyHandler(w http.ResponseWriter, r *http.Request) {
 
 在企业生产部署中，测速服务前端常挂载有 CDN、Nginx 或负载均衡器。如果直接读取 `RemoteAddr` 会误拿到代理节点的内网 IP：
 
+```mermaid
+flowchart LR
+    Origin["真实客户端<br/>(222.128.1.1)"] --> CDN["Cloudflare 边缘<br/>(CF-Connecting-IP)"]
+    CDN --> SLB["负载均衡/反代<br/>(X-Forwarded-For)"]
+    SLB --> Node["Go Speed-Node<br/>(安全优先级提取)"]
+```
+
+![五级代理链穿透与真实客户端公网 IP 安全提取管线](../../../public/images/speedtest-proxy-ip-pipeline.svg)
+
 ```go
 // web/getip_util.go - 代理标头安全穿透
 func ExtractRealClientIP(r *http.Request) string {
@@ -433,6 +443,8 @@ func ExtractRealClientIP(r *http.Request) string {
 ### 3.6 套接字配置与内核状态获取
 
 在需要进一步控制网络传输行为时，可以通过 Go 的 `syscall.RawConn` 直接操作底层 socket：
+
+![从物理网卡、Linux 内核到 Go 运行时的软硬件分层数据栈](../../../public/images/speedtest-network-layer-stack.svg)
 
 ```go
 // socket_options.go - 关键套接字参数控制
@@ -515,6 +527,8 @@ func GetTCPInfo(conn net.Conn) (*TCPInfo, error) {
 ---
 
 ## 四、 关键工程规范总结
+
+![测速服务核心协议与架构选型多维决策雷达矩阵](../../../public/images/speedtest-protocol-radar-matrix.svg)
 
 | 维度 | 必须遵循的工程规范 | 违背规范的物理后果 |
 | --- | --- | --- |

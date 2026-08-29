@@ -46,6 +46,7 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "cdn-01-anycast-bgp-routing",
       "speedtest-01-physical-essence",
       "speedtest-02-zero-copy-downlink",
       "speedtest-03-zero-alloc-uplink",

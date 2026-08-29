@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PostList } from "@/components/post/post-list";
+import { SeriesCurriculum } from "@/components/post/series-curriculum";
 import { getAllPosts, getPostSources } from "@/lib/content/posts";
 import { collectSeries, decodeSeries, getPostsForSeries } from "@/lib/content/series";
 import { encodeRouteSegment } from "@/lib/site-links";
@@ -32,14 +32,14 @@ export default async function SeriesDetailPage({ params }: PageProps) {
   if (!posts.length) notFound();
 
   return (
-    <div className="archive-page">
+    <div className="archive-page series-detail-page">
       <header className="tag-page-header">
-        <Link href="/series/">← 所有系列</Link>
-        <p className="eyebrow">Series / {posts.length} essays</p>
+        <Link href="/series/">← 所有专栏系列</Link>
+        <p className="eyebrow">Series Track / {posts.length} Chapters</p>
         <h1>{name}</h1>
-        <p>这条路线上的全部记录，按发布时间由新到旧排列。</p>
+        <p>专栏路线完整目录，按章节阅读顺序由前至后排列（共 {posts.length} 篇）。</p>
       </header>
-      <PostList posts={posts} />
+      <SeriesCurriculum seriesName={name} posts={posts} />
     </div>
   );
 }
