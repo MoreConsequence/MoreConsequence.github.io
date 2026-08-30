@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Chunked Prefill 算力带宽配平与解码时延防抖架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">长 Prompt 切片分块（如 512 Tokens/Chunk） ──► 与现有 Decode 批次混部共批 ──► 消除首字延迟（TTFT）与逐字抖动（ITL）</text>
+  </g>
+
+  <!-- Main Comparison Panes (435px each) -->
+  <g transform="translate(30, 75)">
+    <!-- Pane 1: Traditional Big Prefill Block (435px) -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
+      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统整块 Prefill：Decode 被长时间饿死</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Giant Prefill -->
+        <rect width="403" height="46" rx="4" fill="#fee2e2" stroke="#f87171"/>
+        <text x="12" y="18" fill="#991b1b" font-weight="700">新来 4K Token 超长 Prompt</text>
+        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">独占 GPU 计算核心，执行时长高达 280ms！</text>
+
+        <!-- Starved Decode Requests -->
+        <rect y="54" width="403" height="60" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="18" fill="#991b1b" font-weight="700">在途 Decode 请求被完全挂起：</text>
+        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">• 用户 A 正在看打字机输出，文字突然卡顿 300ms</text>
+        <text x="12" y="46" font-size="9.5" fill="#7f1d1d">• 逐字延迟（ITL - Inter-Token Latency）产生剧烈毛刺</text>
+
+        <rect y="122" width="403" height="42" rx="4" fill="#fee2e2"/>
+        <text x="12" y="18" fill="#b91c1c" font-weight="700">物理缺陷：</text>
+        <text x="12" y="32" font-size="9.5" fill="#991b1b">计算密集型与带宽密集型两极分化，硬件利用率严重失衡</text>
+      </g>
+    </g>
+
+    <!-- Pane 2: Chunked Prefill (435px) -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">⚡ Chunked Prefill：切片分块与 Decode 完美混部</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Chunks -->
+        <rect width="403" height="46" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="18" fill="#14532d" font-weight="700">Prompt 均匀切片 (如 512 Tokens/Chunk)</text>
+        <text x="12" y="32" font-size="9.5" fill="#15803d">每轮迭代只计算 1 个 Chunk（耗时严格限制在 20ms）</text>
+
+        <!-- Co-batching with Decode -->
+        <rect y="54" width="403" height="60" rx="4" fill="#ecfdf5" stroke="#10b981"/>
+        <text x="12" y="18" fill="#047857" font-weight="700">每轮 Iteration 混合打包：</text>
+        <text x="12" y="32" font-size="9.5" fill="#065f46">• [ 1 个 Prefill Chunk (512T) ] + [ 32 个在途 Decode (32T) ]</text>
+        <text x="12" y="46" font-size="9.5" font-weight="700" fill="#047857">✓ 在途 Decode 绝不受阻，打字机流式输出丝般顺滑！</text>
+
+        <rect y="122" width="403" height="42" rx="4" fill="#d1fae5"/>
+        <text x="12" y="18" fill="#065f46" font-weight="700">算力带宽完美配平：</text>
+        <text x="12" y="32" font-size="9.5" font-weight="700" fill="#047857">Prefill 吃满 Tensor Core 算力，Decode 吃满显存带宽！</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">推理引擎调度精髓：</tspan> Chunked Prefill（Sarathi-Serve 架构）通过 <tspan font-weight="700" fill="#2563eb">“时间切片混部”</tspan>，
+      彻底解决了长 Prompt 对在线 Decode 实时流式体验的毁灭性阻塞。
+    </text>
+  </g>
+</svg>

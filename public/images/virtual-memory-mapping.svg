@@ -1,82 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="vm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">malloc(1GB) 之后：虚拟地址空间、多级页表与物理页框的关系</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <text x="60" y="66" font-size="13" font-weight="700" fill="#0f172a">虚拟地址空间（进程视角）</text>
-  <rect x="60" y="78" width="210" height="300" rx="8" fill="#fff" stroke="#d7def0"/>
-  <g font-size="11">
-    <rect x="72" y="90" width="186" height="34" rx="5" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="165" y="103" text-anchor="middle" fill="#3730a3">代码 / 数据</text>
-    <text x="165" y="117" text-anchor="middle" fill="#3730a3" font-size="10">已映射（文件页）</text>
-    <rect x="72" y="132" width="186" height="34" rx="5" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="165" y="145" text-anchor="middle" fill="#3730a3">堆（已 touch 部分）</text>
-    <text x="165" y="159" text-anchor="middle" fill="#3730a3" font-size="10">已映射（匿名页）</text>
-    <rect x="72" y="174" width="186" height="120" rx="5" fill="#fef9e7" stroke="#eab308" stroke-dasharray="4 3"/>
-    <text x="165" y="228" text-anchor="middle" fill="#92400e">malloc 出来的大洞</text>
-    <text x="165" y="244" text-anchor="middle" fill="#92400e">只有 VMA 记录，</text>
-    <text x="165" y="260" text-anchor="middle" fill="#92400e">没有页表项、</text>
-    <text x="165" y="276" text-anchor="middle" fill="#92400e">不占物理内存</text>
-    <rect x="72" y="302" width="186" height="34" rx="5" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="165" y="315" text-anchor="middle" fill="#3730a3">栈</text>
-    <text x="165" y="329" text-anchor="middle" fill="#3730a3" font-size="10">已映射（匿名页）</text>
-    <rect x="72" y="344" width="186" height="26" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
-    <text x="165" y="361" text-anchor="middle" fill="#475569">其他区域（共享库、mmap…）</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 虚拟内存映射与缺页异常机理：从 malloc(1GB) 到物理页框分配</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">VMA 虚拟内存区域记录 vs 四级稀疏页表（PGD/PUD/PMD/PTE）vs 物理页框按需延迟分配（Lazy Allocation）</text>
   </g>
 
-  <text x="320" y="66" font-size="13" font-weight="700" fill="#0f172a">地址翻译：页表 + TLB</text>
-  <rect x="320" y="78" width="250" height="300" rx="8" fill="#fff" stroke="#d7def0"/>
-  <g font-size="11">
-    <rect x="332" y="90" width="226" height="40" rx="5" fill="#f0fdf4" stroke="#34d399"/>
-    <text x="445" y="106" text-anchor="middle" fill="#065f46">TLB（Translation Lookaside Buffer）</text>
-    <text x="445" y="122" text-anchor="middle" fill="#065f46" font-size="10">虚拟页号 → 物理页框号 的硬件缓存</text>
-    <text x="445" y="158" text-anchor="middle" font-size="11" fill="#64748b">未命中 ↓ 查页表</text>
-    <rect x="332" y="172" width="226" height="34" rx="5" fill="#f5f3ff" stroke="#8b5cf6"/>
-    <text x="445" y="185" text-anchor="middle" fill="#5b21b6">页全局目录（PGD）</text>
-    <text x="445" y="199" text-anchor="middle" fill="#5b21b6" font-size="10">每进程一张 · 记录 4 级树的根</text>
-    <rect x="382" y="212" width="176" height="30" rx="5" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="470" y="231" text-anchor="middle" fill="#5b21b6">页上级目录（PUD）</text>
-    <rect x="432" y="248" width="126" height="30" rx="5" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="495" y="267" text-anchor="middle" fill="#5b21b6">页中间目录（PMD）</text>
-    <rect x="482" y="284" width="76" height="30" rx="5" fill="#ede9fe" stroke="#a78bfa"/>
-    <text x="520" y="303" text-anchor="middle" fill="#5b21b6">页表项（PTE）</text>
-    <text x="445" y="340" text-anchor="middle" fill="#64748b">多级表：没映射的级根本不分配，</text>
-    <text x="445" y="356" text-anchor="middle" fill="#64748b">64 位下也只要几十 KB 而非天文数字</text>
+  <!-- 3 Equal Columns (280px each, gap 30px) -->
+  <g transform="translate(30, 75)">
+    <!-- Column 1: Virtual Address Space -->
+    <g filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 进程虚拟地址空间 (VMA)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect x="0" y="0" width="248" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="17" fill="#1e40af" font-weight="600" text-anchor="middle">代码段 / 数据段 (.text / .data)</text>
+
+        <rect x="0" y="32" width="248" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="49" fill="#1e40af" font-weight="600" text-anchor="middle">堆内存 (已 Touch 写入部分)</text>
+
+        <!-- Big Malloc Hole -->
+        <rect x="0" y="64" width="248" height="88" rx="4" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="124" y="88" fill="#c2410c" font-weight="700" text-anchor="middle">malloc(1GB) 虚拟内存空洞</text>
+        <text x="124" y="106" fill="#9a3412" text-anchor="middle">仅内核生成 `vm_area_struct`</text>
+        <text x="124" y="122" fill="#9a3412" text-anchor="middle">❌ 无页表项 · ❌ 0 字节物理内存</text>
+        <text x="124" y="138" fill="#ea580c" font-weight="600" text-anchor="middle">瞬间完成（耗时 &lt; 1μs）</text>
+
+        <rect x="0" y="158" width="248" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="175" fill="#1e40af" font-weight="600" text-anchor="middle">动态共享库映射区 (mmap)</text>
+
+        <rect x="0" y="190" width="248" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="207" fill="#1e40af" font-weight="600" text-anchor="middle">用户调用栈 (Stack 8MB 上限)</text>
+      </g>
+    </g>
+
+    <!-- Column 2: Address Translation & Multi-level Page Table -->
+    <g transform="translate(310, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">2. 地址翻译：TLB 与四级页表</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- TLB Box -->
+        <rect x="0" y="0" width="248" height="36" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="124" y="17" fill="#166534" font-weight="700" text-anchor="middle">CPU TLB 硬件快表 (0.5ns)</text>
+        <text x="124" y="30" fill="#15803d" font-size="9.5" text-anchor="middle">虚拟页号 (VPN) ──► 物理页框号 (PFN)</text>
+
+        <!-- Page Table Tree -->
+        <g transform="translate(0, 44)" font-family="ui-monospace, monospace" font-size="10.5">
+          <rect x="0" y="0" width="248" height="25" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="12" y="17" fill="#334155">CR3 ──► PGD (页全局目录)</text>
+
+          <rect x="20" y="30" width="228" height="25" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="32" y="47" fill="#334155">└──► PUD (页上级目录)</text>
+
+          <rect x="40" y="60" width="208" height="25" rx="3" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="52" y="77" fill="#334155">     └──► PMD (页中间目录)</text>
+
+          <rect x="60" y="90" width="188" height="25" rx="3" fill="#f8fafc" stroke="#2563eb"/>
+          <text x="72" y="107" fill="#1d4ed8" font-weight="700">          └──► PTE (页表项)</text>
+        </g>
+
+        <!-- Note -->
+        <rect x="0" y="168" width="248" height="48" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="10" y="184" fill="#475569" font-size="10">多级页表稀疏分配：未 touch 区域</text>
+        <text x="10" y="198" fill="#475569" font-size="10">不分配 PMD/PTE，48位地址空间仅需</text>
+        <text x="10" y="210" fill="#2563eb" font-size="10" font-weight="700">几十 KB 内存开销而非 512GB！</text>
+      </g>
+    </g>
+
+    <!-- Column 3: Physical Page Frames -->
+    <g transform="translate(620, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">3. 物理内存 (Page Frames)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect x="0" y="0" width="248" height="30" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="12" y="20" fill="#334155">页框 #001 · 内核常驻代码</text>
+
+        <rect x="0" y="36" width="248" height="30" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="12" y="56" fill="#334155">页框 #002 · 业务代码段 (只读)</text>
+
+        <rect x="0" y="72" width="248" height="34" rx="4" fill="#ecfdf5" stroke="#10b981"/>
+        <text x="12" y="93" fill="#047857" font-weight="700">页框 #003 · 匿名脏页 (已分配 4KB)</text>
+
+        <rect x="0" y="112" width="248" height="30" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="12" y="132" fill="#64748b">页框 #004 · 空闲物理内存 (Free)</text>
+
+        <!-- Page fault trigger -->
+        <rect x="0" y="152" width="248" height="64" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="170" fill="#1e40af" font-weight="700">⚡ 首次写入触发 Page Fault：</text>
+        <text x="10" y="188" fill="#334155" font-size="10.5">• Minor Fault：分配 4KB 物理页并填 PTE</text>
+        <text x="10" y="204" fill="#334155" font-size="10.5">• Major Fault：从磁盘交换分区换入数据</text>
+      </g>
+    </g>
   </g>
 
-  <text x="620" y="66" font-size="13" font-weight="700" fill="#0f172a">物理内存（页框数组）</text>
-  <rect x="620" y="78" width="240" height="300" rx="8" fill="#fff" stroke="#d7def0"/>
-  <g font-size="10.5">
-    <rect x="632" y="90" width="216" height="30" rx="5" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="740" y="109" text-anchor="middle" fill="#065f46">页框 #0 · 内核</text>
-    <rect x="632" y="126" width="216" height="30" rx="5" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="740" y="145" text-anchor="middle" fill="#065f46">页框 #1 · 代码页</text>
-    <rect x="632" y="162" width="216" height="30" rx="5" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="740" y="181" text-anchor="middle" fill="#065f46">页框 #2 · 堆页</text>
-    <rect x="632" y="198" width="216" height="30" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
-    <text x="740" y="217" text-anchor="middle" fill="#64748b">页框 #3 · 空闲</text>
-    <rect x="632" y="234" width="216" height="30" rx="5" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="740" y="253" text-anchor="middle" fill="#7f1d1d">页框 #4 · 回收中（待重新分配）</text>
-    <rect x="632" y="270" width="216" height="30" rx="5" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="740" y="289" text-anchor="middle" fill="#065f46">页框 #5 · 堆页</text>
-    <text x="740" y="330" text-anchor="middle" fill="#64748b">缺页（major fault）时：</text>
-    <text x="740" y="346" text-anchor="middle" fill="#64748b">从磁盘读文件页 / 换出页，</text>
-    <text x="740" y="362" text-anchor="middle" fill="#64748b">毫秒级；minor fault 直接复用</text>
-  </g>
-
-  <g stroke="#6366f1" stroke-width="1.6" fill="none" marker-end="url(#vm-arrow)">
-    <path d="M 270 250 C 290 250, 290 290, 332 295"/>
-    <path d="M 570 150 C 600 150, 600 160, 632 160"/>
-    <path d="M 570 300 C 600 300, 600 205, 632 205"/>
-  </g>
-  <g font-size="11" fill="#4f46e5">
-    <text x="282" y="290" font-size="10">首次 touch → 分配物理页 + 建立 PTE</text>
-    <text x="576" y="146" font-size="10">PTE 命中页框</text>
-    <text x="576" y="316" font-size="10">PTE 指向页框</text>
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">核心结论：</tspan> Linux 采用 <tspan font-weight="700" fill="#2563eb">Overcommit 乐观承诺策略</tspan>，`malloc(1GB)` 仅申请虚拟区间；直到首字节写入（First Touch）产生缺页中断，内核才以 <tspan font-weight="700" fill="#ea580c">4KB 页为单位</tspan> 真实切出物理内存。
+    </text>
   </g>
 </svg>

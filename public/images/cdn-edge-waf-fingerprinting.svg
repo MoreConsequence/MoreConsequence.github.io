@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="100%" height="100%" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="waf-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="arr-waf-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-waf-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+    </marker>
+    <marker id="arr-waf-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="waf-shadow" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#waf-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">EDGE WAF · JA4 FINGERPRINTING &amp; DISTRIBUTED RATE LIMITING</text>
+  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">边缘 WAF 深度指纹识别（JA4）与分布式分布式令牌桶频控拓扑</text>
+
+  <!-- ================= TOP: THREE-STEP PIPELINE (x: 40 ~ 920, w: 880) ================= -->
+  
+  <!-- Step 1: Client TLS/HTTP2 Extraction [x: 40 ~ 270, w: 230] -->
+  <g transform="translate(40, 75)" filter="url(#waf-shadow)">
+    <rect width="230" height="155" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="0" y="0" width="230" height="5" rx="2" fill="#3b82f6"/>
+    <text x="14" y="24" fill="#1e40af" font-size="9" font-weight="700" class="mono">1. PROTOCOL FINGERPRINT</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">TLS 握手特征与指纹提取</text>
+    <line x1="14" y1="56" x2="216" y2="56" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="14" y="74" fill="#475569" font-size="10.5">提取 ClientHello 密码套件列表</text>
+    <text x="14" y="94" fill="#475569" font-size="10.5">提取 ALPN、扩展排序与椭圆曲线</text>
+    <rect x="14" y="106" width="202" height="34" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8"/>
+    <text x="115" y="120" fill="#1e40af" font-size="8.5" font-weight="700" class="mono" text-anchor="middle">JA4: t13d1516h2_8daaf618843b</text>
+    <text x="115" y="133" fill="#64748b" font-size="8" text-anchor="middle">(精准识破伪造的 User-Agent 爬虫)</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 [x: 270 -> 340] -->
+  <path d="M 270,152 H 337" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-waf-blue)"/>
+
+  <!-- Step 2: Edge WAF & Distributed Rate Limiter [x: 340 ~ 620, w: 280] -->
+  <g transform="translate(340, 75)" filter="url(#waf-shadow)">
+    <rect width="280" height="155" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <rect x="0" y="0" width="280" height="5" rx="2" fill="#2563eb"/>
+    <text x="14" y="24" fill="#1d4ed8" font-size="9" font-weight="700" class="mono">2. EDGE WAF &amp; TOKEN BUCKET</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">边缘多维规则与令牌桶决策</text>
+    <line x1="14" y1="56" x2="266" y2="56" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="14" y="74" fill="#1e40af" font-size="10.5">· OWASP 核心规则集 (SQLi / XSS 拦截)</text>
+    <text x="14" y="94" fill="#1e40af" font-size="10.5">· 分布式令牌桶频控 (1000次/IP/分钟)</text>
+    <rect x="14" y="106" width="252" height="34" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+    <text x="140" y="120" fill="#059669" font-size="9.5" font-weight="700" text-anchor="middle">多维度联合打分评估 (Scoring Model)</text>
+    <text x="140" y="133" fill="#64748b" font-size="8.5" text-anchor="middle">IP信誉 + 指纹 + 行为熵值</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 [x: 620 -> 690] -->
+  <path d="M 620,120 H 687" fill="none" stroke="#059669" stroke-width="2" marker-end="url(#arr-waf-green)"/>
+  <path d="M 620,185 H 687" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-waf-red)"/>
+
+  <!-- Step 3: Mitigation Decisions [x: 690 ~ 920, w: 230] -->
+  <g transform="translate(690, 75)" filter="url(#waf-shadow)">
+    <rect width="230" height="155" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="0" y="0" width="230" height="5" rx="2" fill="#0f172a"/>
+    <text x="14" y="24" fill="#0f172a" font-size="9" font-weight="700" class="mono">3. ACTION DISPOSITION</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">边缘执行分流动作</text>
+    <line x1="14" y1="56" x2="216" y2="56" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <!-- Action 1: Pass -->
+    <rect x="14" y="66" width="202" height="32" rx="4" fill="#f0fdf4" stroke="#86efac" stroke-width="0.8"/>
+    <text x="24" y="86" fill="#065f46" font-size="10" font-weight="700">✓ 正常用户：透明放行回源 (0ms)</text>
+
+    <!-- Action 2: Challenge / Block -->
+    <rect x="14" y="106" width="202" height="34" rx="4" fill="#fef2f2" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="24" y="122" fill="#991b1b" font-size="9.5" font-weight="700">✗ 恶意爬虫：直接 403 阻断</text>
+    <text x="24" y="134" fill="#dc2626" font-size="8.5">或下发无感 JavaScript 质询验证</text>
+  </g>
+
+
+  <!-- ================= BOTTOM: TECHNICAL MECHANISM CARDS (x: 40, y: 245, w: 880, h: 185) ================= -->
+  <g transform="translate(40, 245)">
+    <rect width="880" height="185" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+    
+    <!-- Column 1 -->
+    <g transform="translate(16, 16)">
+      <rect width="270" height="150" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="14" y="24" fill="#1e40af" font-size="11" font-weight="700">JA4 协议指纹识别机理</text>
+      <line x1="14" y1="34" x2="256" y2="34" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="14" y="54" fill="#475569" font-size="10">结合协议类型、套件排序、扩展哈希；</text>
+      <text x="14" y="74" fill="#475569" font-size="10">Python/Go 爬虫与真人浏览器在 TLS 握手</text>
+      <text x="14" y="94" fill="#475569" font-size="10">阶段具有不可伪造的底层特征差异；</text>
+      <text x="14" y="118" fill="#1e40af" font-size="10" font-weight="700">无须解析 HTTP Body 即可毫秒级阻断。</text>
+    </g>
+
+    <!-- Column 2 -->
+    <g transform="translate(305, 16)">
+      <rect width="270" height="150" rx="6" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+      <text x="14" y="24" fill="#c2410c" font-size="11" font-weight="700">分布式令牌桶状态同步</text>
+      <line x1="14" y1="34" x2="256" y2="34" stroke="#fed7aa" stroke-width="1"/>
+      <text x="14" y="54" fill="#9a3412" font-size="10">本地内存原子递减与滑动时间窗口；</text>
+      <text x="14" y="74" fill="#9a3412" font-size="10">机房内部通过 Gossip/Redis 快速同步；</text>
+      <text x="14" y="94" fill="#9a3412" font-size="10">防御黑产通过切换 Anycast PoP 实施的</text>
+      <text x="14" y="118" fill="#c2410c" font-size="10" font-weight="700">分布式绕过式 CC 洪水攻击。</text>
+    </g>
+
+    <!-- Column 3 -->
+    <g transform="translate(594, 16)">
+      <rect width="270" height="150" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="14" y="24" fill="#065f46" font-size="11" font-weight="700">TLS 1.3 0-RTT 防重放攻击</text>
+      <line x1="14" y1="34" x2="256" y2="34" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="14" y="54" fill="#065f46" font-size="10">TLS 1.3 Early Data 易遭中间人重放；</text>
+      <text x="14" y="74" fill="#065f46" font-size="10">边缘部署单向时间窗口 + Bloom Filter；</text>
+      <text x="14" y="94" fill="#065f46" font-size="10">对已出现过的 Early Data 票据即刻拒收，</text>
+      <text x="14" y="118" fill="#065f46" font-size="10" font-weight="700">彻底根除针对金融/下单接口的重放攻击。</text>
+    </g>
+  </g>
+</svg>

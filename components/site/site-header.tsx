@@ -10,6 +10,7 @@ const navigation = [
   { href: "/writing", label: "文章" },
   { href: "/series", label: "系列" },
   { href: "/tags", label: "标签" },
+  { href: "/playground", label: "实验室" },
   { href: "/about", label: "关于" },
 ];
 

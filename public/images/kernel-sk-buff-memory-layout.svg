@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 内核 sk_buff 内存布局：控制元数据与真实数据区分离架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">`struct sk_buff` 元数据控制头（约 230B） ──► 四大游标指针（head/data/tail/end） ──► 连续数据缓存区与零拷贝克隆（skb_clone）</text>
+  </g>
+
+  <!-- Main Comparison Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: struct sk_buff control block (350px) -->
+    <g transform="translate(20, 20)">
+      <rect width="350" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="350" height="32" rx="6" fill="#dbeafe"/>
+      <text x="175" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 控制头：`struct sk_buff` (元数据)</text>
+
+      <g transform="translate(14, 44)" font-family="ui-monospace, monospace" font-size="10.5">
+        <rect width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="17" fill="#1d4ed8">struct sk_buff *next, *prev;</text>
+
+        <rect y="32" width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="49" fill="#1d4ed8">struct net_device *dev; (网卡设备)</text>
+
+        <rect y="64" width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="81" fill="#1d4ed8">struct sock *sk; (关联 Socket)</text>
+
+        <rect y="96" width="322" height="74" rx="3" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="10" y="114" fill="#0f172a" font-weight="700">四大游标指针：</text>
+        <text x="10" y="130" fill="#2563eb">unsigned char *head;  // 内存起点</text>
+        <text x="10" y="144" fill="#2563eb">unsigned char *data;  // 有效载荷起点</text>
+        <text x="10" y="158" fill="#2563eb">sk_buff_data_t tail, end;</text>
+      </g>
+    </g>
+
+    <!-- Right: Data Buffer Layout (490px) -->
+    <g transform="translate(390, 20)">
+      <rect width="490" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect width="490" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="245" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">2. 实际数据物理缓冲区 (Packet Data Buffer)</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <!-- Visual Buffer Bar -->
+        <g transform="translate(0, 0)">
+          <!-- Headroom (Reserved) -->
+          <rect x="0" y="0" width="100" height="50" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
+          <text x="50" y="22" font-weight="700" fill="#64748b" text-anchor="middle">Headroom</text>
+          <text x="50" y="38" font-size="9" fill="#94a3b8" text-anchor="middle">(预留协议头空间)</text>
+
+          <!-- Payload (Headers + User Data) -->
+          <rect x="105" y="0" width="240" height="50" rx="3" fill="#f0fdf4" stroke="#10b981" stroke-width="2"/>
+          <text x="225" y="22" font-weight="700" fill="#047857" text-anchor="middle">有效载荷数据 (Payload Area)</text>
+          <text x="225" y="38" font-size="9" fill="#059669" text-anchor="middle">[ Ethernet 14B | IP 20B | TCP 20B | Data ]</text>
+
+          <!-- Tailroom -->
+          <rect x="350" y="0" width="105" height="50" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
+          <text x="402" y="22" font-weight="700" fill="#64748b" text-anchor="middle">Tailroom</text>
+          <text x="402" y="38" font-size="9" fill="#94a3b8" text-anchor="middle">(尾部预留)</text>
+        </g>
+
+        <!-- Zero-copy Protocol Header Manipulation -->
+        <g transform="translate(0, 62)">
+          <rect width="455" height="110" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="12" y="18" font-weight="700" fill="#0f172a">📐 零拷贝协议封装与解封装机理：</text>
+          <text x="12" y="36" fill="#334155"><tspan font-weight="700" fill="#2563eb">• skb_push()</tspan>：`data` 指针向低地址前移，在预留 Headroom 零内存拷贝写入协议头；</text>
+          <text x="12" y="54" fill="#334155"><tspan font-weight="700" fill="#2563eb">• skb_pull()</tspan>：`data` 指针向高地址后移，剥离协议头直达上层载荷；</text>
+          <text x="12" y="72" fill="#334155"><tspan font-weight="700" fill="#ea580c">• skb_clone()</tspan>：仅复制元数据结构体（230B），共享底层物理数据区，引用计数加 1！</text>
+          <text x="12" y="90" font-size="9.5" fill="#166534" font-weight="700">✓ 收益：网络包在 L2/L3/L4 协议栈间穿梭完全零内存搬运与零重分配！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">内核数据结构之美：</tspan> `sk_buff` 用极其精巧的“四指针移动法”彻底消除了协议层级间的内存拷贝；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        但单个 SKB 依然包含大量的元数据指针与自旋锁，这也是为什么在万兆/十万兆高吞吐下催生了 XDP 极速旁路的原因。
+      </text>
+    </g>
+  </g>
+</svg>

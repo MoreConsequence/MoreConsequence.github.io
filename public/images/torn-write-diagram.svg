@@ -1,55 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
     </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="880" height="360" rx="12" fill="#fafbff" stroke="#d7def0"/>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <text x="440" y="36" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">一次 8KB 页的写入被拆成多次物理 IO，断电发生在中间</text>
+  <!-- Header -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">页撕裂（Torn Write）物理本质与 MySQL Doublewrite 双写缓冲恢复</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">16KB 逻辑页 vs 4KB 物理扇区：掉电半写导致校验和崩溃，双写区如何提供干净副本</text>
+  </g>
 
-  <text x="120" y="78" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">磁盘上物理页</text>
-  <text x="760" y="78" text-anchor="middle" font-size="14" font-weight="600" fill="#475569">断电后读到的</text>
+  <!-- Main Comparison Grid (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <rect x="40" y="92" width="160" height="220" rx="6" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
-  <text x="120" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">IO #1 已落盘</text>
-  <line x1="60" y1="140" x2="180" y2="140" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
-  <rect x="60" y="148" width="120" height="56" rx="4" fill="#dbeafe" stroke="#3b82f6"/>
-  <text x="120" y="170" text-anchor="middle" font-size="12" fill="#1e3a5f">新行内容 V2</text>
-  <text x="120" y="190" text-anchor="middle" font-size="12" fill="#1e3a5f">校验和 @ 偏移 4K</text>
-  <line x1="60" y1="212" x2="180" y2="212" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
-  <rect x="60" y="220" width="120" height="56" rx="4" fill="#fee2e2" stroke="#ef4444"/>
-  <text x="120" y="242" text-anchor="middle" font-size="12" fill="#7f1d1d">旧行内容 V1</text>
-  <text x="120" y="262" text-anchor="middle" font-size="12" fill="#7f1d1d">校验和 @ 偏移 8K</text>
-  <line x1="60" y1="284" x2="180" y2="284" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="4 4"/>
-  <text x="120" y="300" text-anchor="middle" font-size="12" fill="#64748b">IO #2 未落盘 → 丢失</text>
+    <!-- Left Box: Torn Write Process (420px wide) -->
+    <g transform="translate(20, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#fecaca" stroke-width="1"/>
+      <rect width="420" height="32" rx="6" fill="#fef2f2"/>
+      <text x="14" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b">⚠️ 硬件物理限制：16KB 写入被扇区拆分，中途掉电</text>
 
-  <line x1="230" y1="110" x2="330" y2="110" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrow-red)"/>
-  <text x="280" y="98" text-anchor="middle" font-size="13" font-weight="600" fill="#ef4444">断电</text>
+      <g transform="translate(16, 46)">
+        <!-- 4KB Sector 1 (Written) -->
+        <rect x="0" y="0" width="200" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">扇区 1 (0-4KB) ── [已落盘 V2 新数据]</text>
 
-  <rect x="360" y="92" width="160" height="220" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
-  <text x="440" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">IO #1 已落盘</text>
-  <line x1="380" y1="140" x2="500" y2="140" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
-  <rect x="380" y="148" width="120" height="56" rx="4" fill="#dbeafe" stroke="#3b82f6"/>
-  <text x="440" y="170" text-anchor="middle" font-size="12" fill="#1e3a5f">新行内容 V2</text>
-  <text x="440" y="190" text-anchor="middle" font-size="12" fill="#1e3a5f">校验和 @ 偏移 4K</text>
-  <line x1="380" y1="212" x2="500" y2="212" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
-  <rect x="380" y="220" width="120" height="56" rx="4" fill="#fff1f2" stroke="#fb7185"/>
-  <text x="440" y="242" text-anchor="middle" font-size="12" fill="#881337">旧行内容 V1</text>
-  <text x="440" y="262" text-anchor="middle" font-size="12" fill="#881337">校验和 @ 偏移 8K</text>
-  <line x1="380" y1="284" x2="500" y2="284" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 4"/>
-  <text x="440" y="300" text-anchor="middle" font-size="12" fill="#64748b">IO #2 未落盘 → 丢失</text>
+        <!-- 4KB Sector 2 (Written) -->
+        <rect x="0" y="38" width="200" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="100" y="59" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">扇区 2 (4-8KB) ── [已落盘 V2 新数据]</text>
 
-  <text x="600" y="122" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">页读回来长这样</text>
-  <rect x="580" y="140" width="260" height="132" rx="6" fill="#fff1f2" stroke="#ef4444" stroke-width="2"/>
-  <text x="710" y="170" text-anchor="middle" font-size="13" fill="#7f1d1d">半页：新旧混合</text>
-  <text x="710" y="196" text-anchor="middle" font-size="13" fill="#7f1d1d">行号对不上内容</text>
-  <text x="710" y="222" text-anchor="middle" font-size="13" fill="#7f1d1d">校验和必然失败</text>
-  <text x="710" y="248" text-anchor="middle" font-size="13" font-weight="600" fill="#ef4444">torn write</text>
-  <rect x="580" y="286" width="260" height="28" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-  <text x="710" y="305" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">对策：full_page_writes 整页镜像 / doublewrite</text>
+        <!-- Power Cut Lightning Line -->
+        <line x1="210" y1="75" x2="380" y2="75" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrow-red)"/>
+        <text x="295" y="68" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#dc2626" text-anchor="middle">⚡ 突发掉电 (Power Cut)</text>
+
+        <!-- 4KB Sector 3 (Lost) -->
+        <rect x="0" y="76" width="200" height="34" rx="4" fill="#fee2e2" stroke="#f87171"/>
+        <text x="100" y="97" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#991b1b" text-anchor="middle">扇区 3 (8-12KB) ── [丢失! 仍为 V1]</text>
+
+        <!-- 4KB Sector 4 (Lost) -->
+        <rect x="0" y="114" width="200" height="34" rx="4" fill="#fee2e2" stroke="#f87171"/>
+        <text x="100" y="135" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#991b1b" text-anchor="middle">扇区 4 (12-16KB) ── [丢失! 仍为 V1]</text>
+
+        <!-- Result note -->
+        <rect x="210" y="90" width="180" height="58" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+        <text x="300" y="112" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#b91c1c" text-anchor="middle">❌ 页损坏 (Torn Page)</text>
+        <text x="300" y="128" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#7f1d1d" text-anchor="middle">新旧数据杂糅，Checksum</text>
+        <text x="300" y="140" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#7f1d1d" text-anchor="middle">校验彻底失败，WAL 无法回放！</text>
+      </g>
+    </g>
+
+    <!-- Right Box: Doublewrite Buffer Solution (420px wide) -->
+    <g transform="translate(460, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1"/>
+      <rect width="420" height="32" rx="6" fill="#eff6ff"/>
+      <text x="14" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">🛡️ 工业解法：InnoDB Doublewrite Buffer（双写区）</text>
+
+      <g transform="translate(16, 46)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 -->
+        <rect width="388" height="36" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="18" fill="#0f172a" font-weight="700">步骤 1：顺序写入 Doublewrite Buffer (连续磁盘区)</text>
+        <text x="12" y="30" fill="#64748b" font-size="9.5">脏页先批量顺序刷入系统表空间连续双写槽位，性能开销仅增加 ~5%</text>
+
+        <!-- Step 2 -->
+        <rect y="44" width="388" height="36" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="62" fill="#0f172a" font-weight="700">步骤 2：离散刷盘到真实数据表空间 (*.ibd)</text>
+        <text x="12" y="74" fill="#64748b" font-size="9.5">离散写入若遭遇掉电产生撕裂损坏，无需恐慌</text>
+
+        <!-- Step 3 Recovery -->
+        <rect y="88" width="388" height="54" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="106" fill="#166534" font-weight="700">步骤 3：崩溃恢复时从双写区复制完整副本 (Crash Safe)</text>
+        <text x="12" y="122" fill="#15803d" font-size="10">• 校验和失败发现撕裂页 ──► 从 Doublewrite 区找到未损坏完整旧页</text>
+        <text x="12" y="136" fill="#15803d" font-size="10">• 用干净页覆盖损坏页 ──► 重新应用 Redo Log 推进至最新一致位点！</text>
+      </g>
+    </g>
+
+    <!-- Bottom Summary Bar -->
+    <g transform="translate(20, 260)">
+      <rect width="860" height="55" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">设计权衡：</tspan> Redo Log 记录的是物理增量差量，<tspan font-weight="700" fill="#ea580c">假定基础数据页未被物理破坏</tspan>；Doublewrite Buffer 提供了兜底的“纯净基底页”，确保 ACID 持久性。
+      </text>
+      <text x="430" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">
+        (PostgreSQL 等效机制：`full_page_writes=on`，每个 Checkpoint 后的首次页修改将整页完整写入 WAL)
+      </text>
+    </g>
+  </g>
 </svg>

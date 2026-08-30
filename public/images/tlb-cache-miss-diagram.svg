@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">进程切换的微架构隐性开销：TLB Invalidation 与 Cache 污染惩罚</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">显性耗时（保存寄存器 ~1µs）vs 隐性微架构惩罚（TLB Miss 漫长页表遍历 + L1/L2 Cold Cache 停顿 ~10-100µs）</text>
+  </g>
+
+  <!-- Main Comparison Grid (900px wide, 2 Panes 435px each) -->
+  <g transform="translate(30, 75)">
+    <!-- Pane 1: TLB Invalidation -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
+      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">隐性惩罚一：TLB Invalidation (页表缓存失效)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 -->
+        <rect width="403" height="34" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="17" font-weight="700" fill="#991b1b">1. 进程切换写入新 CR3 (Change Address Space)</text>
+        <text x="12" y="29" font-size="9.5" fill="#dc2626">若无 PCID 支持，CPU 强制冲刷清空所有非全局 TLB 项</text>
+
+        <!-- Step 2 -->
+        <rect y="42" width="403" height="74" rx="4" fill="#fff1f2" stroke="#fda4af"/>
+        <text x="12" y="58" font-weight="700" fill="#9f1239">2. 遭遇 TLB Miss：硬件 MMU 触发 4 级页表漫长遍历</text>
+        <text x="12" y="74" font-family="ui-monospace, monospace" font-size="10" fill="#881337">CR3 ──► PGD (页全局) ──► PUD ──► PMD ──► PTE (页表项)</text>
+        <text x="12" y="90" font-size="9.5" fill="#9f1239">每次内存访问最坏情况需 4 次 DRAM 查表（耗时飙升至数百周期）</text>
+        <text x="12" y="104" font-size="9.5" font-weight="700" fill="#e11d48">👉 现代优化：Linux 引入 PCID / ASID 保留多进程 TLB 标签</text>
+
+        <!-- Step 3 Result -->
+        <rect y="124" width="403" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="12" y="142" font-weight="700" fill="#0f172a">微架构后果：</text>
+        <text x="12" y="156" fill="#64748b" font-size="10">指令流水线因等待地址翻译进入长达数百周期的停顿 (Stall)</text>
+      </g>
+    </g>
+
+    <!-- Pane 2: Cold Cache -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fed7aa" stroke-width="1.2"/>
+      <rect width="435" height="36" rx="8" fill="#fff7ed"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#c2410c" text-anchor="middle">隐性惩罚二：L1/L2/L3 Cache 污染 (Cold Cache)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 -->
+        <rect width="403" height="34" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+        <text x="12" y="17" font-weight="700" fill="#9a3412">1. 任务 B 调入执行，工作集 (Working Set) 膨胀</text>
+        <text x="12" y="29" font-size="9.5" fill="#c2410c">任务 B 将自身代码和数据载入 32KB L1d/L1i 及 512KB L2</text>
+
+        <!-- Step 2 -->
+        <rect y="42" width="403" height="74" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+        <text x="12" y="58" font-weight="700" fill="#991b1b">2. 任务 A 的热点缓存行被全部驱逐 (Evicted)</text>
+        <text x="12" y="74" font-size="10" fill="#7f1d1d">• L1 Cache (0.5ns) ──► 跌落至 DRAM 内存 (60~100ns)</text>
+        <text x="12" y="90" font-size="9.5" fill="#991b1b">• 当任务 A 稍后重新切回时，遭遇持续数百毫秒的 Cold Cache 严寒</text>
+        <text x="12" y="104" font-size="9.5" font-weight="700" fill="#b91c1c">👉 跨 CPU 核心迁移（NUMA 漂移）更会导致跨总线同步惩罚！</text>
+
+        <!-- Step 3 Result -->
+        <rect y="124" width="403" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="12" y="142" font-weight="700" fill="#0f172a">微架构后果：</text>
+        <text x="12" y="156" fill="#64748b" font-size="10">IPC (每周期执行指令数) 从 2.5 暴跌至 0.3，吞吐急剧恶化</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">Microbenchmark 陷阱：</tspan> 用空循环测出的几百纳秒切换是假的；高负载生产中，<tspan font-weight="700" fill="#ea580c">TLB Miss 与冷缓存驱逐带来的隐性惩罚才是吞吐雪崩的真正元凶</tspan>。
+    </text>
+  </g>
+</svg>

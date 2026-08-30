@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL 2PC 组提交（Group Commit）三阶段流水线与单次 fsync 架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Flush 队列汇聚 ──► Sync 阶段 Leader 执行单次物理 fsync() 批量刷盘 ──► Commit 阶段按序提交释放锁</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="900" height="34" rx="8" fill="#f8fafc"/>
+    <text x="20" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">【无锁队列移交管线】并发事务从分散独立 I/O 汇聚为单一硬件批处理</text>
+
+    <!-- 3 Stages Grid (270px + 290px + 270px) -->
+    <g transform="translate(20, 50)">
+      <!-- Stage 1: Flush Stage -->
+      <g>
+        <rect width="265" height="225" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="265" height="28" rx="6" fill="#dbeafe"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">Stage 1: Flush Stage (内存写)</text>
+
+        <!-- Queue Stack inside Flush -->
+        <g transform="translate(12, 38)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <!-- Leader Card -->
+          <rect width="241" height="34" rx="4" fill="#2563eb"/>
+          <text x="10" y="21" font-size="10" font-weight="700" fill="#ffffff">Tx 1 (👑 Leader 线程)</text>
+          <text x="230" y="21" font-size="8.5" fill="#dbeafe" text-anchor="end">代写整个批次</text>
+
+          <!-- Follower 1 -->
+          <rect y="40" width="241" height="30" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="10" y="20" font-size="9.5" fill="#1e40af">Tx 2 (Follower 1 阻塞等待)</text>
+
+          <!-- Follower 2 -->
+          <rect y="74" width="241" height="30" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="10" y="20" font-size="9.5" fill="#1e40af">Tx 3 (Follower 2 阻塞等待)</text>
+
+          <!-- Follower 32 -->
+          <rect y="108" width="241" height="30" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="10" y="20" font-size="9.5" fill="#1e40af">Tx 32 (Follower 31 阻塞等待)</text>
+
+          <text x="0" y="160" font-size="9" fill="#1d4ed8">
+            • 多个并发线程入队，第一个到达者成为 Leader
+          </text>
+          <text x="0" y="174" font-size="9" fill="#1d4ed8">
+            • Leader 一次性将 32 个事务写入 Binlog Cache
+          </text>
+        </g>
+      </g>
+
+      <!-- Conveyor Arrow 1 -->
+      <path d="M 270 160 L 290 160" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-blue)"/>
+
+      <!-- Stage 2: Sync Stage -->
+      <g transform="translate(295, 0)">
+        <rect width="280" height="225" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="280" height="28" rx="6" fill="#dcfce7"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">Stage 2: Sync Stage (硬件落盘)</text>
+
+        <g transform="translate(12, 38)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <!-- Delayed Queue Accumulator -->
+          <rect width="256" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#14532d">binlog_group_commit_sync_delay</text>
+          <text x="10" y="30" font-size="8.5" fill="#15803d">微秒级等待，汇聚更多在途事务入批</text>
+
+          <!-- The Great Single fsync Box -->
+          <rect y="48" width="256" height="54" rx="4" fill="#10b981"/>
+          <text x="128" y="22" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">⚡ 仅 1 次物理 fsync() 调用！</text>
+          <text x="128" y="38" font-size="9" fill="#d1fae5" text-anchor="middle">Leader 代替全部 32 个事务完成落盘</text>
+
+          <!-- SSD Badge -->
+          <rect y="108" width="256" height="34" rx="4" fill="#dcfce7" stroke="#34d399"/>
+          <text x="10" y="21" font-size="9.5" font-weight="700" fill="#065f46">SSD 物理写入：1 个 IOPS 处理 32 事务！</text>
+
+          <text x="0" y="165" font-size="9" fill="#15803d">
+            ✓ 彻底将磁盘 IO 瓶颈从 1000 TPS 推至 50,000+ TPS
+          </text>
+        </g>
+      </g>
+
+      <!-- Conveyor Arrow 2 -->
+      <path d="M 580 160 L 600 160" stroke="#10b981" stroke-width="3" marker-end="url(#arrow-emerald)"/>
+
+      <!-- Stage 3: Commit Stage -->
+      <g transform="translate(605, 0)">
+        <rect width="255" height="225" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+        <rect width="255" height="28" rx="6" fill="#ffedd5"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">Stage 3: Commit Stage (释放锁)</text>
+
+        <g transform="translate(12, 38)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <!-- Ordered Commit -->
+          <rect width="231" height="42" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#9a3412">binlog_order_commits = ON</text>
+          <text x="10" y="30" font-size="8.5" fill="#c2410c">严格按 Binlog 写入顺序提交 InnoDB</text>
+
+          <!-- Wake up Followers -->
+          <rect y="48" width="231" height="50" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#9a3412">批量唤醒全部 Follower 线程</text>
+          <text x="10" y="32" font-size="8.5" fill="#ea580c">• 批量释放行级排他锁 (X Lock)</text>
+          <text x="10" y="44" font-size="8.5" fill="#ea580c">• 向 32 个客户端连接返回成功</text>
+
+          <text x="0" y="160" font-size="9" fill="#c2410c">
+            • 客户端拿到 OK 响应，保证持久化
+          </text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Metric Bar -->
+    <g transform="translate(20, 310)">
+      <rect width="860" height="58" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">
+        💡 组提交吞吐公式：$\text{Throughput} = \frac{\text{Group Size}}{\text{Single fsync Latency}}$
+      </text>
+      <text x="430" y="44" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569" text-anchor="middle">
+        并发请求越多，组提交批次越大，单事务分摊的 I/O 成本越接近于 0 —— 实现了 <tspan font-weight="700" fill="#2563eb">“高并发反而更高吞吐”</tspan> 的正向飞轮效应！
+      </text>
+    </g>
+  </g>
+</svg>

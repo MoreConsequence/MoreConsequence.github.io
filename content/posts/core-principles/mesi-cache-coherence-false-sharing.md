@@ -13,6 +13,8 @@ series: "硬核底层原理"
 
 ## 一、缓存一致性：不是同步，是缓存行所有权迁移
 
+![CPU MESI 缓存一致性协议流转与伪共享（False Sharing）消除架构](../../../public/images/cpu-mesi-cache-coherence-matrix.svg)
+
 现代 CPU 以**缓存行（cache line）**作为缓存和一致性操作的重要粒度。很多目标机器使用 64B，但它不是 Go 语言层面的保证；结构体是否跨行要用目标架构的布局检查确认。单核读写没问题；多个核同时写同一行，就要保证二者看到的最终值一致——MESI 用 M（Modified）/E（Exclusive）/S（Shared）/I（Invalid）四态提供一个有用的解释模型：
 
 ```mermaid

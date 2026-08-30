@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">LLM 流式长连接网关：TCP 零窗口反压与显存级联熔断时序</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">客户端消费慢 ──► 操作系统发送 TCP Zero-Window ──► 网关 write() 阻塞反压 ──► 客户端断开时 AbortSignal 级联释放 GPU KV Cache</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 4 Pipeline Stages (200px each) -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: Browser Client (195px) -->
+      <g>
+        <rect width="190" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="190" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="95" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">1. 前端客户端 (Browser)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="170" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="16" fill="#0f172a" font-weight="700">JS 单线程渲染卡顿</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">DOM 树复杂导致无法读包</text>
+
+          <rect y="48" width="170" height="52" rx="3" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="8" y="16" fill="#991b1b" font-weight="700">TCP 接收缓冲区满</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#dc2626">win=0 (Zero Window)</text>
+          <text x="8" y="42" font-size="8.5" fill="#7f1d1d">向网关发送暂停发包通知</text>
+
+          <rect y="106" width="170" height="40" rx="3" fill="#f8fafc"/>
+          <text x="8" y="16" fill="#64748b">或用户直接关掉浏览器 ──►</text>
+          <text x="8" y="28" font-size="8.5" fill="#dc2626">触发 TCP RST 拆链</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: SSE API Gateway (200px) -->
+      <g transform="translate(210, 0)">
+        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">2. API 网关 (Envoy/Node)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1d4ed8" font-weight="700">捕获 Socket 反压</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">res.write() 返回 false</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">暂停拉取下游流</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• 监听 'drain' 事件再恢复</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• 彻底防止网关内存 OOM</text>
+
+          <rect y="106" width="175" height="40" rx="3" fill="#dbeafe"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">req.on('close') 触发</text>
+          <text x="8" y="28" font-size="9" fill="#1d4ed8">向推理引擎发送取消信号</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: gRPC & AbortSignal (200px) -->
+      <g transform="translate(425, 0)">
+        <rect width="195" height="235" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#ffedd5"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#c2410c" text-anchor="middle">3. 级联取消传播通道</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="8" y="16" fill="#9a3412" font-weight="700">gRPC Context Cancel</text>
+          <text x="8" y="28" font-size="9" fill="#c2410c">向下游发送 CANCELLED 帧</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="8" y="16" fill="#9a3412" font-weight="700">微秒级跨服务透传</text>
+          <text x="8" y="30" font-size="9" fill="#c2410c">终止内部队列排队</text>
+          <text x="8" y="42" font-size="9" fill="#c2410c">防止幽灵请求（Ghost Tasks）</text>
+
+          <rect y="106" width="175" height="40" rx="3" fill="#ffedd5"/>
+          <text x="8" y="16" font-weight="700" fill="#ea580c">直达 vLLM 调度器 ──►</text>
+          <text x="8" y="28" font-size="8.5" fill="#ea580c">调用 abort_request(seq_id)</text>
+        </g>
+      </g>
+
+      <!-- Stage 4: GPU Memory Free (230px) -->
+      <g transform="translate(640, 0)">
+        <rect width="220" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="220" height="32" rx="6" fill="#dcfce7"/>
+        <text x="110" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. GPU KV Cache 瞬间释放</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="200" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">终止后续 Iteration 循环</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">避免浪费 GPU 昂贵的算力</text>
+
+          <rect y="48" width="200" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#166534" font-weight="700">回收 PagedAttention 页块</text>
+          <text x="8" y="30" font-size="9" fill="#15803d">• BlockManager.free(table)</text>
+          <text x="8" y="42" font-size="9" fill="#15803d">• 立即释放 2GB+ HBM 显存！</text>
+
+          <rect y="106" width="200" height="40" rx="3" fill="#d1fae5" stroke="#10b981"/>
+          <text x="8" y="16" fill="#065f46" font-weight="700">✓ 供给新请求复用：</text>
+          <text x="8" y="28" font-size="9" font-weight="700" fill="#047857">彻底杜绝显存雪崩泄漏！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">长连接网关核心命脉：</tspan> 大模型流式输出（SSE）面对高达 30s 的长事务，必须实现 <tspan font-weight="700" fill="#2563eb">“反压控流 + 级联取消”</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        客户端一旦断开，必须在毫秒内将取消信号传递至 GPU 显存管理器，否则闲置计算将瞬间拖垮整个集群。
+      </text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">eBPF Maps 内核态与用户态无锁共享内存通信机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">内核 eBPF 程序极速更新 ──► BPF Maps（Hash / Per-CPU / RingBuffer） ──► 用户态 Go/C++ 应用程序 mmap 零拷贝消费</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: Kernel Space eBPF (270px) -->
+    <g transform="translate(20, 20)">
+      <rect width="260" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="260" height="32" rx="6" fill="#dbeafe"/>
+      <text x="130" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">内核态 (Kernel Space eBPF)</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="236" height="42" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="16" fill="#1d4ed8" font-weight="700">Hook 点事件触发</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">网络包到达、系统调用发生</text>
+
+        <rect y="50" width="236" height="52" rx="4" fill="#ffffff" stroke="#3b82f6"/>
+        <text x="10" y="16" fill="#1e40af" font-weight="700">bpf_map_update_elem()</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">• 纳秒级原子写入 Map</text>
+        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 或向 RingBuf 提交事件流</text>
+
+        <rect y="110" width="236" height="36" rx="4" fill="#eff6ff"/>
+        <text x="10" y="22" font-size="9.5" fill="#1e40af">物理开销：&lt; 10 纳秒</text>
+      </g>
+    </g>
+
+    <!-- Center: BPF Maps Shared Memory (300px) -->
+    <g transform="translate(300, 20)">
+      <rect width="300" height="230" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="300" height="32" rx="6" fill="#dcfce7"/>
+      <text x="150" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">BPF Maps 共享内存中枢</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="276" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="10" y="16" fill="#14532d" font-weight="700">BPF_MAP_TYPE_HASH</text>
+        <text x="10" y="30" font-size="9.5" fill="#15803d">键值映射表，支持原子并发读写</text>
+
+        <rect y="50" width="276" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="10" y="16" fill="#14532d" font-weight="700">BPF_MAP_TYPE_PERCPU_ARRAY</text>
+        <text x="10" y="30" font-size="9.5" fill="#15803d">每 CPU 独占内存，彻底消除锁争用</text>
+
+        <rect y="100" width="276" height="52" rx="4" fill="#d1fae5" stroke="#10b981"/>
+        <text x="10" y="16" fill="#065f46" font-weight="700">BPF_MAP_TYPE_RINGBUF ★</text>
+        <text x="10" y="30" font-size="9.5" fill="#047857">单生产者多消费者环形缓冲区</text>
+        <text x="10" y="42" font-size="9.5" font-weight="700" fill="#047857">mmap 零内存拷贝，支持事件推送</text>
+      </g>
+    </g>
+
+    <!-- Right: User Space App (260px) -->
+    <g transform="translate(620, 20)">
+      <rect width="260" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect width="260" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="130" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">用户态应用 (Go / cilium/ebpf)</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="236" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="10" y="16" fill="#0f172a" font-weight="700">文件描述符 (FD) 句柄</text>
+        <text x="10" y="30" font-size="9.5" fill="#64748b">通过 bpf() 系统调用创建/打开 Map</text>
+
+        <rect y="50" width="236" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="10" y="16" fill="#1e40af" font-weight="700">ringbuf.Reader.Read()</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">• epoll 事件驱动无阻塞拉取</text>
+        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 零上下文切换，极速吞吐</text>
+
+        <rect y="110" width="236" height="36" rx="4" fill="#f8fafc"/>
+        <text x="10" y="22" font-size="9.5" fill="#475569">指标上报 Prometheus / 链路汇总</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">通信架构进化：</tspan> 相比老旧 Perf Buffer 每 CPU 独立缓冲导致的内存浪费，<tspan font-weight="700" fill="#2563eb">BPF RingBuf 提供了全局单环与内存按序到达</tspan>，是高性能可观测性的首选。
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="500" fill="#f8fafc"/>
+  <rect width="960" height="500" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型 API 接口协议代际演进与架构权衡全景</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">从裸文本续写到 ChatML 角色协议、多态内容块、文法受限解码与 WebSocket 全双工实时事件帧</text>
+  </g>
+
+  <!-- 5 Generational Evolution Pipeline Cards (172px each, spaced by 10px) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- Gen 1: Raw Completions -->
+    <g>
+      <rect width="172" height="260" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <rect width="172" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="86" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#475569" text-anchor="middle">1. 纯文本续写 (2020)</text>
+
+      <g transform="translate(10, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="152" height="34" rx="3" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#334155">/v1/completions</text>
+        <text x="8" y="26" font-family="ui-monospace, monospace" font-size="7.5" fill="#64748b">"prompt": string</text>
+
+        <rect y="40" width="152" height="72" rx="3" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="8" y="16" font-size="8.5" font-weight="700" fill="#991b1b">❌ 核心缺陷：</text>
+        <text x="8" y="30" font-size="7.5" fill="#7f1d1d">• Prompt 注入与定界符碰撞</text>
+        <text x="8" y="44" font-size="7.5" fill="#7f1d1d">• Human/AI 标记容易泄露</text>
+        <text x="8" y="58" font-size="7.5" fill="#7f1d1d">• 停用词 (stop) 脆弱分句</text>
+
+        <rect y="118" width="152" height="42" rx="3" fill="#f1f5f9"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#475569">无角色隔离</text>
+        <text x="8" y="30" font-size="7.5" fill="#64748b">系统元指令与用户输入混杂</text>
+      </g>
+    </g>
+
+    <!-- Gen 2: ChatML & Chat Completions -->
+    <g transform="translate(182, 0)">
+      <rect width="172" height="260" rx="6" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="172" height="32" rx="6" fill="#eff6ff"/>
+      <text x="86" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">2. ChatML/SSE (2023)</text>
+
+      <g transform="translate(10, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="152" height="34" rx="3" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#1e40af">/v1/chat/completions</text>
+        <text x="8" y="26" font-family="ui-monospace, monospace" font-size="7" fill="#2563eb">messages: [{role, content}]</text>
+
+        <rect y="40" width="152" height="72" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="8" y="16" font-size="8.5" font-weight="700" fill="#166534">✓ 协议升级：</text>
+        <text x="8" y="30" font-size="7.5" fill="#15803d">• &lt;|im_start|&gt; 特殊 Token 隔离</text>
+        <text x="8" y="44" font-size="7.5" fill="#15803d">• SSE text/event-stream 流式</text>
+        <text x="8" y="58" font-size="7.5" fill="#15803d">• delta.content 逐字推送</text>
+
+        <rect y="118" width="152" height="42" rx="3" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#991b1b">⚠️ 碎片账陷阱</text>
+        <text x="8" y="30" font-size="7.5" fill="#7f1d1d">UTF-8 多字节截断与 Usage 缺失</text>
+      </g>
+    </g>
+
+    <!-- Gen 3: Tool Use & Polymorphic Blocks -->
+    <g transform="translate(364, 0)">
+      <rect width="172" height="260" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="172" height="32" rx="6" fill="#f0fdf4"/>
+      <text x="86" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">3. 多态内容块 (2024)</text>
+
+      <g transform="translate(10, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="152" height="34" rx="3" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#166534">/v1/messages (Claude)</text>
+        <text x="8" y="26" font-family="ui-monospace, monospace" font-size="7" fill="#15803d">content: Array&lt;Block&gt;</text>
+
+        <rect y="40" width="152" height="72" rx="3" fill="#d1fae5" stroke="#10b981"/>
+        <text x="8" y="16" font-size="8.5" font-weight="700" fill="#065f46">✓ 多态结构解耦：</text>
+        <text x="8" y="30" font-size="7.5" fill="#047857">• Text / ToolUse / Thinking</text>
+        <text x="8" y="44" font-size="7.5" fill="#047857">• content_block_start 事件流</text>
+        <text x="8" y="58" font-size="7.5" fill="#047857">• 终结 JSON 字符串手动拼接</text>
+
+        <rect y="118" width="152" height="42" rx="3" fill="#f0fdf4"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#166534">显式状态机生命周期</text>
+        <text x="8" y="30" font-size="7.5" fill="#15803d">严格的块起止（Block Start/Stop）</text>
+      </g>
+    </g>
+
+    <!-- Gen 4: Constrained Decoding (CFG) -->
+    <g transform="translate(546, 0)">
+      <rect width="172" height="260" rx="6" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="172" height="32" rx="6" fill="#fff7ed"/>
+      <text x="86" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">4. 受限解码 (2024)</text>
+
+      <g transform="translate(10, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="152" height="34" rx="3" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#9a3412">response_format</text>
+        <text x="8" y="26" font-family="ui-monospace, monospace" font-size="7" fill="#c2410c">type: "json_schema"</text>
+
+        <rect y="40" width="152" height="72" rx="3" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="8" y="16" font-size="8.5" font-weight="700" fill="#9a3412">✓ 引擎级文法约束：</text>
+        <text x="8" y="30" font-size="7.5" fill="#c2410c">• Schema 编译为 CFG / DFA</text>
+        <text x="8" y="44" font-size="7.5" fill="#c2410c">• Logit Masking 非法 Token</text>
+        <text x="8" y="58" font-size="7.5" font-weight="700" fill="#ea580c">• 数学保证 100% 语法正确</text>
+
+        <rect y="118" width="152" height="42" rx="3" fill="#fff7ed"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#9a3412">0 语法幻觉</text>
+        <text x="8" y="30" font-size="7.5" fill="#c2410c">消除后置 JSON.parse 重试开销</text>
+      </g>
+    </g>
+
+    <!-- Gen 5: Realtime Bidi WebSocket -->
+    <g transform="translate(728, 0)">
+      <rect width="172" height="260" rx="6" fill="#ffffff" stroke="#a855f7" stroke-width="1.5"/>
+      <rect width="172" height="32" rx="6" fill="#faf5ff"/>
+      <text x="86" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#7e22ce" text-anchor="middle">5. 实时双向帧 (2025)</text>
+
+      <g transform="translate(10, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="152" height="34" rx="3" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#7e22ce">/v1/realtime (WebSocket)</text>
+        <text x="8" y="26" font-family="ui-monospace, monospace" font-size="7" fill="#9333ea">event-driven JSON frames</text>
+
+        <rect y="40" width="152" height="72" rx="3" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="8" y="16" font-size="8.5" font-weight="700" fill="#6b21a8">✓ 全双工实时通信：</text>
+        <text x="8" y="30" font-size="7.5" fill="#7e22ce">• PCM16 24kHz 音频流并发</text>
+        <text x="8" y="44" font-size="7.5" fill="#7e22ce">• 协议级打断 (Barge-in)</text>
+        <text x="8" y="58" font-size="7.5" font-weight="700" fill="#7e22ce">• conversation.item.truncate</text>
+
+        <rect y="118" width="152" height="42" rx="3" fill="#faf5ff"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#7e22ce">端到端亚秒时延</text>
+        <text x="8" y="30" font-size="7.5" fill="#9333ea">彻底超越 HTTP/SSE 半双工模型</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Comprehensive Comparison Table (900px) -->
+  <g transform="translate(30, 345)" filter="url(#card-shadow)">
+    <rect width="900" height="135" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+    <rect width="900" height="28" rx="8" fill="#f8fafc"/>
+    <text x="20" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155">
+      【5 代协议核心工程维度横向对比矩阵】
+    </text>
+
+    <!-- Table Grid -->
+    <g transform="translate(15, 36)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9">
+      <!-- Header Row -->
+      <text x="0" y="14" font-weight="700" fill="#64748b">协议代际</text>
+      <text x="120" y="14" font-weight="700" fill="#64748b">传输层 / 协议</text>
+      <text x="250" y="14" font-weight="700" fill="#64748b">载荷数据模型</text>
+      <text x="420" y="14" font-weight="700" fill="#64748b">流式帧粒度与状态</text>
+      <text x="610" y="14" font-weight="700" fill="#64748b">结构化输出保证</text>
+      <text x="770" y="14" font-weight="700" fill="#64748b">实时双向打断</text>
+
+      <line x1="0" y1="20" x2="870" y2="20" stroke="#e2e8f0" stroke-width="1"/>
+
+      <!-- Row 1: Chat Completions -->
+      <text x="0" y="34" font-weight="700" fill="#1e40af">OpenAI Chat</text>
+      <text x="120" y="34" fill="#334155">HTTP/1.1 or H2 + SSE</text>
+      <text x="250" y="34" fill="#334155">messages: [{role, content}]</text>
+      <text x="420" y="34" fill="#334155">choices[0].delta.content 碎片</text>
+      <text x="610" y="34" fill="#c2410c">CFG / json_schema strict</text>
+      <text x="770" y="34" fill="#dc2626">❌ 不支持 (需断连接)</text>
+
+      <!-- Row 2: Anthropic Messages -->
+      <text x="0" y="52" font-weight="700" fill="#166534">Anthropic Messages</text>
+      <text x="120" y="52" fill="#334155">HTTP/2 + Typed SSE</text>
+      <text x="250" y="52" fill="#334155">content: Array&lt;TypedBlock&gt;</text>
+      <text x="420" y="52" fill="#166534">content_block_start/delta/stop</text>
+      <text x="610" y="52" fill="#166534">Tool-Use 强类型约束</text>
+      <text x="770" y="52" fill="#dc2626">❌ 不支持 (单向流)</text>
+
+      <!-- Row 3: OpenAI Realtime -->
+      <text x="0" y="70" font-weight="700" fill="#7e22ce">OpenAI Realtime</text>
+      <text x="120" y="70" fill="#7e22ce">WebSocket / WebRTC</text>
+      <text x="250" y="70" fill="#334155">Event JSON + PCM Audio</text>
+      <text x="420" y="70" fill="#7e22ce">双向事件帧 (Client/Server)</text>
+      <text x="610" y="70" fill="#334155">Session Tool Definitions</text>
+      <text x="770" y="70" font-weight="700" fill="#166534">✓ 毫秒级 truncate 打断</text>
+    </g>
+  </g>
+</svg>

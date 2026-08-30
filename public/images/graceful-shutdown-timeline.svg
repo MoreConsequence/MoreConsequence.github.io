@@ -1,47 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="400" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">SIGTERM 之后:30 秒停机窗口里的四件事</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <rect x="60" y="56" width="780" height="24" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
-  <text x="450" y="73" text-anchor="middle" font-size="12.5" font-weight="600" fill="#991b1b">terminationGracePeriodSeconds = 30s(默认)——窗口耗尽,进程被 SIGKILL</text>
-
-  <g font-size="13">
-    <rect x="60" y="96" width="160" height="32" rx="6" fill="#fecaca" stroke="#ef4444" stroke-width="1.5"/>
-    <text x="140" y="117" text-anchor="middle" font-weight="700" fill="#7f1d1d">SIGTERM</text>
-    <text x="230" y="117" font-size="12.5" fill="#64748b">0s · signal.NotifyContext 收到</text>
-
-    <rect x="60" y="140" width="250" height="56" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="80" y="162" font-weight="600" fill="#3730a3">第 1 步 关闸:停止接收新工作</text>
-    <text x="80" y="184" font-size="12" fill="#475569">关闭 listener;keep-alive 上的新请求被拒</text>
-
-    <rect x="330" y="140" width="270" height="56" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="350" y="162" font-weight="600" fill="#065f46">第 2 步 排空:处理中请求完成</text>
-    <text x="350" y="184" font-size="12" fill="#475569">http.Server.Shutdown,预算 10s</text>
-
-    <rect x="620" y="140" width="220" height="56" rx="6" fill="#fefce8" stroke="#facc15"/>
-    <text x="640" y="162" font-weight="600" fill="#854d0e">第 3 步 收尾:后台任务结束</text>
-    <text x="640" y="184" font-size="12" fill="#475569">worker/队列消费,预算 15s</text>
-
-    <rect x="60" y="212" width="780" height="46" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-    <text x="80" y="234" font-weight="600" fill="#334155">第 4 步 兜底:关闭资源并退出</text>
-    <text x="80" y="252" font-size="12" fill="#64748b">数据库连接池、消息队列客户端、flusher——顺序固定,每步给明确预算</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产级优雅停机（Graceful Shutdown）时序与 30 秒预算分配</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">从 SIGTERM 关闸到 SIGKILL 强制绝杀：关入站 ──► 排在途 ──► 刷异步 ──► 关依赖的严密依赖序</text>
   </g>
 
-  <line x1="140" y1="270" x2="140" y2="330" stroke="#94a3b8" stroke-width="2"/>
-  <text x="140" y="292" text-anchor="middle" font-size="11.5" fill="#64748b">30s</text>
-  <line x1="140" y1="330" x2="820" y2="330" stroke="#cbd5e1" stroke-width="2.5"/>
-  <circle cx="140" cy="330" r="5" fill="#ef4444"/>
-  <circle cx="420" cy="330" r="5" fill="#6366f1"/>
-  <circle cx="700" cy="330" r="5" fill="#facc15"/>
-  <line x1="800" y1="322" x2="800" y2="338" stroke="#ef4444" stroke-width="2.5" marker-end="url(#g-arrow)"/>
-  <text x="450" y="356" text-anchor="middle" font-size="12.5" fill="#475569">时间轴:关闸在前,排空与收尾并行,资源关闭最后——任何一步超预算,整个窗口作废</text>
+  <!-- Main Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <rect x="60" y="366" width="780" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-  <text x="450" y="384" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">预算公式:排空 + 收尾 + 资源关闭 ≤ gracePeriod - 信号抖动余量(建议留 5s)</text>
+    <!-- Timeline Grid Header (0s -> 30s) -->
+    <g transform="translate(180, 20)">
+      <!-- Timeline axis -->
+      <line x1="0" y1="20" x2="680" y2="20" stroke="#cbd5e1" stroke-width="2"/>
+      
+      <!-- Ticks -->
+      <line x1="0" y1="14" x2="0" y2="26" stroke="#64748b" stroke-width="2"/>
+      <text x="0" y="8" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#64748b" text-anchor="middle">0s (SIGTERM)</text>
+
+      <line x1="170" y1="14" x2="170" y2="26" stroke="#64748b" stroke-width="1.5"/>
+      <text x="170" y="8" font-family="ui-monospace, monospace" font-size="11" fill="#64748b" text-anchor="middle">7.5s</text>
+
+      <line x1="340" y1="14" x2="340" y2="26" stroke="#64748b" stroke-width="1.5"/>
+      <text x="340" y="8" font-family="ui-monospace, monospace" font-size="11" fill="#64748b" text-anchor="middle">15s</text>
+
+      <line x1="510" y1="14" x2="510" y2="26" stroke="#64748b" stroke-width="1.5"/>
+      <text x="510" y="8" font-family="ui-monospace, monospace" font-size="11" fill="#64748b" text-anchor="middle">22.5s (安全线)</text>
+
+      <line x1="680" y1="14" x2="680" y2="26" stroke="#dc2626" stroke-width="2.5"/>
+      <text x="680" y="8" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#dc2626" text-anchor="middle">30s (SIGKILL 绝杀)</text>
+    </g>
+
+    <!-- 4 Gantt Timeline Bars -->
+    <g transform="translate(20, 56)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1: Drain Ingress -->
+      <g transform="translate(0, 0)">
+        <text x="0" y="22" font-size="12" font-weight="700" fill="#0f172a">1. 关闸与服务注销</text>
+        <text x="0" y="36" font-size="10" fill="#64748b">摘除 Endpoint / 关 Listener</text>
+        <!-- Bar: 0 - 5s -->
+        <rect x="160" y="8" width="115" height="28" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="217" y="26" font-size="11" font-weight="700" fill="#1d4ed8" text-anchor="middle">0 ~ 5s (注册中心感知)</text>
+      </g>
+
+      <!-- Step 2: HTTP Drain -->
+      <g transform="translate(0, 48)">
+        <text x="0" y="22" font-size="12" font-weight="700" fill="#0f172a">2. 排空在途 HTTP 请求</text>
+        <text x="0" y="36" font-size="10" fill="#64748b">`http.Server.Shutdown(ctx)`</text>
+        <!-- Bar: 2s - 15s -->
+        <rect x="205" y="8" width="295" height="28" rx="4" fill="#f0fdf4" stroke="#10b981"/>
+        <text x="352" y="26" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">预算 10 ~ 13s (等待业务处理完)</text>
+      </g>
+
+      <!-- Step 3: Worker & Queue Flush -->
+      <g transform="translate(0, 96)">
+        <text x="0" y="22" font-size="12" font-weight="700" fill="#0f172a">3. 后台 Worker 消费收敛</text>
+        <text x="0" y="36" font-size="10" fill="#64748b">停止拉取，Commit Offset</text>
+        <!-- Bar: 0s - 20s -->
+        <rect x="160" y="8" width="455" height="28" rx="4" fill="#fff7ed" stroke="#f97316"/>
+        <text x="387" y="26" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">预算 15 ~ 20s (Worker 优雅退出并刷出 Log Buffer)</text>
+      </g>
+
+      <!-- Step 4: Close DB/Redis Pool -->
+      <g transform="translate(0, 144)">
+        <text x="0" y="22" font-size="12" font-weight="700" fill="#0f172a">4. 基础设施最后关闭</text>
+        <text x="0" y="36" font-size="10" fill="#64748b">DB 连接池 / Redis / MQ 连接</text>
+        <!-- Bar: 20s - 25s -->
+        <rect x="615" y="8" width="115" height="28" rx="4" fill="#f8fafc" stroke="#64748b"/>
+        <text x="672" y="26" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">20 ~ 25s (最后关)</text>
+      </g>
+
+      <!-- Buffer safety margin -->
+      <rect x="730" y="8" width="110" height="164" rx="4" fill="#fef2f2" stroke="#fca5a5" stroke-dasharray="4 3" opacity="0.8"/>
+      <text x="785" y="90" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">5s 安全余量</text>
+      <text x="785" y="106" font-size="9.5" fill="#dc2626" text-anchor="middle">防网络/时钟抖动</text>
+    </g>
+
+    <!-- Bottom Budget Formula Bar -->
+    <g transform="translate(20, 250)">
+      <rect width="860" height="65" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">
+        🧮 停机预算黄金公式：$T_{排空} + T_{收尾} + T_{资源关闭} \le \text{terminationGracePeriodSeconds} - 5\text{s (抖动余量)}$
+      </text>
+      <text x="430" y="46" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569" text-anchor="middle">
+        ⚠️ <tspan font-weight="700" fill="#ea580c">依赖反转致命禁忌：</tspan> 绝对禁止在 HTTP 和 Worker 完全排空前提前关闭 DB 连接池，否则所有在途请求必将爆出 `connection refused / closed` 脏错误！
+      </text>
+    </g>
+  </g>
 </svg>

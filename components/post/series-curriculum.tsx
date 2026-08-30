@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CompiledPost, PostSource } from "@/lib/content/types";
+import { getSeriesIcon } from "@/lib/content/series";
 import { tagHref } from "@/lib/site-links";
 
 type ListPost = PostSource | CompiledPost;
@@ -30,7 +31,7 @@ export function SeriesCurriculum({
   return (
     <div className="series-curriculum-container">
       <div className="series-curriculum-meta-bar">
-        <span className="series-curriculum-badge">📚 《{seriesName}》专栏路线</span>
+        <span className="series-curriculum-badge">{getSeriesIcon(seriesName)} 《{seriesName}》专栏路线</span>
         <span className="series-curriculum-count">已连载 {posts.length} 个核心章节 · 建议按 01 至 {String(posts.length).padStart(2, "0")} 循序研读</span>
       </div>
 

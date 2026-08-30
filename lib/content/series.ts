@@ -46,3 +46,20 @@ export function getPostsForSeries(posts: PostSource[], series: string) {
         a.slug.localeCompare(b.slug),
     );
 }
+
+export function getSeriesIcon(seriesName: string): string {
+  if (/内核|eBPF|Linux/i.test(seriesName)) return "🐧";
+  if (/共识|容错|分布式/i.test(seriesName)) return "🏛️";
+  if (/CDN|边缘/i.test(seriesName)) return "⚡";
+  if (/测速|吞吐/i.test(seriesName)) return "🚀";
+  if (/Pi|Agent|智能体/i.test(seriesName)) return "🤖";
+  if (/Go的|Go设计/i.test(seriesName)) return "🐹";
+  if (/系统设计|架构/i.test(seriesName)) return "🏗️";
+  if (/数据库|存储/i.test(seriesName)) return "🗄️";
+  if (/TypeScript|从 Go 到/i.test(seriesName)) return "🔄";
+  if (/底层原理|造轮子/i.test(seriesName)) return "⚙️";
+  if (/协议|浏览器/i.test(seriesName)) return "📡";
+  if (/AI|大模型|LLM/i.test(seriesName)) return "🔮";
+  return "🏷️";
+}
+

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型流式反压（Backpressure）与客户端断开取消传播机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">慢消费者 TCP 零窗口反压 ──► 网关 Socket 缓冲区填满 ──► AbortSignal 级联取消 GPU 幽灵推理</text>
+  </g>
+
+  <!-- Main Comparison Panes (435px each) -->
+  <g transform="translate(30, 75)">
+    <!-- Pane 1: Ghost Inference Disaster (435px) -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
+      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 无取消传播：幽灵推理空耗昂贵 GPU 算力</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 -->
+        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="18" fill="#991b1b" font-weight="700">1. 用户关闭网页 / 点击“停止生成”</text>
+        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">客户端 TCP 发送 RST / FIN 包，前端直接销毁连接</text>
+
+        <!-- Step 2 Disaster -->
+        <g transform="translate(0, 48)">
+          <rect width="403" height="52" rx="4" fill="#fee2e2" stroke="#f87171"/>
+          <text x="12" y="18" fill="#7f1d1d" font-weight="700">2. 网关未感知，后台 GPU 仍在全力生成！</text>
+          <text x="12" y="32" font-size="9.5" fill="#991b1b">vLLM 引擎继续为该请求执行几百轮 Forward 计算，</text>
+          <text x="12" y="44" font-size="9.5" font-weight="700" fill="#b91c1c">💥 锁住 2.5GB KV Cache 显存，阻塞其他正常排队用户！</text>
+        </g>
+
+        <!-- Step 3 Financial Waste -->
+        <g transform="translate(0, 108)">
+          <rect width="403" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="12" y="18" fill="#0f172a" font-weight="700">财务后果：</text>
+          <text x="12" y="32" font-size="9.5" fill="#475569">高达 30% 的 GPU 卡时与算力费用被浪费在“无人接收的空转”上！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Pane 2: Cascade Cancellation (435px) -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">🛡️ 生产级解法：级联取消与 TCP 反压传导</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 Detect -->
+        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="18" fill="#14532d" font-weight="700">1. 网关实时监听 Socket `close` / `error` 事件</text>
+        <text x="12" y="32" font-size="9.5" fill="#15803d">一旦客户端断开，网关立即触发内部 `AbortController.abort()`</text>
+
+        <!-- Step 2 Signal gRPC -->
+        <g transform="translate(0, 48)">
+          <rect width="403" height="52" rx="4" fill="#ecfdf5" stroke="#10b981"/>
+          <text x="12" y="18" fill="#065f46" font-weight="700">2. gRPC CancelContext 信号直达 vLLM 调度器</text>
+          <text x="12" y="32" font-size="9.5" fill="#047857">调度器在下一个 Iteration 瞬间将该请求移出 Running 队列，</text>
+          <text x="12" y="44" font-size="9.5" font-weight="700" fill="#047857">✓ 瞬间释放该请求占用的全部物理 GPU 显存块！</text>
+        </g>
+
+        <!-- Step 3 TCP Zero Window -->
+        <g transform="translate(0, 108)">
+          <rect width="403" height="40" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="12" y="18" fill="#1e40af" font-weight="700">3. 慢消费者 TCP 零窗口保护</text>
+          <text x="12" y="32" font-size="9.5" fill="#2563eb">若客户端消费极慢，网关暂停读取 gRPC 流，自动反压推理引擎</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">显存即生命：</tspan> 大模型服务每节省 1 毫秒无效推理，就能为排队用户多挤出 1 份 GPU 算力；<tspan font-weight="700" fill="#2563eb">全链路取消机制</tspan>是后端降本增效第一道阀门。
+    </text>
+  </g>
+</svg>

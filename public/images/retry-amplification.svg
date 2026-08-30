@@ -1,59 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="a-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">重试放大:一次超时,层层翻倍</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <g font-size="13">
-    <rect x="50" y="180" width="150" height="60" rx="8" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="125" y="206" text-anchor="middle" font-weight="700" fill="#3730a3">用户</text>
-    <text x="125" y="226" text-anchor="middle" font-size="12" fill="#475569">1 个请求</text>
-
-    <rect x="300" y="140" width="160" height="60" rx="8" fill="#fefce8" stroke="#facc15"/>
-    <text x="380" y="166" text-anchor="middle" font-weight="700" fill="#854d0e">网关</text>
-    <text x="380" y="186" text-anchor="middle" font-size="12" fill="#475569">超时重试 ×3</text>
-    <text x="380" y="204" text-anchor="middle" font-size="12" fill="#475569">= 3 个请求</text>
-
-    <rect x="560" y="90" width="160" height="60" rx="8" fill="#fefce8" stroke="#facc15"/>
-    <text x="640" y="116" text-anchor="middle" font-weight="700" fill="#854d0e">服务 A</text>
-    <text x="640" y="136" text-anchor="middle" font-size="12" fill="#475569">下游重试 ×3</text>
-    <text x="640" y="154" text-anchor="middle" font-size="12" fill="#475569">= 9 个请求</text>
-
-    <rect x="740" y="40" width="130" height="60" rx="8" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="805" y="66" text-anchor="middle" font-weight="700" fill="#991b1b">服务 B</text>
-    <text x="805" y="86" text-anchor="middle" font-size="12" fill="#475569">重试 ×3</text>
-    <text x="805" y="104" text-anchor="middle" font-size="12" fill="#475569">= 27 个请求</text>
-
-    <rect x="740" y="220" width="130" height="60" rx="8" fill="#fef2f2" stroke="#f87171"/>
-    <text x="805" y="246" text-anchor="middle" font-weight="700" fill="#991b1b">数据库</text>
-    <text x="805" y="266" text-anchor="middle" font-size="12" fill="#475569">扣款被执行 27 次</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">微服务重试指数放大风暴（Retry Storm）与幂等键收敛机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">三层链路各重试 3 次导致下游 27 倍洪峰打崩数据库 vs 幂等键（Idempotency Key）状态机收敛为 1 次</text>
   </g>
 
-  <path d="M 200 195 L 296 180" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
-  <path d="M 460 175 L 556 150" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
-  <path d="M 720 130 L 736 100" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#a-arrow)"/>
-  <path d="M 720 150 L 800 216" stroke="#f87171" stroke-width="2" stroke-dasharray="5 4" fill="none" marker-end="url(#a-arrow)"/>
+  <!-- Main Comparison Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <g font-size="12" fill="#64748b">
-    <text x="238" y="170">timeout(3s)</text>
-    <text x="500" y="145">每层各等 3s</text>
-    <text x="700" y="110">叠加等待 ≥ 9s</text>
-    <text x="700" y="186">写路径非幂等 → 翻 27 倍</text>
-  </g>
+    <!-- Top Half: Retry Storm Pipeline (4 Stages) -->
+    <g transform="translate(20, 16)">
+      <text x="0" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b">⚠️ 致命缺陷：无全局预算的局部重试导致流量雪崩（$3 \times 3 \times 3 = 27\times$ 放大）</text>
 
-  <line x1="50" y1="310" x2="870" y2="310" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="450" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">幂等键出现之后:同一笔请求,服务端只认第一次</text>
+      <g transform="translate(0, 26)">
+        <!-- Node 1: User -->
+        <rect x="0" y="0" width="160" height="64" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="80" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">客户端 (Client)</text>
+        <text x="80" y="44" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#2563eb" text-anchor="middle">1 个 HTTP POST</text>
 
-  <g font-size="12.5">
-    <rect x="60" y="352" width="240" height="40" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="180" y="376" text-anchor="middle" fill="#065f46">幂等表唯一键：27 次重试 → 1 次执行</text>
-    <rect x="330" y="352" width="240" height="40" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="450" y="376" text-anchor="middle" fill="#065f46">重复请求返回第一次的结果（重放）</text>
-    <rect x="600" y="352" width="300" height="40" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="750" y="376" text-anchor="middle" fill="#3730a3">状态机终态：SUCCESS 后的重试是查询，不是执行</text>
+        <!-- Arrow 1 -> 2 -->
+        <path d="M 160 32 L 210 32" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+
+        <!-- Node 2: Gateway -->
+        <rect x="220" y="0" width="180" height="64" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="310" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">API 网关 (Gateway)</text>
+        <text x="310" y="44" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#ea580c" text-anchor="middle">超时重试 ×3 ──► 3 请求</text>
+
+        <!-- Arrow 2 -> 3 -->
+        <path d="M 400 32 L 450 32" fill="none" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-red)"/>
+
+        <!-- Node 3: Order Service -->
+        <rect x="460" y="0" width="180" height="64" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="550" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a" text-anchor="middle">订单服务 (Order Svc)</text>
+        <text x="550" y="44" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#dc2626" text-anchor="middle">下游重试 ×3 ──► 9 请求</text>
+
+        <!-- Arrow 3 -> 4 -->
+        <path d="M 640 32 L 690 32" fill="none" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+
+        <!-- Node 4: DB (Crashed) -->
+        <rect x="700" y="0" width="160" height="64" rx="6" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="780" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">🔥 支付 / 数据库</text>
+        <text x="780" y="44" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">承受 27 倍洪峰! 宕机</text>
+      </g>
+    </g>
+
+    <!-- Divider -->
+    <line x1="20" y1="125" x2="880" y2="125" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Bottom Half: Idempotency Key & Singleflight Recovery -->
+    <g transform="translate(20, 138)">
+      <text x="0" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#15803d">🛡️ 工业生产标准架构：幂等键（Idempotency Key）状态机收敛</text>
+
+      <!-- 3 Key Features -->
+      <g transform="translate(0, 26)">
+        <!-- Box 1 -->
+        <rect x="0" y="0" width="275" height="100" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="14" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534">1. 唯一索引表排重 (Unique Key)</text>
+        <text x="14" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#14532d">• 请求携带 `Idempotency-Key: uuid`</text>
+        <text x="14" y="60" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#14532d">• 数据库执行 `INSERT ... ON DUPLICATE`</text>
+        <text x="14" y="78" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">👉 27 次重试仅第 1 次成功插入执行！</text>
+
+        <!-- Box 2 -->
+        <rect x="290" y="0" width="275" height="100" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="304" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">2. 状态机快速重放 (Playback)</text>
+        <text x="304" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#1e3a8a">• 记录状态：`PROCESSING | SUCCESS`</text>
+        <text x="304" y="60" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#1e3a8a">• 终态后到达的重试直接返回缓存响应</text>
+        <text x="304" y="78" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1d4ed8">👉 重试蜕化为只读查询，0 业务副作用</text>
+
+        <!-- Box 3 -->
+        <rect x="580" y="0" width="280" height="100" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="594" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">3. 重试退避与重试预算 (Budget)</text>
+        <text x="594" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 指数退避 + Full Jitter 随机抖动打散</text>
+        <text x="594" y="60" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 限制全局重试请求占正常流量 ≤ 10%</text>
+        <text x="594" y="78" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#2563eb">👉 彻底根除共振雪崩与级联超时！</text>
+      </g>
+    </g>
+
+    <!-- Bottom summary bar -->
+    <g transform="translate(20, 280)">
+      <rect width="860" height="38" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">核心结论：</tspan> 网络不可靠是物理常态；任何非幂等写接口（扣款、下单、发货）在未设计幂等键之前，<tspan font-weight="700" fill="#ea580c">绝对禁止盲目配置自动重试机制</tspan>。
+      </text>
+    </g>
   </g>
 </svg>

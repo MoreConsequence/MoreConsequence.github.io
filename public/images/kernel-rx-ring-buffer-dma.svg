@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 网络收包物理全景：从网卡 DMA、Ring Buffer 到 NAPI 软中断轮询</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">物理光电信号 ──► 网卡 DMA 直传主机内存 ──► 硬中断（Hard IRQ）触发 ──► NAPI 关中断批量软中断轮询（net_rx_action）</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 4 Pipeline Columns (200px each, gap 15px) -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: NIC Hardware & DMA -->
+      <g>
+        <rect width="195" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="195" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">1. 网卡硬件 (NIC PHY)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="38" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="15" fill="#0f172a" font-weight="700">物理层与 MAC 解析</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">校验 FCS 校验和，存入 FIFO</text>
+
+          <rect y="46" width="175" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">DMA 控制器直传</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• 绕过 CPU 内存总线</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• 数据帧直接写入主存 Ring</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="8" y="16" fill="#991b1b" font-weight="700">触发硬中断 (Hard IRQ)</text>
+          <text x="8" y="30" font-size="9" fill="#dc2626">通知 CPU 物理数据已就绪</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: Driver & RX Ring Buffer -->
+      <g transform="translate(210, 0)">
+        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. RX Ring Buffer 队列</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="46" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">环形描述符数组</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#15803d">rx_ring_desc [4096]</text>
+          <text x="8" y="40" font-size="8.5" fill="#15803d">存放物理内存地址与长度</text>
+
+          <rect y="54" width="175" height="46" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#166534" font-weight="700">溢出丢包风险 (RX Drop)</text>
+          <text x="8" y="30" font-size="9" fill="#c2410c">若软中断处理不及时，Ring 满</text>
+          <text x="8" y="40" font-size="8.5" font-weight="700" fill="#dc2626">网卡直接丢弃新包（overruns）</text>
+
+          <rect y="108" width="175" height="40" rx="3" fill="#f0fdf4"/>
+          <text x="8" y="16" font-weight="700" fill="#047857">ethtool -g eth0 调大</text>
+          <text x="8" y="28" font-size="9" fill="#047857">通常从 512 扩容至 4096</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: NAPI & SoftIRQ -->
+      <g transform="translate(420, 0)">
+        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">3. NAPI 软中断轮询</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1d4ed8" font-weight="700">关闭网卡硬中断</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">防止每包一次中断压垮 CPU</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">ksoftirqd 轮询处理</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">net_rx_action() 批量收包</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">默认预算 budget = 64 包/轮</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#eff6ff"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">分配 sk_buff 结构体</text>
+          <text x="8" y="28" font-size="9" fill="#2563eb">将原始数据封装送入协议栈</text>
+        </g>
+      </g>
+
+      <!-- Stage 4: Protocol Stack & Socket -->
+      <g transform="translate(630, 0)">
+        <rect width="230" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <rect width="230" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="115" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">4. 内核协议栈与 Socket 队列</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="210" height="38" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="15" fill="#0f172a" font-weight="700">L3/L4 协议解析</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">IP 路由判定 ──► TCP 序号/重组</text>
+
+          <rect y="44" width="210" height="52" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+          <text x="8" y="16" fill="#166534" font-weight="700">排入 Socket Receive Buffer</text>
+          <text x="8" y="30" font-size="9" fill="#15803d">• sk_receive_queue 排队</text>
+          <text x="8" y="42" font-size="9" fill="#15803d">• 唤醒用户态阻塞的 epoll / read()</text>
+
+          <rect y="104" width="210" height="44" rx="3" fill="#f8fafc"/>
+          <text x="8" y="16" fill="#0f172a" font-weight="700">用户态 copy_to_user</text>
+          <text x="8" y="30" font-size="9" fill="#64748b">从内核缓冲区拷贝到应用内存</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">收包性能第一性原理：</tspan> NAPI 机制通过 <tspan font-weight="700" fill="#2563eb">“低负载用中断响应、高负载转轮询批量处理”</tspan>，
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        彻底消除了网卡万兆高吞吐时频繁硬件中断导致的 CPU 中断风暴与上下文颠簸。
+      </text>
+    </g>
+  </g>
+</svg>

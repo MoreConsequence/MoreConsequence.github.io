@@ -11,7 +11,7 @@ series: "硬核底层原理"
 
 **TL;DR：** 上下文切换的物理本质是**保存并恢复执行所需的寄存器、栈和调度状态**；是否还要切换地址空间、刷新 TLB，取决于任务关系、PCID/ASID 和架构。内核线程共享地址空间但仍由内核调度；Go goroutine 在同一线程内的某些用户态路径可以不进入 syscall，但阻塞 I/O、跨 P 调度和唤醒会进入更复杂的 runtime/内核路径。Go 的初始栈、保存字段和寄存器安排都是版本/架构相关实现细节，不能拿一个“8 个寄存器”或一组纳秒数当通用性能承诺。
 
-![CPU 上下文切换物理状态与 Go 协程演进全景架构图](/images/context-switching-hero.jpg)
+![CPU 上下文切换物理状态与 Go 协程演进全景架构图](/images/context-switching-hero.svg)
 
 *图注：上下文切换的完整演进图景——左为 CPU 硬件寄存器状态机与电路逻辑，中为内存页表及栈指针置换，右为 Go 在用户态实现的轻量级 Goroutine 协程调度栈。*
 
@@ -367,7 +367,7 @@ __switch_to_asm:
 上下文切换总开销 = 显性物理耗时 (Direct Cost) + 隐性微架构污染 (Indirect Cost)
 ```
 
-![CPU 缓存与 TLB 失效在进程切换时的隐性开销分析图](/images/tlb-cache-miss-diagram.jpg)
+![CPU 缓存与 TLB 失效在进程切换时的隐性开销分析图](/images/tlb-cache-miss-diagram.svg)
 
 *图注：进程上下文切换对 CPU 微架构造成的隐性惩罚——写入 CR3 引发 TLB 清空，新进程执行初期遭遇高昂的 4 级页表遍历；原有 L1/L2 热点缓存行被驱逐，引发大量 Core Stall 停顿等待。*
 

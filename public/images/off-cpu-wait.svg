@@ -1,68 +1,101 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="o-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">off-CPU：线程不在 CPU 上时，它在等什么</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <text x="60" y="66" font-size="13" font-weight="700" fill="#0f172a">线程时间线（30 秒采样窗口）</text>
-  <text x="840" y="66" text-anchor="end" font-size="11" fill="#64748b">on-CPU 采样只看得见绿色段</text>
-
-  <g font-size="11">
-    <rect x="60" y="80" width="90" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="105" y="97" text-anchor="middle" fill="#065f46">运行 12%</text>
-    <rect x="170" y="80" width="150" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="245" y="97" text-anchor="middle" fill="#7f1d1d">等锁（futex）</text>
-    <rect x="340" y="80" width="80" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="380" y="97" text-anchor="middle" fill="#065f46">运行</text>
-    <rect x="440" y="80" width="130" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="505" y="97" text-anchor="middle" fill="#7f1d1d">磁盘 I/O（fsync）</text>
-    <rect x="590" y="80" width="90" height="26" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-    <text x="635" y="97" text-anchor="middle" fill="#065f46">运行</text>
-    <rect x="700" y="80" width="140" height="26" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="770" y="97" text-anchor="middle" fill="#7f1d1d">网络等待（recv）</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Off-CPU 阻塞耗时度量机理：On-CPU 盲区与 eBPF 记账时序</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">为什么 CPU 利用率仅 15% 但 P99 延迟高达数秒？—— 捕获线程被换下 CPU 时的锁、I/O 与调度等待</text>
   </g>
 
-  <g stroke="#64748b" stroke-width="1.5">
-    <line x1="60" y1="140" x2="860" y2="140"/>
-    <line x1="60" y1="140" x2="60" y2="300"/>
-  </g>
-  <text x="28" y="220" text-anchor="middle" font-size="12" fill="#64748b" transform="rotate(-90 28 220)">CPU 占用</text>
+  <!-- Main Timeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <g stroke="#94a3b8" stroke-width="1.2" fill="none" marker-end="url(#o-arrow)">
-    <path d="M 105 108 L 105 138"/>
-    <path d="M 380 108 L 380 138"/>
-    <path d="M 635 108 L 635 138"/>
-  </g>
-  <g font-size="11" fill="#059669">
-    <text x="112" y="126">on-CPU：采样器能命中</text>
-    <text x="387" y="126">on-CPU：能命中</text>
-    <text x="642" y="126">on-CPU：能命中</text>
-  </g>
+    <!-- Section 1: Thread Execution Timeline Stream -->
+    <g transform="translate(20, 20)">
+      <text x="0" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" fill="#0f172a">1. 线程真实生命周期状态流（采样窗口时间线）</text>
+      <text x="860" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#64748b" text-anchor="end">时间流逝 t ──►</text>
 
-  <rect x="60" y="150" width="840" height="150" rx="8" fill="#fff" stroke="#d7def0"/>
-  <g font-size="11" fill="#7f1d1d">
-    <rect x="170" y="162" width="150" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="245" y="181" text-anchor="middle">等锁：futex_wait</text>
-    <rect x="440" y="162" width="130" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="505" y="181" text-anchor="middle">等磁盘：fsync</text>
-    <rect x="700" y="162" width="140" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-    <text x="770" y="181" text-anchor="middle">等网络：recv</text>
+      <!-- Timeline Blocks -->
+      <g transform="translate(0, 26)">
+        <!-- Running 1 -->
+        <rect x="0" y="0" width="120" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+        <text x="60" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU (12%)</text>
+        <text x="60" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">CPU 计算执行</text>
+
+        <!-- Blocked Lock -->
+        <rect x="126" y="0" width="190" height="36" rx="5" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="221" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">Off-CPU: 等锁 (35%)</text>
+        <text x="221" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f1d1d" text-anchor="middle">futex_wait / mutex</text>
+
+        <!-- Running 2 -->
+        <rect x="322" y="0" width="100" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+        <text x="372" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU (8%)</text>
+        <text x="372" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">业务逻辑</text>
+
+        <!-- Blocked Disk -->
+        <rect x="428" y="0" width="170" height="36" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+        <text x="513" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">Off-CPU: 等磁盘 (25%)</text>
+        <text x="513" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#9a3412" text-anchor="middle">fsync / ext4_write</text>
+
+        <!-- Running 3 -->
+        <rect x="604" y="0" width="90" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+        <text x="649" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU</text>
+        <text x="649" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">封包解析</text>
+
+        <!-- Blocked Net -->
+        <rect x="700" y="0" width="160" height="36" rx="5" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="780" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1d4ed8" text-anchor="middle">Off-CPU: 等网络 (20%)</text>
+        <text x="780" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#1e40af" text-anchor="middle">epoll_wait / socket recv</text>
+      </g>
+    </g>
+
+    <!-- Section 2: Two Sampling Observability Perspectives -->
+    <g transform="translate(20, 110)">
+      <!-- Left Box: Standard Perf Sampling -->
+      <rect x="0" y="0" width="420" height="100" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="14" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">视角 A：传统 Linux Perf (99Hz 定时采样)</text>
+      <text x="14" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 仅在时钟中断到来时，抓取正在 CPU 上执行的代码调用栈</text>
+      <text x="14" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 缺点：线程等锁、等磁盘时被操作系统移出运行队列，采样器</text>
+      <text x="14" y="82" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#dc2626">  👉 采样命中率为 0！在 On-CPU 火焰图上留下大片无法解释的空白</text>
+
+      <!-- Right Box: eBPF offcputime -->
+      <rect x="440" y="0" width="420" height="100" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+      <text x="454" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534">视角 B：bcc / bpftrace `offcputime` (内核调度器探针)</text>
+      <text x="454" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#166534">• 挂载在 Linux 内核调度函数 `finish_task_switch()` 执行点</text>
+      <text x="454" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#166534">• 线程换下 CPU 时记录当前时间戳与用户态/内核态栈；</text>
+      <text x="454" y="82" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#15803d">  👉 重新唤醒换回 CPU 时结算 `Δt = t_wake - t_sleep`，按调用栈聚合并绘制</text>
+    </g>
+
+    <!-- Section 3: Diagnostic Decision Bar -->
+    <g transform="translate(20, 225)">
+      <rect x="0" y="0" width="860" height="85" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      
+      <g transform="translate(16, 16)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <text x="0" y="14" font-size="12" font-weight="700" fill="#0f172a">💡 生产性能排查决策定式（双视角联合分析）：</text>
+        <g font-size="11.5">
+          <text x="0" y="36" fill="#334155"><tspan font-weight="700" fill="#ea580c">【CPU 打满 100% + 延迟高】</tspan> ──► 直接抓 <tspan font-weight="700">On-CPU 火焰图</tspan>，寻找算法复杂度 $O(N^2)$、密集 JSON 解析或内存拷贝热点</text>
+          <text x="0" y="56" fill="#334155"><tspan font-weight="700" fill="#2563eb">【CPU 空闲 &lt;20% + P99 飙升】</tspan> ──► 必须抓 <tspan font-weight="700">Off-CPU 火焰图</tspan>，排查数据库行锁竞争、同步 fsync 阻塞或下游网络超时</text>
+        </g>
+      </g>
+    </g>
   </g>
-  <text x="450" y="230" text-anchor="middle" font-size="12.5" fill="#b91c1c">off-CPU：线程被换下 CPU，采样器采不到——火焰图里这里是空白</text>
-  <text x="450" y="252" text-anchor="middle" font-size="12" fill="#64748b">空白本身不是答案：要用 offcputime 记账"谁在等、等了多久、为什么"</text>
-  <text x="450" y="282" text-anchor="middle" font-size="12" fill="#64748b">每次被换下 CPU 记下调用栈 + 时间点，换回时结算阻塞时长，按调用栈聚合</text>
-
-  <rect x="60" y="322" width="280" height="34" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-  <text x="200" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#065f46">on-CPU 火焰图<br/>回答"谁烧了 CPU"</text>
-  <rect x="310" y="322" width="280" height="34" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-  <text x="450" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#7f1d1d">off-CPU 分析<br/>回答"谁在等、等什么"</text>
-  <rect x="620" y="322" width="280" height="34" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-  <text x="760" y="344" text-anchor="middle" font-size="12.5" font-weight="600" fill="#3730a3">两个视角合并<br/>才覆盖线程的全部时间</text>
-
-  <rect x="60" y="374" width="840" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-  <text x="480" y="392" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">CPU 利用率只有 20%、p99 却好几秒时，热点在空白里——先跑 offcputime 再下结论</text>
 </svg>

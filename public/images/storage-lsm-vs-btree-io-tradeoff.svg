@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">B+ 树 vs LSM-Tree 存储底层拓扑与读写放大物理权衡</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">B+ 树页分层索引（读放大仅 1~3，写放大 50x~100x） vs LSM-Tree 多层 Compaction（写放大仅 10x，读需布隆过滤器加速）</text>
+  </g>
+
+  <!-- Main Comparison Panes (435px each) -->
+  <g transform="translate(30, 70)">
+    <!-- Left Pane: B+ Tree Structure (435px) -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">🌳 B+ 树：固定 16KB 页原地更新模型</text>
+
+      <!-- B+ Tree Visual Nodes -->
+      <g transform="translate(20, 50)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- Root Page (16KB) -->
+        <g transform="translate(130, 0)">
+          <rect width="135" height="34" rx="4" fill="#2563eb"/>
+          <text x="67" y="16" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">Root Page (16KB)</text>
+          <text x="67" y="28" font-size="7.5" fill="#dbeafe" text-anchor="middle">[Key: 100 | Key: 500]</text>
+        </g>
+
+        <!-- Pointers Down -->
+        <path d="M 160 34 L 75 60" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+        <path d="M 235 34 L 320 60" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+        <!-- Internal Pages Layer -->
+        <g transform="translate(15, 60)">
+          <rect width="125" height="32" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="62" y="15" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">Internal Node A</text>
+          <text x="62" y="26" font-size="7.5" fill="#2563eb" text-anchor="middle">[10, 30, 70]</text>
+        </g>
+
+        <g transform="translate(255, 60)">
+          <rect width="125" height="32" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="62" y="15" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">Internal Node B</text>
+          <text x="62" y="26" font-size="7.5" fill="#2563eb" text-anchor="middle">[600, 800, 950]</text>
+        </g>
+
+        <!-- Pointers to Leaves -->
+        <path d="M 60 92 L 35 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
+        <path d="M 95 92 L 125 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
+        <path d="M 300 92 L 270 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
+        <path d="M 335 92 L 360 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
+
+        <!-- Leaf Pages Doubly Linked Chain -->
+        <g transform="translate(0, 115)">
+          <rect width="85" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+          <text x="42" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 1 (16KB)</text>
+          <text x="42" y="26" font-size="7" fill="#15803d" text-anchor="middle">[1..99 数据行]</text>
+
+          <line x1="85" y1="17" x2="100" y2="17" stroke="#10b981" stroke-width="1.5"/>
+
+          <g transform="translate(100, 0)">
+            <rect width="85" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+            <text x="42" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 2 (16KB)</text>
+            <text x="42" y="26" font-size="7" fill="#15803d" text-anchor="middle">[100..499 数据行]</text>
+          </g>
+
+          <line x1="185" y1="17" x2="200" y2="17" stroke="#10b981" stroke-width="1.5"/>
+
+          <g transform="translate(200, 0)">
+            <rect width="90" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+            <text x="45" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 3 (16KB)</text>
+            <text x="45" y="26" font-size="7" fill="#15803d" text-anchor="middle">[500..799 数据行]</text>
+          </g>
+
+          <line x1="290" y1="17" x2="305" y2="17" stroke="#10b981" stroke-width="1.5"/>
+
+          <g transform="translate(305, 0)">
+            <rect width="90" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+            <text x="45" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 4 (16KB)</text>
+            <text x="45" y="26" font-size="7" fill="#15803d" text-anchor="middle">[800..1000 数据行]</text>
+          </g>
+        </g>
+
+        <!-- Evaluation Cards -->
+        <g transform="translate(0, 165)">
+          <rect width="395" height="50" rx="4" fill="#fee2e2" stroke="#f87171"/>
+          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#991b1b">❌ 致命写放大（WA = 50~100）：</text>
+          <text x="10" y="32" font-size="8.5" fill="#7f1d1d">• 修改 1 条 100B 数据 ──► 必须刷写整张 16KB 脏页！</text>
+          <text x="10" y="44" font-size="8.5" fill="#dc2626">• 随机写入触发频繁页分裂（Page Split）重构父节点</text>
+
+          <rect y="56" width="395" height="50" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#166534">✓ 极致读性能（RA = 1~3）：</text>
+          <text x="10" y="32" font-size="8.5" fill="#14532d">• 点查仅需 1~3 次内存/磁盘 I/O 直达叶子页，时延极低且稳定</text>
+          <text x="10" y="44" font-size="8.5" font-weight="700" fill="#15803d">• 经典代表：MySQL InnoDB / PostgreSQL / Oracle</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right Pane: LSM-Tree Structure (435px) -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">⚡ LSM-Tree：分层追加与 Compaction 模型</text>
+
+      <!-- LSM Visual Pyramid -->
+      <g transform="translate(20, 50)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- Top: MemTable & WAL -->
+        <g>
+          <rect width="180" height="34" rx="4" fill="#10b981"/>
+          <text x="90" y="16" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">MemTable (内存跳表)</text>
+          <text x="90" y="28" font-size="7.5" fill="#d1fae5" text-anchor="middle">读写都在内存，0 随机 I/O</text>
+
+          <rect x="200" width="195" height="34" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="297" y="16" font-size="9" font-weight="700" fill="#1e40af" text-anchor="middle">WAL (顺序写日志)</text>
+          <text x="297" y="28" font-size="7.5" fill="#2563eb" text-anchor="middle">顺序追加，跑满 SSD 线速</text>
+        </g>
+
+        <!-- Flush Arrow -->
+        <path d="M 90 34 L 90 55" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+        <text x="100" y="48" font-size="8" fill="#166534">Flush 落盘</text>
+
+        <!-- L0 SSTables (Overlapping) -->
+        <g transform="translate(0, 55)">
+          <rect width="395" height="30" rx="4" fill="#fef3c7" stroke="#fcd34d"/>
+          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#92400e">Level 0 SSTables (Key 范围重叠)</text>
+          <text x="385" y="18" font-size="7.5" fill="#b45309" text-anchor="end">[SST 1] [SST 2] [SST 3] [SST 4]</text>
+        </g>
+
+        <!-- Compaction Arrow -->
+        <path d="M 197 85 L 197 105" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+        <text x="205" y="98" font-size="8" fill="#ea580c">Leveled Compaction 归并</text>
+
+        <!-- L1 SSTables (Non-overlapping) -->
+        <g transform="translate(0, 105)">
+          <rect width="395" height="30" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">Level 1 (10MB, Key 无重叠)</text>
+          <text x="385" y="18" font-size="7.5" fill="#15803d" text-anchor="end">[1..100] [101..200] [201..300]</text>
+        </g>
+
+        <!-- Compaction Arrow 2 -->
+        <path d="M 197 135 L 197 150" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+
+        <!-- L2 SSTables (100MB) -->
+        <g transform="translate(0, 150)">
+          <rect width="395" height="28" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+          <text x="10" y="17" font-size="8" font-weight="700" fill="#065f46">Level 2 (100MB) ──► Level 3 (1GB) 逐层倍增</text>
+        </g>
+
+        <!-- Evaluation Cards -->
+        <g transform="translate(0, 190)">
+          <rect width="395" height="42" rx="4" fill="#d1fae5" stroke="#86efac"/>
+          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#065f46">✓ 极低写放大与超强写入吞吐（WA = 10~20）：</text>
+          <text x="10" y="30" font-size="8.5" fill="#047857">• 纯追加写入消除随机 IO，写入性能较 B+ 树暴增 10x！</text>
+
+          <rect y="46" width="395" height="46" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#9a3412">读放大缓解：布隆过滤器 (Bloom Filter)</text>
+          <text x="10" y="30" font-size="8.5" fill="#c2410c">• 过滤 99% 不存在 key 的探测，点查接近 O(1)</text>
+          <text x="10" y="42" font-size="8" font-weight="700" fill="#ea580c">• 经典代表：RocksDB / TiKV / Cassandra / ClickHouse</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

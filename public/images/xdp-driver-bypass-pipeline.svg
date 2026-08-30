@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">XDP（eXpress Data Path）驱动层网络旁路 vs 传统 Linux 协议栈性能对比</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统协议栈（1.5M PPS，SKB 分配与锁争用严重） vs XDP 驱动层裸帧拦截（24M+ PPS 物理线速处理）</text>
+  </g>
+
+  <!-- Main Comparison Panes (435px each) -->
+  <g transform="translate(30, 75)">
+    <!-- Pane 1: Traditional Kernel Stack (435px) -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
+      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统 Linux 网络栈（iptables / tc / Socket）</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Steps -->
+        <rect width="403" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="16" fill="#991b1b" font-weight="700">1. 分配复杂的 sk_buff 结构体 (230B+)</text>
+        <text x="12" y="28" font-size="9.5" fill="#7f1d1d">高频 slab/kmalloc 内存分配与原子锁操作</text>
+
+        <rect y="42" width="403" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="16" fill="#991b1b" font-weight="700">2. 串行穿透 Netfilter / iptables 规则链</text>
+        <text x="12" y="28" font-size="9.5" fill="#7f1d1d">逐包匹配线性规则列表，CPU 软中断被打满</text>
+
+        <rect y="84" width="403" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+        <text x="12" y="16" fill="#991b1b" font-weight="700">3. Socket 接收队列排队与上下文切换</text>
+        <text x="12" y="28" font-size="9.5" fill="#7f1d1d">用户态 epoll 唤醒与内核 copy_to_user 内存拷贝</text>
+
+        <rect y="126" width="403" height="42" rx="4" fill="#fee2e2"/>
+        <text x="12" y="18" fill="#b91c1c" font-weight="700">吞吐瓶颈上限：</text>
+        <text x="12" y="32" font-size="9.5" fill="#991b1b">单核最高约 1.2M ~ 1.8M PPS（无法应对万兆 DDoS）</text>
+      </g>
+    </g>
+
+    <!-- Pane 2: XDP Line-Rate Bypass (435px) -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">⚡ XDP 驱动层极速旁路（Driver Native Mode）</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Steps -->
+        <rect width="403" height="36" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="16" fill="#14532d" font-weight="700">1. 在网卡驱动层（DMA 落盘后）直接执行！</text>
+        <text x="12" y="28" font-size="9.5" fill="#15803d">零 sk_buff 分配，直接操作原始内存指针 `xdp_md`</text>
+
+        <rect y="42" width="403" height="36" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="16" fill="#14532d" font-weight="700">2. 四大动作原语极速决策：</text>
+        <text x="12" y="28" font-family="ui-monospace, monospace" font-size="9" fill="#047857">XDP_DROP (秒级丢弃) | XDP_TX (原卡反弹) | XDP_REDIRECT</text>
+
+        <rect y="84" width="403" height="36" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="16" fill="#14532d" font-weight="700">3. 攻击流量 100% 绕过内核协议栈</text>
+        <text x="12" y="28" font-size="9.5" fill="#15803d">单核直接在驱动层完成千万级包过滤，CPU 负载 &lt; 5%</text>
+
+        <rect y="126" width="403" height="42" rx="4" fill="#d1fae5"/>
+        <text x="12" y="18" fill="#065f46" font-weight="700">吞吐飞跃奇迹：</text>
+        <text x="12" y="32" font-size="9.5" font-weight="700" fill="#047857">单核突破 24M+ PPS！轻松实现 40G/100G 硬件线速处理！</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">XDP 核心架构洞察：</tspan> 性能的秘密在于 <tspan font-weight="700" fill="#2563eb">“尽可能在物理硬件最近的地方做减法”</tspan>；
+    </text>
+  </g>
+</svg>

@@ -1,73 +1,144 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="z-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="440" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">数据从磁盘到网卡:三种路径,搬运次数对比</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <text x="180" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">传统 read + write</text>
-  <text x="490" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">sendfile</text>
-  <text x="800" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">sendmsg + MSG_ZEROCOPY</text>
-
-  <g font-size="12">
-    <rect x="60" y="80" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="125" y="100" text-anchor="middle" fill="#3730a3">磁盘</text>
-    <rect x="60" y="140" width="130" height="30" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-    <text x="125" y="160" text-anchor="middle" fill="#334155">页缓存</text>
-    <rect x="60" y="200" width="130" height="30" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-    <text x="125" y="220" text-anchor="middle" fill="#334155">用户缓冲区</text>
-    <rect x="60" y="260" width="130" height="30" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-    <text x="125" y="280" text-anchor="middle" fill="#334155">socket 缓冲区</text>
-    <rect x="60" y="320" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="125" y="340" text-anchor="middle" fill="#3730a3">网卡</text>
-
-    <rect x="310" y="80" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="375" y="100" text-anchor="middle" fill="#3730a3">磁盘</text>
-    <rect x="310" y="140" width="130" height="30" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
-    <text x="375" y="160" text-anchor="middle" fill="#334155">页缓存</text>
-    <rect x="310" y="320" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="375" y="340" text-anchor="middle" fill="#3730a3">网卡</text>
-
-    <rect x="620" y="80" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="685" y="100" text-anchor="middle" fill="#3730a3">磁盘</text>
-    <rect x="620" y="200" width="130" height="30" rx="6" fill="#fefce8" stroke="#facc15"/>
-    <text x="685" y="220" text-anchor="middle" fill="#854d0e">用户缓冲区（pin 住）</text>
-    <rect x="620" y="320" width="130" height="30" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-    <text x="685" y="340" text-anchor="middle" fill="#3730a3">网卡</text>
+  <!-- Header -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">从磁盘到网卡：三种数据搬运路径与零拷贝物理本质</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统 read/write（4次拷贝/4次切态）vs Linux sendfile（2次全DMA/0次CPU拷贝）vs io_uring / MSG_ZEROCOPY</text>
   </g>
 
-  <g stroke="#94a3b8" stroke-width="1.8" fill="none" marker-end="url(#z-arrow)">
-    <path d="M 125 110 L 125 138"/>
-    <path d="M 125 170 L 125 198"/>
-    <path d="M 125 230 L 125 258"/>
-    <path d="M 125 290 L 125 318"/>
-    <path d="M 375 110 L 375 138"/>
-    <path d="M 375 170 L 340 300"/>
-    <path d="M 685 110 L 685 198"/>
-    <path d="M 685 230 L 685 318"/>
+  <!-- 3 Equal Parallel Columns (280px each, gap 30px) -->
+  <g transform="translate(30, 75)">
+    <!-- Column 1: Traditional read + write -->
+    <g filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 传统 read() + write()</text>
+
+      <g transform="translate(16, 46)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect x="0" y="0" width="248" height="24" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="124" y="16" fill="#334155" text-anchor="middle">磁盘 NVMe SSD</text>
+
+        <!-- Down Arrow DMA -->
+        <text x="124" y="33" fill="#64748b" font-size="9.5" text-anchor="middle">↓ DMA 拷贝 ① (硬件)</text>
+
+        <rect x="0" y="38" width="248" height="24" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="54" fill="#1e40af" text-anchor="middle">内核 PageCache 页缓存</text>
+
+        <!-- CPU Copy Up -->
+        <text x="124" y="72" fill="#dc2626" font-size="9.5" font-weight="700" text-anchor="middle">↑ CPU 拷贝 ② (用户态内存)</text>
+
+        <rect x="0" y="76" width="248" height="24" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+        <text x="124" y="92" fill="#991b1b" font-weight="700" text-anchor="middle">用户态应用 Buffer (切态 2次)</text>
+
+        <!-- CPU Copy Down -->
+        <text x="124" y="110" fill="#dc2626" font-size="9.5" font-weight="700" text-anchor="middle">↓ CPU 拷贝 ③ (陷入内核)</text>
+
+        <rect x="0" y="114" width="248" height="24" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="130" fill="#1e40af" text-anchor="middle">内核套接字 Socket Buffer</text>
+
+        <!-- DMA Copy Down -->
+        <text x="124" y="148" fill="#64748b" font-size="9.5" text-anchor="middle">↓ DMA 拷贝 ④ (网卡发送)</text>
+
+        <rect x="0" y="152" width="248" height="24" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="124" y="168" fill="#334155" text-anchor="middle">网卡 NIC 发送队列</text>
+
+        <!-- Result Badge -->
+        <rect x="0" y="186" width="248" height="38" rx="6" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="124" y="202" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">4 次拷贝（2 CPU + 2 DMA）</text>
+        <text x="124" y="216" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#dc2626" text-anchor="middle">4 次上下文切换 · CPU 负载重</text>
+      </g>
+    </g>
+
+    <!-- Column 2: Linux sendfile() -->
+    <g transform="translate(310, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="280" height="36" rx="8" fill="#eff6ff"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">2. 工业标准：Linux `sendfile()`</text>
+
+      <g transform="translate(16, 46)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect x="0" y="0" width="248" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="124" y="17" fill="#334155" text-anchor="middle">磁盘 NVMe SSD</text>
+
+        <!-- Down Arrow DMA -->
+        <text x="124" y="38" fill="#10b981" font-size="9.5" font-weight="700" text-anchor="middle">↓ DMA 拷贝 ① (硬件直读)</text>
+
+        <rect x="0" y="44" width="248" height="36" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+        <text x="124" y="60" fill="#1e40af" font-weight="700" text-anchor="middle">内核 PageCache 页缓存</text>
+        <text x="124" y="73" fill="#2563eb" font-size="9.5" text-anchor="middle">(仅拷贝描述符 fd/offset/length)</text>
+
+        <!-- Direct SG DMA to NIC -->
+        <text x="124" y="100" fill="#10b981" font-size="9.5" font-weight="700" text-anchor="middle">↓ DMA 拷贝 ② (Scatter-Gather 网卡直接取)</text>
+
+        <rect x="0" y="112" width="248" height="40" rx="4" fill="#ecfdf5" stroke="#10b981"/>
+        <text x="124" y="130" fill="#047857" font-weight="700" text-anchor="middle">网卡 NIC (分散-聚集 DMA 引擎)</text>
+        <text x="124" y="144" fill="#065f46" font-size="9.5" text-anchor="middle">完全绕过用户态内存，0 次 CPU 拷贝</text>
+
+        <!-- Result Badge -->
+        <rect x="0" y="186" width="248" height="38" rx="6" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="124" y="202" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">2 次拷贝（0 CPU，全 DMA）</text>
+        <text x="124" y="216" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#059669" text-anchor="middle">2 次上下文切换 · 跑满 100G 线速</text>
+      </g>
+    </g>
+
+    <!-- Column 3: io_uring / MSG_ZEROCOPY -->
+    <g transform="translate(620, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">3. 异步直通：`io_uring` 零拷贝</text>
+
+      <g transform="translate(16, 46)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect x="0" y="0" width="248" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="124" y="17" fill="#334155" text-anchor="middle">磁盘 / 用户态注册 Buffer</text>
+
+        <!-- Down Arrow DMA -->
+        <text x="124" y="38" fill="#64748b" font-size="9.5" text-anchor="middle">↓ `io_uring_register_buffers` Pin 住物理页</text>
+
+        <rect x="0" y="44" width="248" height="36" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="124" y="60" fill="#166534" font-weight="700" text-anchor="middle">内核 SQ / CQ 环形无锁队列</text>
+        <text x="124" y="73" fill="#15803d" font-size="9.5" text-anchor="middle">用户态直接写环，0 次 System Call</text>
+
+        <!-- Direct DMA -->
+        <text x="124" y="100" fill="#10b981" font-size="9.5" font-weight="700" text-anchor="middle">↓ DMA 硬件极速推入网卡队列</text>
+
+        <rect x="0" y="112" width="248" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="124" y="130" fill="#334155" font-weight="600" text-anchor="middle">网卡 NIC / 硬件卸载引擎</text>
+        <text x="124" y="144" fill="#64748b" font-size="9.5" text-anchor="middle">完成事件写回 CQ 环，异步收敛</text>
+
+        <!-- Result Badge -->
+        <rect x="0" y="186" width="248" height="38" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="124" y="202" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1d4ed8" text-anchor="middle">2 次拷贝 · 0 系统调用</text>
+        <text x="124" y="216" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#2563eb" text-anchor="middle">极高并发网络事件循环终极架构</text>
+      </g>
+    </g>
   </g>
 
-  <g font-size="11" fill="#64748b">
-    <text x="135" y="126">DMA ①</text>
-    <text x="135" y="186">CPU ②</text>
-    <text x="135" y="246">CPU ③</text>
-    <text x="135" y="306">DMA ④</text>
-    <text x="385" y="126">DMA ①</text>
-    <text x="353" y="290">DMA ②（scatter-gather）</text>
-    <text x="695" y="126">DMA ①</text>
-    <text x="695" y="316">DMA ②（pin 后直达）</text>
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">性能工程本质：</tspan> 零拷贝省掉的是 <tspan font-weight="700" fill="#ea580c">CPU 内存拷贝周期与上下文切换开销</tspan>，而不是 DMA —— 数据终究要从物理介质流向以太网卡。
+    </text>
   </g>
-
-  <rect x="60" y="366" width="280" height="30" rx="6" fill="#fee2e2" stroke="#ef4444"/>
-  <text x="200" y="386" text-anchor="middle" font-size="13" font-weight="600" fill="#7f1d1d">4 次拷贝（2 CPU + 2 DMA）· 2 syscall</text>
-  <rect x="310" y="366" width="280" height="30" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-  <text x="450" y="386" text-anchor="middle" font-size="13" font-weight="600" fill="#065f46">2 次拷贝（0 CPU，全 DMA）· 1 syscall</text>
-  <rect x="620" y="366" width="280" height="30" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-  <text x="760" y="386" text-anchor="middle" font-size="13" font-weight="600" fill="#065f46">2 次拷贝（0 CPU）· 提交开销前置</text>
-
-  <rect x="60" y="406" width="840" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/>
-  <text x="480" y="424" text-anchor="middle" font-size="12" font-weight="600" fill="#3730a3">省钱的是 CPU 拷贝与 syscall，不是 DMA——数据终究要过网卡；先量瓶颈在哪一步再选路径</text>
 </svg>

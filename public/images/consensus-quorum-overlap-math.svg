@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Quorum 多数派重叠数学原理：从 R + W &gt; N 到 Sloppy Quorum</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">鸽巢原理保证读集与写集必有交集 vs 弱网络分区下 Sloppy Quorum 与暂存写入（Hinted Handoff）</text>
+  </g>
+
+  <!-- Main Content (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left Box: Strict Quorum Math (N=5, W=3, R=3) -->
+    <g transform="translate(20, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="420" height="32" rx="6" fill="#eff6ff"/>
+      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">一、 严格 Quorum 数学证明 ($R + W &gt; N$)</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- 5 Nodes Representation -->
+        <g transform="translate(0, 0)">
+          <!-- Node 1 (Write only) -->
+          <rect x="0" y="0" width="70" height="42" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="35" y="18" font-weight="700" fill="#1e40af" text-anchor="middle">Node 1</text>
+          <text x="35" y="32" font-size="9" fill="#2563eb" text-anchor="middle">Write</text>
+
+          <!-- Node 2 (Write only) -->
+          <rect x="78" y="0" width="70" height="42" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="113" y="18" font-weight="700" fill="#1e40af" text-anchor="middle">Node 2</text>
+          <text x="113" y="32" font-size="9" fill="#2563eb" text-anchor="middle">Write</text>
+
+          <!-- Node 3 (Intersection: Read + Write!) -->
+          <rect x="156" y="0" width="76" height="42" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="194" y="18" font-weight="700" fill="#b45309" text-anchor="middle">Node 3 🎯</text>
+          <text x="194" y="32" font-size="9" font-weight="700" fill="#d97706" text-anchor="middle">Read &amp; Write</text>
+
+          <!-- Node 4 (Read only) -->
+          <rect x="240" y="0" width="70" height="42" rx="4" fill="#f0fdf4" stroke="#10b981"/>
+          <text x="275" y="18" font-weight="700" fill="#047857" text-anchor="middle">Node 4</text>
+          <text x="275" y="32" font-size="9" fill="#059669" text-anchor="middle">Read</text>
+
+          <!-- Node 5 (Read only) -->
+          <rect x="318" y="0" width="70" height="42" rx="4" fill="#f0fdf4" stroke="#10b981"/>
+          <text x="353" y="18" font-weight="700" fill="#047857" text-anchor="middle">Node 5</text>
+          <text x="353" y="32" font-size="9" fill="#059669" text-anchor="middle">Read</text>
+        </g>
+
+        <!-- Math explanation -->
+        <rect y="54" width="388" height="60" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="72" font-weight="700" fill="#0f172a">📐 鸽巢原理（Pigeonhole Principle）：</text>
+        <text x="12" y="88" fill="#475569">总节点 $N=5$，写确认 $W=3$，读采样 $R=3$。因为 $3 + 3 = 6 &gt; 5$，</text>
+        <text x="12" y="102" fill="#1e40af" font-weight="700">任何一次合法的 Read 集合必定包含至少一个拥有最新 Write 数据的节点！</text>
+
+        <!-- Read Repair note -->
+        <rect y="122" width="388" height="34" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="137" fill="#166534" font-weight="700">读修复（Read Repair）：</text>
+        <text x="12" y="149" fill="#15803d" font-size="9.5">客户端读到多版本时，以最大时间戳为准，并异步回写修补落后节点。</text>
+      </g>
+    </g>
+
+    <!-- Right Box: Sloppy Quorum & Hinted Handoff (420px) -->
+    <g transform="translate(460, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#fed7aa" stroke-width="1.5"/>
+      <rect width="420" height="32" rx="6" fill="#fff7ed"/>
+      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">二、 弱网络容错：Sloppy Quorum &amp; Hinted Handoff</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Step 1 -->
+        <rect width="388" height="42" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+        <text x="12" y="18" fill="#9a3412" font-weight="700">1. 节点宕机/网络分区致使严格 Quorum 失败</text>
+        <text x="12" y="32" font-size="9.5" fill="#c2410c">Node 1, 2 无法连接，常规写入因凑不齐 3 个确认本应失败报 500</text>
+
+        <!-- Step 2 -->
+        <rect y="50" width="388" height="55" rx="4" fill="#fff7ed" stroke="#f97316"/>
+        <text x="12" y="68" fill="#c2410c" font-weight="700">2. 宽松多数派（Sloppy Quorum）暂存写入</text>
+        <text x="12" y="82" font-size="9.5" fill="#7c2d12">将数据先写到健康的其他旁路节点（如 Node 6, 7），附加 Hint 元信息：</text>
+        <text x="12" y="94" font-family="ui-monospace, monospace" font-size="9.5" fill="#ea580c">`"This data is intended for Node 1"`</text>
+
+        <!-- Step 3 -->
+        <rect y="114" width="388" height="42" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="130" fill="#166534" font-weight="700">3. 节点恢复后移交数据（Hinted Handoff）</text>
+        <text x="12" y="144" fill="#15803d" font-size="9.5">一旦 Node 1 重新上线，旁路节点自动将暂存数据移交归还（Dynamo/Cassandra）</text>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">一致性代价本质：</tspan> 严格 Quorum 保证了 <tspan font-weight="700" fill="#2563eb">强一致性（Linearizability）但牺牲了可用性</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#ea580c" font-weight="700" text-anchor="middle">
+        Sloppy Quorum 选择极致高可用，但破坏了多数派重叠，必须接受读旧数据与异步最终一致！
+      </text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">从物理 CPU 寄存器到 Go 协程：上下文切换三层全景架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">物理硬件状态机 ──► Linux 内核 switch_to 进程/线程调度 ──► Go 用户态 GMP gogo 协程演进</text>
+  </g>
+
+  <!-- 3 Main Columns (280px each, gap 30px) -->
+  <g transform="translate(30, 75)">
+    <!-- Column 1: Hardware Layer -->
+    <g filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="280" height="36" rx="8" fill="#f1f5f9"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 物理硬件层 (CPU Core)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect width="248" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="12" y="18" fill="#0f172a" font-weight="700">CPU 寄存器堆 (Register File)</text>
+        <text x="12" y="32" font-family="ui-monospace, monospace" font-size="9.5" fill="#64748b">RIP(PC), RSP(栈顶), RAX..R15, RFLAGS</text>
+
+        <rect y="50" width="248" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="12" y="68" fill="#0f172a" font-weight="700">MMU 与控制寄存器</text>
+        <text x="12" y="82" font-family="ui-monospace, monospace" font-size="9.5" fill="#64748b">CR3 (页表基址), TLB, 段寄存器</text>
+
+        <rect y="100" width="248" height="65" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="12" y="118" fill="#1e40af" font-weight="700">物理本质：</text>
+        <text x="12" y="132" fill="#2563eb" font-size="10">CPU 无“进程”概念，仅机械重复</text>
+        <text x="12" y="146" fill="#2563eb" font-size="10">“取指-译码-执行-写回”流水线循环</text>
+
+        <rect y="174" width="248" height="45" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="12" y="192" fill="#475569" font-weight="700">切换开销：</text>
+        <text x="12" y="206" fill="#64748b" font-size="10">必须将电路寄存器全部保存至内存</text>
+      </g>
+    </g>
+
+    <!-- Column 2: Linux Kernel Layer -->
+    <g transform="translate(310, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="280" height="36" rx="8" fill="#eff6ff"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">2. Linux 内核层 (switch_to)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect width="248" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="18" fill="#0f172a" font-weight="700">进程描述符 task_struct</text>
+        <text x="12" y="32" font-size="9.5" fill="#64748b">内核栈 thread_info + 用户态上下文</text>
+
+        <rect y="50" width="248" height="52" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
+        <text x="12" y="68" fill="#991b1b" font-weight="700">地址空间切换 (switch_mm)</text>
+        <text x="12" y="82" font-size="9.5" fill="#7f1d1d">• 写 CR3 寄存器 ──► 冲刷 TLB 缓存</text>
+        <text x="12" y="94" font-size="9.5" fill="#7f1d1d">• 线程切换共享 mm，跳过此步</text>
+
+        <rect y="110" width="248" height="55" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="128" fill="#0f172a" font-weight="700">寄存器切换 (__switch_to_asm)</text>
+        <text x="12" y="142" font-size="9.5" fill="#64748b">movq %rsp, ...; movq ..., %rsp</text>
+        <text x="12" y="154" font-size="9.5" fill="#64748b">置换 RSP 与内核栈顶指针</text>
+
+        <rect y="174" width="248" height="45" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="12" y="192" fill="#1e40af" font-weight="700">物理开销：</text>
+        <text x="12" y="206" fill="#2563eb" font-size="10">进程 ~1-2µs / 线程 ~0.5-1µs</text>
+      </g>
+    </g>
+
+    <!-- Column 3: Go Runtime GMP Layer -->
+    <g transform="translate(620, 0)" filter="url(#card-shadow)">
+      <rect width="280" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="280" height="36" rx="8" fill="#f0fdf4"/>
+      <text x="140" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Go 用户态 GMP (gogo)</text>
+
+      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <rect width="248" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="18" fill="#14532d" font-weight="700">轻量级协程结构 runtime.g</text>
+        <text x="12" y="32" font-size="9.5" fill="#15803d">初始连续栈仅 2KB，动态按需扩缩</text>
+
+        <rect y="50" width="248" height="52" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="68" fill="#166534" font-weight="700">极简现场：g.sched (gobuf)</text>
+        <text x="12" y="82" font-size="9.5" fill="#15803d">• 仅保存 SP, PC, g, BP, ret 等几个字段</text>
+        <text x="12" y="94" font-size="9.5" fill="#15803d">• 0 次系统调用陷入，0 次 CR3 刷新</text>
+
+        <rect y="110" width="248" height="55" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="12" y="128" fill="#14532d" font-weight="700">极速跳转：gogo(&amp;g.sched)</text>
+        <text x="12" y="142" font-size="9.5" fill="#15803d">纯汇编仅十几条 MOV 指令重置 SP/PC</text>
+        <text x="12" y="154" font-size="9.5" fill="#15803d">JMP 直接进入目标 Goroutine 代码</text>
+
+        <rect y="174" width="248" height="45" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="12" y="192" fill="#047857" font-weight="700">物理开销：</text>
+        <text x="12" y="206" fill="#059669" font-size="10">纯协程切换 ~10-20ns (提速 100 倍!)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">演进主线：</tspan> 上下文切换的成本优化史，就是一部 <tspan font-weight="700" fill="#2563eb">“尽可能少存寄存器、绝不陷入内核、尽量不清空 TLB 与 Cache”</tspan> 的极简主义工程史。
+    </text>
+  </g>
+</svg>

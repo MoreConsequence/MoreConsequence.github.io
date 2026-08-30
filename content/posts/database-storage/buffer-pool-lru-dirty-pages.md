@@ -24,6 +24,8 @@ series: "数据库与存储"
 
 ## 二、两本账的语法：LRU 链（读）与 Flush list（写）
 
+![MySQL InnoDB Buffer Pool 变种 LRU 链表与防扫描污染架构](../../../public/images/mysql-buffer-pool-lru-midpoint.svg)
+
 两种"页"在 Buffer Pool 里都按链表排队，但排的依据完全不同：
 
 **LRU 链（读账）**：所有页按访问和冷热分段组织，新读入的页先进入“旧区”（MySQL 8.4 默认约占 37%，由 `innodb_old_blocks_pct` 控制）；旧区页只有在第一次访问后至少经过 `innodb_old_blocks_time` 才有资格晋升到新区。全表扫描的页因此不必立刻污染热段，但这只是启发式，不是“扫描页一定一次就淘汰”。淘汰发生时若页是脏页，必须先把它落盘再腾位——这是两条时间线的直接交汇点。

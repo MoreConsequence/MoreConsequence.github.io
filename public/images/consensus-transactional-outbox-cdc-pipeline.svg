@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">本地事务消息表（Transactional Outbox）+ CDC 异步可靠投递全景架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">本地 ACID 双写业务表与 outbox 表 ──► CDC 引擎（Debezium/Canal）捕获 WAL 日志 ──► Kafka 投递 ──► 消费端幂等去重</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 4 Pipeline Columns -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: Local DB Transaction (210px) -->
+      <g>
+        <rect width="200" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="200" height="32" rx="6" fill="#dbeafe"/>
+        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">1. 本地数据库事务 (ACID)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="180" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1d4ed8" font-weight="700">写业务订单表 (orders)</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">INSERT INTO orders ...</text>
+
+          <rect y="48" width="180" height="48" rx="3" fill="#ffffff" stroke="#3b82f6"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">写本地消息表 (outbox)</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">INSERT INTO outbox ...</text>
+          <text x="8" y="42" font-size="8.5" fill="#1d4ed8">(状态: PENDING)</text>
+
+          <rect y="102" width="180" height="42" rx="3" fill="#dbeafe"/>
+          <text x="8" y="16" font-weight="700" fill="#1e40af">同一本地事务 Commit！</text>
+          <text x="8" y="28" font-size="8.5" fill="#1e40af">保证业务与消息强原子一致</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: CDC WAL Capture (200px) -->
+      <g transform="translate(220, 0)">
+        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. CDC 引擎捕获日志</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">解析 DB 底层 WAL / Binlog</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">Debezium / Canal 监听</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#166534" font-weight="700">零业务侵入与零轮询</text>
+          <text x="8" y="30" font-size="9" fill="#15803d">• 无需频繁 SELECT 扫描表</text>
+          <text x="8" y="42" font-size="9" fill="#15803d">• 顺序读取磁盘，0 数据库压力</text>
+
+          <rect y="106" width="175" height="40" rx="3" fill="#d1fae5"/>
+          <text x="8" y="16" font-weight="700" fill="#065f46">流式投递 ──►</text>
+          <text x="8" y="28" font-size="9" fill="#047857">亚毫秒级低延迟响应</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: Kafka Message Broker (200px) -->
+      <g transform="translate(435, 0)">
+        <rect width="195" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <rect width="195" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">3. 消息中间件 (Kafka)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="16" fill="#0f172a" font-weight="700">持久化 Topic 队列</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">Partition 按 orderId 分区保序</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">高可用多副本冗余</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">支持海量消费者并发堆积</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">削峰填谷，平滑流量尖峰</text>
+
+          <rect y="106" width="175" height="40" rx="3" fill="#f8fafc"/>
+          <text x="8" y="16" fill="#475569">广播给下游微服务群 ──►</text>
+          <text x="8" y="28" font-size="8.5" fill="#64748b">积分服务 / 仓储服务 / 通知</text>
+        </g>
+      </g>
+
+      <!-- Stage 4: Consumer Idempotency (230px) -->
+      <g transform="translate(650, 0)">
+        <rect width="210" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="210" height="32" rx="6" fill="#dcfce7"/>
+        <text x="105" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. 消费端幂等去重落地</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="190" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">幂等去重表 (dedup_key)</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">以 event_id 作为唯一主键索引</text>
+
+          <rect y="48" width="190" height="48" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">消费业务落盘</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">发货扣库存 / 发送短信通知</text>
+
+          <rect y="102" width="190" height="48" rx="3" fill="#d1fae5" stroke="#10b981"/>
+          <text x="8" y="16" fill="#065f46" font-weight="700">✓ 最终一致性达成：</text>
+          <text x="8" y="30" font-size="9" font-weight="700" fill="#047857">At-Least-Once 消息 + 幂等去重</text>
+          <text x="8" y="42" font-size="9" font-weight="700" fill="#047857">= Exactly-Once 业务语义！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">架构模式黄金法则：</tspan> Transactional Outbox 将“跨网络两阶段提交的脆弱锁”转换为 <tspan font-weight="700" fill="#2563eb">“本地单库原子写 + 异步重试”</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        用极低的实现复杂度换取了微服务间 100% 可靠的最终一致性。
+      </text>
+    </g>
+  </g>
+</svg>

@@ -1,42 +1,138 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="e-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="0" y="0" width="900" height="440" rx="12" fill="#fafbff" stroke="#d7def0"/>
-  <text x="450" y="32" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">事件循环的一轮：任务 → 微任务检查点 → （渲染机会）→ 下一任务</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <line x1="140" y1="80" x2="140" y2="390" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="6 6"/>
-  <text x="96" y="86" text-anchor="middle" font-size="12.5" font-weight="600" fill="#475569">时间轴</text>
-
-  <g font-size="13">
-    <rect x="180" y="76" width="640" height="70" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
-    <text x="200" y="100" font-size="14" font-weight="700" fill="#3730a3">1. 取一个任务，执行到 JS 栈清空</text>
-    <text x="200" y="122" font-size="12.5" fill="#475569">脚本、setTimeout 回调、事件回调、IO 回调——本轮只取一个任务</text>
-    <text x="200" y="140" font-size="12.5" fill="#64748b">执行期间产生的微任务不立即执行，先排队</text>
-
-    <rect x="180" y="162" width="640" height="70" rx="8" fill="#ecfdf5" stroke="#34d399" stroke-width="1.5"/>
-    <text x="200" y="186" font-size="14" font-weight="700" fill="#065f46">2. 微任务检查点：清空整个微任务队列</text>
-    <text x="200" y="208" font-size="12.5" fill="#475569">Promise reaction、queueMicrotask、MutationObserver 回调全部执行</text>
-    <text x="200" y="226" font-size="12.5" fill="#64748b">期间新产生的微任务继续追加执行——直到队列为空为止</text>
-
-    <rect x="180" y="248" width="640" height="70" rx="8" fill="#fefce8" stroke="#facc15" stroke-width="1.5"/>
-    <text x="200" y="272" font-size="14" font-weight="700" fill="#854d0e">3. 渲染机会（可能发生，也可能跳过）</text>
-    <text x="200" y="294" font-size="12.5" fill="#475569">浏览器按刷新率、可见性与主线程占用决定是否渲染一帧</text>
-    <text x="200" y="312" font-size="12.5" fill="#64748b">rAF 回调在此阶段执行；任务较多时一帧可能跨多轮</text>
-
-    <rect x="180" y="334" width="640" height="44" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="200" y="354" font-size="14" font-weight="700" fill="#334155">4. 回到任务队列，取下一个任务</text>
-    <text x="200" y="372" font-size="12.5" fill="#64748b">一轮结束，从第 1 步开始——所以"循环"不是队列，是这套流程</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">浏览器事件循环（Event Loop）单轮 Tick 状态流转机理</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">宏任务（仅取1个）──► 微任务检查点（排空至尽）──► UI 渲染阶段（rAF / 重排重绘）──► 下一轮循环</text>
   </g>
 
-  <circle cx="140" cy="111" r="6" fill="#6366f1"/>
-  <circle cx="140" cy="197" r="6" fill="#34d399"/>
-  <circle cx="140" cy="283" r="6" fill="#facc15"/>
-  <circle cx="140" cy="356" r="6" fill="#94a3b8"/>
+  <!-- Main Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <path d="M 180 378 C 140 400, 96 400, 96 380" stroke="#6366f1" stroke-width="2" fill="none" marker-end="url(#e-arrow)"/>
-  <text x="96" y="404" text-anchor="middle" font-size="11" fill="#6366f1">回到步骤 1</text>
+    <!-- 4 Horizontal Phase Cards (200px each, gap 20px) -->
+    <g transform="translate(20, 20)">
+      <!-- Phase 1: Task (Macrotask) -->
+      <g>
+        <rect width="200" height="235" rx="6" fill="#f8fafc" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="200" height="32" rx="6" fill="#eff6ff"/>
+        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">阶段 1：取 1 个宏任务</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="176" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="88" y="18" fill="#0f172a" font-weight="600" text-anchor="middle">`setTimeout` 回调</text>
+
+          <rect y="34" width="176" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="88" y="52" fill="#0f172a" font-weight="600" text-anchor="middle">I/O 事件 / 用户点击 Click</text>
+
+          <rect y="68" width="176" height="28" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="88" y="86" fill="#0f172a" font-weight="600" text-anchor="middle">网络 AJAX / Fetch 响应</text>
+
+          <rect y="106" width="176" height="42" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="88" y="122" fill="#1e40af" font-weight="700" text-anchor="middle">执行规则：</text>
+          <text x="88" y="138" fill="#2563eb" text-anchor="middle">每轮 Tick 仅执行最老 1 个</text>
+        </g>
+      </g>
+
+      <!-- Arrow 1 -> 2 -->
+      <path d="M 220 110 L 235 110" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+      <!-- Phase 2: Microtask Checkpoint -->
+      <g transform="translate(240, 0)">
+        <rect width="200" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="200" height="32" rx="6" fill="#dcfce7"/>
+        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">阶段 2：排空微任务队列</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="176" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="88" y="18" fill="#14532d" font-weight="600" text-anchor="middle">`Promise.then` / `catch`</text>
+
+          <rect y="34" width="176" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="88" y="52" fill="#14532d" font-weight="600" text-anchor="middle">`queueMicrotask()`</text>
+
+          <rect y="68" width="176" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="88" y="86" fill="#14532d" font-weight="600" text-anchor="middle">`MutationObserver` 回调</text>
+
+          <rect y="106" width="176" height="42" rx="4" fill="#d1fae5" stroke="#6ee7b7"/>
+          <text x="88" y="122" fill="#047857" font-weight="700" text-anchor="middle">🔥 关键特性：</text>
+          <text x="88" y="138" fill="#065f46" font-weight="700" text-anchor="middle">必须彻底清空，新产生的也算!</text>
+        </g>
+      </g>
+
+      <!-- Arrow 2 -> 3 -->
+      <path d="M 460 110 L 475 110" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+      <!-- Phase 3: Render Opportunity -->
+      <g transform="translate(480, 0)">
+        <rect width="200" height="235" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+        <rect width="200" height="32" rx="6" fill="#ffedd5"/>
+        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">阶段 3：UI 渲染更新机会</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="176" height="28" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="88" y="18" fill="#9a3412" font-weight="600" text-anchor="middle">`requestAnimationFrame`</text>
+
+          <rect y="34" width="176" height="28" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="88" y="52" fill="#9a3412" font-weight="600" text-anchor="middle">Style 样式计算</text>
+
+          <rect y="68" width="176" height="28" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="88" y="86" fill="#9a3412" font-weight="600" text-anchor="middle">Layout 排版 ──► Paint 绘制</text>
+
+          <rect y="106" width="176" height="42" rx="4" fill="#fed7aa" stroke="#fb923c"/>
+          <text x="88" y="122" fill="#7c2d12" font-weight="700" text-anchor="middle">按刷新率对齐：</text>
+          <text x="88" y="138" fill="#9a3412" text-anchor="middle">16.6ms (60Hz) 触发一次</text>
+        </g>
+      </g>
+
+      <!-- Arrow 3 -> 4 -->
+      <path d="M 700 110 L 715 110" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+      <!-- Phase 4: Next Loop -->
+      <g transform="translate(720, 0)">
+        <rect width="140" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <rect width="140" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="70" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">下一轮循环</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <text x="60" y="40" fill="#64748b" text-anchor="middle">若任务队列空</text>
+          <text x="60" y="60" fill="#64748b" text-anchor="middle">线程进入休眠</text>
+          <text x="60" y="80" fill="#0f172a" font-weight="600" text-anchor="middle">等待新事件唤醒</text>
+
+          <rect y="106" width="120" height="42" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+          <text x="60" y="122" fill="#334155" font-weight="700" text-anchor="middle">循环回环 ↺</text>
+          <text x="60" y="138" fill="#64748b" text-anchor="middle">返回步骤 1</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">性能诊断真相：</tspan> 如果在微任务中无限递归调用 <tspan font-weight="700" fill="#ea580c">`Promise.resolve().then(...)`</tspan>，微任务队列将永远无法清空，导致主线程卡死、UI 渲染被彻底饿死！
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        （解法：拆解重任务至宏任务 `setTimeout(fn, 0)` 或 `scheduler.yield()` 让出渲染权）
+      </text>
+    </g>
+  </g>
 </svg>

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Jepsen 混沌工程检验架构：Nemesis 故障注入器与 Knossos 判定流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">并发客户端记录调用历史（History Log） ──► 注入网络分区/时钟跳跃 ──► WGL 算法判定线性一致性</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 3 Stage Columns (265px each, gap 20px) -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: Clients & Workload -->
+      <g>
+        <rect width="265" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="265" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 并发工作负载 (Workload)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="241" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="10" y="18" fill="#0f172a" font-weight="700">并发并发 Client 线程池</text>
+          <text x="10" y="32" font-size="9.5" fill="#64748b">持续执行 `read(k)` / `cas(k, v1, v2)`</text>
+
+          <rect y="50" width="241" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="10" y="18" fill="#1e40af" font-weight="700">全量历史流水 (History Log)</text>
+          <text x="10" y="32" font-family="ui-monospace, monospace" font-size="9.5" fill="#2563eb">{:process 1, :f :read, :time 120}</text>
+          <text x="10" y="44" font-family="ui-monospace, monospace" font-size="9.5" fill="#2563eb">{:process 1, :f :ok, :value 42}</text>
+
+          <rect y="110" width="241" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="10" y="18" fill="#475569" font-weight="600">目标：</text>
+          <text x="10" y="32" font-size="9.5" fill="#64748b">记录精确物理纳秒级的调用与响应对</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: Nemesis Chaos Injection -->
+      <g transform="translate(285, 0)">
+        <rect width="265" height="235" rx="6" fill="#fff1f2" stroke="#fca5a5" stroke-width="1.5"/>
+        <rect width="265" height="32" rx="6" fill="#fee2e2"/>
+        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">2. 复仇女神 (Nemesis 注入器)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="241" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+          <text x="10" y="16" fill="#991b1b" font-weight="700">🔥 极端网络分区 (iptables/tc)</text>
+          <text x="10" y="28" font-size="9.5" fill="#7f1d1d">随机切断节点间双向/单向连通性</text>
+
+          <rect y="44" width="241" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+          <text x="10" y="16" fill="#991b1b" font-weight="700">⚡ 进程崩溃与挂起 (kill -9/SIGSTOP)</text>
+          <text x="10" y="28" font-size="9.5" fill="#7f1d1d">模拟 JVM GC 停顿与物理掉电</text>
+
+          <rect y="88" width="241" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
+          <text x="10" y="16" fill="#991b1b" font-weight="700">⏱️ 时钟跳变 (Clock Strobe)</text>
+          <text x="10" y="28" font-size="9.5" fill="#7f1d1d">拨快/拨慢系统时间数百毫秒</text>
+
+          <rect y="132" width="241" height="26" rx="4" fill="#fee2e2"/>
+          <text x="120" y="18" fill="#b91c1c" font-weight="700" text-anchor="middle">在混沌震荡中检验系统防御</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: Knossos / Elle Checker -->
+      <g transform="translate(570, 0)">
+        <rect width="270" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="270" height="32" rx="6" fill="#dcfce7"/>
+        <text x="135" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 轨迹检验算法 (Knossos/Elle)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="246" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="10" y="18" fill="#14532d" font-weight="700">WGL 线性一致性搜索树</text>
+          <text x="10" y="32" font-size="9.5" fill="#15803d">穷举所有可能的全序点，寻找反例</text>
+
+          <rect y="50" width="246" height="52" rx="4" fill="#ecfdf5" stroke="#10b981"/>
+          <text x="10" y="18" fill="#047857" font-weight="700">判定输出结果：</text>
+          <text x="10" y="32" font-size="9.5" fill="#065f46">• `{:valid? true}` 线性一致成立 ✓</text>
+          <text x="10" y="44" font-size="9.5" font-weight="700" fill="#b91c1c">• `{:valid? false, :anomaly ...}` ❌</text>
+
+          <rect y="110" width="246" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="10" y="18" fill="#0f172a" font-weight="600">捕获的典型缺陷：</text>
+          <text x="10" y="32" font-size="9.5" fill="#64748b">未提交读、脏写、脑裂双主导致写丢失</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">混沌工程的终极价值：</tspan> 不要相信数据库厂商的宣传口号，<tspan font-weight="700" fill="#ea580c">“未经 Jepsen 故障注入严刑拷打的共识实现都是假象”</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#2563eb" text-anchor="middle">
+        Jepsen 曾测出 MongoDB、Kafka、Elasticsearch、etcd 早期版本的大量隐蔽数据丢失 Bug！
+      </text>
+    </g>
+  </g>
+</svg>

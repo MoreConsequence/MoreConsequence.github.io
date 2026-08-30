@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/content/posts";
-import { collectSeries } from "@/lib/content/series";
+import { collectSeries, getSeriesIcon } from "@/lib/content/series";
 import { seriesHref } from "@/lib/site-links";
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default async function SeriesPage() {
             <span className="tag-index-number">
               {String(index + 1).padStart(2, "0")}
             </span>
-            <strong>{item.name}</strong>
+            <strong>{getSeriesIcon(item.name)} {item.name}</strong>
             <span>{item.count} 篇文章</span>
             <time>{item.latestPublishedAt.replaceAll("-", ".")}</time>
           </Link>

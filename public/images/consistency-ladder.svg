@@ -1,46 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="ui-sans-serif, system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif">
-  <rect x="0" y="0" width="880" height="420" rx="12" fill="#fafbff" stroke="#d7def0"/>
-
-  <text x="440" y="34" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">一致性阶梯：越往上，缓存收益越稀薄，直到归零</text>
-
-  <line x1="70" y1="370" x2="830" y2="370" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-x)"/>
-  <text x="830" y="392" text-anchor="end" font-size="13" font-weight="600" fill="#475569">一致性 / 实现成本 →</text>
-  <line x1="70" y1="370" x2="70" y2="70" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-y)"/>
-  <text x="70" y="56" text-anchor="middle" font-size="13" font-weight="600" fill="#475569">常见程度</text>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
   <defs>
-    <marker id="arrow-x" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
     </marker>
-    <marker id="arrow-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
     </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
   </defs>
 
-  <rect x="90" y="330" width="720" height="40" rx="6" fill="#ecfdf5" stroke="#34d399"/>
-  <text x="110" y="355" font-size="14" font-weight="700" fill="#065f46">TTL + 容忍</text>
-  <text x="330" y="355" font-size="13" fill="#065f46">最终一致，滞后有界——默认方案，绝大多数业务停在这里</text>
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
 
-  <rect x="110" y="284" width="700" height="40" rx="6" fill="#eff6ff" stroke="#60a5fa"/>
-  <text x="130" y="309" font-size="14" font-weight="700" fill="#1e40af">读重建互斥（singleflight）</text>
-  <text x="380" y="309" font-size="13" fill="#1e40af">防击穿；配合写方锁可收窄竞态窗口</text>
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">分布式缓存一致性阶梯：成本、复杂度与收益衰减矩阵</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">一致性要求越高，系统复杂度呈指数上升，缓存带来的吞吐收益加速归零</text>
+  </g>
 
-  <rect x="130" y="238" width="680" height="40" rx="6" fill="#fefce8" stroke="#facc15"/>
-  <text x="150" y="263" font-size="14" font-weight="700" fill="#854d0e">延迟双删</text>
-  <text x="330" y="263" font-size="13" fill="#854d0e">把一个概率窗口换成另一个，临时缓解，不建议长期依赖</text>
+  <!-- Main Ladder Stack Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
 
-  <rect x="150" y="192" width="660" height="40" rx="6" fill="#fff7ed" stroke="#fb923c"/>
-  <text x="170" y="217" font-size="14" font-weight="700" fill="#9a3412">CDC 主动失效</text>
-  <text x="380" y="217" font-size="13" fill="#9a3412">数据库自己宣布变更，覆盖一切写路径，代价是基础设施</text>
+    <!-- Left Axis: Consistency & Cost (Increasing Upwards) -->
+    <g transform="translate(25, 20)">
+      <line x1="15" y1="235" x2="15" y2="15" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+      <text x="15" y="0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#2563eb" text-anchor="middle">一致性强度 &amp; 实现成本 ↑</text>
+    </g>
 
-  <rect x="170" y="146" width="640" height="40" rx="6" fill="#fef2f2" stroke="#f87171"/>
-  <text x="190" y="171" font-size="14" font-weight="700" fill="#991b1b">版本号 + 互斥</text>
-  <text x="380" y="171" font-size="13" fill="#991b1b">近强一致：每次读都比对版本，落后就重读</text>
+    <!-- 5 Layers (From bottom Tier 1 to top Tier 5) -->
+    <g transform="translate(70, 20)">
+      <!-- Tier 5: Direct DB (Top) -->
+      <g transform="translate(0, 0)">
+        <rect width="780" height="42" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+        <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">第 5 阶：直读权威数据库 / 严格分布式锁</text>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b">强一致（Linearizable）· 放弃一切缓存收益（“必须强一致”=“不该用缓存”）</text>
+        <rect x="700" y="10" width="68" height="22" rx="4" fill="#fee2e2"/>
+        <text x="734" y="25" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#b91c1c" text-anchor="middle">收益归零</text>
+      </g>
 
-  <rect x="190" y="100" width="620" height="40" rx="6" fill="#e2e8f0" stroke="#64748b"/>
-  <text x="210" y="125" font-size="14" font-weight="700" fill="#1e293b">直读数据库</text>
-  <text x="380" y="125" font-size="13" fill="#1e293b">强一致，但放弃缓存收益——「必须强一致」的另一层意思是「不该用缓存」</text>
+      <!-- Tier 4: Version Token -->
+      <g transform="translate(0, 48)">
+        <rect width="780" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">第 4 阶：数据版本代数（Generation / ETag）比对</text>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b">近强一致 · 读操作带版本比对，检测到落后强制重查源库，需全局版本生成器</text>
+        <rect x="700" y="10" width="68" height="22" rx="4" fill="#fff7ed"/>
+        <text x="734" y="25" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#c2410c" text-anchor="middle">吞吐减半</text>
+      </g>
 
-  <rect x="90" y="66" width="720" height="26" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-  <text x="450" y="83" text-anchor="middle" font-size="12" fill="#64748b">▲ 最常见 · 成本最低      ▼ 最罕见 · 成本最高（甚至为负收益）</text>
+      <!-- Tier 3: CDC Event Invalidation -->
+      <g transform="translate(0, 96)">
+        <rect width="780" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">第 3 阶：CDC (Canal/Debezium) 监听 Binlog 异步失效</text>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">最终一致 · 覆盖任何写路径，业务无侵入；代价是依赖 Kafka/Canal 基础设施链路</text>
+        <rect x="700" y="10" width="68" height="22" rx="4" fill="#eff6ff"/>
+        <text x="734" y="25" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#1d4ed8" text-anchor="middle">工业推荐</text>
+      </g>
+
+      <!-- Tier 2: Singleflight + Invalidation -->
+      <g transform="translate(0, 144)">
+        <rect width="780" height="42" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8">第 2 阶：写后删缓存 + 读重建互斥（Singleflight）</text>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#1e40af">弱一致 · 根绝并发击穿与回源风暴；代码内聚，适合绝大部分高并发服务</text>
+        <rect x="700" y="10" width="68" height="22" rx="4" fill="#eff6ff"/>
+        <text x="734" y="25" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#1d4ed8" text-anchor="middle">高性价比</text>
+      </g>
+
+      <!-- Tier 1: TTL + Tolerance (Base) -->
+      <g transform="translate(0, 192)">
+        <rect width="780" height="42" rx="6" fill="#ecfdf5" stroke="#86efac" stroke-width="1.5"/>
+        <text x="16" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534">第 1 阶：TTL 绝对生存期 + 容忍微量滞后（默认基石）</text>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#15803d">有界最终一致 · 零锁竞争、零外部协调、超万倍吞吐，90% 互联网业务停留于此</text>
+        <rect x="700" y="10" width="68" height="22" rx="4" fill="#d1fae5"/>
+        <text x="734" y="25" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#047857" text-anchor="middle">极限吞吐 🚀</text>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">架构决策铁律：</tspan> 永远不要为了“假装强一致”引入复杂的分布式两阶段加锁；优先通过 <tspan font-weight="700" fill="#2563eb">TTL + Singleflight + CDC 异步失效</tspan>，把不一致窗口收窄在业务容忍阈值内。
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        （注：类似“延迟双删”仅将确定性竞态换成概率窗口，不建议作为生产核心依赖）
+      </text>
+    </g>
+  </g>
 </svg>

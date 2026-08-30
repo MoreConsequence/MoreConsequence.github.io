@@ -34,6 +34,8 @@ flowchart LR
 
 ## 三、ReadView：一致性读建立的一张“当时还有谁活着”的名单
 
+![MySQL InnoDB MVCC 多版本链与 ReadView 可见性判定架构](../../../public/images/mysql-mvcc-readview-undo-chain.svg)
+
 在 RR 下，第一次一致性读建立 ReadView；如果使用显式一致性快照，则在 `START TRANSACTION` 时建立。ReadView 概念上记录：快照时仍活跃的事务 ID 集合、用于划分事务 ID 的上下边界，以及创建者事务。判断版本能否被看到时，沿版本链向旧版本回退，直到找到一个在该快照中可见的版本：
 
 - 快照建立前已经提交、且不属于仍活跃事务的版本 → **可见**，停。

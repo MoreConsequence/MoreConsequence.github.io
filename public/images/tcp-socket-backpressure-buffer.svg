@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">TCP Socket 端到端背压传导与缓冲区级联阻断管道图</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">接收端 SO_RCVBUF 溢出 ──► TCP 发送 Zero-Window 帧 ──► 发送端 SO_SNDBUF 填满 ──► 用户态 write() 阻塞 / EAGAIN 反压</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Sender System Container (400px) -->
+    <g transform="translate(20, 20)">
+      <rect width="380" height="270" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="380" height="30" rx="6" fill="#dbeafe"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
+        【发送端主机 (Sender Host)】
+      </text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- App Layer -->
+        <rect width="350" height="46" rx="4" fill="#fee2e2" stroke="#f87171"/>
+        <text x="12" y="18" font-size="10" font-weight="700" fill="#991b1b">发送方应用程序 (Go / Java / Nginx)</text>
+        <text x="12" y="32" font-size="8.5" fill="#7f1d1d">write() 系统调用被挂起（阻塞）或返回 EAGAIN（非阻塞）</text>
+
+        <!-- Down Arrow -->
+        <path d="M 175 46 L 175 68" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+        <text x="185" y="60" font-size="8" fill="#dc2626">无法写入</text>
+
+        <!-- Socket Send Buffer -->
+        <g transform="translate(0, 70)">
+          <rect width="350" height="70" rx="4" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+          <text x="12" y="18" font-size="10" font-weight="700" fill="#991b1b">内核发送缓冲区 (SO_SNDBUF) ── 100% 满载！</text>
+
+          <!-- Buffer Memory Slot Boxes -->
+          <g transform="translate(12, 26)">
+            <rect width="70" height="32" rx="3" fill="#fecaca"/>
+            <text x="35" y="16" font-size="8" fill="#7f1d1d" text-anchor="middle">SKB #1 (ACK等待)</text>
+            <text x="35" y="26" font-size="7" fill="#991b1b" text-anchor="middle">1460 字节</text>
+
+            <rect x="75" width="70" height="32" rx="3" fill="#fecaca"/>
+            <text x="110" y="16" font-size="8" fill="#7f1d1d" text-anchor="middle">SKB #2 (ACK等待)</text>
+
+            <rect x="150" width="70" height="32" rx="3" fill="#fecaca"/>
+            <text x="185" y="16" font-size="8" fill="#7f1d1d" text-anchor="middle">SKB #3 (冻结)</text>
+
+            <rect x="225" width="95" height="32" rx="3" fill="#dc2626"/>
+            <text x="272" y="16" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">sk_write_queue 满</text>
+            <text x="272" y="26" font-size="7" fill="#fee2e2" text-anchor="middle">停止向网卡推包</text>
+          </g>
+        </g>
+
+        <!-- NIC Layer -->
+        <g transform="translate(0, 155)">
+          <rect width="350" height="42" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="12" y="16" font-size="9" font-weight="700" fill="#1e40af">发送端网卡 (TX Ring Buffer / DMA)</text>
+          <text x="12" y="30" font-size="8" fill="#2563eb">接收到 Zero-Window 通告，TCP 滑动窗口冻结在 0，停止发送数据帧</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Center Network Wire with Bidirectional Flow (80px) -->
+    <g transform="translate(415, 100)">
+      <!-- Data Packets Stopped -->
+      <line x1="0" y1="30" x2="60" y2="30" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 3"/>
+      <rect x="15" y="18" width="30" height="24" rx="3" fill="#fee2e2" stroke="#f87171"/>
+      <text x="30" y="33" font-size="9" font-weight="700" fill="#dc2626" text-anchor="middle">⛔ 停发</text>
+
+      <!-- Zero Window ACK Coming Back -->
+      <line x1="60" y1="80" x2="10" y2="80" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrow-red)"/>
+      <rect x="0" y="90" width="70" height="26" rx="3" fill="#dc2626"/>
+      <text x="35" y="103" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">TCP ACK</text>
+      <text x="35" y="112" font-size="7" fill="#fee2e2" text-anchor="middle">win=0 (Zero)</text>
+    </g>
+
+    <!-- Receiver System Container (400px) -->
+    <g transform="translate(500, 20)">
+      <rect width="380" height="270" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="380" height="30" rx="6" fill="#ffedd5"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">
+        【接收端主机 / 慢消费者 (Slow Receiver)】
+      </text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- NIC Layer -->
+        <g>
+          <rect width="350" height="42" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="12" y="16" font-size="9" font-weight="700" fill="#9a3412">接收端物理网卡 (RX Ring Buffer / DMA)</text>
+          <text x="12" y="30" font-size="8" fill="#c2410c">网卡正常收包并拷贝进内核 SO_RCVBUF，但发现可用空间归零</text>
+        </g>
+
+        <!-- Up Arrow -->
+        <path d="M 175 42 L 175 60" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+
+        <!-- Socket Receive Buffer (Full) -->
+        <g transform="translate(0, 65)">
+          <rect width="350" height="70" rx="4" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+          <text x="12" y="18" font-size="10" font-weight="700" fill="#991b1b">内核接收缓冲区 (SO_RCVBUF) ── 100% 满溢！</text>
+
+          <!-- Buffer Memory Slot Boxes -->
+          <g transform="translate(12, 26)">
+            <rect width="100" height="32" rx="3" fill="#fecaca"/>
+            <text x="50" y="16" font-size="8" fill="#7f1d1d" text-anchor="middle">已收未读数据 A</text>
+            <text x="50" y="26" font-size="7" fill="#991b1b" text-anchor="middle">堆积在内存</text>
+
+            <rect x="105" width="100" height="32" rx="3" fill="#fecaca"/>
+            <text x="155" y="16" font-size="8" fill="#7f1d1d" text-anchor="middle">已收未读数据 B</text>
+
+            <rect x="210" width="115" height="32" rx="3" fill="#dc2626"/>
+            <text x="267" y="16" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">rcv_wnd = 0</text>
+            <text x="267" y="26" font-size="7" fill="#fee2e2" text-anchor="middle">向发送方通告零窗口</text>
+          </g>
+        </g>
+
+        <!-- Up Arrow to App -->
+        <path d="M 175 135 L 175 155" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+
+        <!-- App Layer (Slow!) -->
+        <g transform="translate(0, 155)">
+          <rect width="350" height="46" rx="4" fill="#fef2f2" stroke="#f87171"/>
+          <text x="12" y="18" font-size="10" font-weight="700" fill="#991b1b">慢消费者应用 (卡死/GC/慢磁盘)</text>
+          <text x="12" y="32" font-size="8.5" fill="#7f1d1d">停止调用 read() / recv()，导致内核缓冲区永远无法被腾空！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 310)">
+      <rect width="860" height="58" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">
+        💡 全链路背压守护原则：
+      </text>
+      <text x="430" y="44" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569" text-anchor="middle">
+        接收端不读 ──► SO_RCVBUF 满 ──► TCP 零窗口 ──► SO_SNDBUF 满 ──► 发送端 write() 阻塞。
+        <tspan font-weight="700" fill="#2563eb">背压是系统的自愈免疫系统，严禁在网关层无脑无限开 Buffer 吞没反压！</tspan>
+      </text>
+    </g>
+  </g>
+</svg>

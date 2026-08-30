@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/post/article-body";
 import { PostMeta } from "@/components/post/post-meta";
 import { ReadingProgress } from "@/components/post/reading-progress";
+import { getSeriesIcon } from "@/lib/content/series";
 import { TableOfContents } from "@/components/post/table-of-contents";
 import { getAllPosts, getPostSources } from "@/lib/content/posts";
 import { getPostsForSeries } from "@/lib/content/series";
@@ -82,7 +83,7 @@ export default async function ArticlePage({ params }: PageProps) {
             {post.meta.series ? (
               <>
                 <Link href={seriesHref(post.meta.series)} className="kicker-series">
-                  📚 {post.meta.series}
+                  {getSeriesIcon(post.meta.series)} {post.meta.series}
                   {isSeries ? (
                     <span className="kicker-chapter">
                       （{String(currentSeriesIndex + 1).padStart(2, "0")}/{seriesPosts.length}）
@@ -114,7 +115,7 @@ export default async function ArticlePage({ params }: PageProps) {
               <div className="article-fact sidebar-panel" aria-label="专栏连载">
                 <div className="sidebar-panel-header">
                   <Link href={seriesHref(post.meta.series!)} className="sph-title" title={`查看《${post.meta.series}》专栏全部目录`}>
-                    📚 {post.meta.series}
+                    {getSeriesIcon(post.meta.series!)} {post.meta.series}
                   </Link>
                   <span className="sph-badge">
                     {currentSeriesIndex + 1}/{seriesPosts.length}

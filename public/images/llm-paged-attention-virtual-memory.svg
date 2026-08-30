@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">PagedAttention 显存虚拟化：从操作系统分页到 GPU 零碎片管理</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">逻辑连续 KV Blocks ──► 块表（Block Table）映射 ──► 非连续物理显存块（Physical GPU Blocks）与写时复制（CoW）</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 3 Stage Columns (265px each, gap 20px) -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: Logical KV Sequence -->
+      <g>
+        <rect width="265" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="265" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 逻辑序列 (Logical Blocks)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <!-- Block 0 -->
+          <rect width="241" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="12" y="21" fill="#1e40af" font-weight="700">Logical Block 0: [Token 0 ~ 15]</text>
+
+          <!-- Block 1 -->
+          <rect y="40" width="241" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="12" y="61" fill="#1e40af" font-weight="700">Logical Block 1: [Token 16 ~ 31]</text>
+
+          <!-- Block 2 -->
+          <rect y="80" width="241" height="34" rx="4" fill="#f0fdf4" stroke="#10b981"/>
+          <text x="12" y="101" fill="#047857" font-weight="700">Logical Block 2: [Token 32 ~ 47]</text>
+
+          <!-- Note -->
+          <rect y="120" width="241" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="12" y="138" fill="#475569" font-weight="600">模型视角：</text>
+          <text x="12" y="152" fill="#64748b" font-size="9.5">以为 KV Cache 是连续线性的地址空间</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: Block Table (Page Table) -->
+      <g transform="translate(285, 0)">
+        <rect width="265" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="265" height="32" rx="6" fill="#dcfce7"/>
+        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 块表映射 (Block Table)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-monospace, monospace" font-size="10">
+          <rect width="241" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="12" y="18" fill="#14532d">Logical 0 ──► Physical Block 7</text>
+
+          <rect y="34" width="241" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="12" y="52" fill="#14532d">Logical 1 ──► Physical Block 1</text>
+
+          <rect y="68" width="241" height="28" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="12" y="86" fill="#14532d">Logical 2 ──► Physical Block 12</text>
+
+          <rect y="106" width="241" height="56" rx="4" fill="#d1fae5" stroke="#6ee7b7"/>
+          <text x="12" y="124" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" fill="#065f46">✨ 共享与写时复制 (CoW)：</text>
+          <text x="12" y="138" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#047857">Parallel Sampling 多个输出分支</text>
+          <text x="12" y="150" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#047857">只读共享 Prompt 物理块，0 显存复制！</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: Physical Non-contiguous GPU VRAM -->
+      <g transform="translate(570, 0)">
+        <rect width="270" height="235" rx="6" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1.5"/>
+        <rect width="270" height="32" rx="6" fill="#eff6ff"/>
+        <text x="135" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">3. 物理显存散列块 (GPU HBM)</text>
+
+        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <!-- Physical Slot 1 -->
+          <rect width="246" height="26" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="12" y="17" fill="#1e40af" font-weight="700">Phys Block 1 (存放 Logical 1)</text>
+
+          <!-- Physical Slot 7 -->
+          <rect y="32" width="246" height="26" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+          <text x="12" y="49" fill="#1e40af" font-weight="700">Phys Block 7 (存放 Logical 0)</text>
+
+          <!-- Physical Slot 12 -->
+          <rect y="64" width="246" height="26" rx="3" fill="#f0fdf4" stroke="#10b981"/>
+          <text x="12" y="81" fill="#047857" font-weight="700">Phys Block 12 (存放 Logical 2)</text>
+
+          <!-- Result -->
+          <rect y="100" width="246" height="62" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+          <text x="12" y="118" font-weight="700" fill="#065f46">🎯 碎片消除奇迹：</text>
+          <text x="12" y="132" font-size="9.5" fill="#047857">• 显存浪费率从 60%~80% 直降至 &lt; 4%</text>
+          <text x="12" y="146" font-size="9.5" font-weight="700" fill="#047857">• 单卡推理系统吞吐直接翻 2~4 倍！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">vLLM 架构创新本质：</tspan> 没有改变任何 Transformer 数学模型，而是将 <tspan font-weight="700" fill="#2563eb">“操作系统的虚拟内存分页思想（Virtual Memory Paging）”</tspan>
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#ea580c" font-weight="700" text-anchor="middle">
+        首次降维打击式引入 GPU 显存管理，彻底终结了静态连续显存预分配时代的巨大浪费！
+      </text>
+    </g>
+  </g>
+</svg>

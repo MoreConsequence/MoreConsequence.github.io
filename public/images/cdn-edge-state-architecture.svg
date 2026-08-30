@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="100%" height="100%" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="state-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="arr-st-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-st-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="st-shadow" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#state-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">EDGE STORAGE · DISTRIBUTED STATE &amp; CONSISTENCY ORCHESTRATION</text>
+  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">边缘分布式状态编排：边缘最终一致性 KV vs 区域强一致 Raft 体系</text>
+
+  <!-- ================= TOP: TWO COMPONENT STORAGE MODELS (x: 40 ~ 920, w: 880) ================= -->
+  
+  <!-- Model 1: Edge KV (Read-at-Edge / Eventual Consistency) [x: 40 ~ 460, w: 420] -->
+  <g transform="translate(40, 75)" filter="url(#st-shadow)">
+    <rect width="420" height="235" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <rect x="0" y="0" width="420" height="5" rx="2" fill="#2563eb"/>
+    <rect x="14" y="12" width="200" height="22" rx="4" fill="#2563eb"/>
+    <text x="114" y="27" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">模式 A：边缘只读 KV (最终一致性)</text>
+
+    <!-- Sub Boxes -->
+    <g transform="translate(14, 44)">
+      <!-- PoP 1 -->
+      <rect x="0" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="60" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">北京 PEK 节点</text>
+      <rect x="8" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
+      <text x="60" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
+      <text x="60" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+
+      <!-- PoP 2 -->
+      <rect x="135" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="195" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">法兰克福 FRA 节点</text>
+      <rect x="143" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
+      <text x="195" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
+      <text x="195" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+
+      <!-- PoP 3 -->
+      <rect x="270" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="330" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">硅谷 SJC 节点</text>
+      <rect x="278" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
+      <text x="330" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
+      <text x="330" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+
+      <!-- Broadcast Bar -->
+      <rect x="0" y="95" width="390" height="26" rx="4" fill="#dbeafe"/>
+      <text x="195" y="112" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">全局异步多主复制广播 (秒级全网同步收敛)</text>
+    </g>
+
+    <!-- Metrics -->
+    <line x1="14" y1="175" x2="406" y2="175" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="14" y="195" fill="#1e40af" font-size="10.5">· 读性能：<tspan font-weight="700" fill="#059669">微秒级 (本地命中无需跨机房)</tspan></text>
+    <text x="14" y="215" fill="#1e40af" font-size="10.5">· 适用场景：<tspan font-weight="600">配置开关、用户权限黑白名单、路由规则表</tspan></text>
+  </g>
+
+  <!-- Model 2: Strong Consistency Raft (Durable Objects / Edge SQL) [x: 500 ~ 920, w: 420] -->
+  <g transform="translate(500, 75)" filter="url(#st-shadow)">
+    <rect width="420" height="235" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <rect x="0" y="0" width="420" height="5" rx="2" fill="#ea580c"/>
+    <rect x="14" y="12" width="220" height="22" rx="4" fill="#ea580c"/>
+    <text x="124" y="27" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">模式 B：区域强一致存储 (Raft 事务)</text>
+
+    <!-- Sub Boxes -->
+    <g transform="translate(14, 44)">
+      <!-- Raft Cluster -->
+      <rect x="0" y="0" width="390" height="85" rx="4" fill="#ffffff" stroke="#fed7aa" stroke-width="1"/>
+      <text x="195" y="20" fill="#9a3412" font-size="10" font-weight="700" text-anchor="middle">区域 Raft 共识集群 (Durable Objects / D1 SQL)</text>
+      
+      <rect x="12" y="28" width="115" height="48" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+      <text x="69" y="46" fill="#c2410c" font-size="9" font-weight="700" text-anchor="middle">Leader 节点</text>
+      <text x="69" y="62" fill="#059669" font-size="8" text-anchor="middle">唯一写事务入口</text>
+
+      <rect x="137" y="28" width="115" height="48" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+      <text x="194" y="46" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">Follower #1</text>
+      <text x="194" y="62" fill="#64748b" font-size="8" text-anchor="middle">多数派 Quorum 确认</text>
+
+      <rect x="262" y="28" width="115" height="48" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+      <text x="319" y="46" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">Follower #2</text>
+      <text x="319" y="62" fill="#64748b" font-size="8" text-anchor="middle">多数派 Quorum 确认</text>
+
+      <!-- Coordination Bar -->
+      <rect x="0" y="95" width="390" height="26" rx="4" fill="#fed7aa"/>
+      <text x="195" y="112" fill="#9a3412" font-size="10" font-weight="700" text-anchor="middle">单键原子排队锁 (Single-threaded Execution / 0 并发冲突)</text>
+    </g>
+
+    <!-- Metrics -->
+    <line x1="14" y1="175" x2="406" y2="175" stroke="#fed7aa" stroke-width="1"/>
+    <text x="14" y="195" fill="#9a3412" font-size="10.5">· 强一致性：<tspan font-weight="700" fill="#ea580c">严格线性一致性（Linearizable Consistency）</tspan></text>
+    <text x="14" y="215" fill="#9a3412" font-size="10.5">· 适用场景：<tspan font-weight="600">协作文档协调者、秒杀实时计数器、分布式游戏房间</tspan></text>
+  </g>
+
+
+  <!-- ================= BOTTOM: SYSTEM ARCHITECTURE TRADE-OFF MATRIX (x: 40, y: 325, h: 105) ================= -->
+  <g transform="translate(40, 325)">
+    <rect width="880" height="105" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+    
+    <!-- Box 1 -->
+    <g transform="translate(16, 12)">
+      <rect width="270" height="80" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="12" y="22" fill="#1e40af" font-size="10.5" font-weight="700">CAP 定理在边缘的物理取舍</text>
+      <text x="12" y="42" fill="#475569" font-size="9.5">跨大洋网络分区是不可避免的常态；</text>
+      <text x="12" y="60" fill="#475569" font-size="9.5">边缘存储架构必须在 AP 与 CP 间严格隔离。</text>
+    </g>
+
+    <!-- Box 2 -->
+    <g transform="translate(305, 12)">
+      <rect width="270" height="80" rx="4" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+      <text x="12" y="22" fill="#c2410c" font-size="10.5" font-weight="700">就近读 + 区域写（Read-at-Edge）</text>
+      <text x="12" y="42" fill="#9a3412" font-size="9.5">读请求 100% 命中同城边缘 PoP；</text>
+      <text x="12" y="60" fill="#9a3412" font-size="9.5">写事务自动路由至就近的数据权威中心。</text>
+    </g>
+
+    <!-- Box 3 -->
+    <g transform="translate(594, 12)">
+      <rect width="270" height="80" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="12" y="22" fill="#065f46" font-size="10.5" font-weight="700">边缘微前端与流式拼装 (ESI 2.0)</text>
+      <text x="12" y="42" fill="#065f46" font-size="9.5">利用 TransformStream 在边缘流式合成；</text>
+      <text x="12" y="60" fill="#065f46" font-size="9.5">个性化用户信息与静态骨架边拉边渲染。</text>
+    </g>
+  </g>
+</svg>

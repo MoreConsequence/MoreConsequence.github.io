@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 流量控制（TC）体系：qdisc 排队规则、Class 类别与 HTB 分层令牌桶</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Root Qdisc 根排队规则 ──► Filter 分流过滤器 ──► HTB 分层树状带宽保障（Rate）与突发借调（Ceil）</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: Root Qdisc & Filters (300px) -->
+    <g transform="translate(20, 20)">
+      <rect width="280" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="280" height="32" rx="6" fill="#dbeafe"/>
+      <text x="140" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 根排队规则 (Root Qdisc 1:)</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="256" height="42" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="16" fill="#1d4ed8" font-weight="700">挂载 HTB 分层令牌桶</text>
+        <text x="10" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#2563eb">tc qdisc add dev eth0 root htb</text>
+
+        <rect y="50" width="256" height="52" rx="4" fill="#ffffff" stroke="#3b82f6"/>
+        <text x="10" y="16" fill="#1e40af" font-weight="700">Filter 过滤器 (u32 / BPF)</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">• 根据 IP/端口/TOS 标记分类</text>
+        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 将数据包投递至对应子 Class</text>
+
+        <rect y="110" width="256" height="36" rx="4" fill="#eff6ff"/>
+        <text x="10" y="22" font-size="9.5" fill="#1e40af">分流精准度：支持微秒级流分类</text>
+      </g>
+    </g>
+
+    <!-- Right: HTB Class Hierarchy Tree (550px) -->
+    <g transform="translate(320, 20)">
+      <rect width="560" height="230" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="560" height="32" rx="6" fill="#dcfce7"/>
+      <text x="280" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. HTB 分层类别树 (Hierarchical Token Bucket Tree)</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <!-- Root Class 1:1 -->
+        <g transform="translate(130, 0)">
+          <rect width="260" height="36" rx="4" fill="#ffffff" stroke="#10b981" stroke-width="1.5"/>
+          <text x="130" y="16" font-weight="700" fill="#047857" text-anchor="middle">总带宽池 (Class 1:1)</text>
+          <text x="130" y="28" font-family="ui-monospace, monospace" font-size="9.5" fill="#059669" text-anchor="middle">Rate: 10Gbps | Ceil: 10Gbps</text>
+        </g>
+
+        <!-- Sub Classes -->
+        <g transform="translate(0, 48)">
+          <!-- Sub Class 1:10 (High Priority / Core Business) -->
+          <g>
+            <rect width="255" height="62" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+            <text x="10" y="16" font-weight="700" fill="#14532d">核心业务流 (Class 1:10)</text>
+            <text x="10" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#15803d">Rate: 7Gbps (保底) | Ceil: 10Gbps</text>
+            <text x="10" y="44" font-size="9" font-weight="700" fill="#047857">✓ 优先级高，优先借调空闲带宽</text>
+          </g>
+
+          <!-- Sub Class 1:20 (Low Priority / Logs & Backups) -->
+          <g transform="translate(275, 0)">
+            <rect width="255" height="62" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+            <text x="10" y="16" font-weight="700" fill="#475569">日志/离线备份 (Class 1:20)</text>
+            <text x="10" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#64748b">Rate: 1Gbps | Ceil: 3Gbps (硬上限)</text>
+            <text x="10" y="44" font-size="9" fill="#dc2626">✗ 高峰期被严格压制，绝不影响核心业务</text>
+          </g>
+        </g>
+
+        <!-- Dynamic Borrowing Note -->
+        <g transform="translate(0, 120)">
+          <rect width="530" height="32" rx="3" fill="#d1fae5"/>
+          <text x="265" y="20" font-weight="700" fill="#065f46" text-anchor="middle">✨ 弹性借调机制：离线流量平时可打满空闲带宽，高峰期毫秒级归还！</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">流量工程精髓：</tspan> TC HTB 解决了 <tspan font-weight="700" fill="#2563eb">“保底不浪费、突发有上限”</tspan> 的多租户带宽隔离难题，是 K8s 容器限速与云厂商计费的底座。
+    </text>
+  </g>
+</svg>

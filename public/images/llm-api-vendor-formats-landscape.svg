@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">主流大模型厂商 API 协议格式与载荷抽象拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">OpenAI ChatCompletions (行业标准) vs Anthropic Messages (多态块) vs Google Gemini (Parts) vs OpenAI Realtime (双向帧)</text>
+  </g>
+
+  <!-- 4 Main Vendor Format Cards (215px each, spaced by 13px) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- Format 1: OpenAI Chat Completions -->
+    <g>
+      <rect width="215" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="215" height="34" rx="8" fill="#eff6ff"/>
+      <text x="107" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">OpenAI 格式 (事实标准)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="191" height="38" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#1e40af">POST /v1/chat/completions</text>
+        <text x="8" y="28" font-size="7.5" fill="#2563eb">支持：vLLM / Ollama / DeepSeek</text>
+
+        <!-- Schema Block -->
+        <rect y="46" width="191" height="155" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="16" fill="#38bdf8">messages: [</text>
+          <text x="14" y="28">{ role: "system", content: "..." },</text>
+          <text x="14" y="40">{ role: "user", content: "..." },</text>
+          <text x="14" y="52">{</text>
+          <text x="20" y="64" fill="#93c5fd">role: "assistant",</text>
+          <text x="20" y="76" fill="#fbbf24">tool_calls: [{</text>
+          <text x="26" y="88">id: "call_123",</text>
+          <text x="26" y="100">type: "function",</text>
+          <text x="26" y="112" fill="#f87171">function: { name, arguments }</text>
+          <text x="20" y="124" fill="#fbbf24">}]</text>
+          <text x="14" y="136">}</text>
+          <text x="8" y="148" fill="#38bdf8">]</text>
+        </g>
+
+        <!-- Pros & Cons -->
+        <rect y="210" width="191" height="60" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#1e40af">✓ 优点：生态绝对主导，兼容性最强</text>
+        <text x="8" y="30" font-size="7.5" fill="#2563eb">❌ 痛点：arguments 必须转为字符串</text>
+        <text x="8" y="44" font-size="7.5" fill="#dc2626">流式分块需客户端自行拼接 JSON</text>
+      </g>
+    </g>
+
+    <!-- Format 2: Anthropic Messages API -->
+    <g transform="translate(228, 0)">
+      <rect width="215" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="215" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="107" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">Anthropic Messages</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="191" height="38" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#166534">POST /v1/messages</text>
+        <text x="8" y="28" font-size="7.5" fill="#15803d">Claude 3.5 Sonnet / Haiku / Opus</text>
+
+        <!-- Schema Block -->
+        <rect y="46" width="191" height="155" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="16" fill="#34d399">system: "...",</text>
+          <text x="8" y="28" fill="#38bdf8">messages: [{</text>
+          <text x="14" y="40">role: "assistant",</text>
+          <text x="14" y="52" fill="#4ade80">content: [</text>
+          <text x="20" y="64">{ type: "text", text: "..." },</text>
+          <text x="20" y="76">{</text>
+          <text x="26" y="88" fill="#fbbf24">type: "tool_use",</text>
+          <text x="26" y="100">id: "toolu_01", name: "...",</text>
+          <text x="26" y="112" fill="#34d399">input: { key: "val" } // 强类型对象!</text>
+          <text x="20" y="124">}</text>
+          <text x="14" y="136" fill="#4ade80">]</text>
+          <text x="8" y="148" fill="#38bdf8">}]</text>
+        </g>
+
+        <!-- Pros & Cons -->
+        <rect y="210" width="191" height="60" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#166534">✓ 优点：多态内容块设计最优雅</text>
+        <text x="8" y="30" font-size="7.5" fill="#15803d">input 为原生 JSON 对象，非字符串</text>
+        <text x="8" y="44" font-size="7.5" fill="#047857">流式事件包含块起止（Block Start/Stop）</text>
+      </g>
+    </g>
+
+    <!-- Format 3: Google Gemini Content/Parts -->
+    <g transform="translate(456, 0)">
+      <rect width="215" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="215" height="34" rx="8" fill="#fff7ed"/>
+      <text x="107" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">Google Gemini API</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="191" height="38" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#9a3412">POST :generateContent</text>
+        <text x="8" y="28" font-size="7.5" fill="#c2410c">Gemini 1.5 Pro / Flash / 2.0</text>
+
+        <!-- Schema Block -->
+        <rect y="46" width="191" height="155" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="16" fill="#fb923c">systemInstruction: { parts: [...] },</text>
+          <text x="8" y="28" fill="#38bdf8">contents: [{</text>
+          <text x="14" y="40">role: "model", // 注意是 model 而非 assistant</text>
+          <text x="14" y="52" fill="#fbbf24">parts: [</text>
+          <text x="20" y="64">{ text: "..." },</text>
+          <text x="20" y="76">{ inlineData: { mimeType, data } },</text>
+          <text x="20" y="88">{</text>
+          <text x="26" y="100" fill="#f87171">functionCall: { name, args: {} }</text>
+          <text x="20" y="112">},</text>
+          <text x="20" y="124">{ functionResponse: { name, response } }</text>
+          <text x="14" y="136" fill="#fbbf24">]</text>
+          <text x="8" y="148" fill="#38bdf8">}]</text>
+        </g>
+
+        <!-- Pros & Cons -->
+        <rect y="210" width="191" height="60" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#9a3412">✓ 优点：多模态与工具统一为 parts</text>
+        <text x="8" y="30" font-size="7.5" fill="#c2410c">角色使用 user / model，命名特立独行</text>
+        <text x="8" y="44" font-size="7.5" fill="#ea580c">工具调用与回包为一级语法部件</text>
+      </g>
+    </g>
+
+    <!-- Format 4: OpenAI Realtime / WebSocket -->
+    <g transform="translate(684, 0)">
+      <rect width="215" height="385" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+      <rect width="215" height="34" rx="8" fill="#faf5ff"/>
+      <text x="107" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#7e22ce" text-anchor="middle">OpenAI Realtime (Bidi)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="191" height="38" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="8" y="15" font-size="8.5" font-weight="700" fill="#7e22ce">WSS /v1/realtime</text>
+        <text x="8" y="28" font-size="7.5" fill="#9333ea">GPT-4o Realtime Voice / Audio</text>
+
+        <!-- Schema Block -->
+        <rect y="46" width="191" height="155" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="16" fill="#c084fc">// 双向异步 JSON 事件帧</text>
+          <text x="8" y="28" fill="#38bdf8">Client ──► Server:</text>
+          <text x="14" y="40">{ type: "session.update", ... }</text>
+          <text x="14" y="52">{ type: "input_audio_buffer.append" }</text>
+          <text x="14" y="64" fill="#f87171">{ type: "conversation.item.truncate" }</text>
+          <text x="8" y="76" fill="#34d399">Server ──► Client:</text>
+          <text x="14" y="88">{ type: "response.audio.delta" }</text>
+          <text x="14" y="100">{ type: "response.function_call..." }</text>
+          <text x="14" y="112">{ type: "input_audio_buffer.speech_started" }</text>
+          <text x="14" y="124" fill="#fbbf24">{ type: "response.cancelled" }</text>
+        </g>
+
+        <!-- Pros & Cons -->
+        <rect y="210" width="191" height="60" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="8" y="16" font-size="8" font-weight="700" fill="#7e22ce">✓ 优点：全双工、端到端亚秒级语音</text>
+        <text x="8" y="30" font-size="7.5" fill="#9333ea">毫秒级精确打断 (Truncation)</text>
+        <text x="8" y="44" font-size="7.5" fill="#6b21a8">彻底摆脱 HTTP/SSE 请求响应枷锁</text>
+      </g>
+    </g>
+  </g>
+</svg>

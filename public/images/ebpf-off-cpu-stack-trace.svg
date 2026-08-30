@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">eBPF 深度捕获 Off-CPU 阻塞时延与系统级瓶颈溯源</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Hook 内核调度切态探针 `finish_task_switch` ──► 记录被切出时间与完整内核/用户调用栈 ──► 唤醒时精准计算阻塞时间</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Top Timeline: Context Switch Time Gap (860px wide) -->
+    <g transform="translate(40, 20)">
+      <text x="0" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a">进程生命周期状态流转与 eBPF 探针打点时序</text>
+
+      <g transform="translate(0, 28)">
+        <!-- Running On-CPU -->
+        <rect x="0" y="0" width="160" height="45" rx="4" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+        <text x="80" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">On-CPU 活跃执行</text>
+        <text x="80" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#059669" text-anchor="middle">跑满 CPU 计算</text>
+
+        <!-- Hook 1: Switch Out -->
+        <g transform="translate(160, 0)">
+          <line x1="0" y1="0" x2="0" y2="45" stroke="#ea580c" stroke-width="2" stroke-dasharray="3 2"/>
+          <circle cx="0" cy="22" r="5" fill="#ea580c"/>
+        </g>
+
+        <!-- Off-CPU Blocked Area -->
+        <rect x="165" y="0" width="450" height="45" rx="4" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+        <text x="390" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#c2410c" text-anchor="middle">⏱️ Off-CPU 阻塞等待区间 (Blocked Duration: 120ms)</text>
+        <text x="390" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#9a3412" text-anchor="middle">进程挂起！等待互斥锁 (futex) / 磁盘 I/O / 网络 Socket 读包</text>
+
+        <!-- Hook 2: Switch In -->
+        <g transform="translate(615, 0)">
+          <line x1="0" y1="0" x2="0" y2="45" stroke="#10b981" stroke-width="2" stroke-dasharray="3 2"/>
+          <circle cx="0" cy="22" r="5" fill="#10b981"/>
+        </g>
+
+        <!-- Running Resumed -->
+        <rect x="620" y="0" width="160" height="45" rx="4" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+        <text x="700" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">被唤醒重新调度</text>
+        <text x="700" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#059669" text-anchor="middle">计算 Δt 并累加直方图</text>
+      </g>
+    </g>
+
+    <!-- Bottom: 3 Root-Cause Categories (860px wide) -->
+    <g transform="translate(20, 115)">
+      <!-- Box 1: Lock Contention -->
+      <g>
+        <rect width="270" height="135" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="270" height="28" rx="6" fill="#f1f5f9"/>
+        <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155">1. 锁争用 (Lock Contention)</text>
+
+        <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569">
+          <text x="0" y="16">• pthread_mutex / futex 阻塞；</text>
+          <text x="0" y="32">• Go runtime.semacquire 争抢；</text>
+          <text x="0" y="48" font-weight="700" fill="#2563eb">排查：热点行锁分段、无锁环形队列</text>
+        </g>
+      </g>
+
+      <!-- Box 2: Disk I/O Wait -->
+      <g transform="translate(290, 0)">
+        <rect width="270" height="135" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="270" height="28" rx="6" fill="#f1f5f9"/>
+        <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155">2. 磁盘 I/O 阻塞 (D 状态)</text>
+
+        <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569">
+          <text x="0" y="16">• fsync / WAL 落盘等待机械磁头；</text>
+          <text x="0" y="32">• 页缓存脏页回刷（Dirty Pages）；</text>
+          <text x="0" y="48" font-weight="700" fill="#2563eb">排查：开启 Group Commit / 升级 NVMe</text>
+        </g>
+      </g>
+
+      <!-- Box 3: Network & GC Pauses -->
+      <g transform="translate(580, 0)">
+        <rect width="280" height="135" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="280" height="28" rx="6" fill="#f1f5f9"/>
+        <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155">3. 网络与运行时挂起</text>
+
+        <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569">
+          <text x="0" y="16">• 下游微服务 RPC 慢响应等待；</text>
+          <text x="0" y="32">• JVM Full GC / Go STW 挂起；</text>
+          <text x="0" y="48" font-weight="700" fill="#2563eb">排查：设置严格客户端超时与熔断</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">火焰图盲区终结者：</tspan> 传统 CPU 火焰图只能告诉你“CPU 在忙什么”，而 <tspan font-weight="700" fill="#ea580c">Off-CPU 分析才能告诉你“程序为什么卡着不走”</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        在后端 P99 延迟劣化排查中，90% 以上的隐蔽故障都是由 Off-CPU 阻塞造成的。
+      </text>
+    </g>
+  </g>
+</svg>

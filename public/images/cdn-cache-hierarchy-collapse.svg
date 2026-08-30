@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="100%" height="100%" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="cache-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="arr-blue-c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-orange-c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <marker id="arr-muted-c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <filter id="soft-shadow-c" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#cache-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">L7 HIERARCHICAL CACHE &amp; REQUEST COLLAPSING PIPELINE</text>
+  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">七层边缘分层缓存架构与 Singleflight 回源请求合并熔断拓扑</text>
+
+  <!-- ================= TOP: 4-STAGE HIERARCHICAL PIPELINE (x: 40 ~ 920, w: 880) ================= -->
+  
+  <!-- Tier 1: L1 DRAM RAM Cache [x: 40 ~ 230, w: 190] -->
+  <g transform="translate(40, 75)" filter="url(#soft-shadow-c)">
+    <rect width="190" height="150" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="0" y="0" width="190" height="5" rx="2" fill="#3b82f6"/>
+    <text x="14" y="24" fill="#1e40af" font-size="9" font-weight="700" class="mono">TIER 1 · L1 DRAM MEMORY</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">L1 内存热点缓存</text>
+    <line x1="14" y1="56" x2="176" y2="56" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="14" y="74" fill="#475569" font-size="10.5">访问时延：<tspan fill="#059669" font-weight="700">&lt; 100 ns</tspan></text>
+    <text x="14" y="94" fill="#475569" font-size="10.5">存储介质：<tspan font-weight="600">DRAM 堆外内存</tspan></text>
+    <rect x="14" y="104" width="162" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8"/>
+    <text x="95" y="121" fill="#1d4ed8" font-size="10" font-weight="700" text-anchor="middle">命中率 60% · 极速吞吐</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 [x: 230 -> 265] -->
+  <path d="M 230,150 H 263" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue-c)"/>
+  <rect x="233" y="132" width="28" height="16" rx="3" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+  <text x="247" y="143" fill="#2563eb" font-size="8.5" font-weight="700" text-anchor="middle">Miss</text>
+
+  <!-- Tier 2: L2 NVMe SSD Storage [x: 265 ~ 455, w: 190] -->
+  <g transform="translate(265, 75)" filter="url(#soft-shadow-c)">
+    <rect width="190" height="150" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="0" y="0" width="190" height="5" rx="2" fill="#2563eb"/>
+    <text x="14" y="24" fill="#1d4ed8" font-size="9" font-weight="700" class="mono">TIER 2 · L2 NVMe STORAGE</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">L2 本地高速磁盘</text>
+    <line x1="14" y1="56" x2="176" y2="56" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="14" y="74" fill="#475569" font-size="10.5">访问时延：<tspan fill="#059669" font-weight="700">&lt; 100 μs</tspan></text>
+    <text x="14" y="94" fill="#475569" font-size="10.5">存储介质：<tspan font-weight="600">NVMe SSD / DirectIO</tspan></text>
+    <rect x="14" y="104" width="162" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8"/>
+    <text x="95" y="121" fill="#1d4ed8" font-size="10" font-weight="700" text-anchor="middle">命中率 35% · TB级容量</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 [x: 455 -> 490] -->
+  <path d="M 455,150 H 488" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue-c)"/>
+  <rect x="458" y="132" width="28" height="16" rx="3" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/>
+  <text x="472" y="143" fill="#2563eb" font-size="8.5" font-weight="700" text-anchor="middle">Miss</text>
+
+  <!-- Tier 3: Regional Shield / Parent Cache [x: 490 ~ 680, w: 190] -->
+  <g transform="translate(490, 75)" filter="url(#soft-shadow-c)">
+    <rect width="190" height="150" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="0" y="0" width="190" height="5" rx="2" fill="#1e40af"/>
+    <text x="14" y="24" fill="#1e40af" font-size="9" font-weight="700" class="mono">TIER 3 · REGIONAL SHIELD</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">Regional Shield 区域中心</text>
+    <line x1="14" y1="56" x2="176" y2="56" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="14" y="74" fill="#475569" font-size="10.5">访问时延：<tspan fill="#059669" font-weight="700">&lt; 15 ms</tspan></text>
+    <text x="14" y="94" fill="#475569" font-size="10.5">核心职责：<tspan font-weight="600">跨 PoP 回源聚合收敛</tspan></text>
+    <rect x="14" y="104" width="162" height="26" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8"/>
+    <text x="95" y="121" fill="#1d4ed8" font-size="10" font-weight="700" text-anchor="middle">命中率 4% · 汇聚漏斗</text>
+  </g>
+
+  <!-- Arrow 3 -> 4 [x: 680 -> 715] -->
+  <path d="M 680,150 H 713" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#arr-orange-c)"/>
+  <rect x="683" y="132" width="28" height="16" rx="3" fill="#ffffff" stroke="#fed7aa" stroke-width="0.8"/>
+  <text x="697" y="143" fill="#ea580c" font-size="8.5" font-weight="700" text-anchor="middle">Miss</text>
+
+  <!-- Tier 4: Singleflight Origin Lock [x: 715 ~ 920, w: 205] -->
+  <g transform="translate(715, 75)" filter="url(#soft-shadow-c)">
+    <rect width="205" height="150" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <rect x="0" y="0" width="205" height="5" rx="2" fill="#ea580c"/>
+    <text x="14" y="24" fill="#c2410c" font-size="9" font-weight="700" class="mono">COLLAPSE · SINGLEFLIGHT</text>
+    <text x="14" y="44" fill="#0f172a" font-size="13" font-weight="700">Singleflight 回源互斥锁</text>
+    <line x1="14" y1="56" x2="191" y2="56" stroke="#fed7aa" stroke-width="1"/>
+    <text x="14" y="74" fill="#9a3412" font-size="10.5">回源控制：<tspan font-weight="700">仅放行 1 个 In-flight</tspan></text>
+    <text x="14" y="94" fill="#9a3412" font-size="10.5">等待机制：<tspan font-weight="600">9999 请求内存阻塞广播</tspan></text>
+    <rect x="14" y="104" width="177" height="26" rx="4" fill="#ffffff" stroke="#ea580c" stroke-width="1"/>
+    <text x="102" y="121" fill="#ea580c" font-size="10" font-weight="700" text-anchor="middle">源站回源量削减 99.99%</text>
+  </g>
+
+
+  <!-- ================= BOTTOM: COMPARISON PANEL (x: 40, y: 245, w: 880, h: 185) ================= -->
+  <g transform="translate(40, 245)">
+    <rect width="880" height="185" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+    <!-- Left Comparison: Unprotected Stampede (Failure) [x: 16 ~ 424, w: 408] -->
+    <g transform="translate(16, 14)">
+      <rect width="414" height="155" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+      <rect x="14" y="12" width="165" height="22" rx="4" fill="#64748b"/>
+      <text x="96" y="27" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">传统无保护：回源风暴雪崩</text>
+
+      <text x="14" y="58" fill="#0f172a" font-size="11.5" font-weight="700">1. 突发热点资源在缓存过期瞬间</text>
+      <text x="14" y="78" fill="#64748b" font-size="10.5">10,000 个用户并发请求同时判定 Cache Miss</text>
+
+      <line x1="14" y1="90" x2="400" y2="90" stroke="#e2e8f0" stroke-width="1"/>
+
+      <text x="14" y="110" fill="#dc2626" font-size="11" font-weight="700">2. 10,000 个 TCP 请求并发穿透直冲源站</text>
+      <text x="14" y="132" fill="#64748b" font-size="10.5">源站数据库连接池瞬间打满爆满，引发级联宕机 💥</text>
+    </g>
+
+    <!-- Right Comparison: Singleflight Coalescing (Production Standard) [x: 450 ~ 864, w: 414] -->
+    <g transform="translate(450, 14)">
+      <rect width="414" height="155" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+      <rect x="14" y="12" width="180" height="22" rx="4" fill="#ea580c"/>
+      <text x="104" y="27" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">生产解法：Singleflight 请求合并</text>
+
+      <text x="14" y="58" fill="#0f172a" font-size="11.5" font-weight="700">1. 首个请求抢占 Leader 回源通道</text>
+      <text x="14" y="78" fill="#9a3412" font-size="10.5">其余 9,999 个请求在内存 Channel 挂起等待结果</text>
+
+      <line x1="14" y1="90" x2="400" y2="90" stroke="#fed7aa" stroke-width="1"/>
+
+      <text x="14" y="110" fill="#059669" font-size="11" font-weight="700">2. 回源 1 份响应到达后，内存并发广播分发</text>
+      <text x="14" y="132" fill="#9a3412" font-size="10.5">源站仅承受 1 次回源请求，毫秒级填仓全部响应 ✓</text>
+    </g>
+  </g>
+</svg>

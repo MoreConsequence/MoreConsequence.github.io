@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">HTTP/3 QUIC 连接迁移与 UDP 零 RTT 漫游全景拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">64-bit Connection ID 解耦物理 4 元组 ──► 蜂窝网络切 Wi-Fi 零重连 ──► 后台 PATH_CHALLENGE 静默路径验证</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: Mobile Roaming Client (240px) -->
+    <g transform="translate(20, 20)">
+      <rect width="240" height="280" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="240" height="30" rx="6" fill="#dbeafe"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
+        📱 移动客户端 (Mobile Client)
+      </text>
+
+      <g transform="translate(12, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- CID Global Header -->
+        <rect width="216" height="46" rx="4" fill="#2563eb"/>
+        <text x="10" y="18" font-size="9.5" font-weight="700" fill="#ffffff">QUIC 64-bit Connection ID</text>
+        <text x="10" y="34" font-family="ui-monospace, monospace" font-size="8.5" fill="#dbeafe">CID: 0x8a3f7c9e102b4d66</text>
+
+        <!-- Network Path 1: 5G -->
+        <g transform="translate(0, 56)">
+          <rect width="216" height="50" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" font-size="9" font-weight="700" fill="#1e40af">链路 1: 5G 蜂窝网络</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#64748b">IP: 198.51.100.23 : 45021</text>
+          <text x="8" y="42" font-size="7.5" fill="#dc2626">(用户进门，信号减弱)</text>
+        </g>
+
+        <!-- Network Path 2: Wi-Fi -->
+        <g transform="translate(0, 114)">
+          <rect width="216" height="50" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+          <text x="8" y="16" font-size="9" font-weight="700" fill="#166534">链路 2: 家庭 Wi-Fi</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#15803d">IP: 192.168.1.108 : 58210</text>
+          <text x="8" y="42" font-size="7.5" font-weight="700" fill="#166534">✓ 瞬间切入新网卡并发送 UDP</text>
+        </g>
+
+        <!-- Client Benefit -->
+        <text x="0" y="182" font-size="8.5" fill="#1e40af">
+          • 传输层身份绑定 CID，不绑定 IP
+        </text>
+        <text x="0" y="196" font-size="8.5" fill="#1e40af">
+          • 应用层视频流 0 毫秒卡顿！
+        </text>
+      </g>
+    </g>
+
+    <!-- Center: Internet Wire & Migration Stream (340px) -->
+    <g transform="translate(280, 20)">
+      <!-- 5G Path Line (Old) -->
+      <g transform="translate(0, 75)">
+        <line x1="0" y1="0" x2="310" y2="0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 3"/>
+        <rect x="90" y="-12" width="130" height="24" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="155" y="4" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8" fill="#64748b" text-anchor="middle">旧链路 5G (逐步废弃)</text>
+      </g>
+
+      <!-- Wi-Fi Migration Path (Active) -->
+      <g transform="translate(0, 155)">
+        <line x1="0" y1="0" x2="305" y2="0" stroke="#10b981" stroke-width="3" marker-end="url(#arrow-emerald)"/>
+        <rect x="60" y="-14" width="190" height="28" rx="4" fill="#10b981"/>
+        <text x="155" y="3" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">0-RTT 数据漫游包 (携带相同 CID)</text>
+      </g>
+
+      <!-- Challenge / Response Verification -->
+      <g transform="translate(0, 215)">
+        <line x1="305" y1="0" x2="5" y2="0" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+        <rect x="50" y="-12" width="210" height="24" rx="3" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="155" y="4" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8" fill="#c2410c" text-anchor="middle">PATH_CHALLENGE 静默安全探测 ──►</text>
+      </g>
+    </g>
+
+    <!-- Right: HTTP/3 Edge / Origin Server (260px) -->
+    <g transform="translate(640, 20)">
+      <rect width="240" height="280" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="240" height="30" rx="6" fill="#dcfce7"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">
+        ⚡ QUIC 服务端 / 网关
+      </text>
+
+      <g transform="translate(12, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- CID Router Mapping Table -->
+        <rect width="216" height="60" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="8" y="16" font-size="9" font-weight="700" fill="#14532d">服务端 CID 路由映射表：</text>
+        <text x="8" y="32" font-family="ui-monospace, monospace" font-size="7.5" fill="#64748b">0x8a3f.. ──► 198.51.. (旧)</text>
+        <text x="8" y="46" font-family="ui-monospace, monospace" font-size="7.5" font-weight="700" fill="#15803d">0x8a3f.. ──► 192.168.. (新绑定!)</text>
+
+        <!-- Security Guard -->
+        <g transform="translate(0, 68)">
+          <rect width="216" height="50" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+          <text x="8" y="16" font-size="9" font-weight="700" fill="#9a3412">防 IP 欺骗放大攻击：</text>
+          <text x="8" y="30" font-size="7.5" fill="#c2410c">• 收到新 IP 报文立即发送 Challenge</text>
+          <text x="8" y="42" font-size="7.5" fill="#c2410c">• 校验通过前限制回包不超 3 倍</text>
+        </g>
+
+        <!-- Migration Complete -->
+        <g transform="translate(0, 126)">
+          <rect width="216" height="38" rx="4" fill="#dcfce7" stroke="#34d399"/>
+          <text x="8" y="16" font-size="9" font-weight="700" fill="#065f46">✓ 迁移完成 (Migration Done)</text>
+          <text x="8" y="28" font-size="7.5" fill="#047857">正式将下行流量切至新 IP</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 310)">
+      <rect width="860" height="58" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">
+        💡 传统 TCP vs QUIC 漫游对比：
+      </text>
+      <text x="430" y="44" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#475569" text-anchor="middle">
+        传统 TCP 换网络由于 4 元组失效必须 <tspan font-weight="700" fill="#dc2626">RST 强制重连经历 3-RTT 握手</tspan>；
+        QUIC 通过 <tspan font-weight="700" fill="#2563eb">“CID 解耦 4 元组 + 零 RTT 漫游”</tspan> 彻底消灭了移动互联网的断流卡顿。
+      </text>
+    </g>
+  </g>
+</svg>

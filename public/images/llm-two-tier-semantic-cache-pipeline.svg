@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产级大模型双层缓存架构：L1 精确哈希 + L2 向量语义 + 交叉校验管道</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">L1 精准 Hash 极速过滤 ──► L2 向量近似检索（HNSW） ──► 实体一致性交叉校验 ──► 透传 LLM 保护</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 4 Pipeline Blocks (200px each, gap 15px) -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: L1 Exact Hash -->
+      <g>
+        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">1. L1 精确 Hash 缓存</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1d4ed8" font-weight="700">Redis String Hash</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb">Key: SHA256(Prompt)</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">性能指标：</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• 耗时 &lt; 1ms</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• 100% 准确无幻觉</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#eff6ff"/>
+          <text x="8" y="16" fill="#64748b">命中直接返回；</text>
+          <text x="8" y="28" fill="#64748b">未命中进入 L2 ──►</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: L2 Vector Search -->
+      <g transform="translate(210, 0)">
+        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. L2 向量语义检索</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">Embedding 生成</text>
+          <text x="8" y="30" font-size="9" fill="#15803d">调用轻量 text-embed 向量</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#166534" font-weight="700">Milvus / Qdrant</text>
+          <text x="8" y="30" font-size="9" fill="#15803d">• HNSW 极速 Top-1 检索</text>
+          <text x="8" y="42" font-size="9" fill="#15803d">• 耗时 $\approx 8\text{ms}$</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#f0fdf4"/>
+          <text x="8" y="16" fill="#64748b">计算 Cosine Score；</text>
+          <text x="8" y="28" fill="#64748b">Score &gt; 0.90 进校验 ──►</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: Cross Verification -->
+      <g transform="translate(420, 0)">
+        <rect width="195" height="235" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#ffedd5"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#c2410c" text-anchor="middle">3. 实体交叉校验</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="8" y="16" fill="#9a3412" font-weight="700">实体提取 (NER)</text>
+          <text x="8" y="30" font-size="9" fill="#c2410c">校验函数名/变量/数字是否一致</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="8" y="16" fill="#c2410c" font-weight="700">否定词/方向校验</text>
+          <text x="8" y="30" font-size="9" fill="#9a3412">• 严防 "读" 匹配为 "写"</text>
+          <text x="8" y="42" font-size="9" fill="#9a3412">• 严防 "开" 匹配为 "关"</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#fff7ed"/>
+          <text x="8" y="16" fill="#64748b">校验通过 ──► 命中返回</text>
+          <text x="8" y="28" fill="#64748b">校验失败 ──► 透传 LLM</text>
+        </g>
+      </g>
+
+      <!-- Stage 4: LLM Fallback & Write Back -->
+      <g transform="translate(630, 0)">
+        <rect width="230" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <rect width="230" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="115" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">4. 透传推理与异步回填</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="210" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="16" fill="#0f172a" font-weight="700">透传 GPU 推理集群</text>
+          <text x="8" y="30" font-size="9" fill="#475569">vLLM 重新计算输出</text>
+
+          <rect y="48" width="210" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">异步回填双层缓存</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• 异步写入 Redis L1 Hash</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• 异步写入 Milvus L2 向量库</text>
+
+          <rect y="106" width="210" height="42" rx="3" fill="#f0fdf4"/>
+          <text x="8" y="16" font-weight="700" fill="#047857">收益：平均节省 40% Token 成本！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">生产工程精髓：</tspan> 双层缓存架构在保持 <tspan font-weight="700" fill="#047857">“0 误判假阳性率”</tspan> 的同时，
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#2563eb" text-anchor="middle">
+        将重复 Prompt 的响应时间从 10 秒级直接压缩至 10 毫秒以内，极大地削峰填谷保护了底层昂贵的 GPU 资源。
+      </text>
+    </g>
+  </g>
+</svg>

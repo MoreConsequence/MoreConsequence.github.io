@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL InnoDB MVCC ReadView 快照与 Undo 版本链回溯机理</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">三段式事务坐标轴 ──► roll_ptr 沿物理时间倒流回溯 ──► 活跃事务判定与自写可见性规则</text>
+  </g>
+
+  <!-- Section 1: Transaction Coordinate Number Line (900px) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="120" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="20" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">【ReadView 连续坐标轴】基于事务 ID 的三区间可见性划分</text>
+
+    <!-- Number Line Bar -->
+    <g transform="translate(30, 42)">
+      <!-- Zone 1: min_trx_id before (Green) -->
+      <rect x="0" y="10" width="260" height="36" rx="4" fill="#dcfce7" stroke="#86efac"/>
+      <text x="130" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#166534" text-anchor="middle">trx_id &lt; min_trx_id (102)</text>
+      <text x="130" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#14532d" text-anchor="middle">快照生成前已提交 ──► 100% 可见！</text>
+
+      <!-- Boundary 1: min_trx_id (102) -->
+      <circle cx="260" cy="28" r="8" fill="#2563eb"/>
+      <text x="260" y="32" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">102</text>
+      <text x="260" y="58" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#1e40af" text-anchor="middle">min_trx_id</text>
+
+      <!-- Zone 2: m_ids active window (Amber) -->
+      <rect x="260" y="10" width="320" height="36" rx="4" fill="#fef3c7" stroke="#fcd34d"/>
+      <text x="420" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">102 ≤ trx_id &lt; 108 活跃窗口</text>
+      <text x="420" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#78350f" text-anchor="middle">在 m_ids 中且非自己 ──► 不可见；是自己 (creator) ──► 可见</text>
+
+      <!-- Boundary 2: max_trx_id (108) -->
+      <circle cx="580" cy="28" r="8" fill="#ea580c"/>
+      <text x="580" y="32" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">108</text>
+      <text x="580" y="58" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#c2410c" text-anchor="middle">max_trx_id</text>
+
+      <!-- Zone 3: max_trx_id after (Red) -->
+      <rect x="580" y="10" width="260" height="36" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+      <text x="710" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#991b1b" text-anchor="middle">trx_id ≥ max_trx_id (108)</text>
+      <text x="710" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#7f1d1d" text-anchor="middle">快照生成后未来的事务 ──► 100% 不可见！</text>
+    </g>
+  </g>
+
+  <!-- Section 2: Undo Log Traversing Machine (900px) -->
+  <g transform="translate(30, 205)" filter="url(#card-shadow)">
+    <rect width="900" height="255" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="900" height="32" rx="8" fill="#f8fafc"/>
+    <text x="20" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">【实战回溯流程】当前事务 T105 沿 roll_ptr 回溯寻找可见历史版本</text>
+
+    <!-- Version Cards Linked Chain -->
+    <g transform="translate(30, 48)">
+      <!-- Version 3 (Disk Record) -->
+      <g>
+        <rect width="240" height="150" rx="6" fill="#fef2f2" stroke="#f87171" stroke-width="1.5"/>
+        <rect width="240" height="28" rx="6" fill="#fee2e2"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#991b1b">最新磁盘记录 (Page)</text>
+
+        <g transform="translate(10, 36)" font-family="ui-monospace, monospace" font-size="9.5">
+          <text x="0" y="14" fill="#0f172a">id = 1 | balance = 300</text>
+          <text x="0" y="28" fill="#dc2626" font-weight="700">DB_TRX_ID = 107</text>
+          <text x="0" y="42" fill="#64748b">DB_ROLL_PTR ──► Undo 2</text>
+        </g>
+
+        <!-- Verdict Badge -->
+        <rect x="10" y="90" width="220" height="48" rx="4" fill="#ffffff" stroke="#fca5a5"/>
+        <text x="18" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#991b1b">裁决：107 属于 m_ids (活跃未提交)</text>
+        <text x="18" y="120" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" fill="#7f1d1d">❌ 不可见！沿 roll_ptr 向历史回溯...</text>
+      </g>
+
+      <!-- Connecting Pointer 1 -->
+      <path d="M 240 120 L 290 120" stroke="#ea580c" stroke-width="2.5" marker-end="url(#arrow-orange)"/>
+      <text x="265" y="112" font-family="ui-monospace, monospace" font-size="8.5" fill="#ea580c" text-anchor="middle">roll_ptr</text>
+
+      <!-- Version 2 (Undo Record 2) -->
+      <g transform="translate(300, 0)">
+        <rect width="250" height="150" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="250" height="28" rx="6" fill="#dcfce7"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#166534">Undo 历史版本 2</text>
+
+        <g transform="translate(10, 36)" font-family="ui-monospace, monospace" font-size="9.5">
+          <text x="0" y="14" fill="#0f172a">id = 1 | balance = 200</text>
+          <text x="0" y="28" fill="#166534" font-weight="700">DB_TRX_ID = 105 (当前事务)</text>
+          <text x="0" y="42" fill="#64748b">DB_ROLL_PTR ──► Undo 1</text>
+        </g>
+
+        <!-- Verdict Badge -->
+        <rect x="10" y="90" width="230" height="48" rx="4" fill="#ffffff" stroke="#86efac"/>
+        <text x="18" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#166534">裁决：105 == creator_trx_id！</text>
+        <text x="18" y="120" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" font-weight="700" fill="#047857">✓ 命中所查版本，返回 balance=200！</text>
+      </g>
+
+      <!-- Connecting Pointer 2 -->
+      <path d="M 550 120 L 600 120" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 3"/>
+
+      <!-- Version 1 (Undo Record 1) -->
+      <g transform="translate(610, 0)">
+        <rect width="240" height="150" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+        <rect width="240" height="28" rx="6" fill="#f1f5f9"/>
+        <text x="12" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#475569">Undo 历史版本 1 (更早)</text>
+
+        <g transform="translate(10, 36)" font-family="ui-monospace, monospace" font-size="9.5">
+          <text x="0" y="14" fill="#0f172a">id = 1 | balance = 100</text>
+          <text x="0" y="28" fill="#475569">DB_TRX_ID = 101 (&lt; min_trx_id)</text>
+          <text x="0" y="42" fill="#64748b">DB_ROLL_PTR = null</text>
+        </g>
+
+        <!-- Verdict Badge -->
+        <rect x="10" y="90" width="220" height="48" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="18" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#64748b">已找到可见版本，无需继续回溯</text>
+        <text x="18" y="120" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" fill="#94a3b8">(该早期旧版本待 Purge 线程回收)</text>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 210)">
+      <text x="430" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">快照读无锁精髓：</tspan> 写事务修改数据无需加读锁，读事务通过 <tspan font-weight="700" fill="#2563eb">“ReadView + roll_ptr 倒流回溯”</tspan> 自主找到属于自己时代的合法快照版本。
+      </text>
+    </g>
+  </g>
+</svg>

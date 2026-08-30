@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型推理显存墙：自回归两阶段与 KV Cache 物理内存开销</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Prefill（首字计算密集型）vs Decode（逐字显存带宽受限型）与静态显存碎片暴涨物理根因</text>
+  </g>
+
+  <!-- Main Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left Box: 2-Phase Inference (420px) -->
+    <g transform="translate(20, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect width="420" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">一、 自回归推理的两阶段物理特征</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Phase 1: Prefill -->
+        <rect width="388" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="12" y="18" fill="#1e40af" font-weight="700">阶段 1：预填充（Prefill / Prompt Phase）── 计算受限 (Compute-Bound)</text>
+        <text x="12" y="32" font-size="9.5" fill="#2563eb">• 一次性并行输入 $N$ 个 Prompt Tokens，跑满 GPU Tensor Core 矩阵乘算力</text>
+        <text x="12" y="44" font-size="9.5" fill="#2563eb">• 生成全量历史的 Key-Value 向量并写入 GPU HBM 显存</text>
+
+        <!-- Phase 2: Decode -->
+        <rect y="60" width="388" height="62" rx="4" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="12" y="18" fill="#c2410c" font-weight="700">阶段 2：自回归解码（Decode Phase）── 显存带宽受限 (Memory-Bound)</text>
+        <text x="12" y="32" font-size="9.5" fill="#9a3412">• 每轮仅输入 1 个 Token，但必须将整整几十 GB 的全量模型权重与历史 KV Cache</text>
+        <text x="12" y="44" font-size="9.5" fill="#9a3412">  从 HBM 重新搬运至 SRAM 寄存器！算力利用率（MFU）暴跌至 &lt; 5%！</text>
+        <text x="12" y="56" font-size="9.5" font-weight="700" fill="#ea580c">👉 瓶颈所在：显存读写带宽（GB/s）决定了 Token 生成极速！</text>
+      </g>
+    </g>
+
+    <!-- Right Box: KV Cache Memory Formula (420px) -->
+    <g transform="translate(460, 20)">
+      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect width="420" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">二、 KV Cache 显存爆炸容量精确推导</text>
+
+      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
+        <!-- Formula Box -->
+        <rect width="388" height="46" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="12" y="18" font-weight="700" fill="#0f172a">📐 单 Token 显存公式：</text>
+        <text x="12" y="34" font-family="ui-monospace, monospace" font-size="10.5" fill="#1e40af">Memory = 2 × 2(FP16) × n_layers × n_heads × d_head (Bytes)</text>
+
+        <!-- Real Example (LLaMA-3 70B) -->
+        <g transform="translate(0, 54)">
+          <rect width="388" height="85" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="12" y="18" font-weight="700" fill="#991b1b">实测案例：LLaMA-3 70B (80层, GQA 8组Key-Value)</text>
+          <text x="12" y="34" font-size="9.5" fill="#7f1d1d">• 单 Token 的 KV Cache 显存消耗 $\approx 320\text{ KB}$</text>
+          <text x="12" y="48" font-size="9.5" fill="#7f1d1d">• 单并发 8K 上下文消耗 $\approx 2.56\text{ GB}$</text>
+          <text x="12" y="62" font-size="9.5" font-weight="700" fill="#b91c1c">💥 32 并发 8K 窗口：仅 KV Cache 就要吃掉 82 GB 显存！（远超权重本身）</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">大模型后端的物理矛盾：</tspan> 模型权重是固定不动的，而 <tspan font-weight="700" fill="#ea580c">KV Cache 随着并发数与生成长度呈平方级爆炸膨胀</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#2563eb" text-anchor="middle">
+        显存容量与 HBM 带宽壁垒（Memory Wall）才是制约大模型高吞吐生产落地的终极紧箍咒。
+      </text>
+    </g>
+  </g>
+</svg>

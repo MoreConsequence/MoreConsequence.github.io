@@ -56,6 +56,8 @@ sequenceDiagram
 
 ## 三、迁移账：Connection ID 让连接不认识网络
 
+![HTTP/3 QUIC 连接迁移与 UDP 零 RTT 漫游全景架构](../../../public/images/quic-http3-connection-migration.svg)
+
 TCP 的连接身份是**四元组**（srcIP:port, dstIP:port）——换 Wi-Fi，IP 变了，连接立刻断裂，应用必须重连重握。QUIC 的连接身份是 **Connection ID**（客户端随机生成，写在每个包里），四元组只是"当前投递地址"：
 
 ```

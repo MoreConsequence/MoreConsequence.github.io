@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="100%" height="100%" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+    <pattern id="routing-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.8" fill="#cbd5e1"/>
+    </pattern>
+    <marker id="arr-blue-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-orange-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <marker id="arr-red-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="soft-shadow-r" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" stroke="#e2e8f0" stroke-width="1"/>
+  <rect width="100%" height="100%" fill="url(#routing-grid)"/>
+
+  <!-- Eyebrow & Title -->
+  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">DYNAMIC CONTENT ACCELERATION · SMART OVERLAY ROUTING</text>
+  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">公网 BGP 单线拥塞 vs CDN 多跳智能探测覆盖网（Smart Routing）对比</text>
+
+  <!-- ================= TOP: CONVENTIONAL PUBLIC INTERNET (FAILURE PATH) [y: 75, h: 120] ================= -->
+  <g transform="translate(40, 75)">
+    <rect width="880" height="120" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+    <rect x="16" y="12" width="220" height="22" rx="4" fill="#64748b"/>
+    <text x="126" y="27" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">模式 A：公网原生 BGP 僵化选路</text>
+
+    <!-- Client Node [x: 16 ~ 176, w: 160] -->
+    <g transform="translate(16, 45)">
+      <rect width="160" height="60" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="14" y="24" fill="#0f172a" font-size="11" font-weight="700">🇨🇳 北京客户端</text>
+      <text x="14" y="44" fill="#64748b" font-size="9.5" class="mono">AS4837 (中国联通)</text>
+    </g>
+
+    <!-- Arrow 1 -> Congestion [x: 176 -> 340] -->
+    <path d="M 176,75 H 337" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr-red-r)"/>
+    <rect x="200" y="58" width="95" height="16" rx="3" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="247" y="69" fill="#dc2626" font-size="8.5" font-weight="700" text-anchor="middle">公网跨洋骨干</text>
+
+    <!-- Congestion Hotspot Node [x: 340 ~ 530, w: 190] -->
+    <g transform="translate(340, 45)">
+      <rect width="190" height="60" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+      <text x="14" y="24" fill="#991b1b" font-size="11" font-weight="700">⚠️ 公网拥塞中继路由器</text>
+      <text x="14" y="44" fill="#dc2626" font-size="9.5">BGP 僵化无法绕道 · 丢包 8%</text>
+    </g>
+
+    <!-- Arrow Congestion -> Origin [x: 530 -> 700] -->
+    <path d="M 530,75 H 697" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr-red-r)"/>
+    <rect x="560" y="58" width="95" height="16" rx="3" fill="#ffffff" stroke="#fca5a5" stroke-width="0.8"/>
+    <text x="607" y="69" fill="#dc2626" font-size="8.5" font-weight="700" text-anchor="middle">重传排队 280ms</text>
+
+    <!-- Origin Node [x: 700 ~ 864, w: 164] -->
+    <g transform="translate(700, 45)">
+      <rect width="164" height="60" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="14" y="24" fill="#0f172a" font-size="11" font-weight="700">🏢 弗吉尼亚源站</text>
+      <text x="14" y="44" fill="#64748b" font-size="9.5" class="mono">AWS us-east-1</text>
+    </g>
+  </g>
+
+
+  <!-- ================= MIDDLE: CDN SMART OVERLAY ROUTING (OPTIMAL PATH) [y: 210, h: 125] ================= -->
+  <g transform="translate(40, 210)">
+    <rect width="880" height="125" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+    <rect x="16" y="12" width="240" height="22" rx="4" fill="#ea580c"/>
+    <text x="136" y="27" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">模式 B：CDN 智能多跳覆盖网加速</text>
+
+    <!-- Client -> Edge Ingress [x: 16 ~ 176] -->
+    <g transform="translate(16, 45)" filter="url(#soft-shadow-r)">
+      <rect width="160" height="65" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
+      <text x="12" y="24" fill="#1e40af" font-size="11" font-weight="700">🇨🇳 北京 PEK 边缘</text>
+      <text x="12" y="42" fill="#059669" font-size="9.5">Local Leg: 4ms 极速建连</text>
+      <text x="12" y="56" fill="#64748b" font-size="9" class="mono">四层终结 + 协议卸载</text>
+    </g>
+
+    <!-- Relay Arrow 1 [x: 176 -> 255] -->
+    <path d="M 176,78 H 252" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#arr-orange-r)"/>
+    <text x="214" y="70" fill="#c2410c" font-size="8.5" font-weight="700" text-anchor="middle">专网专线</text>
+
+    <!-- Relay PoP 1: Tokyo NRT [x: 255 ~ 445, w: 190] -->
+    <g transform="translate(255, 45)" filter="url(#soft-shadow-r)">
+      <rect width="190" height="65" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.2"/>
+      <text x="12" y="24" fill="#9a3412" font-size="11" font-weight="700">⚡ 东京 NRT 智能中继</text>
+      <text x="12" y="42" fill="#059669" font-size="9.5">实时探针锁定: 丢包 0%</text>
+      <text x="12" y="56" fill="#64748b" font-size="9" class="mono">跨洋海缆直连专线</text>
+    </g>
+
+    <!-- Relay Arrow 2 [x: 445 -> 525] -->
+    <path d="M 445,78 H 522" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#arr-orange-r)"/>
+    <text x="484" y="70" fill="#c2410c" font-size="8.5" font-weight="700" text-anchor="middle">FASTER海缆</text>
+
+    <!-- Relay PoP 2: Silicon Valley SJC [x: 525 ~ 705, w: 180] -->
+    <g transform="translate(525, 45)" filter="url(#soft-shadow-r)">
+      <rect width="180" height="65" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.2"/>
+      <text x="12" y="24" fill="#9a3412" font-size="11" font-weight="700">⚡ 硅谷 SJC 骨干枢纽</text>
+      <text x="12" y="42" fill="#059669" font-size="9.5">BBR 拥塞控制满速灌流</text>
+      <text x="12" y="56" fill="#64748b" font-size="9" class="mono">陆地 100G 骨干直通</text>
+    </g>
+
+    <!-- Final Arrow [x: 705 -> 780] -->
+    <path d="M 705,78 H 777" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#arr-orange-r)"/>
+    <text x="741" y="70" fill="#c2410c" font-size="8.5" font-weight="700" text-anchor="middle">常驻长连接</text>
+
+    <!-- Origin Destination [x: 780 ~ 864, w: 84] -->
+    <g transform="translate(780, 45)" filter="url(#soft-shadow-r)">
+      <rect width="84" height="65" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.2"/>
+      <text x="10" y="24" fill="#701a75" font-size="11" font-weight="700">🏢 源站</text>
+      <text x="10" y="42" fill="#059669" font-size="9.5">0ms 建连</text>
+      <text x="10" y="56" fill="#c2410c" font-size="9" font-weight="700">总时延155ms</text>
+    </g>
+  </g>
+
+
+  <!-- ================= BOTTOM: THREE MECHANISM BADGES [y: 350, h: 95] ================= -->
+  <g transform="translate(40, 350)">
+    <!-- Badge 1 -->
+    <g transform="translate(0, 0)">
+      <rect width="280" height="95" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="14" y="24" fill="#1e40af" font-size="11" font-weight="700">1. 全球实时探针网格 (Probes)</text>
+      <text x="14" y="46" fill="#475569" font-size="10">每秒在 300+ PoP 间发送合成探针；</text>
+      <text x="14" y="66" fill="#475569" font-size="10">实时捕获各段光纤的丢包、抖动与 RTT。</text>
+    </g>
+
+    <!-- Badge 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="280" height="95" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="14" y="24" fill="#059669" font-size="11" font-weight="700">2. 动态 Dijkstra 路径图计算</text>
+      <text x="14" y="46" fill="#475569" font-size="10">以时延与丢包率构建综合权重函数；</text>
+      <text x="14" y="66" fill="#475569" font-size="10">毫秒级自动绕行公网单点拥塞黑洞。</text>
+    </g>
+
+    <!-- Badge 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="280" height="95" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.2"/>
+      <text x="14" y="24" fill="#c2410c" font-size="11" font-weight="700">3. 骨干长连接池与 BBR 算法</text>
+      <text x="14" y="46" fill="#9a3412" font-size="10">多路复用长连接常驻，消除跨洋握手；</text>
+      <text x="14" y="66" fill="#9a3412" font-size="10">BBR 拥塞控制在长距专网压榨 95% 带宽。</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">工具调用（Tool Calling）交互状态机与流式反序列化时序对比</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">OpenAI 字符串化 JSON 增量分块拼装 vs Anthropic 显式多态内容块生命周期状态机</text>
+  </g>
+
+  <!-- Main Comparison Panes (435px each) -->
+  <g transform="translate(30, 70)">
+    <!-- Left Pane: OpenAI Stringified JSON Streaming -->
+    <g filter="url(#card-shadow)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">OpenAI 模式：字符串切片累加器</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- Step 1: Chunk 1 -->
+        <rect width="405" height="54" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="16" font-size="8.5" font-weight="700" fill="#1e40af">SSE Chunk 1: tool_calls[0].function</text>
+        <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#2563eb">name: "get_weather", arguments: "{\""</text>
+        <text x="10" y="44" font-size="7.5" fill="#64748b">客户端动作：创建 map[0] = "{\""，无法反序列化</text>
+
+        <!-- Step 2: Chunk 2 -->
+        <g transform="translate(0, 60)">
+          <rect width="405" height="54" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#1e40af">SSE Chunk 2: tool_calls[0].function</text>
+          <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#2563eb">arguments: "city\":\"Beijing\"}"</text>
+          <text x="10" y="44" font-size="7.5" fill="#64748b">客户端动作：累加 map[0] += "city\":\"Beijing\"}"</text>
+        </g>
+
+        <!-- Step 3: Finish Reason -->
+        <g transform="translate(0, 120)">
+          <rect width="405" height="54" rx="4" fill="#fef3c7" stroke="#fcd34d"/>
+          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#92400e">SSE Chunk 3: finish_reason = "tool_calls"</text>
+          <text x="10" y="30" font-size="8" fill="#78350f">必须等到整条流结束，客户端才能执行一次性反序列化：</text>
+          <text x="10" y="44" font-family="ui-monospace, monospace" font-size="8" font-weight="700" fill="#b45309">const args = JSON.parse(map[0]); // 触发函数调用</text>
+        </g>
+
+        <!-- Cons Box -->
+        <g transform="translate(0, 182)">
+          <rect width="405" height="74" rx="4" fill="#fee2e2" stroke="#f87171"/>
+          <text x="10" y="16" font-size="9" font-weight="700" fill="#991b1b">❌ 核心工程痛点：</text>
+          <text x="10" y="30" font-size="7.5" fill="#7f1d1d">• 中间态 JSON 残缺，无法做流式渐进式 UI 渲染；</text>
+          <text x="10" y="44" font-size="7.5" fill="#7f1d1d">• 并行调用（Parallel Tools）时多个 index 交叉容易错乱；</text>
+          <text x="10" y="58" font-size="7.5" fill="#dc2626">• 字符串转义开销大，JSON 嵌套深度受限。</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right Pane: Anthropic Polymorphic Blocks Streaming -->
+    <g transform="translate(465, 0)" filter="url(#card-shadow)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">Anthropic 模式：多态内容块生命周期</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- Event 1: Start -->
+        <rect width="405" height="54" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="16" font-size="8.5" font-weight="700" fill="#166534">event: content_block_start (index: 1)</text>
+        <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#15803d">{ type: "tool_use", id: "toolu_01", name: "get_weather" }</text>
+        <text x="10" y="44" font-size="7.5" fill="#047857">✓ 显式状态机：立刻在前端渲染 Tool 卡片骨架！</text>
+
+        <!-- Event 2: Delta -->
+        <g transform="translate(0, 60)">
+          <rect width="405" height="54" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#166534">event: content_block_delta (index: 1)</text>
+          <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#15803d">delta: { type: "input_json_delta", partial_json: "..." }</text>
+          <text x="10" y="44" font-size="7.5" fill="#047857">✓ 渐进式填充参数，明确指示这是 JSON 局部增量</text>
+        </g>
+
+        <!-- Event 3: Stop -->
+        <g transform="translate(0, 120)">
+          <rect width="405" height="54" rx="4" fill="#d1fae5" stroke="#10b981"/>
+          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#065f46">event: content_block_stop (index: 1)</text>
+          <text x="10" y="30" font-size="8" fill="#047857">✓ 状态机闭环：当前 Block 已经完全闭合！</text>
+          <text x="10" y="44" font-size="7.5" fill="#065f46">无需等整个响应结束，立即并发触发该工具执行！</text>
+        </g>
+
+        <!-- Pros Box -->
+        <g transform="translate(0, 182)">
+          <rect width="405" height="74" rx="4" fill="#ecfdf5" stroke="#34d399"/>
+          <text x="10" y="16" font-size="9" font-weight="700" fill="#065f46">✓ 工业级优势：</text>
+          <text x="10" y="30" font-size="7.5" fill="#047857">• 文本块、工具块、思考块（Thinking）类型完全解耦；</text>
+          <text x="10" y="44" font-size="7.5" fill="#047857">• 块级生命周期（Start/Stop）支持多工具更早并发执行；</text>
+          <text x="10" y="58" font-size="7.5" fill="#15803d">• 终结了字符串手动拼装与解析歧义。</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

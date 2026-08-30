@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">网卡硬件多队列与 RSS / RPS / RFS 多核负载均衡架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Toeplitz 4元组哈希 ──► 硬件 RX 多队列 ──► MSI-X 独立中断绑核（SMP Affinity） ──► 多核并行 SoftIRQ 消除单核热点</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- 4 Pipeline Columns -->
+    <g transform="translate(20, 20)">
+      <!-- Stage 1: Packet Stream & Toeplitz Hash (200px) -->
+      <g>
+        <rect width="190" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+        <rect width="190" height="32" rx="6" fill="#f1f5f9"/>
+        <text x="95" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">1. 4元组哈希 (Toeplitz)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="170" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
+          <text x="8" y="16" fill="#0f172a" font-weight="700">提取网络流特征</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">源IP/端口 + 目的IP/端口</text>
+
+          <rect y="48" width="170" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">硬件 RSS 散列算法</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• 同一 TCP 流 Hash 恒定</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• 保证单流数据包严格保序</text>
+
+          <rect y="106" width="170" height="42" rx="3" fill="#f8fafc"/>
+          <text x="8" y="16" fill="#64748b">查 Indirection Table ──►</text>
+          <text x="8" y="28" font-size="9" fill="#64748b">映射至对应物理队列</text>
+        </g>
+      </g>
+
+      <!-- Stage 2: Hardware RX Queues (200px) -->
+      <g transform="translate(210, 0)">
+        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. 硬件独立 RX 队列池</text>
+
+        <g transform="translate(10, 44)" font-family="ui-monospace, monospace" font-size="9.5">
+          <rect width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="20" fill="#14532d">RX Queue 0 (IRQ 125)</text>
+
+          <rect y="38" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="20" fill="#14532d">RX Queue 1 (IRQ 126)</text>
+
+          <rect y="76" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="20" fill="#14532d">RX Queue 2 (IRQ 127)</text>
+
+          <rect y="114" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="20" fill="#14532d">RX Queue 3 (IRQ 128)</text>
+        </g>
+      </g>
+
+      <!-- Stage 3: IRQ Affinity Mapping (200px) -->
+      <g transform="translate(425, 0)">
+        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
+        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">3. CPU 亲和性绑定 (SMP)</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
+          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1d4ed8" font-weight="700">smp_affinity 配置</text>
+          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb">echo 1 > /proc/irq/125/smp</text>
+
+          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">独占核心中断响应</text>
+          <text x="8" y="30" font-size="9" fill="#2563eb">• IRQ 125 ──► CPU 0</text>
+          <text x="8" y="42" font-size="9" fill="#2563eb">• IRQ 126 ──► CPU 1</text>
+
+          <rect y="106" width="175" height="42" rx="3" fill="#eff6ff"/>
+          <text x="8" y="16" fill="#1e40af" font-weight="700">消灭跨核上下文切换</text>
+          <text x="8" y="28" font-size="9" fill="#2563eb">L1/L2 Cache 命中率提升 40%</text>
+        </g>
+      </g>
+
+      <!-- Stage 4: Multi-Core SoftIRQ (230px) -->
+      <g transform="translate(640, 0)">
+        <rect width="220" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="220" height="32" rx="6" fill="#dcfce7"/>
+        <text x="110" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. 多核并行 SoftIRQ 消费</text>
+
+        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+          <rect width="200" height="38" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">CPU 0: ksoftirqd/0 (25% 负载)</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">处理 RX-0 队列数据包</text>
+
+          <rect y="44" width="200" height="38" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#14532d" font-weight="700">CPU 1: ksoftirqd/1 (25% 负载)</text>
+          <text x="8" y="28" font-size="9" fill="#15803d">处理 RX-1 队列数据包</text>
+
+          <rect y="88" width="200" height="58" rx="3" fill="#d1fae5" stroke="#10b981"/>
+          <text x="8" y="18" fill="#065f46" font-weight="700">✓ 性能飞跃成果：</text>
+          <text x="8" y="32" font-size="9.5" fill="#047857">• 彻底消除 CPU 0 单核 100% 跑满</text>
+          <text x="8" y="46" font-size="9.5" font-weight="700" fill="#047857">• 万兆吞吐线性分摊至 32/64 核！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 265)">
+      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">多核网络核心法则：</tspan> 硬件 RSS + 绑定 CPU 亲和性（IRQ Affinity）实现了 <tspan font-weight="700" fill="#2563eb">“单流保序、多流横向并行”</tspan>；
+      </text>
+      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
+        若网卡不支持硬件多队列，也可通过软件 RPS（Receive Packet Steering）在内核层模拟多核分发。
+      </text>
+    </g>
+  </g>
+</svg>

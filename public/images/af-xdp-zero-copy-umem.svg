@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="440" fill="#f8fafc"/>
+  <rect width="960" height="440" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 24)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">AF_XDP (XSK) 零拷贝内存架构：UMEM 用户态与网卡 DMA 直通通道</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">用户态预分配 UMEM 内存池 ──► 四大环形无锁队列（Fill / Rx / Tx / Completion） ──► 网卡 DMA 直接读写用户内存</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 75)" filter="url(#card-shadow)">
+    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: UMEM Memory Area (280px) -->
+    <g transform="translate(20, 20)">
+      <rect width="270" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="270" height="32" rx="6" fill="#dbeafe"/>
+      <text x="135" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 用户态 UMEM 共享内存池</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="246" height="36" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="16" fill="#1d4ed8" font-weight="700">posix_memalign() 预分配</text>
+        <text x="10" y="28" font-size="9.5" fill="#2563eb">划分数千个固定大小的 Chunk (如 4KB)</text>
+
+        <rect y="44" width="246" height="52" rx="4" fill="#ffffff" stroke="#3b82f6"/>
+        <text x="10" y="16" fill="#1e40af" font-weight="700">mmap() 映射至内核与网卡</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">• 网卡 DMA 直接读写该内存</text>
+        <text x="10" y="42" font-size="9.5" font-weight="700" fill="#1d4ed8">✓ 彻底实现零内存拷贝（Zero-Copy）！</text>
+
+        <rect y="104" width="246" height="42" rx="4" fill="#eff6ff"/>
+        <text x="10" y="18" fill="#1e40af" font-weight="700">用户态应用程序直读：</text>
+        <text x="10" y="32" font-size="9.5" fill="#2563eb">零 syscall，直接指针解引用读取包载荷！</text>
+      </g>
+    </g>
+
+    <!-- Center: 4 Lockless Ring Queues (300px) -->
+    <g transform="translate(305, 20)">
+      <rect width="290" height="230" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="290" height="32" rx="6" fill="#dcfce7"/>
+      <text x="145" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 四大无锁环形队列 (Ring Queues)</text>
+
+      <g transform="translate(12, 44)" font-family="ui-monospace, monospace" font-size="10">
+        <!-- Fill Ring -->
+        <rect width="266" height="26" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="8" y="17" fill="#14532d">Fill Ring: 用户态提供空闲缓冲地址</text>
+
+        <!-- Rx Ring -->
+        <rect y="32" width="266" height="26" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="8" y="49" fill="#14532d">Rx Ring: 内核/网卡交付已收到的数据包</text>
+
+        <!-- Tx Ring -->
+        <rect y="64" width="266" height="26" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="8" y="81" fill="#14532d">Tx Ring: 用户态提交待发送的数据包</text>
+
+        <!-- Completion Ring -->
+        <rect y="96" width="266" height="26" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="8" y="113" fill="#14532d">Completion: 内核通知已完成 DMA 发送</text>
+
+        <rect y="130" width="266" height="20" rx="3" fill="#d1fae5"/>
+        <text x="133" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#065f46" text-anchor="middle">单生产者单消费者（SPSC）零互斥锁无锁队列</text>
+      </g>
+    </g>
+
+    <!-- Right: NIC Driver DMA (260px) -->
+    <g transform="translate(610, 20)">
+      <rect width="270" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <rect width="270" height="32" rx="6" fill="#f1f5f9"/>
+      <text x="135" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">3. 物理网卡 DMA 控制器</text>
+
+      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
+        <rect width="246" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="10" y="16" fill="#0f172a" font-weight="700">硬件 DMA 控制器</text>
+        <text x="10" y="30" font-size="9.5" fill="#64748b">直接将光纤收到的网络帧写入 UMEM</text>
+
+        <rect y="50" width="246" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="10" y="16" fill="#1e40af" font-weight="700">性能收益：</text>
+        <text x="10" y="30" font-size="9.5" fill="#2563eb">• 媲美 DPDK 的极致吞吐</text>
+        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 却无需专用网卡与独立内核旁路驱动！</text>
+
+        <rect y="110" width="246" height="36" rx="4" fill="#f0fdf4"/>
+        <text x="10" y="22" font-weight="700" fill="#047857">兼容 Linux 权限与网络生态</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom Insight Bar -->
+  <g transform="translate(30, 375)">
+    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
+    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
+      💡 <tspan font-weight="700" fill="#0f172a">DPDK 终结者：</tspan> AF_XDP 在保持 <tspan font-weight="700" fill="#2563eb">“零拷贝直通用户态”</tspan> 极限性能的同时，
+      保留了标准 Linux 安全模型与驱动兼容性，已成为 Cilium 等现代网络基础设施的王牌武器。
+    </text>
+  </g>
+</svg>

@@ -32,6 +32,8 @@ flowchart LR
 
 ## 二、epoll 的账本：注册、就绪、取就绪
 
+![Linux epoll 内核架构：红黑树、就绪双向链表与中断回调流](../../../public/images/linux-epoll-rbtree-readylist.svg)
+
 epoll 把"查询"改成"事件订阅 + 就绪取用"两步：
 
 ```mermaid

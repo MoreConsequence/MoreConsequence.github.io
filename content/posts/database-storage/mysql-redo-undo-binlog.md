@@ -45,6 +45,8 @@ flowchart LR
 
 ## 三、为什么是"两阶段"而不是各写各的
 
+![MySQL 事务两阶段提交（2PC）与崩溃恢复裁决全景架构](../../../public/images/mysql-innodb-2pc-crash-recovery.svg)
+
 redo 归 InnoDB，binlog 归服务层；如果没有正确的 2PC 协调或刷盘配置，两个组件各自可见的落盘状态就可能出现窗口：
 
 - 若 redo 先落、binlog 尚未完成，崩溃在中间 → InnoDB 可能重做这笔修改，但复制侧没有对应事件；2PC 恢复需要识别它是 prepared、已提交还是应回滚。

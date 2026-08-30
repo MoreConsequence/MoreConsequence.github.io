@@ -102,6 +102,8 @@ sequenceDiagram
 
 ### 4.1 原理：leader-follower，一次 fsync 服务一批
 
+![MySQL 2PC 组提交（Group Commit）三阶段流水线与 fsync 批量合并架构](../../../public/images/mysql-group-commit-pipeline.svg)
+
 group commit（组提交）的结构一句话：**多个提交者并发时，第一个到达的人成为 leader，把整批的日志刷走；其余人看到自己的 LSN 已被刷过，直接返回成功，不重复 fsync**。WAL 是纯顺序追加，这保证了"挨在一起的记录，一次 fsync 全部覆盖"——PostgreSQL 官方文档对它的定义就是一句话："one fsync of the WAL file may suffice to commit many transactions"。
 
 ```go

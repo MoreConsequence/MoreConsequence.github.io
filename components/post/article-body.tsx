@@ -1,5 +1,6 @@
 import { CodeCopy } from "./code-copy";
 import { MermaidRenderer } from "./mermaid-renderer";
+import { SandboxMountRenderer } from "@/components/sandboxes/sandbox-mount-renderer";
 
 export function ArticleBody({ html }: { html: string }) {
   return (
@@ -10,6 +11,7 @@ export function ArticleBody({ html }: { html: string }) {
       />
       <CodeCopy />
       <MermaidRenderer />
+      <SandboxMountRenderer />
     </div>
   );
 }
