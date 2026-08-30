@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">套接字参数抉择：TCP_NODELAY vs TCP_CORK</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">TCP_NODELAY (有包就发，极低延迟 0.1ms 适合交互与 RPC) vs TCP_CORK (死死塞住软木塞，凑满 MSS 才发射适合大文件 sendfile)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. TCP_NODELAY：极致低时延 (Low Latency)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &amp;1)</text>
+          
+          <text y="38" fill="#86efac">行为表现：</text>
+          <text y="52" fill="#cbd5e1">• 完全跳过 Nagle 缓冲判断</text>
+          <text y="66" fill="#cbd5e1">• 即使只有 1 个字节也立即封装发送</text>
+          <text y="80" fill="#cbd5e1">• RTT 敏感型微服务与实时通信首选！</text>
+          
+          <text y="106" fill="#4ade80">✓ 生产默认：Go、Node.js、Netty 框架默认开启！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• gRPC / REST API 微服务调用；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 终端 SSH、在线游戏操作同步；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极低时延交互底座。</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. TCP_CORK：极限吞吐量 (High Throughput)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">setsockopt(fd, IPPROTO_TCP, TCP_CORK, &amp;1) // 塞住软木塞</text>
+          <text y="28" fill="#fed7aa">write(header); // 严禁发送，在内核强行积攒！</text>
+          <text y="42" fill="#fed7aa">sendfile(body); // 填满 1460 字节 MSS 大包！</text>
+          <text y="56" fill="#fb923c">setsockopt(fd, IPPROTO_TCP, TCP_CORK, &amp;0) // 拔出木塞全部发射！</text>
+          
+          <text y="82" fill="#34d399">✓ 100% 满载 MTU，包头开销降低至极限！</text>
+          <text y="98" fill="#4ade80">✓ 单机吞吐飙升至 40Gbps 物理网卡上限！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• Nginx 静态文件服务器；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 测速服务下行极限推流（Speedtest Downlink）；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 压榨万兆服务器网络带宽极限！</text>
+      </g>
+    </g>
+  </g>
+</svg>

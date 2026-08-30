@@ -10,6 +10,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 重构的承诺是"行为不变"，但大多数套件只能证明"没变坏到我看得见"。本文对 `experiments/service/src/store.ts` 完成一次可复现的完整闭环：先新增 **9 条 characterization 快照**钉住精确行为（含两个此前无人写下的怪癖），再提取共享语义完成重构，连同既有套件共 **29 条用例**逐条全绿；最后注入一个 `>` → `>=` 的 off-by-one 突变——旧套件（`toBeLessThanOrEqual`）保持绿、对回归免疫，快照的精确等式当场红掉（`expected 99 to be 100`）。安全网的拉力来自精确，不来自数量。
 
+
+---
+
+![特征快照测试 (Characterization Test)：重构遗留系统的 Golden Master 黄金安全网](../../../public/images/characterization-test-golden-master-safety-net.svg)
+
 ## 一、重构的困境："没变"由谁作证
 
 重构 store 之前有个无法回避的问题：改完之后，谁来证明"行为一个字节都没变"？靠肉眼 diff 不可靠——本次重构要动的恰恰是三处重复的条件表达式和一段三表写入逻辑，肉眼看"等价"的代码恰恰最容易在边界条件上失手。
@@ -20,6 +25,10 @@ series: "把原理变成服务"
 2. 只覆盖设计者想到的行为，没覆盖实现长出来的行为——怪癖不在它的视野里。
 
 characterization test（行为快照）补的正是这两个盲区：不问"应该怎样"，只记录"现在怎样"，然后让这套记录替重构作证。
+
+
+
+![镀金快照测试 (Golden Master) 保护网流水线：海量生产流量录制 -> 行为快照固化 -> 重构 Diff 对比](../../../public/images/golden-master-characterization-test-pipeline.svg)
 
 ## 二、先拍照再动刀：快照的三条纪律
 
@@ -44,6 +53,10 @@ characterization test（行为快照）补的正是这两个盲区：不问"应�
 | 双表联动 | 订单与其幂等键同生共死（有键订单） | 设计意图 |
 | 无键驱逐 | 不触碰 byKey，size 可大于 keySize | 快照新发现 |
 | 指纹缺边 | 缺一边就不判冲突 | 快照新发现 |
+
+
+
+![绞杀者模式 (Strangler Fig Pattern)：旧单体渐进式路由切流与无缝退役](../../../public/images/code-refactoring-risk-mitigation-strangler-fig.svg)
 
 ## 四、动刀：提取共享语义与唯一写入口
 

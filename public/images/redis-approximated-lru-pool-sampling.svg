@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis 近似 LRU 采样候选池算法 (Approximated LRU with EvictionPool)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">经典 LRU 双向链表 (每个 Key 耗费 24B 指针 + 并发锁竞争) vs Redis 随机抽样 5 个键放入 16 槽全局 EvictionPool (0 额外指针，精准度逼近真实 LRU)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. robj.lru 24-bit 紧凑时间戳 (Compact In-Header Timestamp)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">每个 Redis 对象头复用 24 位整数字段记录访问时钟 ──► 0 外部双向链表开销，亿级数据节省数 GB 内存！</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">极致的内存紧凑物理设计！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 随机抽样 N 个样本键 (Random Sampling: maxmemory-samples = 5)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">写操作触发内存超限 ──► 从字典中随机抽取 5~10 个键 ──► 计算各自闲置空闲时间 idle_time</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">常数级 O(1) 极速抽样，0 遍历全库开销！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 插入 16 槽 EvictionPool 候选排序数组 (Sorted Eviction Pool)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">维护容量为 16 的全局有序数组 ──► 按 idle_time 从小到大升序排列 ──► 淘汰空闲时间最大的尾部候选键</text>
+        <text x="15" y="62" font-size="8" fill="#047857">跨批次累积优秀淘汰样本，大幅修正单次随机误差！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 极速逐出与空间释放 (Evict and Free Memory Block)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">从 db 字典中物理删除目标 Key 并归还内存 ──► samples=10 时拟合度达到真实 LRU 的 99%！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">兼顾空间极限压缩与近乎完美的数学拟合典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

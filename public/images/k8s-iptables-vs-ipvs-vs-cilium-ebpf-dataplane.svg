@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kubernetes Service 网络数据平面三代演进拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">第 1 代 iptables (O(N) 线性链表扫描，5000 服务时内核 CPU 锁死) ──► 第 2 代 IPVS (IPSet 哈希表 O(1)) ──► 第 3 代 Cilium eBPF (Bypass TCP/IP 栈直通)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">1. iptables 模式 (O(N) 线性链)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">kube-proxy 维护庞大规则链：</text>
+          
+          <text x="10" y="38" fill="#fca5a5">• 5,000 个 Service 产生 25,000 条规则</text>
+          <text x="10" y="54" fill="#ef4444">• 数据包逐条线性遍历比对 (O(N))</text>
+          <text x="10" y="70" fill="#ef4444">• 每次规则更新全量加锁重写内核表</text>
+          
+          <text x="10" y="100" fill="#f87171">🔴 导致内核软中断 CPU 打满卡死！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 大规模集群网络性能断崖式下跌；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• Pod 滚动发布时网络频繁丢包；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 早期 K8s 最大扩展瓶颈。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. IPVS 模式 (IPSet O(1) 哈希)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">Linux 内核 LVS 负载均衡：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 采用 IPSet 哈希表存储服务映射</text>
+          <text x="10" y="54" fill="#34d399">• 路由查找复杂度降至 O(1) 常数级</text>
+          <text x="10" y="70" fill="#38bdf8">• 增量更新规则，0 全量重锁</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 轻松支撑万级 Service 规模！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 传统 K8s 大规模集群标准首选；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 支持加权轮询、最小连接等高级算法；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 性能平稳可靠。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Cilium eBPF (旁路网络栈直发)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">Socket 层 eBPF 字节码劫持：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 彻底移除 kube-proxy 与 iptables！</text>
+          <text x="10" y="54" fill="#38bdf8">• 在 sock_ops 阶段直接重写对端 Socket</text>
+          <text x="10" y="70" fill="#4ade80">• 绕过整个复杂的 Linux TCP/IP 协议栈</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 吞吐提升 300%，延迟降低 50%！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 云原生容器网络终极革命形态；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 深度集成 L7 流量安全与 Hubble 可观测；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代化云原生基础设施巅峰！</text>
+      </g>
+    </g>
+  </g>
+</svg>

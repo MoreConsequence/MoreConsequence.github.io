@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DSH 双层循环调度引擎：Turn (用户交互轮) 与 Step (单步思考执行)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">用户输入 ──► 开启 Turn ──► 循环执行 Step (LLM 推理 ──► 思考链提取 ──► 工具执行 ──► 结果写入日志) ──► 满足终止闸门 ──► 结束 Turn</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Turn 启动与上下文装配 (Turn Initialization)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">User Message ──► 触发 onTurnStart ──► 拼接会话历史树 + AGENTS.md ──► 校验 Token 预算</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">为本轮交互初始化专属的取消信号 (AbortController) 与遥测跟踪上下文！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. Step 内部循环：LLM 流式生成与增量聚合 (LLM Streaming Step)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">DeepSeek-R1 流式吐出 &lt;think&gt; 深度推理 ──► 实时渲染至 TUI ──► 增量拼装 tool_calls 参数</text>
+        <text x="15" y="62" font-size="8" fill="#047857">流式协议与结构化数据无缝解耦，兼顾极速用户首字体验与严密数据解析！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. Step 内部循环：工具执行与日志原子写入 (Tool Execution &amp; Journal)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">beforeToolCall 权限检查 ──► 沙箱执行 (如 go test) ──► 捕获 stdout ──► 追加写 session.jsonl</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">严格保证模型所见与磁盘记录完全一致，任何异常均作为观察结果喂回下一步思考！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 终止闸门判定与 Turn 收敛 (Convergence Check)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">无工具调用 (自然收敛) OR 步数达到上限 OR 死循环熔断 ──► 触发 onTurnEnd ──► 等待下一轮输入</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">严密的双层状态机保证系统永远处于可控状态，0 僵尸协程，0 无限死循环！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">二阶段提交 (2PC: Two-Phase Commit) 强一致模型与阻塞缺陷</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Phase 1 (Prepare: 预留资源并写准备日志) ──► Phase 2 (Commit/Abort: 全量提交或全量回滚) ｜ 协调者宕机导致参与者资源永久锁死阻塞</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Phase 1: 准备与投票阶段 (Prepare / Voting Phase)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">协调者向所有参与者发送 Prepare ──► 参与者执行本地事务、锁定行记录、写入 Undo/Redo 日志 ──► 响应 "VOTE_COMMIT"</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">全员进入待决状态，资源被死死锁住！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 协调者单点崩溃陷阱 (Coordinator Crash &amp; Resource Deadlock)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">协调者在此刻断电宕机 ──► 参与者无法得知最终应该提交还是回滚 ──► 数据库行锁永久无法释放</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">2PC 最大的致命物理缺陷：同步阻塞与单点故障！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Phase 2: 决议与全量提交 (Decision &amp; Commit Phase)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">全员同意 ──► 协调者写入 Commit 决议日志 ──► 广播发送 Commit 指令 ──► 参与者正式提交并释放锁</text>
+        <text x="15" y="62" font-size="8" fill="#047857">达成跨数据库的严格 ACID 强一致性！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 工业界现代替代演进 (Evolution to Saga &amp; TCC)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">微服务超高并发场景全面放弃 2PC ──► 转为 Saga 异步补偿或 Seata TCC 模式 ──► 释放锁压力！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">从刚性强一致迈向柔性最终一致性的历史演进！</text>
+      </g>
+    </g>
+  </g>
+</svg>

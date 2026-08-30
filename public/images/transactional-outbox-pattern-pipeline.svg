@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">事务外箱模式 (Transactional Outbox Pattern) 零双写漏洞架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">业务数据与 outbox 表在同一个 MySQL 本地事务原子提交 ──► Debezium / Canal 监听 Binlog ──► 100% 投递 Kafka ──► 彻底根除分布式双写丢消息</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 本地单库原子写入 (Single DB ACID Transaction)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">BEGIN; INSERT INTO orders (业务表); INSERT INTO outbox_table (事件外箱表); COMMIT;</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">将业务状态与待发消息绑定在同一个物理事务中，要么全成功，要么全回滚！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. CDC 引擎无侵入提取 (Debezium / Canal Binlog Ingestion)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">CDC 组件监听 MySQL Binlog 增量日志 ──► 0 轮询业务数据库压力 ──► 毫秒级提取 outbox 记录</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将数据库写入转化为高吞吐事件流！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 消息队列可靠投递 (Kafka / RocketMQ At-Least-Once)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">投递消息至对应 Topic ──► 收到 Broker ACK 后推进 Binlog 位点 ──► 若投递失败自动无限退避重试</text>
+        <text x="15" y="62" font-size="8" fill="#047857">100% 绝对保障消息不丢失！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 下游消费端幂等处理 (Idempotent Consumer)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">下游微服务接收事件 ──► 基于 event_id 做幂等防重 ──► 优雅完成跨服务数据最终一致！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">微服务分布式事务业界最佳实践！</text>
+      </g>
+    </g>
+  </g>
+</svg>

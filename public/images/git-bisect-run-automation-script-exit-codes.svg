@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">git bisect run 脚本退出码语义契约 (Exit Code Contract)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">exit 0 (当前版本好) ｜ exit 1..124/126..127 (当前版本坏) ｜ exit 125 (无法编译或中间损坏，告知 Git 自动 skip 跳过)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. Exit 0: 测试通过 (Good)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">npm test / go test 成功通过：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 退出码返回 0</text>
+          <text x="10" y="54" fill="#38bdf8">• Git 将当前提交标记为 good</text>
+          <text x="10" y="70" fill="#34d399">• 缩小搜索区间至 [mid, bad]</text>
+          <text x="10" y="86" fill="#34d399">• 自动检出下一个更晚的中间提交</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 判定当前版本功能正常！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 表明引入回归的 Bug 在当前提交之后；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 向右侧半区继续二分；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 推进追凶边界。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">2. Exit 1: 测试失败 (Bad)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">测试脚本断言失败：</text>
+          
+          <text x="10" y="38" fill="#fca5a5">• 退出码返回 1 (或 1~127 非 125)</text>
+          <text x="10" y="54" fill="#ef4444">• Git 将当前提交标记为 bad</text>
+          <text x="10" y="70" fill="#ef4444">• 缩小搜索区间至 [good, mid]</text>
+          <text x="10" y="86" fill="#f87171">• 自动检出更早的历史提交验证</text>
+          
+          <text x="10" y="114" fill="#ef4444">🔴 确认当前版本已经损坏！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 表明 Bug 在当前提交或更早的提交中；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 向左侧半区继续二分；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 逼近破案原点。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Exit 125: 编译报错 (Skip)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">遇到无法编译的脏提交：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">• 例如某历史提交临时语法错误</text>
+          <text x="10" y="54" fill="#38bdf8">• 脚本捕获编译失败并 exit 125</text>
+          <text x="10" y="70" fill="#34d399">• Git 自动执行 git bisect skip</text>
+          <text x="10" y="86" fill="#4ade80">• 智能挑选临近其他提交继续二分！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 杜绝因无关编译错误中断全流程！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 极度精妙的特殊保留退出码；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 赋予自动化测试脚本超强的抗扰自愈能力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• Git 高级工程实践权威规范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

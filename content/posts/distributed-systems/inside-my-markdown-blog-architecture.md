@@ -11,6 +11,11 @@ series: "架构原则"
 
 **TL;DR：** 这套博客系统由 `content/posts/` 目录下的 Markdown 文件驱动，经过 unified 编译管线转化为 HTML，由 Next.js 静态生成页面，最终通过 GitHub Actions 自动构建并部署到 GitHub Pages。全程无数据库、无 CMS、无运行时服务端。
 
+
+---
+
+![Markdown 博客架构全景：AST 语法树编译、元数据校验与 Next.js 静态站点生成 (SSG) 管线](../../../public/images/markdown-blog-static-export-nextjs-pipeline.svg)
+
 ## 一、 全链路总览
 
 从敲下键盘到读者在浏览器中看到页面，一篇博客经历以下阶段：
@@ -27,6 +32,10 @@ flowchart LR
 ```
 
 整个过程没有运行时服务器。`next build` 在 CI 环境生成纯静态的 HTML/CSS/JS，上传到 GitHub Pages 后，通过它的全球 CDN 分发。
+
+
+
+![博客内容工程管线：Zod 强类型 Frontmatter 校验与 Draft 生产隔离](../../../public/images/blog-content-pipeline-markdown-schema-validation.svg)
 
 ## 二、 触发：如何开始一篇新文章
 
@@ -224,6 +233,10 @@ export function filterPublished(
 ```
 
 `sortPosts` 用 `localeCompare` 按 publishedAt 字符串排序——ISO 日期（YYYY-MM-DD）的字典序等于时间序，所以不需要解析成 Date。`filterPublished` 只在 production 过滤草稿：`next dev` 时草稿照常出现（本地预览可见），CI 构建（NODE_ENV=production）时被剔除——同一个函数两种行为，决定权在环境变量。注意这两步只操作元数据，不碰正文：真正编译发生在 `getAllPosts`（L82-97），且结果按环境缓存在 `compiledPostCache`（L104）里，保证同一构建中每篇 Markdown 只编译一次。
+
+
+
+![博客主题设计系统：CSS 自定义属性 (Design Tokens) 与 0 运行时极速渲染](../../../public/images/blog-theme-css-tokens-zero-runtime.svg)
 
 ## 四、 静态生成：Next.js App Router 如何产出页面
 

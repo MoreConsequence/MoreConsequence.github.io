@@ -10,6 +10,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** 取消信号不是撤销键。对"扣款工具"做三时机 × 两实现的对照实验（`experiments/ts-agent-cancel/`）：唯一零副作用的路径是**调用前信号已中止**（`AbortedError`、账本为空）；一旦副作用已提交，哪怕两毫秒后 cancel，结果也是**调用方看到 `AbortedError`、账本却是 `[charged]`**。真实 HTTP 对照同样：客户端 `fetch` 在 14.4ms 抛出 `AbortError`，服务端 30ms 后照常记录 `SERVER_APPLIED`。结论：AbortSignal 的合同是"停止后续工作"，从来不是"收回已做的工作"——工具循环里真正要设计的是事后对账，不是事前阻止。
 
+
+---
+
+![AbortSignal 取消边界：网络连接切断 vs 外部不可撤销写副作用与 Saga 补偿事务](../../../public/images/abort-signal-unabortable-side-effects-saga.svg)
+
 ## 一、取消的合同范围：signal 只在"被检查的地方"生效
 
 [状态机篇](/writing/typescript-agent-state-machine)讲过 Agent 工具循环的事件合法性；这一篇讲它的另一半——**取消的传播边界**。一个配合取消的工具长这样：
@@ -40,6 +45,10 @@ sequenceDiagram
     L--xL: 收到 AbortedError
     Note over G: 但账本里已经有一笔扣款
 ```
+
+
+
+![AbortSignal 树状级联传播与事件监听器泄漏 (Memory Leak) 防御拓扑](../../../public/images/abort-signal-tree-listener-leak-prevention.svg)
 
 ## 二、实验矩阵：三个时机 × 两种工具
 
@@ -72,6 +81,10 @@ SERVER_APPLIED id=order-1 at=…        ← 服务端视角：请求照常处理
 ```
 
 机制很直白：abort 关闭的是**客户端这边的等待**，而 HTTP 请求早已完整到达对端，服务端的 handler 会继续跑完。TCP 连接的中断不会给服务器发"请撤销你刚才要做的事"。把这两层混为一谈，就是"超时重试导致重复下单"这类事故的全部成因——[幂等性工程篇](/writing/idempotency-engineering)的 27 次乘法上界，起点正是这里。
+
+
+
+![协作式中止检查点 (Cooperative Cancellation Checkpoint) 状态流转](../../../public/images/async-task-cooperative-abort-checkpoint.svg)
 
 ## 四、工程答案：把副作用设计成可对账，而不是可阻止
 

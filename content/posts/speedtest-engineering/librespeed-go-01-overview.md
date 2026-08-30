@@ -10,6 +10,11 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** [librespeed/speedtest-go](https://github.com/librespeed/speedtest-go) 是 LibreSpeed 的官方 Go 实现：**全项目 21 个 `.go` 文件、2,371 行**（commit 59cff12 实测），编译出一个无外部依赖的单二进制，提供下载/上行/延迟/IP 归属/遥测/结果分享的完整测速服务。本篇是系列全景：`main.go` 只有 27 行、四个初始化调用；真正的逻辑在 `web/`（HTTP 层）、`results/`（结果与遥测）、`database/`（七种存储后端）三处。本机运行取证确认了每个端点的行为契约——garbage 默认恰好 4 MiB 随机字节、ckSize 参数上限钳制到 1 GiB、上行是纯粹的 `Discard` 汇。系列其余各篇再逐层拆。
 
+
+---
+
+![LibreSpeed Go 整体全景架构：27 行 main.go 启动的核心路由、测速端点与遥测存储管线](../../../public/images/librespeed-go-architecture-overview-pipeline.svg)
+
 ## 一、为什么值得读这个项目
 
 上一篇文章[《你的带宽是怎么被算出来的》](/writing/speedtest-service-architecture)给出了测速服务的通用节点地图：目录调度、测量边缘、载荷源、上行接收、结果上报。但那篇讲的是"它们长什么样"；这一系列要回答"它们怎么实现"。
@@ -47,6 +52,10 @@ func main() {
 
 两个容易忽略的细节：`import _ "time/tzdata"` 把时区数据库打进二进制（结果卡片要显示本地时间戳，scratch 容器里没有 /usr/share/zoneinfo）；`_ "github.com/breml/rootcerts"` 则是把系统 CA 根证书嵌入——同样是"单二进制扔进任何容器都能跑"这个目标的注脚。
 
+
+
+![LibreSpeed Go 架构分层：main.go 启动引导 -> config -> web/handlers -> database](../../../public/images/librespeed-go-package-dependency-graph.svg)
+
 ## 三、文件地图：2,371 行都在哪
 
 ```
@@ -68,6 +77,10 @@ database/
 ```
 
 对照[测速架构篇](/writing/speedtest-service-architecture)的五类节点地图，映射关系一目了然：**测量边缘 + 载荷源**就是 `web.go` 的 `garbage` 与 `empty` 两个函数；**目录调度**在这个单体里退化为"没有调度"（客户端连的就是你）；**上报存储**是 `results/` 加 `database/`。一个自托管测速点不需要全球调度网络——这正是它能把代码压到 2,371 行的根本原因。
+
+
+
+![多形态路由挂载表：原生路径 vs 兼容路径 vs 管理面映射矩阵](../../../public/images/librespeed-go-multi-mount-routing-table.svg)
 
 ## 四、路由表：一套功能，三种挂载
 

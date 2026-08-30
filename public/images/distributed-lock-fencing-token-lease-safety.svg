@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">分布式锁安全本质：GC 停顿导致租约失效 vs Fencing Token 单调栅栏</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">客户端 A 发生 GC STW (锁租约过期) ──► 客户端 B 抢到新锁 ──► 客户端 A 苏醒写入导致数据损坏 ──► Fencing Token 拒绝旧写入</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Redis Lock STW Leak -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 裸分布式锁：无法抵御进程挂起 (STW)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. Client 1 成功获取 Redis 锁 (TTL = 10s)</text>
+          <text y="30" fill="#f87171">2. Client 1 触发 Full GC，发生 15 秒 Stop-the-world 停顿！</text>
+          <text y="46" fill="#fca5a5">3. 10 秒后 Redis 锁自动过期释放</text>
+          <text y="62" fill="#fb923c">4. Client 2 成功获取同一把锁并开始写入存储！</text>
+          <text y="80" fill="#f87171">5. Client 1 GC 结束苏醒，以为自己仍持有锁，强行写入存储！</text>
+          
+          <text y="106" fill="#ef4444">🔴 灾难：并发双写引发严重数据脏写覆盖！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">Martin Kleppmann 论断：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 分布式锁卖的不是绝对互斥，而是一段带有效期的可变租约；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 在不可靠网络和非实时操作系统下，锁租约无法保证临界区安全；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 必须在存储端增加最后一道防御栅栏！</text>
+      </g>
+    </g>
+
+    <!-- Right: Fencing Token -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Fencing Token：单调递增版本号物理拦截</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#34d399">1. 获取锁时由发号器派发严格单调递增 token:</text>
+          <text y="28" fill="#86efac">   Client 1 获得 token = 33; Client 2 获得 token = 34;</text>
+          
+          <text y="50" fill="#38bdf8">2. Client 2 (token=34) 先完成写入，存储记录 max_token = 34</text>
+          <text y="68" fill="#f87171">3. Client 1 苏醒发起写入 (携带 token=33):</text>
+          <text y="82" fill="#ef4444">   存储层判定 33 &lt; max_token(34) ──► 坚决拒绝执行！</text>
+          
+          <text y="106" fill="#4ade80">✓ 存储端 CAS 比较，从物理法则上 100% 杜绝脏写覆盖！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 结合 Redlock 或 Raft/Etcd Lease 实现两级安全；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 让分布式锁与持久化存储形成安全闭环；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造银行级绝对一致性的分布式互斥保障！</text>
+      </g>
+    </g>
+  </g>
+</svg>

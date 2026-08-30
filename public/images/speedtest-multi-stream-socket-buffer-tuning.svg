@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">测速内核网络栈与多流 BDP 压榨拓扑 (Multi-Stream TCP BDP)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">单流受限于 BDP (Bandwidth-Delay Product) 与单核软中断 ──► 动态 4~8 独立并发 TCP 流 ──► 开启 Linux BBR 算法 ──► 100% 填满千兆物理信道</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 初始 RTT 与 BDP 评估 (Initial Ping &amp; BDP Sizing)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">通过 WebSocket / TCP 三次握手精确测量物理往返时延 RTT ──► 计算理论 BDP = Bandwidth * RTT</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">为并发流数量与滑动窗口大小提供数学基准！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 动态多流阶梯建联 (Dynamic Multi-Stream Escalation: 1 -&gt; 4 -&gt; 8)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">从 2 条流快速启动 ──► 若 500ms 内吞吐增速仍处于斜率上限 ──► 阶梯扩增至 4~8 条流并行下载</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">突破客户端单线程处理上限与中间路由器的单流限速策略！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 服务端 Linux 内核参数与 BBR 调优 (Kernel Tuning: wmem &amp; BBR)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">tcp_wmem 调大至 16MB ──► 启用 BBR 拥塞控制 ──► 基于实时最大带宽与最小延迟建模，0 丢包退避</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底克服 CUBIC 在高延迟长肥管道 (LFN) 下的吞吐崩塌！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 客户端聚合统计与 P95 峰值结算 (Aggregation &amp; P95 Settlement)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">汇总各流实时传输字节数 ──► 剔除前 1 秒慢启动抖动 ──► 提取稳定段 P95 吞吐作为最终测速结果！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">国际公认权威的宽带性能评估基准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

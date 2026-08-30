@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产级幂等执行引擎：Idempotency-Key 原子去重与状态锁</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Redis SETNX 占用并发位 ──► 正在处理中返回 409 Conflict ──► 处理成功持久化结果并直接返回缓存响应</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 客户端携带唯一 Idempotency-Key 请求 (Request Arrival)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">POST /api/v1/tools/execute | Header: Idempotency-Key: req_9a8b7c6d5e ──► 拦截器入口检查</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">通过统一强类型中间件保证所有有副作用的 Agent 工具调用天然具备防重入标识！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 原子占位与并发冲突拦截 (Atomic State Locking: PENDING)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Redis SET req_9a8b7c6d5e "PENDING" EX 30 NX ──► 若返回 0 则判定并发冲突，直接回退或等待</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">彻底杜绝网络超时重试导致的一笔扣款被执行两次的灾难性事故！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 核心副作用执行与持久化 (Core Execution &amp; State Persistence)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">执行业务事务 ──► 成功后将结果存入 Redis / DB: {"status":"COMPLETED", "response": {...}}</text>
+        <text x="15" y="62" font-size="8" fill="#047857">状态机严密闭环，确保结果的唯一确定性！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 重复请求极速回放与零副作用 (Instant Replay)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">后续携带相同 Key 的请求到达 ──► 直接命中 COMPLETED 结果 ──► 0ms 零副作用直接返回！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">打造金融级可靠的 TypeScript 生产智能体！</text>
+      </g>
+    </g>
+  </g>
+</svg>

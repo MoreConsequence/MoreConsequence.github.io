@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">分布式事务三大流派对比：2PC、SAGA、Outbox 崩溃后谁负责收拾</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">2PC (协调器收拾，持有全局锁) ｜ SAGA (编排器触发逆向业务补偿) ｜ Transactional Outbox (CDC 消息重试与消费端幂等最终一致)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 2PC (两阶段提交)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">• 一致性级别: ACID 强一致性</text>
+          <text x="10" y="34" fill="#93c5fd">• 锁持有时间: 跨网络长事务全局锁</text>
+          <text x="10" y="50" fill="#f87171">• 崩溃模型: 协调器宕机导致全员挂起</text>
+          <text x="10" y="68" fill="#fb923c">• 吞吐上限: ~1,000 TPS (低)</text>
+          <text x="10" y="86" fill="#34d399">• 谁收拾残局: 协调器重放 Commit 日志</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 单体数据库内部多分区或金融核心账户；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 绝对不能容忍任何脏读/中间态的业务；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 硬件网络极度稳定的内部机房。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. SAGA (长事务柔性补偿)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">• 一致性级别: BASE 最终一致性</text>
+          <text x="10" y="34" fill="#86efac">• 锁持有时间: 0 全局锁 (本地短事务提交)</text>
+          <text x="10" y="50" fill="#38bdf8">• 崩溃模型: 子事务可能暴露中间未决状态</text>
+          <text x="10" y="68" fill="#34d399">• 吞吐上限: 50,000+ TPS (极高)</text>
+          <text x="10" y="86" fill="#34d399">• 谁收拾残局: 编排器执行逆向补偿 (Compensate)</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 跨异构系统的长流程业务 (订机票/酒店)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 业务具有明确天然可逆补偿手段；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 电商高并发订单结算中心。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Transactional Outbox (CDC)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">• 一致性级别: 最终一致性 (At-Least-Once)</text>
+          <text x="10" y="34" fill="#fed7aa">• 锁持有时间: 仅本地单库事务毫秒锁</text>
+          <text x="10" y="50" fill="#38bdf8">• 崩溃模型: 网络抖动消息自动重发</text>
+          <text x="10" y="68" fill="#34d399">• 吞吐上限: 100,000+ TPS (极限)</text>
+          <text x="10" y="86" fill="#34d399">• 谁收拾残局: 消费端幂等去重表</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 异步领域事件通知、缓存刷新、搜索同步；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 微服务间事实状态分发与数据解耦；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 现代分布式云原生事实标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

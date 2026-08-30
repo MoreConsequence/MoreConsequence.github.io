@@ -9,6 +9,11 @@ featured: false
 
 **TL;DR：** maxmemory-policy 不是"防 OOM 的开关",而是一套**语义契约**:它决定"内存不够时,牺牲谁"——而这个"谁"的判定方式,直接决定你的缓存命中率。本机四策略对照(redis:7-alpine, maxmemory=8mb):先写 4000 基础键,热键(k1..k1000)高频 GET 20 次,再塞入 9000 新键并整体 GET 一遍(模拟冷数据扫描流),最后探测热键存活——**allkeys-lru 幸存 31.9%(319/1000),allkeys-lfu 幸存 99.9%(999/1000),allkeys-random 30.9%,noeviction 100% 但写入失败 6257 条**。同一个访问模式,LRU 和 LFU 把"热键"的存亡翻转过来:LRU 的时间戳语义被扫描流整体顶掉,LFU 的频次语义却完全免疫。结论:有冷数据批次拉取的业务(报表、ETL、同步任务),默认 allkeys-lru 很可能把真正热的数据淘汰掉——这比"内存用爆"更隐蔽,因为 evicted_keys 曲线看起来一切正常。
 
+
+---
+
+![Redis maxmemory 淘汰策略实战：LRU 面对冷数据全表扫描的脆弱性 vs LFU 免疫抗扫描](../../../public/images/redis-maxmemory-eviction-lru-vs-lfu-scan-resistance.svg)
+
 ## 一、四种策略的语义承诺,不是名字差异
 
 | 策略 | 淘汰判定 | 语义承诺 | 弱点 |
@@ -19,6 +24,10 @@ featured: false
 | `noeviction` | 不淘汰 | 内存写满后**写失败**(读不受影响) | 写路径直接报 OOM |
 
 LFU 的实现值得注意:每个键的 lru 字段共 24 位,拆成**16 位频次计数器 + 8 位衰减时间戳**,读取时按"距离上次衰减的时间"做对数折减——是**频次 + 时间窗折算**,不是纯粹计数;但对抗"一次性大量访问"的扫描流绰绰有余。
+
+
+
+![Redis 八大内存淘汰策略矩阵：LRU, LFU, Random, TTL 与 noeviction 决策四象限](../../../public/images/redis-eight-eviction-policies-matrix.svg)
 
 ## 二、实验设计与实测
 
@@ -44,6 +53,10 @@ noeviction            0     1000     ← 写失败 6257 条, 但热键全活
 ## 三、为什么 LRU 对扫描流脆弱(机制层面)
 
 LRU 的判定是"上次访问时间"。C 阶段 9000 个键被 GET 一遍后,它们的"最近访问"全部更新——在 LRU 看来,扫描流刚被访问,是"最热"的;而真正的热键(只 GET 了 20 次,时间稍早)排在扫描流后面。淘汰发生时,LRU 从"最不最近"开始清,扫掉了冷键和大量**只在 B 阶段活跃的热键**。LFU 的判定是"频次":扫描流每个键频次=1,热键频次=20,计数天然免疫"一次性大量访问"。**这就是 LFU 的设计动机**(Redis 4.0 引入)——同时为防"一次爆击顶掉全部热缓存"而加入 frequency decay。
+
+
+
+![Redis 近似 LRU 采样池算法：16 槽 EvictionPool 淘汰候选排序与内存 0 额外开销](../../../public/images/redis-approximated-lru-pool-sampling.svg)
 
 ## 四、工程选择:何时 LRU,何时 LFU,何时 noeviction
 

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型 KV Cache 提示词缓存 (Prompt Caching) 前缀对齐拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">前缀动荡 (在开头插入动态时间戳导致 100% Cache Miss，费用高 10 倍) vs 静态前缀对齐 (固定 System Prompt + Tools，命中率 95%，成本与延迟暴跌)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Dynamic Prefix Disaster -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 前缀动态污染：KV Cache 100% 击穿</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">System Prompt 开头: "Current Time: 14:02:15.341"</text>
+          
+          <text y="38" fill="#ef4444">致命缓存失效：</text>
+          <text y="52" fill="#fca5a5">• 每一轮调用的前缀首个 Token 都不同！</text>
+          <text y="68" fill="#ef4444">• GPU 无法复用任何已计算的 KV Cache</text>
+          <text y="84" fill="#ef4444">• 每次请求全量重算 50k Tokens Prefill 算力！</text>
+          
+          <text y="106" fill="#f87171">🔴 首字延迟 (TTFT) 高达 3.5s，API 账单暴涨 10 倍！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">架构通病：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 随意在 System 提示词开头拼接动态可变变量；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 破坏底层大模型服务商缓存对齐断点；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 业余 Agent 实现最昂贵错误！</text>
+      </g>
+    </g>
+
+    <!-- Right: Static Prefix Cache Alignment -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 静态前缀锚定：95% Cache Hit 极致降本</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">结构化前缀设计：</text>
+          <text y="28" fill="#86efac">[Static System Prompt (20k)] + [Tools Schema (10k)]</text>
+          
+          <text y="50" fill="#38bdf8">动态变量放置于尾部消息：</text>
+          <text y="64" fill="#34d399">• 前 30k Tokens 字节级 100% 保持稳定恒定</text>
+          <text y="78" fill="#4ade80">• 触发 Claude / DeepSeek Prompt Caching 机制！</text>
+          
+          <text y="104" fill="#4ade80">✓ 首字延迟降至 200ms，Token 费用直降 90%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 压榨出大模型推理架构最极致的吞吐性能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支撑复杂工业级 Agent 长时间低成本运行；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代 AI 工程架构必备设计模式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** sync.Pool 的正确心智模型是"**GC 的减压阀**"，不是"通用缓存"。统一 benchmark（Go 1.25.1/arm64）测得：256B 对象池命中 Get+Put **9.26ns/0 allocs**，直接分配 **98.99ns/256B/1 alloc**。但这只是热命中路径；GC 可以清理池，victim 只提供有限的延迟保留，Get 也必须允许返回新对象。当前证据没有把 GC 后的成本压成一个跨运行稳定常数。池的正确用法是“丢了也能重建”的短命大对象，永远不要依赖它保存业务状态。
 
+
+---
+
+![Go sync.Pool 内部架构：poolLocal (P 独占 private + 共享 share 环形双端队列) 与 victim 双缓存](../../../public/images/go-sync-pool-local-pool-victim-cache.svg)
+
 ## 一、设计：per-P 私有化 + victim 两代回收
 
 sync.Pool 的核心是 `poolLocal`（每 P 一份，sync/pool.go）：
@@ -26,6 +31,10 @@ type poolLocal struct {
 
 1. **每 P 一份私有槽**：Get 先取本 P 的 `private`（无锁）；没有则从本 P 的 `shared` 队列（无锁 pop）；还没有才去别的 P 偷（有锁），最后才轮 victim 和 New。**热点在私有槽上，锁只在偷取路径出现**——这就是约 9ns 热命中的来源。
 2. **victim 两代回收**：GC 时（poolCleanup）不直接清空，而是把当前代整体降级为 `victim`，下一轮 GC 才真正清掉 victim。它给“GC 后仍需 Get”的场景留了有限缓冲，但不应被当成持久化承诺；本次基准没有把 GC 本身和 Get 重新构造拆成稳定的延迟数字。
+
+
+
+![sync.Pool 双层存储架构：poolLocal (private 私有槽 + shared 双向环形链表与工作窃取)](../../../public/images/sync-pool-local-private-shared-stealing.svg)
 
 ## 二、实测：10 倍差距与 GC 耦合
 
@@ -53,6 +62,10 @@ type poolLocal struct {
 | 生命周期长（缓存/连接） | — | — | 别用池，用长期持有 |
 
 分界线不能只由 256B 一个数字决定：当前 256B 基线是池 9.26ns、直接分配 98.99ns，但小对象的直接分配、池命中率、GC 频率和对象重建成本都要放进同一 workload 测量。**池只应该装"重建贵且生命周期短"的大对象**——连接、大 buffer、解析器中间结构。
+
+
+
+![Go 1.13+ sync.Pool 双轮 GC 受害者缓存 (victim cache) 平滑降级](../../../public/images/sync-pool-victim-cache-gc-lifecycle.svg)
 
 ## 四、反模式：把池当缓存
 

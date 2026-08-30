@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">端到端服务时延四段式物理分解 (Latency Attribution Spectrum)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 传输耗时 (TCP/TLS/RTT: 30ms) ──► 2. 网关排队耗时 (Queue Wait: 15ms) ──► 3. 业务执行耗时 (CPU Exec: 5ms) ──► 4. 下游存储耗时 (DB I/O: 50ms)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 外部接入与网络传输 (Network Transport &amp; TLS Handshake: 30ms)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">DNS 解析 ──► TCP 三次握手 ──► TLS 1.3 密钥协商 ──► 跨国长距离光纤物理 RTT 往返</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">优化方向: 开启 HTTP/2 长连接复用、CDN 边缘接入与 TLS Session Ticket！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 网关排队与调度等待 (Gateway Queue &amp; Worker Starvation: 15ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">连接到达系统 ──► 在 TCP accept 队列或线程池工作队列排队等待空闲 Worker 调度</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">优化方向: 扩容工作线程池、改用异步事件驱动 I/O (epoll/Goroutine)！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 本地计算与内存处理 (CPU Processing &amp; Serialization: 5ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">鉴权解析 JWT ──► JSON 反序列化 ──► 业务状态机逻辑推演 ──► 组装下游 RPC 请求</text>
+        <text x="15" y="62" font-size="8" fill="#047857">优化方向: 消除反射、采用 Protocol Buffers / Sonic 极速序列化、避免逃逸分配！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 下游依赖与持久化 I/O (Downstream RPC &amp; Database Lock: 50ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">SQL 磁盘扫描与锁等待 ──► Redis 缓存网络查询 ──► 第三方支付 API 阻塞调用 ──► 占总时延 60%！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">优化方向: 加覆盖索引、读写分离、并行 RPC 调用与异步消息解耦！</text>
+      </g>
+    </g>
+  </g>
+</svg>

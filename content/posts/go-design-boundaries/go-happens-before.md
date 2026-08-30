@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 两个 goroutine 访问同一个变量，代码里的先后顺序不是证据，happens-before 才是。Go 内存模型把 goroutine 创建、channel、锁、原子操作等同步关系写成了可验证的边；本文重点拆三组最容易误读的规则：channel 按发送与接收配对，锁按 `Unlock(n)` 到后续 `Lock(m)` 配对，原子操作按顺序一致性建立观察关系。肉眼排序不作数，内存模型是合同，`-race` 只能在实际执行路径上帮助发现竞态，不能替你证明所有路径都无竞态。
 
+
+---
+
+![Go 内存模型 happens-before 因果偏序图与并发可见性保障](../../../public/images/go-memory-model-happens-before-graph.svg)
+
 ## 一、不直觉的起点：容量从 0 变 1，保证消失
 
 《The Go Memory Model》给出了两段几乎相同的代码，第一段带缓冲：
@@ -54,6 +59,10 @@ func main() {
 官方同样保证打印 `hello, world`，因为**无缓冲 channel 的接收同步于对应发送的完成**——接收先于发送完成，等于多了一条反向的边。
 
 然后文档用一句话埋了最容易被跳过的坑：把上面 `make(chan int)` 换成 `make(chan int, 1)`，保证就没了。"它可能打印空串、崩溃，或者做其他任何事。"容量从 0 变成 1，逻辑一行没改，语言却收回承诺。要讲清为什么，必须拆开"happens-before"。
+
+
+
+![Go 内存模型 Happens-Before 偏序规则：包初始化、Goroutine 启停与 Channel 通信](../../../public/images/go-memory-model-happens-before-order.svg)
 
 ## 二、没有边，就是数据竞争
 
@@ -128,6 +137,10 @@ go run -race main.go unbuffered
 `buffered` 命令应报告 data race 并以非零状态结束；`unbuffered` 命令输出 `hello, world` 且不应报告 race。原始 stdout/stderr、Go 版本和命令保存在 `evidence/go-happens-before/2026-08-17-local/`。即使这两个命令都通过，也只覆盖这两个小程序的执行路径。
 
 缓冲 1 的 channel 当信号，是生产环境第一高频的隐性竞态：代码看起来"发完信号再读数据"，实际发的只是"我有货了"，接收方却没有关于数据的承诺。
+
+
+
+![指令重排与内存可见性危机：单标志位自旋陷阱与 atomic.Pointer 内存屏障](../../../public/images/instruction-reordering-visibility-barrier-fix.svg)
 
 ## 四、锁和 Once：配对契约
 

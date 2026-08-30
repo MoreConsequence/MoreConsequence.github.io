@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Agent 权限边界与物理沙箱：应用层正则过滤 vs Linux Bubblewrap 隔离</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">应用层黑名单 (容易被 base64/管道绕过) ｜ Linux Namespaces + Bubblewrap (只读挂载 /、仅暴露 /workspace、禁用网络)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: App Level Filter -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 应用层黑名单过滤：形同虚设的安全假象</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 试图用正则匹配 "rm -rf" 或 "curl"</text>
+          <text y="28" fill="#fca5a5">攻击者或模型被注入攻击后的简单绕过手段：</text>
+          
+          <text y="50" fill="#ef4444">1. Base64 编码绕过: echo cm0gLXJmIC8= | base64 -d | sh</text>
+          <text y="66" fill="#ef4444">2. Python 动态反射: python -c "import os; os.system('...')"</text>
+          <text y="82" fill="#ef4444">3. 变量拼接执行: c=rm; a=-rf; $c $a /</text>
+          
+          <text y="108" fill="#ef4444">🔴 结论：应用层永远无法枚举无穷无尽的 Shell 语法变换！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">致命盲区：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 弹窗只会让用户产生疲劳，盲目点击确认；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 恶意提示词注入 (Prompt Injection) 轻松攻破正则；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 造成宿主机 SSH 密钥与云密钥泄露！</text>
+      </g>
+    </g>
+
+    <!-- Right: OS Level Sandbox -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 内核级物理沙箱：Bubblewrap / Docker 隔离</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// bwrap (Bubblewrap) 物理隔离沙箱命令</text>
+          <text y="28" fill="#86efac">bwrap --ro-bind /usr /usr --ro-bind /lib /lib </text>
+          <text y="42" fill="#38bdf8">      --bind /tmp/agent_ws /workspace </text>
+          <text y="56" fill="#f87171">      --unshare-net --unshare-pid --new-session </text>
+          <text y="70" fill="#4ade80">      --die-with-parent /bin/bash -c "cmd"</text>
+          
+          <text y="94" fill="#34d399">1. 根目录与宿主全量只读，仅 /workspace 可写！</text>
+          <text y="108" fill="#34d399">2. 彻底禁用外部网络 (unshare-net)，绝无外带密钥可能！</text>
+          <text y="122" fill="#4ade80">✓ 即使执行 rm -rf /，宿主机也毫发无损！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 把安全责任下沉给 Linux 内核物理机制；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• Agent 可以放开手脚全自动执行编译测试；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 打造银行级零信任的自动化代码开发环境！</text>
+      </g>
+    </g>
+  </g>
+</svg>

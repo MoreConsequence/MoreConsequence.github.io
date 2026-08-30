@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LLM 采样几何物理模型：Temperature 缩放与 Top-P 核采样截断</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Logits / T ──► Softmax 概率分布 ──► Top-P (按累积概率截断长尾) ──► 伪随机采样与 GPU 非确定性浮点累加</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Temperature 能量退火</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">P(x_i) = exp(z_i / T) / ∑ exp(z_j / T)</text>
+          
+          <text x="10" y="44" fill="#86efac">1. T ──► 0 (极寒 Greed):</text>
+          <text x="16" y="58" fill="#86efac">   最大 Logit 概率趋近 100%，绝对确定</text>
+          
+          <text x="10" y="80" fill="#fb923c">2. T = 1.0 (标准分布): 保留原始 logits 梯度</text>
+          
+          <text x="10" y="104" fill="#f87171">3. T &gt;&gt; 1 (高温退火):</text>
+          <text x="16" y="118" fill="#fca5a5">   概率趋向均匀分布，胡言乱语发散！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">选型铁律：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 代码生成、数学推理、提取 JSON: 坚决设为 T = 0；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 文案创作、发散头脑风暴: T = 0.7 ~ 0.9；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 严禁生产环境随意配置大于 1.0！</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Top-P (Nucleus) 核截断</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 动态累积概率截断</text>
+          <text x="10" y="34" fill="#86efac">1. 将候选词按概率由大到小排序</text>
+          <text x="10" y="50" fill="#86efac">2. 累加概率直到超过阈值 P (如 0.9)</text>
+          <text x="10" y="68" fill="#38bdf8">3. 彻底丢弃后 10% 的长尾低概率词！</text>
+          <text x="10" y="88" fill="#34d399">✓ 动态适应不同上下文预测的置信度：</text>
+          <text x="16" y="102" fill="#cbd5e1">• 确定上下文仅保留 1~2 个候选词</text>
+          <text x="16" y="116" fill="#cbd5e1">• 开放上下文保留更多可能分支</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 远优于固定词数的 Top-K 静态截断；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼顾语言丰富性与合规安全性；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代大模型最通用的标配采样策略。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 浮点非确定性与复现真相</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 为什么设定了 seed 依然偶尔有偏差？</text>
+          <text x="10" y="34" fill="#fed7aa">1. GPU 并发规约 (Reduction) 执行顺序随机</text>
+          <text x="10" y="50" fill="#fed7aa">2. IEEE 754 浮点加法不满足结合律：</text>
+          <text x="16" y="66" fill="#f87171">(a + b) + c != a + (b + c)</text>
+          <text x="10" y="86" fill="#38bdf8">3. 微小的 1e-7 尾数差异导致 Softmax 翻转！</text>
+          <text x="10" y="106" fill="#4ade80">✓ 严格复现需开启确定性计算 (Deterministic Kernel)！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">工程建议：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 评测基准必须锁定 seed 与模型 exact checkpoint；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 认知到 GPU 硬件并行带来的固有随机微抖动；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造科学、严谨的 LLM 实验标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

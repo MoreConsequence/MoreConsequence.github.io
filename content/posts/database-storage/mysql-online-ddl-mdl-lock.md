@@ -10,6 +10,11 @@ series: "数据库原理手记"
 
 **TL;DR：** MySQL 的 ALTER TABLE 号称”在线 DDL”，但这个在线是打折的。无论走 COPY 还是 INPLACE，DDL 都要先把元数据锁的可升级共享档（SU）拿到手，结束时再升级成排他做切换；而任何一条 DML 都要先拿共享档，排他与共享天生互斥。只要有一条长事务开着不提交，ALTER 就停在 `Waiting for table metadata lock`，它挂起的排他请求还会把这张表之后所有读写请求全部挡在门外——一条 ALTER 让整表读写排队，而 `lock_wait_timeout` 默认 31536000 秒（一年），意味着没人干预就一直排到超时。5.6+ 的 in-place 只是把“拷贝整表”换成“原地改页”，元数据锁的等待窗口一个不少。这也是 gh-ost / pt-osc 至今不可替代的原因：影子表 + 追平 + 原子 rename，把 MDL 长持有压成毫秒级切换。
 
+
+---
+
+![MySQL Online DDL 的 MDL 元数据锁排队与阻塞雪崩模型](../../../public/images/mysql-online-ddl-mdl-queue.svg)
+
 ## 一、一条加索引的 ALTER 是怎么把线上读写卡住的
 
 先立场景：线上订单表 5000 万行，开发在压测后补一条索引：
@@ -40,6 +45,10 @@ flowchart LR
 ```
 
 这里的关键不在慢查询：一条在 autocommit 下 2 毫秒就跑完的 `SELECT`，一旦被包进“开着不提交”的事务里，它那枚共享元数据锁就变成烫手山芋。慢，不是它造成的；它只是把门从里面别住了。
+
+
+
+![元数据锁 (MDL) 阻塞风暴：慢查询持有 MDL_SHARED 导致全局写阻塞](../../../public/images/metadata-lock-mdl-queue-starvation.svg)
 
 ## 二、MDL 的两种锁：DML 要 SHARED，DDL 要 EXCLUSIVE
 
@@ -95,6 +104,10 @@ MySQL 8.0 里 DDL 有三档算法：
 配套还有 `ALGORITHM` / `LOCK` 两个参数。`ALGORITHM=INSTANT|INPLACE|COPY|DEFAULT` 限定算法档位；`LOCK=NONE`（读写都放行）| `SHARED`（放行读、挡写）| `EXCLUSIVE`（全挡）限定你能接受的最小并发。注意语义是“你请求的并发度必须能被满足，否则报错而不是偷偷降级”：`ALGORITHM=INSTANT` 撞上不支持的操作为报“does not support this operation”，`LOCK=NONE` 撞上 COPY 为报错。所以实际写 DDL 时，习惯是 `ALGORITHM=INPLACE, LOCK=NONE` 尽力而为——跑不了就退 `ALGORITHM=COPY, LOCK=SHARED` 并接受全表排写。
 
 这套谱系与 [MySQL 的三条日志：redo、undo、binlog 各记一本账](/writing/mysql-redo-undo-binlog) 接得上：INPLACE 执行期并发的 DML 变更由 **online row log** 承接（redo 只保证元数据事务落盘）；undo/MVCC 让执行期并发的读拿到一致快照；DDL 语句本身走 binlog 复制到从库，从库执行同样的 ALTER——所以从库同样要过这两道排他窗口，主库的长事务也会连坐从库。
+
+
+
+![InnoDB Online DDL 执行三阶段：Prepare -> Execution (row_log) -> Commit](../../../public/images/online-ddl-row-log-apply-phases.svg)
 
 ## 四、为什么还有 gh-ost / pt-osc：把 MDL 长持有换成短持有
 

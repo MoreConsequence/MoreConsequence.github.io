@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 1.13+ sync.Pool 受害者缓存 (Victim Cache) 跨轮 GC 机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">老版本 (每次 GC 全量清空 Pool，引发 GC 后突发分配毛刺) ──► Go 1.13+ (引入 victim 缓存，对象存活跨越 2 轮 GC，平滑抖动)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 稳态运行与常规存取 (Normal Steady State: local pool)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">业务高频 Put / Get ──► 活跃对象全部在 local 主池中高速循环复用</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">支撑几十万 QPS 的 0 内存分配吞吐！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 第 1 轮 GC 触发：降级入受害者缓存 (poolCleanup: Move to victim)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">GC STW 阶段执行 poolCleanup ──► victim = local ──► local = nil (主池降级为受害者缓存，绝不立即销毁！)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">给予存活对象整整一轮 GC 的再续命机会！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. GC 后的平滑打捞复用 (Get from victim -&gt; Move to local)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">GC 刚结束业务发起 Get ──► local 为空则深入 victim 打捞 ──► 打捞到的对象放回 local 主池继续服役</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底抹平了 GC 后瞬间发生海量 Pool.New 导致的 CPU 与内存毛刺！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 第 2 轮 GC 触发：彻底回收冷对象 (Reclaim Untouched victim)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">连续两轮 GC 期间仍未被访问的冷门对象 ──► 随 victim 清空被 GC 彻底物理释放归还 OS！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">兼具极高命中率与自动缩容防泄漏的终极平衡！</text>
+      </g>
+    </g>
+  </g>
+</svg>

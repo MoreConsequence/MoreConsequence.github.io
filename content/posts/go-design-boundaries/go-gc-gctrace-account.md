@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** Go 的垃圾回收是**并发标记-清除（concurrent mark-sweep）**，但“并发”不等于“零停顿”：一次收集仍包含 **STW sweep termination、并发 mark/scan、STW mark termination** 三段。Go 1.25.1 的 `gctrace=1` 输出还会给出三段墙钟时间、mark/scan 的 assist/background/idle CPU 时间、`heap start → heap end → live heap`、goal、栈、全局变量和 P 数。统一实验保留 1,000,000 个指针密集对象时，单次本机运行在 `GOGC=50/100/200` 下分别出现 3/2/1 个 GC 周期；这只是该输入形状的观测，不是调参定律。先减少可扫描的可达对象，再用 `GOGC` 与 `GOMEMLIMIT` 测量取舍。
 
+
+---
+
+![Go 三色标记清除 GC (Tri-color Mark & Sweep)、混合写屏障与 gctrace 日志拆解](../../../public/images/go-gc-tri-color-mark-sweep-gctrace.svg)
+
 ## 一、GC 不是一次“全停清扫”，而是三段不同语义的工作
 
 Go 1.25.1 的一次 GC 循环在 `gctrace` 里长这样；官方文档明确提醒，输出格式会随版本变化：
@@ -39,6 +44,10 @@ flowchart LR
 因此，“GC 大头在 mark”不能只看一条旧格式样张；要先确认运行时版本和字段。并发 mark/scan 的墙钟时间通常与可扫描的活对象图相关，但 CPU 还会受到分配速率、辅助标记和核数影响。
 
 Go 换来的不是“零停顿”，而是把一次大头工作拆成并发阶段，并将必须全局一致的部分压缩成两次 STW 边界。
+
+
+
+![GODEBUG=gctrace=1 日志全字段公式解剖：STW 耗时、堆伸缩与 P 算力占用](../../../public/images/gctrace-log-parsing-formula-breakdown.svg)
 
 ## 二、用同一个可配置程序采集真实现场
 
@@ -111,6 +120,10 @@ GOGC=100 GODEBUG=gctrace=1 /tmp/github-blog-gc-trace -n=1000000 2>&1 | rg '^(gc|
 3. **finalizer**：带 finalizer 的对象不会在第一次变得不可达时立即回收；finalizer 还要在独立 goroutine 上运行，完成前的回收时机不可当作资源释放协议。日常别拿它替代显式 `Close`。
 
 减压方向：在语义允许时使用值语义（`[]T` 优于 `[]*T`）、减少长期可达的指针图、让大对象尽早脱离根集合；`sync.Pool` 只适合可丢弃的临时对象，不能用来掩盖所有权和生命周期错误。
+
+
+
+![Go 1.19+ 双旋钮调优：GOGC (增长百分比) 与 GOMEMLIMIT (软内存上限) 协同模型](../../../public/images/gogc-vs-gomemlimit-pacer-model.svg)
 
 ## 四、GOGC 和 GOMEMLIMIT 是两个不同的旋钮
 

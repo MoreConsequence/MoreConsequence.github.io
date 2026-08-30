@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">主键选型对物理存储的影响：顺序自增 ID vs 随机 UUID</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">自增 ID (单调递增，顺序磁盘追加，页填充率 93%，0 碎片) vs UUID (全随机散落，引发疯狂页分裂，存储膨胀 200%)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Random UUID -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 随机 UUID 主键：灾难性碎片与写放大</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">PRIMARY KEY (UUID: 36 字符随机字符串)</text>
+          
+          <text y="38" fill="#ef4444">物理破坏：</text>
+          <text y="52" fill="#fca5a5">1. 新数据随机散落在 100 万个不同的叶子页中</text>
+          <text y="66" fill="#ef4444">2. 导致目标页频繁不在 Buffer Pool 中，触发海量随机磁盘读！</text>
+          <text y="80" fill="#ef4444">3. 频繁页分裂导致平均每页只有 50% 填充率！</text>
+          
+          <text y="106" fill="#f87171">🔴 存储体积虚胖 2 倍，二级索引体积暴涨 3 倍！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 写入 QPS 随着数据量增长出现断崖式下跌；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• Buffer Pool 命中率跌破 30%；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 严禁直接使用随机 UUIDv4 作为聚簇索引！</text>
+      </g>
+    </g>
+
+    <!-- Right: Auto-Increment ID -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 单调自增 ID / 雪花算法 (Snowflake / TSID)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">PRIMARY KEY (BIGINT AUTO_INCREMENT / TSID)</text>
+          
+          <text y="38" fill="#86efac">物理收益：</text>
+          <text y="52" fill="#34d399">1. 新记录永远紧凑追加在最右侧尾页 (Page N)</text>
+          <text y="66" fill="#34d399">2. 当前尾页常驻 Buffer Pool，0 磁盘随机读！</text>
+          <text y="80" fill="#34d399">3. 页满后平滑分配新页，填充率高达 93.75% (15/16)！</text>
+          
+          <text y="106" fill="#4ade80">✓ 极限压缩存储空间，顺序写入吞吐飙升 10 倍！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 极大提升 B+ 树缓存局部性与扫描性能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 分布式系统推荐使用时间有序的 TSID / ULID；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库性能调优第一黄金铁律！</text>
+      </g>
+    </g>
+  </g>
+</svg>

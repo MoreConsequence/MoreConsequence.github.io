@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 能够写出跑通单个任务的 Agent 原型，和能够在企业级生产环境中持续迭代一个高可靠的 Agent 系统，其间横跨着一条巨大的工程鸿沟——**评测体系（Evaluation Pipeline）与成本遥测（Telemetry）**。依赖公网公开的 SWE-Bench 基准容易陷入“为榜单过拟合”的陷阱；缺乏毫秒级的全链路追踪，你永远不知道为什么某一轮任务突然耗时 40 秒、花了 $2 美元。本文作为《Pi Agent 实战通才教程》的收官终篇，带你构建**确定性 Mock 回归单测套件**、拆解企业级真实任务评测集的设计原则，并手把手实现 `pi-telemetry` **跨厂商 Token 记账与延迟归因引擎**，最后对全套 9 课的架构体系进行通盘复盘。
 
+
+---
+
+![自动化评测与全链路遥测：从 SWE-Bench 到企业级 Token 记账与成本审计](../../../public/images/pi-evals-telemetry-token-accounting.svg)
+
 ## 一、为什么公开 Benchmark（如 SWE-Bench）无法保证企业落地？
 
 在评估 Coding Agent 时，很多团队过度迷信 SWE-Bench。但在工业级私有代码库中，SWE-Bench 的局限性非常明显：
@@ -36,6 +41,10 @@ flowchart TD
 1. **真实 PR 提取**：从团队最近 6 个月合并的高质量 PR 中提取真实任务；
 2. **全流程测试执行**：不只比对代码文本 Diff，必须在隔离沙箱中真实执行 `npm test` 或 `go test` 并以测试全绿作为 Pass@1 判定标准；
 3. **成本与步数硬约束**：设置单任务 Token 消耗上限与耗时阈值，超过预算即使测试通过也标记为失败（Timeout / Cost Budget Exceeded）。
+
+
+
+![Pi OpenTelemetry 遥测链路与 Span 性能追踪体系：Turn -> Step -> LLM -> Tool](../../../public/images/pi-tutorial-telemetry-otel-trace-collector.svg)
 
 ## 二、确定性回归测试：如何给 Agent 写单测？
 
@@ -223,6 +232,10 @@ Total Spans:       ${this.spans.length} recorded
   }
 }
 ```
+
+
+
+![Pi 自动化评测集构建与评分流水线：合成测试用例 -> 沙箱运行 -> 确定性打分](../../../public/images/pi-tutorial-synthetic-evals-dataset-scoring.svg)
 
 ## 四、全教程通盘复盘：生产级 Agent Harness 架构全景
 

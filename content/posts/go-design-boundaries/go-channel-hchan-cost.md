@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** channel 的成本首先由容量和是否需要交接决定。本次统一基准只测同一条 `send` 路径，由一个独立 goroutine 持续 drain，避免把 send、recv 和 ping-pong 混成一个数字：`cap=256` 为 **34.91ns/op**，`cap=16` 为 **40.33ns/op**，`cap=1` 为 **104.8ns/op**，无缓冲为 **139.0ns/op**；8 个并发 sender 共享 `cap=256` 为 **78.25ns/op**。hchan 的 `lock`、环形 buffer、sendq/recvq 和元素拷贝解释了这些路径，但这组数字只代表当前机器、输入类型和 benchmark 形状，不证明 channel 永远比 Mutex 快。
 
+
+---
+
+![Go Channel 底层结构 (hchan)、环形缓冲区与 waitq 等待队列](../../../public/images/go-channel-hchan-lock-ring-waitq.svg)
+
 ## 一、hchan 解剖：一把锁、两个队列、一个环形 buffer
 
 `channel` 的运行时结构在 `runtime/chan.go`（Go 1.25.1）。下面只保留决定本文路径的关键字段；完整实现仍应以目标 Go 版本源码为准：
@@ -36,6 +41,10 @@ type hchan struct {
 1. **一把锁保护一切**。qcount/buf/sendx/recvx 的读写、队列的进出，全部在 `lock` 临界区内。channel 的吞吐上限 = 锁竞争上限。
 2. **元素可能发生值拷贝**。send 把元素拷进 buf（或直传 sudog），recv 再拷出来；元素类型和路径决定实际拷贝量。本文只测 `int`，不把未采集的“大元素 +7ns”写成当前结论。
 3. **队列里挂的是 sudog**（goroutine 的等待票据），不是数据。阻塞的 goroutine 以 sudog 形式挂在 recvq/sendq 上，等待被唤醒。
+
+
+
+![Channel 内部剖析：hchan 环形缓冲区 (buf)、锁 (lock) 与等待队列 (waitq)](../../../public/images/hchan-circular-buffer-waitq-anatomy.svg)
 
 ## 二、四档容量实测：从 34.91ns 到 139.0ns
 
@@ -76,6 +85,10 @@ send 慢路径（缓冲满）：lock → 挂 sudog 进 sendq → park → 被 re
 这里的数字只是路径示意，不是本次表格的额外测量：当前 benchmark 测的是一个持续 drain 的发送端，不保证每轮都进入“buffer 满”的路径。无缓冲 channel 是“直传”变体：发送方没有 buffer 可写，必须与接收方建立交接；如果要讨论 park/ready 的成本，应使用独立的阻塞或 ping-pong 实验。
 
 因此不能用本表和“Mutex 保护计数器”做速度排名：两者没有相同的工作量。channel 同时提供排队、所有权转移和阻塞；Mutex 只提供互斥，数据结构与等待条件还要由调用方实现。要做公平比较，必须固定临界区、队列深度、消费者数量和成功/阻塞判定。
+
+
+
+![Channel 跨栈内存直传时序：sendDirect 与 goready 唤醒流转](../../../public/images/channel-direct-stack-copy-send-flow.svg)
 
 ## 四、竞争场景：共享 channel 会把快路径拉长
 

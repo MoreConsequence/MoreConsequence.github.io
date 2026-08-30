@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** [《错误处理：throw 是长臂，Result 是管道》](/writing/typescript-errors-result-throw)使用了泛型 Result，这篇把“复杂类型什么时候值得维护”落到 Agent 工具注册表。**泛型推导能把工具名和参数类型绑定，模板字面量类型能约束已知事件格式，条件类型能从字面量中提取信息，类型守卫能把运行时字符串重新收窄。** 实验 `experiments/ts-type-gymnastics/` 用 `@ts-expect-error` 证明 `callTool("get_stock", { symbol: 42 })` 编译不过；但这些类型不会验证外部 JSON，也不会在运行时存在，所以必须用 schema 或手写解析器守住边界。类型体操的收益到“防止一个具体错误”为止，再深就是维护成本。
 
+
+---
+
+![TypeScript 类型体操实战：注册表模式 (Registry Pattern)、模板字面量与编译期安全守卫](../../../public/images/typescript-type-gymnastics-template-literal-registry.svg)
+
 ## 一、注册表是泛型推导最值得落地的场景
 
 如果工具名、参数和执行函数分别维护，新增一个工具要改多个联合类型和分支。把工具定义作为唯一来源，调用函数可以从工具名推导参数：
@@ -45,6 +50,10 @@ const callTool = <N extends ToolName>(name: N, args: ArgsOf<N>) => {
 3. `args as never` 是一个局部的不安全接缝：TypeScript 在泛型索引后无法证明每个具体函数都接受同一个参数类型。它只能出现在注册表已经通过同一结构检查、且没有动态修改的地方；如果工具来自外部配置，不能靠这个断言当作运行时验证。
 
 实验用 TypeScript 5.9.3 执行 `tsc -p experiments/ts-type-gymnastics/tsconfig.json --noEmit`，错误调用由 `@ts-expect-error` 消费；删除错误注释后，编译器会报 `number` 不能赋给 `string`。运行时 demo 则打印两个合法调用，说明编译期合同和运行时行为分别被验证。
+
+
+
+![条件类型分发律 (Distributive Conditional Types) 与元组非分发方括号包裹](../../../public/images/conditional-types-distributive-law.svg)
 
 ## 二、satisfies、类型注解和 as 断言不是一回事
 
@@ -88,6 +97,10 @@ type NotAnEvent = ExtractTool<"event:whatever">;       // never
 它解决的是拼写和格式错误，不是协议解析。`const incoming: string` 即使内容是 `tool:get_stock:start`，仍然只是 `string`；要让它成为 `ToolEvent`，必须先检查前缀、分隔符数量、工具名白名单和动作白名单。否则直接 `as ToolEvent` 只是把错误从编译器隐藏到运行时。
 
 模板字面量也有可读性边界。格式越来越多时，`tool:${string}:${string}:${string}:${string}` 只会产生一个难以解释的类型；这时用对象联合表达 `type/name/action/payload`，通常比继续扩展字符串更容易记录字段级错误。
+
+
+
+![模板字面量类型递归解析：SQL/URL 路由参数编译期 AST 模式匹配](../../../public/images/template-literal-parser-ast-recursion.svg)
 
 ## 四、类型守卫把运行时名称重新接回注册表
 

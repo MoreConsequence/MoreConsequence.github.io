@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 在 Coding Agent 的全部内建工具中，**`edit`（文件修改）是复杂度最高、出错率最高、也是决定任务成功率的最关键工具**。新手开发者往往习惯提供一个 `write_file(path, fullContent)` 工具让模型直接全量重写文件——这在修改 10 行代码的千行大文件时，不仅会白白浪费上万 Token，而且模型在输出长文件时极其容易“偷懒”漏掉关键函数。然而，粗暴的行级 `replace(oldStr, newStr)` 同样脆弱：模型输出的空白符、Tab/Space 缩进、行尾 `\r\n` 哪怕相差一个字符，字符串查找就会彻底失败。本文作为《Pi Agent 实战通才教程》第三课，手把手带你实现一个工业级、支持**模糊锚点匹配（Fuzzy Anchor Search）**与**统一 Diff 预览**的行级编辑算法。
 
+
+---
+
+![代码怎么改：模糊锚点匹配与 Diff-Aware 行级精准编辑算法](../../../public/images/pi-diff-edit-fuzzy-anchor-matching.svg)
+
 ## 一、为什么不能用全量覆盖（Write vs Edit）？
 
 对比两种文件修改方式在真实工程中的表现：
@@ -22,6 +27,10 @@ series: "Pi Agent 通才教程"
 | **并发与状态安全** | 容易发生盲目覆盖（Blind Overwrite），覆盖其他进程修改 | 必须提供原文本作为锚点校验，若锚点失效立即拒绝并报错 |
 
 结论非常明确：**生产级 Coding Agent 必须以结构化局部编辑为主，全量覆写仅用于新建文件。**
+
+
+
+![Pi 代码编辑算法：全量重写 vs 单块精确替换 (Exact Chunk Replacement)](../../../public/images/pi-tutorial-diff-edit-exact-chunk-replacement.svg)
 
 ## 二、精确行匹配的三大崩溃场景
 
@@ -58,6 +67,10 @@ flowchart TD
     Step3 -->|命中 1 次| Apply
     Step3 -->|未命中或歧义| ErrFail["报错: 未能在文件中找到匹配的代码片段"]
 ```
+
+
+
+![Pi 代码模糊匹配与缩进自适应算法：容忍微小空白与换行符差异](../../../public/images/pi-tutorial-fuzzy-match-indent-fix-pipeline.svg)
 
 ## 四、动手实战：编写 FuzzyEditEngine
 

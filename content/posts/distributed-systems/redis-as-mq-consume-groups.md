@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** Redis 能做消息队列，但“能不能”从来不是问题，“**这消息丢了算谁的**”才是。选它之前先判定：消息是否允许丢失、是否需要失败重投、历史要保留多久、主从切换能否接受异步复制窗口。**List** 的阻塞弹出没有 ack；**Pub/Sub** 不保存离线消息；**Streams** 用消费组、PEL、XACK 和 XAUTOCLAIM 管理未确认条目，但 **XACK 不会删除 Stream entry，历史是否可回放取决于 XTRIM/保留策略**。Kafka 通常提供更明确的长期保留和独立 offset；Redis Streams 适合已有 Redis、规模和保留边界可控、业务能承担幂等的任务流。
 
+
+---
+
+![Redis 当消息队列的账本：List / PubSub / Stream PEL 待确认列表 vs 专业 Kafka 对比](../../../public/images/redis-stream-as-mq-pel-ack-vs-kafka.svg)
+
 ## 一、场景先行：先用三条线砍掉一半的"想用"
 
 最便宜的自检是三连问：**丢一秒钟的消息能忍吗？消息消费失败需要重投吗？未来半年会不会要回放历史？**
@@ -32,6 +37,10 @@ series: "系统设计手记"
 | 高吞吐长期堆积 | Streams 需要显式保留/裁剪策略；不设边界会让内存和持久化空间持续增长 |
 
 **一句话场景判据**：这条消息**消费完之后还需要存在**吗？如果要长期回溯、独立消费进度和跨集群复制，优先评估 Kafka/Pulsar；如果只需受控保留的任务流，Redis Streams 可以进入候选，但必须把 `XTRIM`、AOF/RDB、复制和幂等写进合同。
+
+
+
+![Redis Stream 消费组与 PEL 待确认列表模型：XREADGROUP, XACK 与 XCLAIM 故障接管](../../../public/images/redis-stream-consumer-group-pel-architecture.svg)
 
 ## 二、三副账，各卖一种语义
 
@@ -97,6 +106,10 @@ sequenceDiagram
 | 背压 | ✅ BRPOP | 阻塞 | 消费推进慢消息变多 | 依赖 lag 水位线 |
 
 **注意两种"丢"别混淆**：第 4 行的"断电丢多少"和第 3 行的"消费崩溃重投"是两件事——前者是存储安全，后者是投递语义。**List 两个都欠账，Streams 只欠第一个**，这就是为什么"至少一次"总被拿来放在 Streams 的账上。
+
+
+
+![消息队列技术选型对比：Redis Stream (轻量低延迟) vs Kafka (海量吞吐) vs RocketMQ (复杂金融事务)](../../../public/images/redis-stream-vs-kafka-rocketmq-tradeoff.svg)
 
 ## 四、断电与 ack 时机：把死法摆到一张表
 

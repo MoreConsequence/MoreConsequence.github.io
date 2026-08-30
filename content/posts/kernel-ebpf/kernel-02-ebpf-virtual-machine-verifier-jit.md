@@ -101,6 +101,10 @@ $ sudo sysctl -w net.core.bpf_jit_harden=2  # 开启 JIT 代码盲化，防御 S
 
 ---
 
+
+
+![BPF Maps 演进：传统 Perf Event 阵列 vs BPF RingBuffer 无锁内存映射](../../../public/images/ebpf-maps-bpf-ringbuf-lockless-ipc.svg)
+
 ## 五、 BPF Maps：内核态与用户态的无锁通信桥梁
 
 eBPF 程序在内核中运行，用户态应用程序（如 Go、Python 控制面）如何与内核 eBPF 交换数据和监控指标？

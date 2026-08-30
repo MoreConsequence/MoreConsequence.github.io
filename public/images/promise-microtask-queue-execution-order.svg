@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Async/Await 语法糖内核：Promise 状态机与微任务时序演算</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">await fn() 相当于 Promise.resolve(fn()).then(resume) ｜ 同步代码执行完毕 ──► 清空全部微任务 ──► 进入下一轮宏任务</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 同步执行栈排空阶段 (Synchronous Call Stack Execution)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">console.log(1) ──► await asyncFunc() ──► 遇到 await 立即执行右侧表达式并返回 pending Promise</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">当前函数的后续代码被封装为微任务推入 Microtask Queue，当前同步栈继续向下执行！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. process.nextTick 优先插队 (Node.js Exclusive Tick Queue)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">同步栈清空后，优先清空 process.nextTick 队列 ──► 全部执行完毕后才轮到 Promise 微任务</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">掌握优先级差异是排查 Node.js 离奇执行顺序 Bug 的关键！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Promise 微任务队列彻底清空 (Microtask Drainage)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">连续弹出 Promise.then 与 await 恢复点 ──► 微任务中新产生的微任务在当前阶段一并清空！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">在微任务队列完全为 0 之前，浏览器绝不会执行渲染或下一个宏任务！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 宏任务与渲染检查点 (Macrotask &amp; Rendering Opportunity)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">微任务排空 ──► 浏览器尝试执行 UI 渲染 ──► 调度器从 Timers 队列取出下一个 setTimeout 宏任务</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">严密的时间线推演，彻底消除任何面试与架构实战疑惑！</text>
+      </g>
+    </g>
+  </g>
+</svg>

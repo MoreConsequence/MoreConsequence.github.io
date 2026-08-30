@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">数据库死锁等待图 (Wait-For Graph) 环路检测与回滚裁决</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Tx1 持有 Row A 等待 Row B ｜ Tx2 持有 Row B 等待 Row A ｜ 构成有向环路 ──► DFS 环路检测触发 ──► 评估 Undo 成本回滚最小代价事务</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 资源交叉申请与闭环形成 (Resource Contention: Tx1 ⇄ Tx2)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">事务 1 锁定 Row 10 并申请 Row 20 ｜ 事务 2 锁定 Row 20 并申请 Row 10 ──► 双方陷入无限期等待</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">并发场景下不同顺序更新多行数据的典型死锁模型！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">2. 等待图有向环路生成 (Wait-For Graph Cycle Formed)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">构建拓扑图: Node(Tx1) ──► Node(Tx2) ──► Node(Tx1) ──► 形成闭合环路 (Cycle)</text>
+        <text x="15" y="62" font-size="8" fill="#7f1d1d">物理上无论等待多久，双方永远不可能自愈！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 内核 DFS 算法毫秒级检测 (DFS Deadlock Detector: innodb_deadlock_detect=1)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">后台线程定时执行深度优先遍历 ──► 瞬间发现环路 ──► 比对两事务产生的 Undo Log 量</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">精准选取代价最小（修改行数最少）的事务作为受害者 (Victim)！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">4. 强制回滚受害者与解套 (Rollback Victim &amp; Release Locks)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">向 Tx2 抛出 Error 1213: Deadlock ──► 自动执行 ROLLBACK 释放锁 ──► Tx1 立即成功提交！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">数据库自愈保证系统整体吞吐不受个别死锁阻塞！</text>
+      </g>
+    </g>
+  </g>
+</svg>

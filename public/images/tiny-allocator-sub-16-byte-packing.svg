@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go Tiny 分配器微对象合并机理 (&lt; 16 字节且无指针)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">分配 2B, 4B, 8B 变量 ──► 0 独立分配 ──► 全部紧凑塞入当前 16 字节 Tiny Block 槽位 ──► 内存碎片率降低 80%</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 微对象识别判定 (noscan &amp;&amp; size &lt; maxTinySize: 16B)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">例如分配 int32(4B) 或 bool(1B) 或短字符串头部 ──► 判断无指针且尺寸小于 16B</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">命中 Tiny 分配器的极速通道！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 槽内紧凑偏移与对齐 (Offset Alignment within 16B Block)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">tinyOffset 按 size 对齐 ──► 若当前 16B 块剩余空间足够 ──► 直接返回当前 tiny 指针并累加 offset</text>
+        <text x="15" y="62" font-size="8" fill="#047857">纯指针加法运算，耗时仅 1 ~ 2 纳秒！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 槽满换新与空间复用 (Allocate New 16B Tiny Span)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">当 16B 无法容纳新对象 ──► 从 mcache.tinySpan 获取新的 16 字节槽位 ──► 重置 offset = size</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将数以亿计的微小零散对象打包管理！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. GC 聚合回收 (Collective GC Reclamation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">整个 16B Tiny Block 内所有微对象均死亡时 ──► GC 一次性标记并回收整个槽位 ──► 极大幅度减轻 GC 标记负担！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 语言在微观内存优化上的艺术巅峰！</text>
+      </g>
+    </g>
+  </g>
+</svg>

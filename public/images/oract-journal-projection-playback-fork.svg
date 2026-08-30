@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ORACT 状态重放与分叉：无副作用 Playback 与会话树 Fork</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">不可变 Journal 日志 ──► Playback 引擎 (跳过真实网络/磁盘 I/O 极速纯内存重放) ──► 任意节点一键 Fork 派生新分支实验</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Pure Playback -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 无副作用确定性 Playback 回放</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 回放模式下副作用拦截器自动生效</text>
+          <text y="28" fill="#86efac">for event in journal.ReadEvents() {</text>
+          <text y="42" fill="#38bdf8">  if isEffect(event) {</text>
+          <text y="56" fill="#fb923c">    // 0 网络请求，直接从已记录的 Journal 读取旧结果！</text>
+          <text y="70" fill="#4ade80">    effectDispatcher.MockWithJournal(event.Result)</text>
+          <text y="84" fill="#38bdf8">  }</text>
+          <text y="98" fill="#86efac">  state = fsm.Apply(state, event)</text>
+          <text y="112" fill="#86efac">}</text>
+          
+          <text y="130" fill="#34d399">✓ 10,000 步超长会话仅需 50 毫秒即可完整重构状态机！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 纯内存高速执行，绝不触发外部真实操作；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 支持历史时间步的单步断点调试 (Time Travel Debugging)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极致严密的测试与排障利器。</text>
+      </g>
+    </g>
+
+    <!-- Right: Forking Session Trees -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 会话树 Fork 分叉探索与比对</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 从历史第 20 步分叉出全新思路</text>
+          <text y="28" fill="#86efac">const newSession = session.ForkAtStep(20);</text>
+          
+          <text y="50" fill="#38bdf8">分支拓扑演进：</text>
+          <text y="66" fill="#cbd5e1">   Step 0 ──► Step 20 ──┬──► Step 21 ──► [主干: 失败报错]</text>
+          <text y="82" fill="#4ade80">                        └──► Step 21_fork ──► [新分支: 成功通过！]</text>
+          
+          <text y="108" fill="#34d399">✓ 允许不同 Agent 并行探索最优解 (MCTS 搜索)！</text>
+          <text y="122" fill="#34d399">✓ 保留全部探索痕迹，支持最终优胜分支一键合入！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 让 Agent 具备像人类工程师一样的分支探索与试错能力；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 完美支持树搜索算法与强化学习微调 (RLFT)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 下一代高级自主智能体的大脑基底！</text>
+      </g>
+    </g>
+  </g>
+</svg>

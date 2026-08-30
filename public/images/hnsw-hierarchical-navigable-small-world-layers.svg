@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">HNSW 分层可导航小世界图索引拓扑 (Hierarchical NSW Index)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">顶层稀疏图大步长跳跃 (Layer 2) ──► 中间层快速收敛 (Layer 1) ──► 底层全量致密图局部贪婪贪婪探索 (Layer 0) ──► O(log N) 毫秒级 ANN 搜索</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Layer 2: 顶层高速公路</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">极度稀疏的节点分布：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 类似 SkipList 跳表顶层</text>
+          <text x="10" y="54" fill="#38bdf8">• 跨越巨大向量空间距离的大步长跨越</text>
+          <text x="10" y="70" fill="#34d399">• 快速确定目标向量所在的大致几何聚类</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 仅需 2~3 次距离计算！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 解决高维空间的维度灾难；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 避免陷入局部极小值；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造广域检索通道。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. Layer 1: 中间过渡层</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">中等密度拓扑图：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">• 以上一层的局部最优节点为入口 (Entry)</text>
+          <text x="10" y="54" fill="#38bdf8">• 实施贪婪近邻探索 (Greedy Search)</text>
+          <text x="10" y="70" fill="#34d399">• 迅速向目标向量所在社区逼近</text>
+          
+          <text x="10" y="100" fill="#fb923c">✓ 步长逐步收窄，精度快速递增</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 保持小世界图的聚类聚集系数；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 几何距离衰减导向；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 平滑桥接宏观与微观。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Layer 0: 全量致密图</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">包含 100% 原始全量向量：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 设定 efSearch 候选队列大小 (如 64)</text>
+          <text x="10" y="54" fill="#38bdf8">• 开展详尽的局部多路贪婪优先搜索</text>
+          <text x="10" y="70" fill="#4ade80">• 精准输出距离最近的 Top-K 向量！</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 召回率高达 99.2%，耗时仅 2ms！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 支撑数千万级高维向量低延迟查询；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• Milvus / Qdrant / PgVector 核心算法底座；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 向量数据库时代的经典杰作！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 随着 Anthropic 推出的 **MCP（Model Context Protocol）** 成为全球 AI 工具的事实标准，成千上万的开发者为 Postgres、GitHub、Slack、Figma 编写了标准 MCP Server。Pi 虽然在核心包中“刻意不做 MCP 绑定”以保持极简，但得益于其强大的扩展系统，我们只需编写一个约 80 行的 **MCP Bridge 扩展**，就能让 Pi 无缝连接全球所有开源 MCP 工具。本文作为《Pi Agent 全景通才教程》第二十一课，深入解析 MCP JSON-RPC 2.0 传输规范，手把手实现 **MCP Stdio 客户端桥接器**，并剖析如何利用 **Deferred Tool Loading（延迟工具加载）** 避免工具过多导致 Prompt Cache 崩溃。
 
+
+---
+
+![连接一切工具：为 Pi Agent 编写标准 MCP 客户端桥接器](../../../public/images/pi-mcp-gateway-standard-client-bridge.svg)
+
 ## 一、MCP 协议全景：客户端与服务端的交互契约
 
 MCP 采用标准的 JSON-RPC 2.0 消息协议，通过 `stdio` 或 `SSE（Server-Sent Events）` 建立连接：
@@ -39,6 +44,10 @@ sequenceDiagram
 1. **Tools（工具）**：可供模型主动调用的可执行函数；
 2. **Resources（资源）**：类似只读文件的上下文数据源（如数据库 Schema、日志文件）；
 3. **Prompts（提示模板）**：服务器预定义的标准化交互模板。
+
+
+
+![Pi MCP 网关统一路由与熔断器架构：多 Server 聚合与鉴权](../../../public/images/pi-mcp-gateway-router-circuit-breaker.svg)
 
 ## 二、为什么不能把 50 个 MCP 工具全部塞进上下文？
 
@@ -167,6 +176,10 @@ export default async function (pi: ExtensionAPI) {
   }
 }
 ```
+
+
+
+![MCP Server 健康检查与崩溃自动拉起自愈模型](../../../public/images/pi-mcp-server-health-monitoring-lifecycle.svg)
 
 ## 四、小结与课后自检
 

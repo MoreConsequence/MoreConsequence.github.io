@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">W3C / HTML5 规范级事件循环完整循环时序 (Spec Event Loop Timeline)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1 个宏任务 (Task) ──► 清空全部微任务 (Microtask Drainage) ──► 渲染机会评估 ──► rAF 回调 ──► 样式与布局 ──► 光栅化绘制</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 执行单个最老的宏任务 (Execute Oldest Task from Task Queue)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">从事件队列中取出且仅取出 1 个任务（用户输入事件 / setTimeout 到期回调 / I/O 回调）并执行</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">主线程执行栈同步跑完该任务！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 微任务检查点彻底清空 (Perform a Microtask Checkpoint)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">循环执行所有 Promise.then 与 MutationObserver 回调，直到 Microtask 队列长度严格为 0</text>
+        <text x="15" y="62" font-size="8" fill="#047857">微任务递归生成微任务会彻底卡死主线程！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 渲染机会评估与 rAF 执行 (Update the Rendering &amp; rAF)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">若当前处于 60/120Hz 刷新时间点 ──► 触发 requestAnimationFrame 回调 ──► 重新计算 Style 与 Layout</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将页面最新状态提交给合成器线程！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 空闲时间片调度 (requestIdleCallback / MessageChannel)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">若单帧内仍有剩余空闲时间 (deadline.timeRemaining() &gt; 0) ──► 调度后台低优预加载与日志任务</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">彻底理解浏览器的终极心智模型！</text>
+      </g>
+    </g>
+  </g>
+</svg>

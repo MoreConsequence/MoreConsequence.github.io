@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">MCP JSON-RPC 2.0 握手与能力发现生命周期时序</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">initialize 握手 ──► capabilities 协商 ──► initialized 确认 ──► 动态工具发现与执行闭环</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Actors Header -->
+    <g transform="translate(60, 20)">
+      <rect width="260" height="30" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="130" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">💻 MCP Client (Host)</text>
+
+      <rect x="520" width="260" height="30" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+      <text x="650" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">⚙️ MCP Server (e.g. Postgres / Git)</text>
+    </g>
+
+    <!-- Lifelines -->
+    <line x1="190" y1="55" x2="190" y2="360" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <line x1="710" y1="55" x2="710" y2="360" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+    <!-- Protocol Sequence Steps -->
+    <g transform="translate(190, 70)">
+      <!-- Step 1: Initialize Request -->
+      <g>
+        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <rect x="130" y="-14" width="260" height="24" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8" fill="#1e40af" text-anchor="middle">req: initialize (protocolVersion, capabilities)</text>
+      </g>
+
+      <!-- Step 2: Initialize Response -->
+      <g transform="translate(0, 42)">
+        <line x1="520" y1="0" x2="0" y2="0" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+        <rect x="120" y="-14" width="280" height="24" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8" fill="#166534" text-anchor="middle">res: { protocolVersion, capabilities: { tools, resources } }</text>
+      </g>
+
+      <!-- Step 3: Initialized Notification -->
+      <g transform="translate(0, 84)">
+        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <rect x="150" y="-14" width="220" height="24" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8" fill="#1e40af" text-anchor="middle">notif: notifications/initialized</text>
+      </g>
+
+      <!-- Step 4: Tools List -->
+      <g transform="translate(0, 130)">
+        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <rect x="160" y="-14" width="200" height="24" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8" fill="#1e40af" text-anchor="middle">req: tools/list</text>
+
+        <line x1="520" y1="28" x2="0" y2="28" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+        <rect x="140" y="14" width="240" height="24" rx="3" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="260" y="30" font-family="ui-monospace, monospace" font-size="8" fill="#166534" text-anchor="middle">res: { tools: [{ name, description, inputSchema }] }</text>
+      </g>
+
+      <!-- Step 5: Tool Call with Sandbox Auth -->
+      <g transform="translate(0, 195)">
+        <!-- Auth Intercept -->
+        <rect x="-140" y="-10" width="130" height="38" rx="4" fill="#fee2e2" stroke="#ef4444"/>
+        <text x="-75" y="6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" font-weight="700" fill="#991b1b" text-anchor="middle">🛡️ 权限拦截</text>
+        <text x="-75" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#7f1d1d" text-anchor="middle">用户弹窗确认授权</text>
+
+        <line x1="0" y1="10" x2="520" y2="10" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+        <rect x="140" y="-4" width="240" height="24" rx="3" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="260" y="12" font-family="ui-monospace, monospace" font-size="8" fill="#c2410c" text-anchor="middle">req: tools/call { name: "run_sql", arguments: {...} }</text>
+
+        <line x1="520" y1="42" x2="0" y2="42" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+        <rect x="150" y="28" width="220" height="24" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="260" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#166534" text-anchor="middle">res: { content: [{ type: "text", text: "..." }] }</text>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 335)">
+      <rect width="860" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">协议解耦契约：</tspan> Server 永远只暴露协议元语与 JSON Schema，不依赖特定模型；Host 负责 <tspan font-weight="700" fill="#2563eb">权限沙箱、Token 预算裁剪与上下文组装</tspan>。
+      </text>
+    </g>
+  </g>
+</svg>

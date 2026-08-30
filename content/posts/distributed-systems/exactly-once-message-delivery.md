@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** “exactly-once”必须先说清边界：**消息投递、Kafka 内部的读-处理-写、外部数据库副作用**不是同一个命题。at-least-once 加幂等能让重复业务效果无害；Kafka 事务可以在 Kafka 自身的读写边界内提交 offset 和输出，但不能自动把一个任意 HTTP 调用或数据库事务纳入同一原子提交。生产者 ack 丢失、消费者处理成功后 offset 未提交，仍会产生重放窗口。本文沿一条消息的一生，分别标出“重复交付”“重复处理”和“重复副作用”，再给出幂等键、inbox/outbox 与重试边界。
 
+
+---
+
+![Exactly-Once 消息语义的物理边界：生产幂等性、Kafka 事务与消费端去重表](../../../public/images/exactly-once-delivery-boundary-kafka-transactions.svg)
+
 ## 一、三分法为什么是半真半假
 
 教科书把投递语义切成三种：at-most-once（最多一次）、at-least-once（至少一次）、exactly-once（恰好一次）。听起来三选一，但真相是：
@@ -20,6 +25,10 @@ series: "系统设计手记"
 - **exactly-once**：必须限定观察边界。协议可以在某个系统内部提供更强的事务语义，但“消费者的外部业务效果只发生一次”需要额外的原子性或幂等设计。
 
 先记住这个判定：**有没有办法从“至少一次交付”变成“业务效果恰好一次”？** 常见答案是在消费侧做幂等，或者把 offset 与业务写入放入同一个可验证的事务边界。工程上最常见的套餐仍是 **at-least-once 传输 + 幂等业务效果**，但 Kafka 内部事务、同库事务和跨外部服务的合同必须分别说明。
+
+
+
+![两军问题 (Two Generals Problem) 与不可靠网络下的确认困境](../../../public/images/two-generals-problem-flp-impossibility.svg)
 
 ## 二、Producer：ack 确认窗口里藏着第一道重复
 
@@ -68,6 +77,10 @@ sequenceDiagram
 `auto.offset.reset=earliest` 只定义“没有可用已提交 offset 时从哪里开始”，不是提交时机，也不是 exactly-once 开关。提交策略必须和丢失/重复的取舍一起写进消费合同。
 
 **工程结论：把 offset 提交窗口当作"设计好的重复窗口"对待**——窗口多大，系统就要能吞多大。
+
+
+
+![Kafka 端到端 Exactly-Once 架构：PID、Sequence Number 与事务协调者 (Transaction Coordinator)](../../../public/images/kafka-transaction-eos-producer-epoch-pid.svg)
 
 ## 四、幂等消费：把重复变得无害
 

@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 内存模型 (Memory Model) happens-before 同步因果序</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">并发世界没有先来后到 ｜ Channel 发送 happens-before 接收 ｜ Mutex.Unlock happens-before 下一次 Lock</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Panes (285px each) -->
+    <!-- Col 1: Channel -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. Channel 同步保证</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#34d399">// Channel 传递内存屏障</text>
+          <text x="10" y="34" fill="#86efac">1. 第 k 次 send 必然 happens-before</text>
+          <text x="16" y="48" fill="#86efac">   第 k 次 receive 完成！</text>
+          <text x="10" y="66" fill="#38bdf8">2. 无缓冲 channel 的接收完成</text>
+          <text x="16" y="80" fill="#38bdf8">   必然 happens-before 发送完成！</text>
+          <text x="10" y="100" fill="#34d399">3. channel 的 close 必然 happens-before</text>
+          <text x="16" y="114" fill="#34d399">   收到零值接收操作返回！</text>
+          <text x="10" y="132" fill="#4ade80">✓ 保证通道前写入的所有普通变量完全可见！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">权威名言：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">"Do not communicate by sharing memory;</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">instead, share memory by communicating."</text>
+        <text x="10" y="64" font-size="7.5" font-weight="700" fill="#047857">利用 Channel 所有权移交消灭 Data Race！</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Mutex -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. 锁 (sync.Mutex) 保证</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 临界区因果传递</text>
+          <text x="10" y="34" fill="#93c5fd">对于任何 sync.Mutex 变量 l：</text>
+          <text x="10" y="52" fill="#34d399">第 n 次 l.Unlock() 必然</text>
+          <text x="10" y="68" fill="#34d399">happens-before</text>
+          <text x="10" y="84" fill="#34d399">第 m 次 l.Lock() 返回 (其中 m &gt; n)！</text>
+          
+          <text x="10" y="108" fill="#fbbf24">► 保证前一个持有锁的 Goroutine</text>
+          <text x="10" y="122" fill="#fed7aa">   所做的全部内存修改对下一个持锁者 100% 可见！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">重要边界：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 仅在临界区内部受到可见性保护；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 未加锁的野指针并发读依然属于未定义行为 (UB)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 必须使用 go test -race 强制扫描数据争用！</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Once & Goroutine -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. sync.Once 与 Goroutine 创建</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 启动与一次性初始化</text>
+          <text x="10" y="34" fill="#fed7aa">1. go 语句的执行 必然 happens-before</text>
+          <text x="16" y="48" fill="#fed7aa">   新 Goroutine 正式的首行代码执行！</text>
+          
+          <text x="10" y="70" fill="#4ade80">2. once.Do(f) 中的 f() 返回 必然</text>
+          <text x="16" y="84" fill="#4ade80">   happens-before 任何其他 once.Do(f)</text>
+          <text x="16" y="98" fill="#4ade80">   调用的返回！</text>
+          
+          <text x="10" y="120" fill="#38bdf8">✓ 单例初始化标准姿势，绝对无并发双重校验陷阱！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">无保障的反例：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• Goroutine 的退出不保证 happens-before 任何事件</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 主线程退出不会等待子协程！</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 必须使用 sync.WaitGroup 建立明确因果屏障！</text>
+      </g>
+    </g>
+  </g>
+</svg>

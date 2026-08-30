@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Raft 线性一致性读优化：ReadIndex vs Lease Read</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">走全量 Raft 日志 (吞吐断崖下跌) vs ReadIndex (0 写日志，仅广播一轮心跳确认多数派) vs Lease Read (基于物理时钟租约，0 网络 RPC 纯本地读出)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: ReadIndex -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">ReadIndex 模式 (0 磁盘 I/O 确认)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. Leader 记录当前 commitIndex 为 ReadIndex</text>
+          <text y="28" fill="#86efac">2. Leader 向多数派节点广播一轮轻量空心跳 RPC</text>
+          
+          <text y="50" fill="#38bdf8">3. 收到多数派确认：</text>
+          <text y="64" fill="#34d399">   • 证明自己依然是合法 Leader (未被网络分区隔离)</text>
+          <text y="78" fill="#34d399">4. 等待状态机 applyIndex &gt;= ReadIndex</text>
+          <text y="92" fill="#4ade80">5. 直接从内存状态机读取结果回传客户端！</text>
+          
+          <text y="116" fill="#4ade80">✓ 0 磁盘 WAL 开销，严格线性一致！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 0 物理时钟依赖，绝对数学级安全；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 读请求开销从磁盘 I/O 降为 1 次网络 RTT；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• etcd 默认线性读标准实现！</text>
+      </g>
+    </g>
+
+    <!-- Right: Lease Read -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">Lease Read 模式 (0 网络 RPC 纯本地直读)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">基于心跳超时的领导者租约 (Leader Lease):</text>
+          
+          <text y="38" fill="#86efac">1. 选举成功后获得租约 Lease = [start, start + 200ms]</text>
+          <text y="52" fill="#38bdf8">2. 在租约期内：Follower 绝不可能发起选举选出新 Leader</text>
+          <text y="66" fill="#34d399">3. 读请求到达 ──► 0 网络 RPC 协调，直接纯内存读取！</text>
+          
+          <text y="90" fill="#4ade80">✓ 读吞吐量提升 100 倍，延迟 &lt; 0.1ms！</text>
+          <text y="106" fill="#fb923c">⚠️ 依赖系统时钟漂移边界受控 (Clock Drift Bound)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 压榨出分布式共识系统极端极致的读性能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• TiKV / CockroachDB 超高吞吐读核心；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 顶级分布式存储工程艺术！</text>
+      </g>
+    </g>
+  </g>
+</svg>

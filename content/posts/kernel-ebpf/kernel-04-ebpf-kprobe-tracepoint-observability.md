@@ -67,6 +67,10 @@ $ sudo perf list tracepoint | grep sched:
 
 ---
 
+
+
+![Off-CPU 阻塞深度溯源：上下文切换 finish_task_switch 捕获与阻塞火焰图](../../../public/images/ebpf-off-cpu-stack-aggregation-flamegraph.svg)
+
 ## 四、 Off-CPU 深度溯源实战：精准捕获系统阻塞盲区
 
 ### 4.1 什么是 Off-CPU 时延？

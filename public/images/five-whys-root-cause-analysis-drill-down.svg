@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产事故 5-Whys 根因穿透推演拓扑 (5-Whys Deep Drill-Down)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">为什么数据库卡死？ ──► 为什么有慢查询？ ──► 为什么没走索引？ ──► 为什么统计信息漂移？ ──► 根本原因：缺少自动采样与限流机制</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">Why 1: 现象表层 ──► 为什么支付服务出现 504 网关超时？</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">因为数据库连接池被耗尽，所有 HTTP 处理协程在 db.Conn() 阻塞等待超时。</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">定位直接物理瓶颈！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">Why 2: 依赖探寻 ──► 为什么数据库连接池会被瞬间打满？</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">因为有 10 个核心大商户同时发起对账查询，单条 SQL 执行耗时从 5ms 暴涨至 18s 霸占连接。</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">找到下游堆积元凶！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">Why 3: 机制深挖 ──► 为什么日常 5ms 的 SQL 会突然退化为 18s？</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">因为大批量历史数据归档后触发统计信息漂移，MySQL CBO 错误放弃索引转为全表扫描。</text>
+        <text x="15" y="62" font-size="8" fill="#047857">剖析内核级故障诱因！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">Why 4 &amp; 5: 架构根因 ──► 为什么归档操作未触发重校准？为什么未配置慢查询熔断？</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">根本防线漏洞: 归话脚本缺少 post-hook ANALYZE，且应用层缺少 SQL 执行硬超时 (max_execution_time=2000ms)！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">输出彻底杜绝同类故障的制度与技术双重免疫！</text>
+      </g>
+    </g>
+  </g>
+</svg>

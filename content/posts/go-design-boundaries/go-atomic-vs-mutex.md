@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** atomic 与 Mutex 的成本差距随竞争程度变化，不是常数。统一 benchmark（`experiments/go-runtime-boundary`，Go 1.25.1/Darwin arm64）测得：单线程 `atomic.Add` **约 9–14ns**（中位约 10ns）、Mutex Lock/Unlock **约 18–30ns**（中位约 19ns）；竞争 8 worker 为 **39.65ns vs 99.26ns**，纯自旋锁为 **250.1ns**。16 worker 时自旋锁升到 **572.8ns**。这些数字只证明当前实现、机器和短临界区的争用形状；稳定的工程判断是：atomic 只保护单个字，Mutex 保护组合不变量；高竞争时先拆共享状态。
 
+
+---
+
+![Go atomic CAS 硬件总线锁 vs sync.Mutex 自旋与排队在不同并发下的纳秒级延迟曲线](../../../public/images/go-atomic-vs-mutex-contention-curve.svg)
+
 ## 一、本质差异：一条指令 vs 一个状态机
 
 `sync.Mutex` 的运行时结构（Go 1.25 内部实现 `internal/sync/mutex.go`）：
@@ -25,6 +30,10 @@ type Mutex struct {
 Lock 的完整路径：CAS 抢锁快路径 → 失败后按 runtime 条件短暂自旋 → 再失败进入 runtime semaphore 等待，解锁方再唤醒等待者。Linux 的某些路径可能落到 futex，但 Darwin 不是本次 raw 的证明对象。Mutex 的成本是三条路径的混合：**指令 + 自旋 + 等待/唤醒**，随竞争程度和临界区形状变化。
 
 `atomic` 则不同：`AddInt64` 由编译器针对目标架构生成原子读改写序列，具体是单条指令还是 LL/SC 等实现细节不能从这篇 Darwin 基准外推。它通常不创建锁对象或等待队列，但卖的是“单个值的原子性”，买不到“多个变量的组合一致性”——atomic 一次只能保护一个字，Mutex 可以保护任意多的状态。
+
+
+
+![原子操作硬件实现：LOCK 汇编前缀、总线锁 (Bus Lock) 与缓存行锁 (Cache Lock)](../../../public/images/atomic-cas-hardware-lock-bus.svg)
 
 ## 二、单线程基线：2 倍差距从哪来
 
@@ -55,6 +64,10 @@ Lock 的完整路径：CAS 抢锁快路径 → 失败后按 runtime 条件短暂
 1. **atomic 没有单调恶化**（22.93→46.69→39.65→50.89）：共享 cacheline 仍然会在核之间争用，线程增加也不意味着每个点严格单调；这只是本机一次 `RunParallel` 形状。
 2. **Mutex 在竞争下明显变贵**（28.1→94.7→99.3→127.8）：运行时会在自旋和挂起之间选择，具体曲线受调度器、核数和临界区影响；不要把某一轮的“线性”当成严格数学规律。
 3. **自旋锁是一个需要谨慎证明的候选**：它从 39.30ns 迅速涨到 572.8ns。没有退避和挂起出口时，超卖会让所有等待者占住 CPU，cacheline 也在核之间反复转移。
+
+
+
+![Atomic vs Mutex 性能象限对照：低并发极速 vs 极端冲突下的优雅休眠](../../../public/images/atomic-vs-mutex-contention-spectrum.svg)
 
 ## 四、为什么自旋锁难写对：cacheline 弹跳与超卖
 

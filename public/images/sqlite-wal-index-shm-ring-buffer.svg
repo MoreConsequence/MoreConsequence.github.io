@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">SQLite WAL 共享内存 (.shm) 与多读一写并发拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">mmap 映射的 .shm 快速哈希索引 ──► 读事务查 .shm 即可确定读 .db 主文件还是 .wal 日志 ──► 读写并发 100% 互不阻塞</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 共享内存索引文件映射 (WAL-Index / .shm File via mmap)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">所有进程将 .shm 映射到自身虚拟内存 ──► 内部维护 32KB 哈希表与 Read-Mark 水位数组</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">0 磁盘 I/O，纯内存纳秒级检索！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 并发读事务极速路由 (Concurrent Readers: Zero Blocking)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">读取 Page N ──► 查 .shm 哈希表: 若在 WAL 中则读 .wal 最新帧，否则直接读 .db 原始页</text>
+        <text x="15" y="62" font-size="8" fill="#047857">成百上千个并发读事务与后台写操作完全并行无冲突！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 单一排他写锁约束 (Single Writer Constraint: WAL Lock)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">写事务获取 WRITER 锁 ──► 顺序追加写 .wal 尾部 ──► 同步更新 .shm 哈希索引</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">单时刻仅允许 1 个写事务，第 2 个并发写立即触发 SQLITE_BUSY 错误！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 自动检查点平滑写回 (Auto Checkpoint: wal_autocheckpoint=1000)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">.wal 达到 1000 帧 (约 4MB) ──► 将最新页顺序写回 .db ──► 重置 .wal 游标从头覆盖！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">轻量嵌入式数据库的性能与架构天花板！</text>
+      </g>
+    </g>
+  </g>
+</svg>

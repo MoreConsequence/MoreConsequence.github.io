@@ -10,6 +10,11 @@ series: "数据库原理手记"
 
 **TL;DR：** Postgres 靠 MVCC 做多版本，代价是**删掉的行不会真的消失**——旧版本作为死元组留在表页面里，只有 VACUUM 能回收。autovacuum 的触发阈值默认是 `50 + 0.2 × reltuples`，意味着**大表要先攒出约 20% 的死元组才会被清理**；持续高 UPDATE/DELETE 下，清理工（autovacuum worker）被成本限流拖住、回收速度追不上产废速度，表就膨胀（bloat）——磁盘占用上涨、顺序扫描变慢。更隐蔽的雷是 xid 冻结年龄：32 位事务号以 2^31（约 21.5 亿次事务）为回卷线，`autovacuum_freeze_max_age`（默认 2 亿）会先强制全表冻结，逼近回卷线时数据库直接拒绝新命令。膨胀税是 Postgres 运维的第一课：**MVCC 的写近乎免费，税单交给了 vacuum。**
 
+
+---
+
+![PostgreSQL 表膨胀 (Bloat)、Autovacuum 与事务 ID 冻结 (Transaction Freeze) 架构](../../../public/images/postgres-bloat-autovacuum-freeze.svg)
+
 ## 一、先立反直觉：DELETE 之后，行其实还在
 
 「`DELETE FROM t WHERE id = 1` 返回了 1，行应该没了。」这是最常见的认知落差。物理上那行还在，只是被打上了标记：
@@ -21,6 +26,10 @@ series: "数据库原理手记"
 那「删掉的旧版本」什么时候才算真死？当 `xmax` 对应的事务已提交、且该版本比所有仍在飞事务的快照都老——即**对任何活事务都不可见**时，它成为死元组。但腾不腾位置，不由 DELETE 决定，由 VACUUM 决定。VACUUM 不来，死元组就永远占着页面。
 
 这就是膨胀的第一性来源：**Postgres 把「旧版本留档」做进了表自己的页面里**，而不是像 InnoDB 那样写进独立的 undo 日志（对比放第六节）。同系列的 [事务隔离不是靠锁：MVCC 的版本链与快照账本](/writing/mvcc-isolation-snapshot) 讲的是快照怎么决定「看哪个版本」，本文讲的是这些被跳过、不再可见的版本怎么处置。
+
+
+
+![PostgreSQL 死亡元组 (Dead Tuples) 与表膨胀 (Bloat) 物理机理](../../../public/images/postgres-dead-tuple-page-bloat.svg)
 
 ## 二、VACUUM 在干什么：回收、可见性、冻结
 
@@ -55,6 +64,10 @@ n_dead_tup > autovacuum_vacuum_threshold + autovacuum_vacuum_scale_factor × rel
 还有一个常被忽略的门槛：worker 就算醒了，也只能回收「最老活动快照（OldestXmin）之前的死元组」。`pg_stat_user_tables.n_dead_tup` 只是统计采样出来的**估计值**，不是实时计数；而哪怕死元组量过了阈值，只要有一个长期事务把快照拖住，worker 就动不了这些元组——最老快照不前进，回收就无从谈起，日志里 `n_dead_tup` 只增不减正是这个信号。所以 bloat 的完整公式是：**产废率 > 回收率，且最老快照没被拖住时，回收才真的发生。**
 
 顺带两个相关事实：其一，UPDATE 只改非索引列时走 HOT（heap-only tuple），新版本尽量塞进旧版本所在页、不写索引——堆膨胀照旧、但索引不膨胀，所以生产里「表 40GB、索引却很小」往往就是全列 UPDATE 加 HOT 的结果。其二，PG 13 起补了 insert-only 表的坑：`autovacuum_vacuum_insert_threshold = 1000`、`autovacuum_vacuum_insert_scale_factor = 0.2`，让只插不更新的表也会被清理（12 及以前这类表几乎永远轮不到真空，反回卷真空常常是唯一的清理者）。
+
+
+
+![Autovacuum 成本限流与参数调优：autovacuum_vacuum_cost_limit 动态调度](../../../public/images/autovacuum-cost-limit-throttle-model.svg)
 
 ## 四、先量再治：pg_stat_user_tables 与 pgstattuple
 

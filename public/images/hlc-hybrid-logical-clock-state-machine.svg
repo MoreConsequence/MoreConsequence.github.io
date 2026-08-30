@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">混合逻辑时钟 (Hybrid Logical Clock - HLC) 状态机算法</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">HLC = (物理时间 l, 逻辑计数器 c) ｜ 结合 Lamport 逻辑时钟的因果保序与 NTP 物理时钟的接近性 ｜ TiDB / CockroachDB 核心时间引擎</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Local Event -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 本地事件触发 (Send / Local Event)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">pt = get_physical_time(); // 读取本地 NTP 物理时间</text>
+          
+          <text y="38" fill="#86efac">更新规则：</text>
+          <text y="52" fill="#cbd5e1">l' = max(l_old, pt);</text>
+          <text y="66" fill="#cbd5e1">if (l' == l_old) c' = c_old + 1; // 物理时间没变，逻辑自增</text>
+          <text y="80" fill="#34d399">else c' = 0;                     // 物理时间前进，逻辑重置</text>
+          
+          <text y="106" fill="#4ade80">✓ 单调递增，且物理分量永远贴合真实时间！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 0 跨机房网络 RPC 协调；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 单机本地纳秒级极速生成；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速轻量时间发生器。</text>
+      </g>
+    </g>
+
+    <!-- Right: Receive Message Event -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 接收对端消息 (Receive Event: msg.hlc)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">收到消息携带: (l_msg, c_msg), pt = get_physical_time()</text>
+          
+          <text y="38" fill="#86efac">因果对齐规则：</text>
+          <text y="52" fill="#38bdf8">l' = max(l_old, l_msg, pt);</text>
+          <text y="66" fill="#34d399">if (l' == l_old &amp;&amp; l' == l_msg) c' = max(c_old, c_msg) + 1;</text>
+          <text y="80" fill="#34d399">else if (l' == l_old) c' = c_old + 1;</text>
+          <text y="94" fill="#34d399">else if (l' == l_msg) c' = c_msg + 1;</text>
+          <text y="108" fill="#4ade80">else c' = 0;</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 严格保证因果先后关系 (Happens-Before)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 摆脱昂贵的 GPS / 原子钟专用硬件约束；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 通用云原生分布式数据库标准时间基底！</text>
+      </g>
+    </g>
+  </g>
+</svg>

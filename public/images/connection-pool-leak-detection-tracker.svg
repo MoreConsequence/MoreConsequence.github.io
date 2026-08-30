@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">连接池泄漏 (Connection Leak) 溯源与看门狗自动回收机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">代码漏写 conn.release() 导致池耗尽 (Pool Exhaustion) ──► 借出时捕获 Error 堆栈 ──► 泄漏看门狗告警并自动回收</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 漏 release 致命暗坑：连接池耗尽死锁</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">const conn = await pool.acquire();</text>
+          <text y="28" fill="#fca5a5">const res = await conn.query(sql);</text>
+          <text y="42" fill="#ef4444">if (res.error) return false; // 🔴 忘记写 conn.release()！</text>
+          
+          <text y="66" fill="#ef4444">🔴 灾难演进：</text>
+          <text y="80" fill="#ef4444">1. 每次发生业务异常，连接池永久丢失 1 个可用连接</text>
+          <text y="94" fill="#ef4444">2. 运行 2 小时后，池中 20 个连接全被幽灵占用！</text>
+          <text y="108" fill="#ef4444">3. 全站后续所有正常请求全部阻塞在 acquire() 卡死！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 排查极度困难，日志中只有下游超时的假象；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 重启能短暂恢复，但很快再次死锁；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 必须引入自动化防护手段！</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 堆栈溯源 + Leak Watchdog 自动兜底</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 规范 1: 声明式使用 using / defer 自动释放</text>
+          <text y="28" fill="#86efac">await using conn = await pool.acquireScoped();</text>
+          
+          <text y="50" fill="#38bdf8">// 规范 2: 连接池看门狗记录借出堆栈 (debug 模式)</text>
+          <text y="64" fill="#34d399">conn.borrowStackTrace = new Error().stack;</text>
+          <text y="78" fill="#34d399">if (holdTime &gt; 30s) {</text>
+          <text y="92" fill="#86efac">  logger.error("Connection leaked at:", conn.borrowStackTrace);</text>
+          <text y="106" fill="#86efac">  conn.forceDestroy(); // 强制销毁重建！</text>
+          <text y="120" fill="#4ade80">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 泄漏发生时 1 秒定位具体出错的代码行号；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 看门狗自动强力回收，保住服务生命力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高韧性企业级连接架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

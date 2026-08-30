@@ -22,6 +22,10 @@ series: "数据库原理手记"
 
 binlog 与两者最大的不同：它不是存储引擎的账，是**服务器层**的事务事件账。它服务复制与时间点恢复，格式可以是 statement、row 或 mixed；它不替代 InnoDB 的页恢复，也不包含“如何把某个 buffer pool 页刷回磁盘”的全部信息。所以第一个直觉仍然成立：**redo 是引擎为恢复记录的，binlog 是服务器为复制/恢复记录的**。
 
+
+
+![MySQL 三大日志铁三角分工：Redo Log (物理)、Undo Log (逻辑)、Binlog (归档)](../../../public/images/three-logs-triad-redo-undo-binlog.svg)
+
 ## 二、一条 UPDATE 的三本账顺序
 
 一条 `UPDATE t SET c=200 WHERE id=1`，可以先按“运行期修改”和“提交协调”两层理解，而不要把三条日志画成同一个瞬间落盘：
@@ -73,6 +77,10 @@ sequenceDiagram
 ```
 
 这套“先 prepare 再 commit 的两步写”解决的是引擎层与服务器层日志的提交协调，不等于每个数据页都在 commit 前写回。对学习者来说，记住两个动作即可：**prepare 让状态可对账，XID 让恢复知道是否完成 commit**。
+
+
+
+![两阶段提交 (2PC) 崩溃恢复判定：Redo Log Prepare 状态与 XID 比对](../../../public/images/two-phase-commit-xa-crash-recovery.svg)
 
 ## 四、崩溃恢复：把账重放
 

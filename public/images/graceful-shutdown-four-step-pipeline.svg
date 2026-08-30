@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产级 Go 服务优雅关闭四阶段全景时序 (Graceful Shutdown)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 捕获 SIGTERM / SIGINT 信号 ──► 2. K8s Readiness 探针置 503 摘除流量 ──► 3. http.Server.Shutdown 等待存量请求排空 ──► 4. 关闭 DB/MQ/Redis 存储</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. POSIX 信号捕获与关闭意向广播 (Signal Trap: SIGTERM / SIGINT)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">signal.NotifyContext 捕获 K8s 下发的 SIGTERM 信号 ──► 触发全局 ctx.Done() 取消广播</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">开启不可逆的优雅关机倒计时（例如最多 30 秒）！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 流量摘除与就绪探针下线 (Traffic Deregistration: Readiness 503)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">/healthz/ready 立即返回 HTTP 503 ──► K8s Ingress / 注册中心将当前 Pod 从负载均衡剔除 ──► 睡眠 3 秒等网络规则生效</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">绝对杜绝新流量涌入正在关闭的实例导致 502 Bad Gateway！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 存量连接排空与优雅关闭 (Server.Shutdown: Drain In-Flight Requests)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">关闭 Listener 停止接受新连接 ──► 等待所有正在执行的 HTTP / gRPC 活跃请求正常处理完毕并回包</text>
+        <text x="15" y="62" font-size="8" fill="#047857">保证用户正在支付或提交的表单 100% 成功完成，0 数据中断！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 存储与基础组件按序收尾 (Sequential Teardown: MQ -&gt; DB -&gt; Redis)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">停止 MQ 消费者 ──► 刷新日志缓冲区 logger.Sync() ──► 关闭数据库连接池 db.Close() ──► 进程 0 退出！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">严谨的工业级高可用发布底座！</text>
+      </g>
+    </g>
+  </g>
+</svg>

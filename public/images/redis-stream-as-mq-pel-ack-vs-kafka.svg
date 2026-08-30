@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis 当消息队列的边界账本：Stream 消费组与 PEL 待确认队列</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Pub/Sub (无持久化，宕机即丢) ｜ List RPOPLPUSH (缺乏多消费者组) ｜ Stream XREADGROUP (PEL 待确认列表、XACK 与死信 XCLAIM 机制)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Redis Stream PEL -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Redis 5.0+ Stream 完整消息队列模型</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// Stream 核心数据流</text>
+          <text y="28" fill="#86efac">XADD mystream * sensor-id 1234 temp 19.8</text>
+          <text y="42" fill="#38bdf8">XREADGROUP GROUP mygroup consumer1 STREAMS mystream &gt;</text>
+          
+          <text y="66" fill="#fb923c">1. PEL (Pending Entries List) 待确认列表:</text>
+          <text y="80" fill="#fed7aa">   • 记录所有"已分发但尚未收到 XACK 的在途消息"</text>
+          <text y="94" fill="#fed7aa">   • 消费者崩溃重启时，拉取 PEL 重新处理，0 丢失！</text>
+          <text y="110" fill="#34d399">2. XCLAIM / XAUTOCLAIM 机制: 超时自动转交给健康消费者！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 相比 Kafka 极度轻量，无需额外搭建 ZooKeeper/KRaft；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 内存级吞吐，单机轻松承受数十万 QPS；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 适合中小型业务或轻量异步任务分发。</text>
+      </g>
+    </g>
+
+    <!-- Right: Redis vs Kafka Pitfalls -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">2. 物理天花板：为什么它不能替代 Kafka？</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">1. 内存容量是物理死穴 (RAM is Expensive):</text>
+          <text y="28" fill="#fca5a5">   • 消息全部驻留内存，积压 1000 万条直接触发 OOM 宕机！</text>
+          <text y="44" fill="#fca5a5">   • Kafka 基于磁盘 PageCache 顺序写，几 TB 积压稳如泰山！</text>
+          
+          <text y="68" fill="#ef4444">2. 主从异步复制与数据丢失窗 (Async Replication):</text>
+          <text y="82" fill="#fb7185">   • Master 宕机 Failover 时，尚未同步到 Slave 的消息永久丢失！</text>
+          
+          <text y="106" fill="#34d399">✓ 决策红线: 允许少量丢数据且无严重积压选 Redis，否则坚决上 Kafka！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">选型警示：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 不要把 Redis 当作大容量消息持久化存储；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 严格配置 XADD MAXLEN 驱逐淘汰老消息；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 清晰划分系统架构的边界与职责！</text>
+      </g>
+    </g>
+  </g>
+</svg>

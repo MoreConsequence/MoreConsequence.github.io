@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LSM-Tree 存储引擎全景：写吞吐物理极致与写放大 (WA) / 读放大 (RA) 权衡</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">WAL 顺序追加 + 内存 MemTable ──► L0~LN 分层 SSTable ──► Leveled Compaction 归并整理</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Panes (285px each) -->
+    <!-- Col 1: MemTable & WAL -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 内存层 (Write Buffer)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 顺序追加与跳表并发写</text>
+          <text x="10" y="34" fill="#93c5fd">1. 写 WAL (Write-Ahead Log, 磁盘顺序IO)</text>
+          <text x="10" y="48" fill="#93c5fd">2. 插入 Active MemTable (内存 SkipList)</text>
+          <text x="10" y="68" fill="#34d399">✓ 写入延迟极低 (仅纳秒级内存写)</text>
+          <text x="10" y="86" fill="#fbbf24">3. 写满 64MB 转为 Immutable MemTable</text>
+          <text x="10" y="102" fill="#86efac">4. 后台线程异步 Flush 刷写到 L0 磁盘</text>
+          <text x="10" y="124" fill="#38bdf8">► 将随机写彻底转化为纯顺序写！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">写优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 写入吞吐量远超传统 B+Tree 10x 倍</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 充分发挥 NVMe SSD 顺序追加写带宽</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 适合时序、日志、海量追加写场景</text>
+      </g>
+    </g>
+
+    <!-- Col 2: SSTable Hierarchy -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 磁盘分层 (SSTable Layers)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 多层有序不可变文件 (Sorted String Table)</text>
+          <text x="10" y="34" fill="#fed7aa">Level 0: Key 范围相互重叠 (需扫描全部)</text>
+          <text x="10" y="48" fill="#fed7aa">Level 1 (10MB): 各 SSTable Key 互不重叠</text>
+          <text x="10" y="62" fill="#fed7aa">Level 2 (100MB): 容量放大 10 倍</text>
+          <text x="10" y="76" fill="#fed7aa">Level N (10GB+): 最终数据归宿</text>
+          <text x="10" y="98" fill="#34d399">SSTable 内部结构：</text>
+          <text x="10" y="112" fill="#86efac">[ Data Blocks ] + [ Index ] + [ Bloom Filter ]</text>
+          <text x="10" y="128" fill="#38bdf8">布隆过滤器消除 99% 无效磁盘 IO 探测！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">读放大 (Read Amplification):</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 读单行需从 MemTable 查到 L0 再查到 LN</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 严重依赖 Block Cache 与 Bloom Filter</text>
+        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 点查延迟通常略逊于直接 B+Tree</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Compaction -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 归并整理 (Compaction)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 多路归并排序与垃圾回收</text>
+          <text x="10" y="34" fill="#86efac">1. 选定 Li 的一个 SSTable 与 Li+1 重叠表</text>
+          <text x="10" y="48" fill="#86efac">2. 顺序读入多路流，执行归并排序</text>
+          <text x="10" y="62" fill="#86efac">3. 清理被覆写的历史旧版本与 Tombstone 墓碑</text>
+          <text x="10" y="78" fill="#86efac">4. 顺序写入 Li+1 新 SSTable，删除旧文件</text>
+          <text x="10" y="98" fill="#f87171">❌ 写放大税 (Write Amplification):</text>
+          <text x="10" y="114" fill="#fca5a5">同一行数据在多层间被重复读取/重写 10~30 次！</text>
+          <text x="10" y="130" fill="#fb7185">Compaction 剧烈争抢后台磁盘 IO 带宽！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">现代 LSM 调优：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 限制并发 Compaction 线程与速率限制 (Rate Limit)</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 RocksDB / LevelDB 生产最佳配置</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 采用 Universal Compaction 降低写放大</text>
+      </g>
+    </g>
+  </g>
+</svg>

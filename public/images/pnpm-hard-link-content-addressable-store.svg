@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">pnpm 硬链接 (Hard Link) 与内容寻址存储拓扑 (Content-Addressable Store)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">全局存储 (~/.pnpm-store 仅存一份物理 inode) ──► 各项目通过 Hard Link 共享 0 拷贝 ──► 内部 .pnpm/ 虚拟目录编织精确 Symlink 依赖树</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 全局内容寻址中心库 (Global CAS: ~/.pnpm-store/v3/files)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">按文件哈希值分片持久化存储物理文件 ──► 跨 100 个工程使用同一个 react@18.2.0 时，磁盘物理空间仅占一份 5MB！</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">从根本上终结磁盘重复拷贝的物理浪费！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 操作系统硬链接秒级映射 (Hard Link to Project node_modules/.pnpm)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">执行 pnpm install 仅创建 inode 计数硬链接 ──► 0 磁盘 I/O 数据流拷贝 ──► 安装耗时直接从 30s 缩减至 1s！</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">压榨利用操作系统文件系统原生高级特性！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 虚拟隔离目录树结构 (.pnpm/react@18.2.0/node_modules/react)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">在 .pnpm 内部按 "包名+版本号" 平铺展开 ──► 真实物理依赖与依赖的依赖紧密在此嵌套软链</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底满足 Node.js 原生模块寻址解析算法！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 根目录严格受限软链 (Root node_modules: Strict Symlinks)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">项目根目录仅软链接 package.json 声明的直接依赖 ──► 代码绝无法 require 未声明的幽灵包！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">软件工程领域最严谨优美的包管理架构设计！</text>
+      </g>
+    </g>
+  </g>
+</svg>

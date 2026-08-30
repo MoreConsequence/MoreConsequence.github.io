@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">基于基数树 (Radix Tree) 的显存 KV Cache 跨会话共享拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">公共 System Prompt 节点 (100% 显存共享) ──► 分支 A (用户 1 会话) ｜ 分支 B (用户 2 会话) ──► 显存节省 80%，推理吞吐提升 5 倍</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 根节点共享 (Root Shared Node: System Prompt + Common Tools)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">全集群共用一份 20k Tokens 的 KV Cache 显存块 ──► 1,000 个并发请求仅占 1 份显存</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">从根本上破解大模型显存墙！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 中间前缀自动分裂与合并 (Radix Tree Splitting &amp; Merging)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">当两个 Agent 任务拥有相同的前 5 轮对话时 ──► 自动匹配最长公共前缀节点 ──► 0 重复计算</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">动态压榨出每一兆显存的最高复用价值！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 叶子节点独立扩展 (Leaf Private State Extension)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">仅为当前独特的最新输入和生成内容分配新的显存 Page ──► 实现高吞吐 PagedAttention 调度</text>
+        <text x="15" y="62" font-size="8" fill="#047857">兼具极致共享与绝对数据隔离！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. LRU 显存淘汰与持久化卸载 (LRU Eviction &amp; Host Memory Offload)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">长时间不活跃的叶子节点被换出至主机内存 ──► 热门公共前缀常驻 HBM ──► 达成最高经济性能！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">vLLM / SGLang / Mooncake 等顶尖推理引擎核心架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

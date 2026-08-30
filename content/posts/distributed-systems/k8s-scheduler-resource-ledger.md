@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 调度器不是"找最合适的节点"，而是两轮筛选：**filter 先砍掉不合格的（硬约束），score 再给剩下的按加权算分（软偏好）**。三个反直觉点：**filter 阶段只按 requests 记账，不看真实用量**（"requests 是调度账、limits 是运行时账"）；**score 阶段不是必须全量打分**——以 Kubernetes v1.33 源码公式为例，大集群按 `50 - n/125`（最低 5%）抽样；**同分节点之间用抽签（reservoir sampling）**，没有任何"就近"或稳定性保证。版本或 SchedulerConfiguration 改变后，这些默认值必须重新核对。
 
+
+---
+
+![Kubernetes 调度器核心两轮筛选：Filter 过滤硬约束 vs Score 评分软偏好算法拓扑](../../../public/images/k8s-scheduler-filter-scoring-resource-ledger.svg)
+
 ## 一、先说直觉错在哪：调度没有"最优"这一说
 
 几乎所有 K8s 入门文章都会把调度形容成"给 Pod 找一台合适的机器"。正确的心智模型是三步的：
@@ -20,6 +25,10 @@ series: "系统设计手记"
 ```
 
 关键在一个词：**合格（feasible）**。调度器根本不管"这台机器真实负载是多少"，它只知道"账面上还有多少 requests 可分配"。所以调度质量问题要分两层看：**能不能放得下（硬约束，filter）**和**放哪里更好（软偏好，score）**。前者错就是排不进去（`Insufficient cpu`），后者错只是选得不漂亮——且没人定义过什么叫"漂亮"。
+
+
+
+![Kubernetes kube-scheduler 两阶段调度流水线：PreFilter -> Filter -> Score -> Reserve -> Bind](../../../public/images/k8s-scheduler-filtering-scoring-pipeline.svg)
 
 ## 二、filter：否决权在谁手上
 
@@ -90,6 +99,10 @@ n4   43      56      93         CPU/内存平衡得最好
 | BalancedAllocation | CPU 与内存比例匀称 | 单一维度负载场景收益有限 |
 
 `NodeResourcesFit` 默认 LeastAllocated，MostAllocated 需要 SchedulerConfiguration 显式配置（参考[资源装箱官方文档](https://kubernetes.io/docs/concepts/scheduling-eviction/resource-bin-packing/)）。成本敏感的集群才值得切。
+
+
+
+![调度器乐观并发与冲突自愈：SchedulerCache 预扣、假设失败 (AssumePod) 与回滚](../../../public/images/scheduler-optimistic-cache-etcd-reconciliation.svg)
 
 ## 四、两个反直觉细节：打分不全量、同分靠抽签
 

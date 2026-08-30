@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">string ↔ []byte 内存转换：标准拷贝 (12ns) vs unsafe 零拷贝 (0.5ns)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">string (16B 只读不可变) vs slice (24B 可变) ｜ Go 1.20+ 标准库 unsafe.String / unsafe.SliceData 黄金契约</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Standard Copy -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 标准转换：物理内存拷贝 (防篡改)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 标准转译: b := []byte(str)</text>
+          <text y="30" fill="#93c5fd">1. runtime.stringtoslicebyte(nil, str)</text>
+          <text y="46" fill="#93c5fd">2. 在堆/栈上 mallocgc 申请全新底层数组</text>
+          <text y="62" fill="#93c5fd">3. memmove 全量拷贝全部字节内容</text>
+          
+          <text y="88" fill="#34d399">✓ 保证绝对的 string 不可变性安全 (Immutable)</text>
+          <text y="104" fill="#fbbf24">⚠️ 耗时约 12ns ~ 100ns (取决于字符串长度)</text>
+          <text y="120" fill="#fbbf24">⚠️ 产生 1 次堆内存分配与 GC 压力！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">编译器自动零拷贝优化场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• map 查找: m[string(byteSlice)] 编译器自动优化为 0 拷贝；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 字符串拼接: string(b1) + string(b2) 编译器融合为 1 次分配；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 90% 日常场景由编译器自动兜底，无需手动写 unsafe！</text>
+      </g>
+    </g>
+
+    <!-- Right: unsafe Zero Copy -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 极限场景：Go 1.20+ 官方 unsafe 零拷贝</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// []byte ──► string (0 拷贝)</text>
+          <text y="28" fill="#86efac">func BytesToString(b []byte) string {</text>
+          <text y="42" fill="#86efac">    return unsafe.String(unsafe.SliceData(b), len(b))</text>
+          <text y="56" fill="#86efac">}</text>
+          
+          <text y="74" fill="#4ade80">// string ──► []byte (0 拷贝，注意必须只读！)</text>
+          <text y="88" fill="#86efac">func StringToBytes(s string) []byte {</text>
+          <text y="102" fill="#86efac">    return unsafe.Slice(unsafe.StringData(s), len(s))</text>
+          <text y="116" fill="#86efac">}</text>
+          
+          <text y="134" fill="#34d399">✓ 耗时仅 0.5ns (仅 2 条寄存器移动指令)！0 内存分配！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">严苛安全红线：</text>
+        <text x="10" y="34" font-size="7.5" fill="#dc2626">• 绝对禁止修改零拷贝得到的 []byte（会直接触发只读段段错误崩溃！）；</text>
+        <text x="10" y="52" font-size="7.5" fill="#15803d">• 废弃旧时代 ReflectHeader 黑魔法，全面拥抱 Go 1.20+ 官方 unsafe 函数；</text>
+        <text x="10" y="68" font-size="7.5" fill="#047857">• 仅在 RPC 序列化与极高吞吐网关等瓶颈点使用！</text>
+      </g>
+    </g>
+  </g>
+</svg>

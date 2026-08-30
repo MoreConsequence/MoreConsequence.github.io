@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 交互式终端（TUI）适合人类开发者单机探索，但在现代工程体系中，Agent 必须能够被嵌入到 **VSCode / JetBrains 插件**、**Web 工作台**、**Slack 机器人** 以及 **GitHub Actions CI/CD 流水线** 中。如果在无头环境中强行解析终端 ANSI 字符，不仅性能低下而且极易崩溃。**Pi 提供了极其优雅的无头解决方案：`--mode json` 标准输入输出（stdio）行协议**。本文作为《Pi Agent 全景通才教程》第十九课（高阶专题第一课），深入拆解 Pi 的双向 JSON-RPC 事件流协议，解决跨进程交互式问询难题，并手写一个生产级 TypeScript SDK。
 
+
+---
+
+![无头模式与 RPC 协议：将 Pi Agent 嵌入 IDE、Web 与 CI 流水线](../../../public/images/pi-headless-mode-json-rpc-sdk.svg)
+
 ## 一、为什么需要无头模式（Headless Architecture）？
 
 对比三种运行形态的职责分界：
@@ -41,6 +46,10 @@ flowchart LR
 1. **结构化事件流（Structured Event Stream）**：外部系统需要精确感知“当前是正在思考、正在执行第几个工具、还是正在等待模型响应”，必须有无损的 JSON 事件流；
 2. **双向人机回路（Bidirectional Human-in-the-loop）**：当 Agent 触发权限门禁（如 `ctx.ui.select` 弹窗询问“是否允许删除数据库”）时，无头进程如何通过标准输入（stdin）安全挂起并等待外部 UI 系统的用户点击回调？
 3. **进程生命周期与异常隔离**：宿主应用（如 VSCode）崩溃时，Agent 子进程必须安全退出并持久化当前会话树。
+
+
+
+![Pi Agent RPC SDK 通信拓扑：JSON-RPC over stdio / WebSocket 双通道](../../../public/images/pi-rpc-sdk-client-server-transport-flow.svg)
 
 ## 二、Pi 的 `--mode json` 行级 RPC 协议规范
 
@@ -90,6 +99,10 @@ sequenceDiagram
     Core-->>Ext: Promise.resolve("Yes")
     Note over Ext: 收到用户授权，继续向下执行工具
 ```
+
+
+
+![Pi RPC 双向事件流多路复用与心跳保活机制](../../../public/images/pi-rpc-bidirectional-event-multiplexing.svg)
 
 ## 四、动手实战：手写 PiClient TypeScript SDK
 

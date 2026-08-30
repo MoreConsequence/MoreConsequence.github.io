@@ -12,6 +12,10 @@ featured: true
 
 ---
 
+
+
+![边缘 Serverless 运行时演进：V8 Isolate 轻量沙箱 vs 传统 Docker 容器性能矩阵](../../../public/images/v8-isolate-vs-docker-container-startup-memory-matrix.svg)
+
 ## 一、 边缘计算演进史：为什么传统 Docker 容器在边缘彻底失效？
 
 在传统的中心化云计算（如 AWS Lambda、Kubernetes 容器集群）中，计算任务的隔离依赖于 **Linux 操作系统级虚拟化（Namespaces、Cgroups、RootFS 联合文件系统）**：

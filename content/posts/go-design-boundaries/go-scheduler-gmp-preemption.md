@@ -11,6 +11,11 @@ series: "Go 的设计哲学"
 
 **TL;DR：** Go 调度的三笔账不能混成一个“调度延迟”：当前 benchmark 在 `-cpu=8`、Go 1.25.1、Apple M1 Pro 上一次运行测到 goroutine 创建/回收 **310.7ns**、无缓冲 channel 传递 **130.1ns**；源码层的异步抢占触发阈值是 `forcePreemptNS` 的 10ms。G/M/P 各管一件事：G 是执行体，P 持有可运行队列，M 承载 OS 线程。**创建/传递的本机稳态成本，不等于排队和抢占的线上尾延迟**；先确认慢在固定成本、阻塞、队列还是长计算。
 
+
+---
+
+![Go GMP 调度器架构：P 本地队列、全局队列、Work Stealing 窃取与信号抢占机制](../../../public/images/go-gmp-scheduler-work-stealing-preemption.svg)
+
 ## 一、先纠正直觉：goroutine 便宜，但不是零成本
 
 “goroutine 便宜”是相对于创建 OS 线程和维护大块栈而言，不是免费。当前 benchmark 的两个操作都很窄：一个 goroutine 启动后立即 `Done()`，另一个 goroutine 通过无缓冲 channel 接收 `b.N` 次整数；它们不能直接代表业务请求。
@@ -22,6 +27,10 @@ series: "Go 的设计哲学"
 | 无锁原子计数 | 未在同一 benchmark 中测量 | 不与调度路径直接等价 |
 
 创建成本来自栈、调度上下文和队列管理；具体分配与回收路径会受编译器、Go 版本、`GOMAXPROCS` 和 benchmark 结构影响。每秒百万次的线性外推只能作为容量预算起点，不能替代并发服务的 trace、pprof 和尾延迟。
+
+
+
+![GMP 调度模型与工作窃取 (Work Stealing)：本地 runq 队列与全局 runq 负载均衡](../../../public/images/gmp-work-stealing-runq-balance.svg)
 
 ## 二、三张表：G 是执行体，P 是调度权，M 是 OS 线程
 
@@ -55,6 +64,10 @@ const forcePreemptNS = 10 * 1000 * 1000 // 10ms
 4. 锁等待、GC、OS 调度和队列排队都可能成为比抢占阈值更大的延迟来源。
 
 所以“10ms”适合解释 runtime 为什么会尝试打断长计算，不适合作为实时 SLO。要回答某个请求的 p99，必须测完整请求路径和竞争条件。
+
+
+
+![Go 1.14+ 异步抢占机制：sysmon 监控线程、SIGURG 信号与安全点抢占](../../../public/images/asynchronous-preemption-signal-sigurg.svg)
 
 ## 四、验算：把 benchmark 与调度现场分开
 

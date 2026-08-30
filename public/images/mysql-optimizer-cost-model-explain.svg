@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL 优化器代价模型 (Cost Model) 与 EXPLAIN 决策机理</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">IO Cost (物理页读取) + CPU Cost (行比对过滤) ──► 为什么优化器有时选择全表扫描放弃索引？</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Panes (285px each) -->
+    <!-- Col 1: Cost Formula -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 代价精算公式 (Total Cost)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">Total Cost = IO_Cost + CPU_Cost</text>
+          <text x="10" y="36" fill="#93c5fd">• IO_Cost:</text>
+          <text x="16" y="50">页数 × 1.0 (磁盘读) 或 0.25 (内存读)</text>
+          <text x="10" y="68" fill="#93c5fd">• CPU_Cost:</text>
+          <text x="16" y="82">扫描行数 × 0.2 (行比对开销)</text>
+          <text x="10" y="104" fill="#34d399">优化器目标：穷举所有候选执行计划，</text>
+          <text x="10" y="118" fill="#34d399">挑选 Total Cost 绝对值最小的路径！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">统计信息基石：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 基数 (Cardinality, 区分度)</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 采样估计：每次 ANALYZE TABLE 随机读8页</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 脏统计可能导致代价计算严重失真</text>
+      </g>
+    </g>
+
+    <!-- Col 2: The 20% Rule -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 为什么放弃索引？(20% 临界点)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 当匹配行数超过全表约 20%</text>
+          <text x="10" y="36" fill="#f87171">方案 A (走二级索引):</text>
+          <text x="16" y="50">需做 200,000 次随机回表 IO！</text>
+          <text x="16" y="64">回表 IO 代价 &gt;&gt; 全表扫描</text>
+          
+          <text x="10" y="86" fill="#34d399">方案 B (直接全表扫描):</text>
+          <text x="16" y="100">纯顺序 IO 批量预读连续页</text>
+          <text x="16" y="114">总代价更低！</text>
+          <text x="10" y="132" fill="#fbbf24">► 优化器理智地选择放弃索引</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">优化手段：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 使用 FORCE INDEX 强制（慎用）</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 建立联合覆盖索引消灭回表</text>
+        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 优化 WHERE 条件缩小匹配基数</text>
+      </g>
+    </g>
+
+    <!-- Col 3: EXPLAIN Checklist -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. EXPLAIN 关键字段速查</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">• type 访问类型性能阶梯:</text>
+          <text x="16" y="32" fill="#34d399">system &gt; const &gt; eq_ref &gt; ref</text>
+          <text x="16" y="46" fill="#fbbf24">&gt; range &gt; index &gt; ALL (全表)</text>
+          
+          <text x="10" y="68" fill="#4ade80">• Extra 危险与优秀信号:</text>
+          <text x="16" y="82" fill="#34d399">✓ Using index: 覆盖索引最优</text>
+          <text x="16" y="96" fill="#f87171">❌ Using filesort: 额外文件排序</text>
+          <text x="16" y="110" fill="#f87171">❌ Using temporary: 内存临时表</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">生产准则：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 核心查询 type 至少达到 range 级</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 杜绝 Using temporary 与 filesort</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 借助 EXPLAIN FORMAT=JSON 观察 exact cost</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Agent 引擎 Turn-Step 双层嵌套状态机 (Execution Lifecycle FSM)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Turn (用户单次对话交互轮次) ──► 内部包含 N 个原子 Step 递归循环 (Thinking ──► Tool Call ──► Sandbox Execute ──► Observation) ──► Turn End</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Turn Start: 用户意图接收与上下文装配 (Ingest User Message)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">开启全局 Turn 会话 ──► 读取工作区文件树与 Git 状态 ──► 组装输入消息并进入内部 Step 循环</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">单次交互轮次的顶层生命周期起点！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Step: 模型流式推理与工具派发 (Step Thinking &amp; Tool Decision)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">LLM 发起流式推理 ──► 解析生成 Tool Call: write_file("app.ts") ──► 状态机原子跃迁至 Executing</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将决策思维转化为明确物理操作！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Step: 沙箱隔离执行与铁证观测 (Step Execution &amp; Observation Feed)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">在安全沙箱内修改文件并执行测试 ──► 捕获 stdout 输出注入上下文 ──► 判断任务是否完结，未完结进入 Step+1！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">支持多达 30 步深度自主迭代！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Turn End: 最终结果交付与持久化归档 (Turn Finalization &amp; Journal Append)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">输出最终回复文本 ──► 向本地 session.jsonl 增量追加不可篡改操作日志 ──► 状态机重置为 Idle 等待下一次交互！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代自主 Coding Agent 状态流转最高工程范式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

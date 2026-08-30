@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">弱网丢包环境下的吞吐表现：CUBIC vs Google BBR</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">CUBIC (将偶发丢包误判为网络拥塞，窗口瞬间腰斩 50%，吞吐暴跌 90%) vs BBR (基于 BtlBw 与 RTprop 物理建模，抗 20% 随机丢包不掉速)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: CUBIC -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ CUBIC：基于丢包驱动 (Loss-Based)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. 盲目持续增大拥塞窗口 cwnd 直到把路由器填满</text>
+          <text y="28" fill="#f87171">2. 路由器溢出发生 1 个包丢包 ──► CUBIC 立即触发乘法减小：</text>
+          
+          <text y="50" fill="#ef4444">💥 cwnd = cwnd × 0.7 (瞬间腰斩！)</text>
+          <text y="66" fill="#ef4444">• 在 2% 随机丢包的跨洋专线或 5G 弱网下</text>
+          <text y="82" fill="#ef4444">• 窗口永远在腰斩与慢爬坡之间震荡！</text>
+          <text y="98" fill="#f87171">• 千兆带宽实际吞吐暴跌至 15Mbps！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 跨大洲国际网络访问体验极差；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 造成巨大的 Bufferbloat 延迟恶化；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 无法适应现代高带宽弱网环境！</text>
+      </g>
+    </g>
+
+    <!-- Right: BBR -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Google BBR：基于物理模型 (Model-Based)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">目标模型：BDP = BtlBw × RTprop (寻找最优工作点)</text>
+          
+          <text y="38" fill="#86efac">抗丢包机制：</text>
+          <text y="52" fill="#38bdf8">1. 丢包不等于拥塞！只要 Delivery Rate 未下降就不降速</text>
+          <text y="68" fill="#34d399">2. 精确按实际交付速率 pacing 发送，不依赖 ACK 时钟催促</text>
+          <text y="84" fill="#34d399">3. 在 15% 恶劣丢包率下，依然跑满 920Mbps 吞吐！</text>
+          
+          <text y="108" fill="#4ade80">✓ 跨国 CDN 与 YouTube 视频秒开的核心底座！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底释放跨国传输与边缘 CDN 物理潜能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 极大降低排队延迟，兼顾吞吐与低时延；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代网络拥塞控制的最高工业标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

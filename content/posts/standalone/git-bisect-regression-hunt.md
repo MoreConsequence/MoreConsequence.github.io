@@ -9,11 +9,20 @@ featured: false
 
 **TL;DR：** `git bisect` 的二分定位能力人人会用，但**判定脚本**才是成败关键。本机构造 21 个 commit 的仓库、在 c21 引入 `add()` 的回归，`git bisect run` 仅 **4 次测试**（约 log₂21≈5）锁定了 c21。真正值得写下来的是踩过的三个坑：① **bisect run 的 cwd 是仓库目录，不是脚本所在目录**——脚本里的相对路径 `./repo/...`、`cd ../repo` 都会叠出一层错路径，必须用 `$0` 绝对化得到 SCRIPT_DIR 再拼一切路径；② bisect run 的测试在任何 commit 上都要自洽，**不能用宿主仓库的模块系统**（本机因博客仓库根 package.json 是 `type: module`，require 语义被污染，`add` 恒为 `undefined`，改成源码 eval 判定才稳定）；③ 二分的前提是"好→坏"单调——若脚本本身不稳定（偶发失败），结果直接失真。工程结论：bisect 定位是**时间维度上的二分搜索**，判定脚本的质量决定定位精度，写脚本的时间永远花得值。
 
+
+---
+
+![git bisect 自动化性能回归猎杀：二分搜索判定脚本与 10 次提交定位 Bug](../../../public/images/git-bisect-automated-regression-hunt.svg)
+
 ## 一、为什么 bisect 是时间维度的二分
 
 回归本质上是"某个 commit 改变了行为"。如果好/坏在 commit 序列上是单调的（一旦坏，后续都坏），那问题就变成"在提交历史里二分查找分界点"。bisect 做的事：取 bad 与 good 的中点 commit 检出、跑判定脚本、根据结果把范围折半。21 个 commit → 5 次以内（实测 4 次）。
 
 关键认识：**二分的是"提交序列"，不是"代码"**。任何能区分好/坏的脚本都可以当判定器；bisect 不关心为什么坏，只关心"这个 commit 是好是坏"。
+
+
+
+![git bisect 二分排查算法原理：O(log N) 快速定位引入 Bug 的首个 Commit](../../../public/images/git-bisect-binary-search-tree-flow.svg)
 
 ## 二、实验构造与实测轨迹
 
@@ -49,6 +58,10 @@ if(typeof m.exports.add!=="function"||m.exports.add(2,3)!==5) process.exit(1);' 
 ```
 
 **坑 3：脚本必须处处退出码明确。** eval 里 `process.exit(1)` 是唯一"坏"信号；任何分支漏写 exit 都会导致默认 0 被判好，bisect 直接跑偏。**自查：手动在 good commit 与 bad commit 各跑一次脚本，确认双向都判对，再交 bisect run。**
+
+
+
+![git bisect run 自动化脚本退出码规范：0 (Good), 1-127 (Bad), 125 (Skip 无法编译)](../../../public/images/git-bisect-run-automation-script-exit-codes.svg)
 
 ## 四、工程启示：bisect 的快慢由判定成本决定
 

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">JavaScript 事件循环 (Event Loop) 与微任务/宏任务执行时序</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">同步 Call Stack ──► 清空 Microtask (Promise.then / queueMicrotask) ──► 渲染 UI ──► 取下 1 个 Macrotask (setTimeout)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Panes (285px each) -->
+    <!-- Col 1: Call Stack -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 同步执行栈 (Call Stack)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 单线程主栈 (严格顺序执行)</text>
+          <text x="10" y="34" fill="#93c5fd">1. console.log("1: Start")</text>
+          <text x="10" y="48" fill="#fb923c">2. setTimeout(cb, 0) ──► 抛给宿主宏任务队列</text>
+          <text x="10" y="64" fill="#34d399">3. Promise.resolve().then(cb) ──► 挂入微任务</text>
+          <text x="10" y="80" fill="#93c5fd">4. console.log("2: End")</text>
+          <text x="10" y="102" fill="#38bdf8">► 主栈必须先彻底清空 (栈深度 = 0)</text>
+          <text x="10" y="118" fill="#38bdf8">► 事件循环才能进入下一个检查阶段</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">物理铁律：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 主栈不空，任何异步回调都绝不可能执行；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• async/await 中 await 之前的代码属于同步！</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• await 之后的代码被包装为 Promise.then 微任务。</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Microtask -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 微任务队列 (Microtask Queue)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 最高优先级插入 (执行直到清空)</text>
+          <text x="10" y="34" fill="#86efac">• Promise.then / catch / finally</text>
+          <text x="10" y="48" fill="#86efac">• queueMicrotask(cb)</text>
+          <text x="10" y="62" fill="#86efac">• MutationObserver 回调</text>
+          <text x="10" y="76" fill="#86efac">• Node.js process.nextTick (更高优先级)</text>
+          <text x="10" y="98" fill="#34d399">► 关键：微任务执行期间产生的新微任务</text>
+          <text x="10" y="112" fill="#34d399">   会在当前 Tick 连续执行，直到彻底清空！</text>
+          <text x="10" y="128" fill="#f87171">⚠️ 递归微任务会导致主线程活锁饿死！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">执行时机：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 每个宏任务执行完毕后立即清空微任务；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 浏览器在渲染 UI 之前必须先清空微任务；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 保证状态变更在单帧内原子收敛！</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Macrotask -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 宏任务队列 (Macrotask Queue)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 宿主环境调度 (每次仅取 1 个)</text>
+          <text x="10" y="34" fill="#fed7aa">• setTimeout / setInterval</text>
+          <text x="10" y="48" fill="#fed7aa">• setImmediate (Node.js)</text>
+          <text x="10" y="62" fill="#fed7aa">• I/O 网络与磁盘事件</text>
+          <text x="10" y="76" fill="#fed7aa">• UI 用户点击 / 滚动交互事件</text>
+          <text x="10" y="98" fill="#fbbf24">► 每次循环严格只取 1 个宏任务执行！</text>
+          <text x="10" y="112" fill="#fbbf24">► 执行完该宏任务后，立即检查微任务！</text>
+          <text x="10" y="128" fill="#86efac">► 若有微任务，全清空后才看是否渲染 UI</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">经典面试题秒杀：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 同步代码 &gt; process.nextTick &gt; Promise.then</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">  &gt; requestAnimationFrame &gt; UI Render &gt; setTimeout</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#ea580c">• 记住金字塔顺序，所有异步时序迎刃而解！</text>
+      </g>
+    </g>
+  </g>
+</svg>

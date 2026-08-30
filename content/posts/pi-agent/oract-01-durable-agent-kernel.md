@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：大模型不确定，但执行系统必须可靠——Go 原生 Durable Agent 内核](../../../public/images/oract-durable-agent-kernel-go-runtime.svg)
+
 ## 一、为什么传统 Agent 在生产环境中“一碰就碎”？
 
 在将 Agent 投入金融风控、自动化运维、数据库迁移等严肃工业场景时，传统基于内存易变状态的 Agent 架构通常会暴露出致命短板：
@@ -42,6 +47,10 @@ flowchart TB
 ORACT 的核心使命，就是用 Go 语言的系统级严谨性彻底解决这些工程隐患。
 
 ---
+
+
+
+![Oract 耐久执行代理内核：确定性重放、检查点 (Checkpoint) 与断点续跑](../../../public/images/oract-durable-agent-execution-kernel.svg)
 
 ## 二、核心抽象：Run 状态机与确定性 Reducer
 
@@ -173,6 +182,10 @@ sequenceDiagram
 2. **绝对可复现性**：排查生产事故时，只需将用户的 Journal 导出并在测试机运行，便能以纳秒级精度复现当时的每一个细微决策。
 
 ---
+
+
+
+![Oract 状态机可重入性与幂等恢复数学证明](../../../public/images/oract-kernel-reentrancy-crash-recovery-proof.svg)
 
 ## 四、为什么选用 Go？系统级并发与内存掌控
 

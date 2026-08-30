@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">分布式事务模型对决：2PC 强一致锁阻塞 vs SAGA 柔性逆向补偿</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">2PC (两阶段提交，协调器宕机导致所有参与者永久持有锁阻塞) vs SAGA (T1-&gt;T2-&gt;T3 失败触发 C2-&gt;C1 业务逆向补偿)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: 2PC -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 2PC (两阶段提交 / XA 规范)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">阶段 1 (Prepare): 协调器向所有节点发送 Prepare，各节点加锁并写 redo/undo log</text>
+          <text y="30" fill="#4ade80">阶段 2 (Commit): 全员同意则发送 Commit，否则发送 Rollback</text>
+          
+          <text y="56" fill="#f87171">⚠️ 致命缺陷：同步阻塞与单点悬挂</text>
+          <text y="72" fill="#fca5a5">• 若协调器在 Commit 阶段宕机，参与者永久加锁挂起！</text>
+          <text y="88" fill="#ef4444">• 吞吐量暴跌，极其不适合跨广域网或微服务高并发！</text>
+          <text y="108" fill="#4ade80">✓ 优势: 严格满足 ACID 强一致性隔离级别！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 局域网内同机房单库多表或关系型数据库内部；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 对脏读与幻读 0 容忍的金融级核心总账；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 低并发、短事务强一致场景。</text>
+      </g>
+    </g>
+
+    <!-- Right: SAGA -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. SAGA (长事务柔性补偿机制)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 正向正事务链: T1(扣库存) ──► T2(扣余额) ──► T3(创建订单)</text>
+          <text y="30" fill="#fb923c">// 若 T3 执行失败触发异常：</text>
+          <text y="46" fill="#f87171">逆向补偿链: C2(退还余额) ──► C1(退还库存)</text>
+          
+          <text y="70" fill="#38bdf8">1. 每个子事务都是本地事务，立即提交并释放数据库锁</text>
+          <text y="86" fill="#34d399">2. 状态机编排器 (Orchestrator) 保证最终一致性</text>
+          <text y="104" fill="#4ade80">✓ 吞吐量极高，完美适配分布式长流程微服务业务！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 补偿操作必须满足严格幂等性 (Idempotency)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 必须能妥善处理空补偿与防悬挂；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代海量电商交易与订票系统的标准解法！</text>
+      </g>
+    </g>
+  </g>
+</svg>

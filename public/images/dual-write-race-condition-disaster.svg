@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">直接双写反模式 (Dual-Write Anti-Pattern) 灾难推演</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">先更库再发 MQ (发 MQ 失败导致下游丢消息) ｜ 先发 MQ 再更库 (更库失败回滚但消息已发出造成幽灵消费) ｜ 无法两全其美</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: DB first MQ fail -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 先写 DB，再发 MQ：网络超时丢消息</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">1. 订单 DB 事务提交成功 (状态: 已支付)</text>
+          <text y="28" fill="#f87171">2. 随后调用 kafkaProducer.send() 发送支付事件</text>
+          
+          <text y="50" fill="#ef4444">突发网络抖动 / 节点断电 / OOM 重启：</text>
+          <text y="64" fill="#fca5a5">• MQ 消息发送失败 throw Exception！</text>
+          <text y="78" fill="#ef4444">• 但此时 DB 事务已无法回滚！</text>
+          <text y="92" fill="#ef4444">• 下游积分/发货服务永久收不到通知！</text>
+          
+          <text y="116" fill="#f87171">🔴 导致数据严重永久撕裂与客诉风暴！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 用户付款后货物迟迟不发；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 需要人工对账补单抢救；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 严禁在微服务中直接写双边！</text>
+      </g>
+    </g>
+
+    <!-- Right: MQ first DB fail -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">❌ 先发 MQ，再写 DB：幽灵消息与假付款</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">1. 先向 Kafka 发送 "支付成功" 消息</text>
+          <text y="28" fill="#86efac">2. 下游发货服务毫秒级消费并光速发货！</text>
+          
+          <text y="50" fill="#ef4444">悲剧发生：</text>
+          <text y="64" fill="#fca5a5">• 上游主业务执行 DB UPDATE 时触发锁等待超时！</text>
+          <text y="78" fill="#ef4444">• 本地事务回滚，订单状态实际为“未支付”！</text>
+          <text y="92" fill="#ef4444">• 用户未扣款却白嫖到了发货商品！</text>
+          
+          <text y="116" fill="#f87171">🔴 造成直接巨大资金损失！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构结论：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 无论先更库还是先发 MQ 均无法保证一致性；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 必须依靠 Transactional Outbox 事务外箱彻底解决；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 分布式系统经典铁律！</text>
+      </g>
+    </g>
+  </g>
+</svg>

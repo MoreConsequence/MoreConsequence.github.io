@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Raft 日志连续性校验与多数派提交模型 (Log Matching Property)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. Leader 接收写请求追加本地日志 ──► 2. AppendEntries RPC 携带 prevLogIndex &amp; prevLogTerm ──► 3. 多数派落盘推进 commitIndex ──► 4. 强行覆盖 Follower 不一致脏日志</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 客户端写入与未提交条目追加 (Append Uncommitted Entry)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Leader 收到 SET key=val ──► 追加到本地 WAL 日志 (Term: 2, Index: 101) ──► 尚未应用至状态机</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">日志先行，写入不可逆持久介质！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 前驱日志匹配性安全检查 (PrevLogIndex &amp; PrevLogTerm Check)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Follower 检查本地 Index 100 处的任期是否匹配 ──► 若不匹配则拒绝 ──► Leader 递减 nextIndex 逐步回退找到公共祖先</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">严密保障日志历史的绝对连续无分叉！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 多数派确认与提交屏障晋升 (Majority Quorum &amp; CommitIndex Advancement)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">超过 N/2+1 个节点返回成功 ──► Leader 将 commitIndex 推进至 101 ──► 应用到状态机并响应客户端成功</text>
+        <text x="15" y="62" font-size="8" fill="#047857">达成绝对不可逆的分布式法定承诺！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 领导者日志绝对权威覆盖 (Leader Append-Only Invariant)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Leader 绝不删除或修改自己的日志 ──► 强制将 Follower 上的冲突未提交脏日志直接截断覆盖！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">保持全集群日志副本 100% 严格一致收敛！</text>
+      </g>
+    </g>
+  </g>
+</svg>

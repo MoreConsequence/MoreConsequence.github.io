@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">端到端 27ms 时延三段拆解归因：为什么服务端日志只记了 2ms</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 客户端排队与 TCP 建连 (3ms) ｜ 2. 物理网络 RTT 传输 (20ms) ｜ 3. 服务端计算 (2ms) ｜ 4. 客户端 JS 主线程调度 (2ms)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Horizontal Columns (270px each) -->
+    <g transform="translate(20, 20)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Col 1 -->
+      <rect width="270" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+      <rect width="270" height="30" rx="6" fill="#dbeafe"/>
+      <text x="135" y="20" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">1. 网络传输与 RTT (20ms)</text>
+
+      <g transform="translate(12, 42)" font-size="8">
+        <text y="14" font-weight="700" fill="#1e40af">• 物理光纤距离与光速物理极限</text>
+        <text y="30" fill="#334155">北京到上海往返物理光纤延时 ~20ms；</text>
+        <text y="50" font-weight="700" fill="#1d4ed8">耗时占比：74% (全链路最大头)</text>
+        <text y="68" fill="#334155">• 无论后端算法如何从 2ms 优化到 1ms；</text>
+        <text y="86" fill="#334155">• 用户体感时延依然纹丝不动！</text>
+        <text y="108" font-weight="700" fill="#166534">✓ 解法：边缘 CDN 部署，拉近物理距离。</text>
+      </g>
+
+      <!-- Col 2 -->
+      <g transform="translate(290, 0)">
+        <rect width="270" height="345" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <rect width="270" height="30" rx="6" fill="#dcfce7"/>
+        <text x="135" y="20" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">2. 服务端真实耗时 (2ms)</text>
+
+        <g transform="translate(12, 42)" font-size="8">
+          <text y="14" font-weight="700" fill="#166534">• Nginx / Go 服务端计算时间</text>
+          <text y="30" fill="#334155">Server-Timing: app;dur=2.1ms</text>
+          <text y="50" font-weight="700" fill="#15803d">耗时占比：仅 7%</text>
+          <text y="68" fill="#334155">• 服务端仅记录 socket 读完到写出时间；</text>
+          <text y="86" fill="#334155">• 无法反映客户端真实受到的网络颠簸！</text>
+          <text y="108" font-weight="700" fill="#166534">✓ 解法：严禁仅凭后端日志评估用户体验。</text>
+        </g>
+      </g>
+
+      <!-- Col 3 -->
+      <g transform="translate(580, 0)">
+        <rect width="280" height="345" rx="6" fill="#fff7ed" stroke="#fed7aa"/>
+        <rect width="280" height="30" rx="6" fill="#ffedd5"/>
+        <text x="140" y="20" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">3. 客户端主线程排队 (5ms)</text>
+
+        <g transform="translate(12, 42)" font-size="8">
+          <text y="14" font-weight="700" fill="#c2410c">• 浏览器/移动端渲染与事件循环</text>
+          <text y="30" fill="#334155">Socket 收到数据 ──► 推入微任务队列 ──► 主线程执行回调</text>
+          <text y="50" font-weight="700" fill="#9a3412">耗时占比：19%</text>
+          <text y="68" fill="#334155">• 若当前主线程被大 DOM 重绘或复杂计算阻塞；</text>
+          <text y="86" fill="#334155">• 回调函数被严重推迟，产生显著体感延迟！</text>
+          <text y="108" font-weight="700" fill="#166534">✓ 解法：Web Worker 分离计算，保障主线程轻量。</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

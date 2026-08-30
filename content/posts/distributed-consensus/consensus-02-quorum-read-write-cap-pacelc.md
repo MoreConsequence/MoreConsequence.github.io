@@ -55,6 +55,10 @@ $$|\mathcal{S}_W \cap \mathcal{S}_R| \ge 1$$
 
 ---
 
+
+
+![弱一致性反熵同步机制：读修复 (Read Repair)、暂存写入 (Hinted Handoff) 与 Merkle 树对比](../../../public/images/dynamo-read-repair-vs-hinted-handoff-anti-entropy.svg)
+
 ## 二、 读修复（Read Repair）与后台反熵（Anti-Entropy）
 
 即使满足 $R + W > N$，那些在写操作时未收到数据的 $N - W$ 个落后节点（Lagging Replicas）依然持有陈旧数据。分布式系统如何收敛落后节点？

@@ -10,6 +10,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 阻塞在 socket 读的 goroutine 不吃线程，因为 Go 把『I/O 等待』定义在 G 层而不是 M 层：`conn.Read` 撞上 `EAGAIN` 时走 `netpollblock` → `gopark`，G 挂到 `pollDesc` 等待位上，M 原地继续跑 runq 里的下一个 G——OS 线程数只数"忙的 M"，与等待的 G 数量无关。本机 macOS/Go 1.25.1 的 1000 个 socket 阻塞读观测到 `OS threads=8`；这只是当前机器与输入规模的一次快照。事件就绪后 netpoll 把内核事件翻译成可运行 G：`netpoll()` 返回一个可运行列表，阻塞在 `epoll_wait` 里的那个空闲 M **就地直接跑列表的第一个**（最快的路径），其余 G 经 `injectglist` 追加到各 P 的 runq 尾部；`runnext` 的插队只发生在 deadline 提前到期或 fd 关闭/取消这类特殊唤醒上，不是正常数据到达。边界是 **pollable**：socket/pipe 走 netpoll，普通文件 IO 与裸 syscall 是阻塞系统调用，M 被钉死在内核里。谁在跑 epoll_wait：没有常驻 netpoll 线程——空闲 M 在 `findrunnable` 里带超时阻塞进 `epoll_wait`（同一时刻至多一个），sysmon 每约 10ms 兜底轮询。
 
+
+---
+
+![Go Netpoll 网络多路复用：Socket Read 阻塞 ──► gopark 挂起 ──► epoll_wait 唤醒 ──► goready 调度](../../../public/images/go-netpoll-epoll-gopark-goready.svg)
+
 ## 一、反直觉：100 万个阻塞读为什么没有变成 100 万个线程
 
 8 个线程的服务，为什么能同时挂着十万个 socket 连接？如果每个阻塞读都占一个线程，8 个线程只能服务 8 个连接，第 9 个请求就得排队。可"每连接一个 goroutine、全量阻塞在 `conn.Read`"是 Go 服务最普通的写法，线程数就是不动。账本说明问题在哪一层：
@@ -22,6 +27,10 @@ series: "Go 的设计边界"
 100 万个阻塞读消耗的是 100 万个 G，不是 100 万个线程。但账本没解决直觉难题：**M 凭什么能"不等"？** 阻塞读的"等数据"如果最终仍由一个 M 睡在内核里承担，线程数还是会被顶上去。
 
 答案在 [GMP 那篇](/writing/go-scheduler-gmp-preemption)没答完的地方：goroutine 阻塞时 M 可以"换乘客"，前提是**这个等待能被运行时观察和解除**。epoll 只负责告诉内核"哪个 fd 就绪了"（内核侧见[epoll 的一生](/writing/epoll-c10k-c10m)）；把"fd 就绪"翻译回"某个 G 该醒了"的，是 netpoller。
+
+
+
+![netpoll 网络轮询器全景架构：epoll/kqueue 抽象、pollDesc 与 gopark 协作](../../../public/images/netpoll-epoll-kqueue-scheduler-bridge.svg)
 
 ## 二、netpoller 的位置：pollDesc 与四次交接
 
@@ -53,6 +62,10 @@ flowchart LR
 还有个易忽略的主动唤醒 `netpollBreak`：deadline 被改早、或出现更早 timer 时，它往内部 eventfd 写一字节（`netpoll_epoll.go`），让阻塞中的 `epoll_wait` 立刻返回重算，否则新 deadline 要等自然超时才被感知。
 
 **唤醒后的调度路径分两条**：正常数据就绪时，`netpoll()` 返回的列表第一个 G 由阻塞中的 M **就地直接执行**（它刚被 `epoll_wait` 叫醒、P 是现成的，这是最快的路径），其余 G 走 `injectglist` 追加到 runq 尾部排队；只有 deadline 提前到期、fd 关闭/取消这类特殊唤醒，才走 `netpollgoready` → `ready(gp, ..., true)` → `runqput(next=true)` 插进 runnext（单槽，插进去会把原占位者踢回 runq）。所以"刚有数据就插队"不是通用行为——正常数据到达没有 runnext 特权，最速路径是 polling M 就地执行第一个。
+
+
+
+![pollDesc 内部状态机：pdReady, pdWait, pdNil 与超时定时器协作](../../../public/images/netpoll-polldesc-state-machine.svg)
 
 ## 四、边界：socket 阻塞不吃线程，文件阻塞照样吃
 

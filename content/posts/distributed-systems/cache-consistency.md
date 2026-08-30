@@ -58,6 +58,10 @@ sequenceDiagram
 
 命中率是可优化的数字，一致性是必须做出取舍的工程判断。不少缓存事故，恰恰是把这两件事当成了一件事。
 
+
+
+![Cache-Aside 经典模式：先更 DB 再删 Cache vs 先删 Cache 读写并发竞态](../../../public/images/cache-aside-pattern-delete-vs-update.svg)
+
 ## 二、写路径的三个候选：删缓存、双写、延迟双删
 
 ### 2.1 Cache Aside：读路径与写路径
@@ -372,6 +376,10 @@ flowchart LR
 
 层级越多，失效延迟越长，一致性预算就要越宽松。这是用一致性换延迟的明码标价。
 
+
+
+![基于 MySQL Binlog + Canal + MQ 的异步缓存失效架构](../../../public/images/canal-binlog-async-cache-invalidation-pipeline.svg)
+
 ## 四、 Redis 故障与缓存降级
 
 第二章的 Go 代码里有一行注释：「Redis 故障不挡业务，降级回库」。这句话展开来，是一整套降级策略：
@@ -414,7 +422,7 @@ flowchart TD
     F -->|"否"| H["最终一致 加 TTL 兜底"]
 ```
 
-![一致性阶梯示意图：从 TTL+容忍到直读数据库，越往上一致性与实现成本越高，缓存收益越稀薄](/images/consistency-ladder.svg)
+![一致性阶梯示意图：从 TTL+容忍到直读数据库，越往上一致性与实现成本越高，缓存收益越稀薄](../../../public/images/consistency-ladder.svg)
 
 *图注：阶梯每一级都有明码标价——越接近强一致，缓存的性能收益越稀薄；大多数业务停在第一级，预算写进监控即可。*
 

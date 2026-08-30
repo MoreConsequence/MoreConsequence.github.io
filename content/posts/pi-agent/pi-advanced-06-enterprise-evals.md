@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 许多团队在优化 Agent 时全凭“感觉”——修改了一句 System Prompt，测试了 2 个简单 Demo 觉得效果不错就直接发布；结果上线后发现原本能写出正确 SQL 的场景全都崩溃了。**没有自动化评测流水线（Eval Pipeline），任何对 Agent 提示词、工具或模型的改动都是盲目且危险的**。本文作为《Pi Agent 全景通才教程》第二十四课，带你跳出公开 Benchmark 的假象，手把手教你如何从**企业真实 Git 仓库历史中自动提取黄金测试集（Gold Dataset）**，并在 **Docker 隔离沙箱中搭建全自动的 Pass@1 评测与成本打分流水线**。
 
+
+---
+
+![企业级 Agent 评测体系：基于真实 PR 的 SWE-Bench 沙箱回归测试流水线](../../../public/images/pi-enterprise-evals-swe-bench-sandbox.svg)
+
 ## 一、真实工程评测的四大黄金支柱
 
 一个能用于生产 CI 拦截的 Agent 评测体系必须包含四大支柱：
@@ -32,6 +37,10 @@ flowchart TD
 2. **黑盒验收（Blackbox Verification）**：不靠另一个 LLM 去“打分”（避免 LLM-as-Judge 带来的主观幻觉），**直接执行仓库原生的单元测试与集成测试**；
 3. **副作用隔离（Side-effect Isolation）**：每个 Eval Case 在独立的临时容器中运行，避免任务之间互相污染磁盘或端口；
 4. **多维度成本画像（Multi-dimensional Profiling）**：综合衡量通过率（Pass@1）、平均耗时（Duration）、平均消耗 Token 与金钱成本。
+
+
+
+![企业级 Agent 评估基准矩阵：SWE-bench 修复率、Token 成本与执行耗时三维评估](../../../public/images/pi-enterprise-evals-matrix-swe-bench-pass-rate.svg)
 
 ## 二、如何从 Git 历史自动提取 Eval 任务？
 
@@ -179,6 +188,10 @@ export class EnterpriseEvalRunner {
   }
 }
 ```
+
+
+
+![企业级 Agent CI 持续评测与回归防护流水线](../../../public/images/pi-ci-evals-regression-testing-pipeline.svg)
 
 ## 四、接入 CI/CD 质量闸门（Quality Gate）
 

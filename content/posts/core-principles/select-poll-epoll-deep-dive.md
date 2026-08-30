@@ -25,6 +25,11 @@ series: "硬核底层原理"
 
 这三个问题把 readiness 合同、Linux wait queue、`select/poll` 的每轮扫描、epoll 的 interest/ready 两类集合，以及后来的 busy polling 与 io_uring 连成一条主线。
 
+
+---
+
+![Linux I/O 多路复用演进：select vs poll vs epoll 内核红黑树与就绪链表](../../../public/images/io-multiplexing-select-poll-epoll.svg)
+
 ## 一、先定义等待合同：readiness 只允许你尝试 I/O
 
 事件循环处理非阻塞 fd 时，核心路径不是“先等到完整数据，再执行读取”，而是尝试、等待、再尝试：
@@ -83,6 +88,10 @@ writable 表示内核当前能接受至少一部分数据。一个 8 MB 响应�
 | 其他错误 | 连接或对象进入错误状态 | 记录原因并清理生命周期 |
 
 把 `EAGAIN` 看成“本轮 drain 已结束”，后面的 `select`、`poll`、`epoll` 才会连成一条完整路径。
+
+
+
+![epoll 内核数据结构全景：红黑树 (epitem) 与双向就绪链表 (rdllist)](../../../public/images/epoll-kernel-rbtree-ready-list.svg)
 
 ## 二、三套 API 的共同底座不是忙扫描，而是 wait queue
 
@@ -173,6 +182,10 @@ Linux 上还要区分 kernel 与 libc：内核系统调用可以根据 `nfds` �
 当 fd 数量很少、必须覆盖广泛 POSIX 平台，或者代码只是一个诊断工具时，`select` 的可读性可能比扩展性更重要。
 
 需要接受的边界也很清楚：1024 的 libc 位图限制、value-result 参数、按 fd 范围扫描，以及多线程 close 行为的可移植性问题。
+
+
+
+![多路复用复杂度与吞吐悬崖对照：O(N) 线性衰减 vs epoll O(1) 绝对水平线](../../../public/images/select-poll-epoll-complexity-benchmark.svg)
 
 ## 四、`poll`：去掉位图和最大 fd 限制，却没有去掉每轮 `N` 项
 

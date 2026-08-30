@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![DeepSeek Harness (DSH) LLM 流式流控、思考链提取与上下文溢出压缩机制](../../../public/images/dsh-llm-streaming-reasoning-compaction.svg)
+
 ## 一、DeepSeek-R1 思考链流式流控架构
 
 DeepSeek-R1 与 DeepSeek-V3 等模型在流式输出时，数据载荷通常包含两种截然不同的信息流：
@@ -70,6 +75,10 @@ export interface AssistantMessageEventStream {
 通过在传输层将 `thinking` 与 `text` 分流，Web 客户端能够实现丝滑的折叠动画，用户可以实时观察模型的推导过程，而在复制正文时完全不受内部思维标记的干扰。
 
 ---
+
+
+
+![DSH 大模型流式背压与平滑渲染管道：SSE Chunk 解析 -> 环形缓冲区 -> UI 帧率同步](../../../public/images/dsh-llm-streaming-token-backpressure-pipeline.svg)
 
 ## 二、KV Cache 命中优化：静态前缀对齐法则
 
@@ -171,6 +180,10 @@ sequenceDiagram
 ```
 
 ---
+
+
+
+![DSH 上下文动态压缩与滑动窗口策略：基于重要度的衰减与关键事实保留](../../../public/images/dsh-dynamic-compaction-sliding-window-strategy.svg)
 
 ## 四、Token 计量与成本控制 (TokenMeter)
 

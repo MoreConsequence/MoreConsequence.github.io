@@ -10,6 +10,11 @@ series: "造轮子手记"
 
 **TL;DR：** LSM 把"随机写"换成"顺序追加"，代价是同一份数据被 compaction 反复重写（写放大）和点查要逐层探测（读放大）。这篇不背结论，我把 memtable、WAL、SST、bloom、compaction 亲手拼成一个约 600 行的 Go 迷你 LSM（`experiments/mini-lsm`），用字节账推写放大、用随机 IO 次数算读放大。固定输入的 sweep 观测到：T=8 时 Leveled 写放大 5.38、Size-Tiered 2.69；但 Size-Tiered 在 T=40 的不存在键探测为 28.0 次，Leveled 为 5.0 次。**Leveled 用写放大换整齐的键域，Size-Tiered 用读放大和空间放大换更低的重写成本。** 这些是内存模拟的放大率，不是磁盘时延或生产引擎基准。
 
+
+---
+
+![LSM-Tree 核心架构：MemTable 内存跳表、SSTable 磁盘分层与 Compaction 压缩](../../../public/images/mini-lsm-memtable-sstable-compaction.svg)
+
 ## 一、从零设计：memtable、WAL、SST 与 bloom 怎么拼成一台"只追加"的机器
 
 先把目标说清楚：我要造的是一个能点查、能顺序写、能崩溃恢复的内存版 LSM，不追求吞吐，只求把"写放大和读放大从哪来"亲手验证一遍。整体是四件套拼起来的：
@@ -36,6 +41,10 @@ flowchart LR
 点查一个键，就是先二分 index block 定位"键可能在哪个 data block"，再读那个 block、块内二分。所以读一个 block 的成本取决于它是否命中缓存——这篇只关心"随机 IO 的次数"，不关心命中率。
 
 **我没做什么、为什么。** 没做 tombstone 删除（LSM 里删除是写一条删除标记、靠合并清账，那是另一篇的题）、没做多列族、没做 block cache。取舍理由很直接：这三者都改的是"账的进出"，不改"账怎么算"，而这篇要验证的是两张账本身。
+
+
+
+![Mini-LSM 读路径四级加速：MemTable -> BlockCache -> BloomFilter -> SSTable](../../../public/images/mini-lsm-block-cache-bloom-filter-pipeline.svg)
 
 ## 二、点查为什么只要 O(levels) 次探测：稀疏索引与 bloom 的假阳性账
 
@@ -78,6 +87,10 @@ compaction 的本质是**把上层文件合并进下一层**：读出上层和�
 | 一句话 | 数据被压得整齐，读便宜 | 写便宜，账记在读和空间上 |
 
 一句"为什么"把两张账连起来：**同一层同一份数据，Leveled 把它合并到键域不相交，靠的是反复重写（写放大涨）；Size-Tiered 少写（写放大降），代价是 run 重叠、点查要多翻、旧版本滞留（读放大和空间放大涨）。** 你只是把成本从一张账挪到另一张账。
+
+
+
+![压缩策略横评：Size-Tiered (写放大极优) vs Leveled (空间与读放大极优)](../../../public/images/tiered-vs-leveled-compaction-tradeoff.svg)
 
 ## 四、亲手跑模拟器：三张曲线与踩坑
 

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">企业级发布模式对决：蓝绿部署 (Blue-Green) vs 金丝雀灰度 (Canary)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">蓝绿部署 (双倍硬件冗余，负载均衡器 1 秒原子切换，秒级回滚) vs 金丝雀灰度 (1% -&gt; 5% -&gt; 25% -&gt; 100% 渐进放量，指标异常自动熔断)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Blue Green -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">蓝绿部署 (Blue-Green 瞬间全量切换)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. 存量稳定集群: Blue (100% 生产流量)</text>
+          <text y="28" fill="#86efac">2. 部署全新集群: Green (0% 流量，充分预热冒烟)</text>
+          
+          <text y="50" fill="#38bdf8">3. 负载均衡原子切流：</text>
+          <text y="64" fill="#34d399">   • 修改 Ingress / Nginx upstream ──► 指向 Green</text>
+          <text y="78" fill="#4ade80">   • 耗时 &lt; 1 秒，全站瞬间完成版本交接！</text>
+          <text y="92" fill="#34d399">4. 若异常: 1 秒切回 Blue 瞬间止血！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 需要 2 倍物理服务器硬件资源；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 数据库 Schema 必须保证前向与后向双向兼容；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 适合核心重大版本发布。</text>
+      </g>
+    </g>
+
+    <!-- Right: Canary -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">金丝雀灰度 (Canary 渐进按权放量)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">基于 Envoy / Istio 流量路由：</text>
+          
+          <text y="36" fill="#86efac">1. 部署 1 个新版本 Pod (承担 2% 流量)</text>
+          <text y="50" fill="#38bdf8">2. Prometheus 自动分析 5 分钟错误率与 P99</text>
+          <text y="64" fill="#34d399">3. 指标正常 ──► 自动放量至 10% ──► 50% ──► 100%</text>
+          <text y="78" fill="#f87171">4. 若 5xx &gt; 0.5% ──► Argo Rollouts 自动触发秒级回滚！</text>
+          
+          <text y="104" fill="#4ade80">✓ 将潜在 Bug 影响范围控制在极小边缘！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 硬件资源开销极小；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 自动化可观测性指标驱动发布与熔断；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 云原生微服务发布金牌标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

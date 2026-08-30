@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">脏页刷盘与 Checkpoint 推进模型 (Flush List &amp; Fuzzy Checkpoint)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Flush List 按 oldest_modification LSN 严格升序排序 ──► Page Cleaner 后台线程异步刷盘 ──► 推进 Checkpoint LSN 释放 Redo Log 空间</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 内存修改与首次变脏 (Buffer Pool Page Mutated: oldest_modification LSN)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">事务更新数据页 ──► 先写 Redo Log (WAL) ──► 内存页标记为脏页并插入 Flush List 尾部</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">oldest_modification LSN 记录了该页第一次变脏时的日志位置！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Flush List 有序队列维护 (Strictly Ordered by LSN)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Flush List 头部永远是全库最早变脏的页 ──► 保证刷盘顺序与 Redo Log 日志顺序完全单调一致</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">为崩溃恢复提供不可逆转的确定性边界！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Page Cleaner 异步平滑刷盘 (Adaptive Flusher: Fuzzy Checkpoint)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">根据脏页比例与 Redo Log 消耗速度动态调整 I/O 速率 ──► 异步写回 ibd 表空间文件</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底避免系统瞬间 I/O 卡死（Sharp Checkpoint 抖动）！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Checkpoint LSN 推进与日志循环覆盖 (Checkpoint Advancement)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">头部脏页刷盘成功 ──► Checkpoint LSN 向前推进 ──► 释放该 LSN 之前的 Redo Log 循环复用！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">保证固定大小的 ib_logfile 可以永久循环写入！</text>
+      </g>
+    </g>
+  </g>
+</svg>

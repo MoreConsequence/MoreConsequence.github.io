@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![DeepSeek Harness (DSH) 架构解密：Cordis 微内核与「一切皆插件」扩展哲学](../../../public/images/dsh-cordis-microkernel-plugin-architecture.svg)
+
 ## 一、传统 Agent 框架的架构绝境：单体硬编码的致命缺陷
 
 在开发复杂的生产级自主 Agent（如代码重构助理、全自动 DevOps 机器人、长程数据分析系统）时，绝大部分团队初期采用的单体框架都会迅速撞上架构天花板：
@@ -49,6 +54,10 @@ flowchart TB
 DeepSeek Harness 给出的破局之道，是将操作系统微内核与函数式响应式设计引入 Agent 领域，依托 **Cordis 微内核** 彻底重塑宿主环境。
 
 ---
+
+
+
+![DSH 多 Agent 协同拓扑架构：主协调器 (Orchestrator) 与特化子代理 (Specialized Subagents)](../../../public/images/dsh-subagent-orchestrator-worker-topology.svg)
 
 ## 二、Cordis 微内核机制：时空可组合性与可逆副作用
 
@@ -200,6 +209,10 @@ dsh --profile web --dump-config
 ```
 
 ---
+
+
+
+![DSH 内核子系统互联矩阵：Session, Router, Executor 与 Sandbox 交互边界](../../../public/images/dsh-kernel-subsystem-interconnect-matrix.svg)
 
 ## 四、核心模块全景：Context 挂载关键服务一览
 

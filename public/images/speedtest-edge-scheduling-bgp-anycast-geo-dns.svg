@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">全局边缘测速调度体系：GeoDNS、BGP Anycast 与动态容量熔断</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">GeoDNS (EDNS-Client-Subnet 精准城市/运营商解析) ｜ BGP Anycast (单 IP 全球宣告) ｜ 实时带宽负载反馈动态剔除过载节点</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: GeoDNS + Anycast -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 就近路由：GeoDNS 与 BGP 任播结合</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. GeoDNS (基于 ECS 扩展):</text>
+          <text y="28" fill="#93c5fd">   • 识别客户端运营商 (中国电信/联通/移动)</text>
+          <text y="42" fill="#93c5fd">   • 解析至同城同运营商本省边缘测速节点 (RTT &lt; 5ms)</text>
+          
+          <text y="64" fill="#4ade80">2. BGP Anycast (全球同 IP 广播):</text>
+          <text y="78" fill="#86efac">   • 多个数据中心宣告同一公网 IP 路由</text>
+          <text y="92" fill="#86efac">   • 依靠骨干网 BGP 协议天然最短 AS-Path 自动就近接入！</text>
+          <text y="106" fill="#34d399">   • 某节点故障时 BGP 毫秒级自动切换收敛！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">选路原则：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• "同运营商 &gt; 同省 &gt; 同国 &gt; 跨国"；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 坚决避免跨网跨运营商结算造成的测速失真；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 测出用户真正的接入网第一公里质量。</text>
+      </g>
+    </g>
+
+    <!-- Right: Capacity Admission -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 容量接纳控制 (Capacity Admission)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 节点容量健康心跳上报</text>
+          <text y="28" fill="#86efac">type NodeCapacity = {</text>
+          <text y="42" fill="#86efac">    totalBandwidthGbps: 40,</text>
+          <text y="56" fill="#86efac">    currentLoadPercent: 82.5 // 当前负载已达 82.5%</text>
+          <text y="70" fill="#86efac">}</text>
+          
+          <text y="92" fill="#f87171">if node.Load &gt; 80%: 触发流量削峰保护</text>
+          <text y="106" fill="#fbbf24">  ├── 调度中心从 DNS 解析池中下线该节点</text>
+          <text y="120" fill="#34d399">  └── 新增测速请求自动分流至同城备用节点！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">稳定性护城河：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免节点带宽被打满后测速结果全线腰斩；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 保证每个测速用户独占足够的物理带宽裕量；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高可用、自愈型的全球分布式测速集群！</text>
+      </g>
+    </g>
+  </g>
+</svg>

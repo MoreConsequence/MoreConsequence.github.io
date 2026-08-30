@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">K8s 调度器不是找最空机器：Filter 硬过滤与 Score 软评分流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">全量待选节点池 ──► 1. Predicates / Filter (硬性约束淘汰) ──► 2. Priorities / Score (多维度加权打分) ──► 3. Reserve 预留 ──► 4. 绑定 Pod</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Filter 阶段: 硬性物理约束过滤 (一票否决淘汰制)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">NodeResourcesFit (CPU/内存容量) &amp;&amp; NodeName &amp;&amp; NodePorts &amp;&amp; NodeAffinity &amp;&amp; TaintsTolerations</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">检查污点容忍、端口冲突、亲和性标签与存储卷挂载限制，将不合格节点全部剔除！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. Score 阶段: 软偏好多维度加权综合打分 (0 ~ 100 分)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Score = w1*LeastAllocated + w2*BalancedResourceAllocation + w3*ImageLocality + w4*TopologySpread</text>
+        <text x="15" y="62" font-size="8" fill="#047857">兼顾资源打散 (高可用) 与资源紧凑 (节省成本)，综合镜像本地命中率计算最优节点！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. Reserve 与 Permit 插件阶段 (乐观预占与同步等待)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">ReservePlugin 内存预占资源 ──► Permit 插件执行 Gang Scheduling 批处理同步等待</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">防止并发调度时多个 Pod 争抢同一份剩余资源发生超卖冲突，支持 AI 任务全量就绪再开跑！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Bind 异步写入与 Kubelet 容器拉起 (Asynchronous Binding)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">POST /api/v1/namespaces/default/pods/pod-1/binding ──► apiserver ──► Kubelet 监听到事件启动容器</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">调度器完成 Bind 写入后立即开始调度下一个 Pod，调度吞吐 QPS 突破上千/秒！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go sync.Pool 错位设计：临时对象池与 victim 受害者双缓存</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">poolLocal (P 本地 private 0 锁 9ns) ｜ shared 无锁双端队列 ｜ victim 缓存 (Go 1.13+ 消除 GC 周期断崖式清空)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: poolLocal -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. P 本地 private 槽位 (9ns)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#34d399">// 极速单对象存储槽</text>
+          <text x="10" y="34" fill="#86efac">1. 每个 P 拥有独立的 poolLocal</text>
+          <text x="10" y="50" fill="#86efac">2. private: 仅当前 P 访问，完全零锁！</text>
+          <text x="10" y="68" fill="#34d399">✓ Get() 命中 private 耗时仅 ~9ns！</text>
+          <text x="10" y="86" fill="#34d399">✓ 完美承接高频短命 Buffer 复用</text>
+          <text x="10" y="106" fill="#fbbf24">► 若 private 为空：</text>
+          <text x="10" y="122" fill="#fed7aa">   访问当前 P 的 shared 双端队列</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">核心价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免了多协程共享全局池的锁争用</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 pin() 锁定当前 P 与 M 绑定</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 打造了 Go 极致吞吐的内存复用基石</text>
+      </g>
+    </g>
+
+    <!-- Col 2: poolChain & Steal -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. shared 队列与跨 P 窃取</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// poolChain 无锁环形双端链表</text>
+          <text x="10" y="34" fill="#93c5fd">1. 本地 P 从 head 端 push/pop (单生产者)</text>
+          <text x="10" y="48" fill="#93c5fd">2. 其他 P 饥饿时从 tail 端 popTail 窃取</text>
+          <text x="10" y="66" fill="#34d399">3. 使用原子 CAS 操作，零互斥锁开销！</text>
+          <text x="10" y="84" fill="#38bdf8">► 耗时约 25ns ~ 40ns</text>
+          <text x="10" y="104" fill="#fbbf24">► 若所有 P 的 shared 均为空：</text>
+          <text x="10" y="120" fill="#fed7aa">   穿透查询 victim (受害者缓存)</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">并发无锁设计：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 环形块容量动态翻倍 (8 ──► 16 ──► 32)</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 头部与尾部分离，读写互不阻塞</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 极致的硬件级并发数据结构实现！</text>
+      </g>
+    </g>
+
+    <!-- Col 3: victim Cache -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. victim 受害者平滑双缓冲</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// Go 1.13+ GC 双缓冲平滑机制</text>
+          <text x="10" y="34" fill="#fed7aa">1. 发生 GC 时：</text>
+          <text x="16" y="48" fill="#fed7aa">• 原 victim 缓存中的对象被真正释放</text>
+          <text x="16" y="62" fill="#4ade80">• 当前 local 表整体移交给 victim (降级存活)</text>
+          <text x="10" y="80" fill="#34d399">2. 新一轮 GC 周期中，仍可从 victim 取回对象！</text>
+          <text x="10" y="98" fill="#38bdf8">► 彻底消除了 GC 之后瞬间重新分配的延迟尖刺！</text>
+          <text x="10" y="118" fill="#f87171">⚠️ 严禁将 sync.Pool 当作持久连接池！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">重要定位认知：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• sync.Pool 是"减轻 GC 负担的暂存池"，非缓存；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 两个 GC 周期内未被访问的对象必被清理；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#ea580c">• Put 归还前必须 Reset 清空旧数据！</text>
+      </g>
+    </g>
+  </g>
+</svg>

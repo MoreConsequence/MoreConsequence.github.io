@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：分布式租约调度、Fencing 纪元栅栏与跨语言 Worker (OEP)](../../../public/images/oract-distributed-lease-fencing-token-worker.svg)
+
 ## 一、脑裂危机：分布式 Agent 的致命并发缺陷
 
 ```mermaid
@@ -33,6 +38,10 @@ sequenceDiagram
 在分布式环境下，单纯依赖本地服务器的 `time.Now()` 进行租约超时计算极度危险，因为不同物理服务器之间必然存在不可消除的 **NTP 时钟漂移（Clock Drift）**。
 
 ---
+
+
+
+![Oract 分布式租约 (Lease) 与隔离栅栓 (Fencing Token) 脑裂防御模型](../../../public/images/oract-distributed-lease-fencing-token-pipeline.svg)
 
 ## 二、Database-Time 权威时钟与租约机制
 
@@ -117,6 +126,10 @@ func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, t
 当假死节点苏醒尝试写入时，由于数据库内的 `fencing_token` 已经被新主节点自增，旧节点的写入影响行数为 0，系统立即返回 `ErrFencingTokenStale` 并主动触发自毁停机。
 
 ---
+
+
+
+![分布式脑裂危害与 Fencing 栅栓防御拓扑](../../../public/images/oract-split-brain-hazard-and-fencing-defense.svg)
 
 ## 四、跨语言执行协议 OEP (ORACT Execution Protocol)
 

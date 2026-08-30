@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** “Go 的 goroutine 是内核级线程，Node 是单线程”是一个方便但错误的类比。goroutine 由 Go runtime 在用户态调度，并复用到操作系统线程；Node 的 JavaScript 主线程确实不能被同步 CPU 代码抢占，但 Node 仍可通过 libuv 与 `worker_threads` 使用其他执行资源。当前实验把两个问题分开，并用 30 轮分布替代单次输出：Go `time.Sleep(10ms)` 唤醒延迟 p50=1ms、max=2ms；Node 10ms timer 基线 p50=11.2ms，前置 50ms busy loop 后 p50=61ms。前者说明可等待操作会让出 runtime，后者说明同步 CPU 工作占住了事件循环，它们不是同一场景的对照。
 
+
+---
+
+![并发模型对比：Go GMP 多线程抢占式协程池 vs Node.js 单线程 Event Loop 异步非阻塞](../../../public/images/golang-gmp-vs-nodejs-event-loop-concurrency.svg)
+
 ## 一、先纠正调度层级：runtime 调度 goroutine，内核调度线程
 
 Go 的 G、M、P 是 runtime 的抽象：G 是 goroutine，M 是操作系统线程，P 是执行 Go 代码所需的调度资源。操作系统看见的是线程，不会直接把每个 goroutine 当作一个内核调度实体。Go runtime 会把可运行 goroutine 复用到线程上，也会在等待、系统调用或抢占时调整运行队列。
@@ -45,6 +50,10 @@ go run go-sleep.go
 
 这里的结论很窄：`time.Sleep` 让当前 goroutine 进入等待，runtime 可以运行另一个 goroutine。它没有证明 Go 的所有阻塞系统调用都相同，也没有和 Node 的 busy loop 构成同语义性能基准。
 
+
+
+![Go GMP 协作抢占调度器 vs Node.js Libuv 单线程事件循环模型对照](../../../public/images/go-gmp-vs-nodejs-libuv-scheduler-matrix.svg)
+
 ## 三、实验 B：同步 CPU 工作会推迟 Node timer
 
 Node 对照使用 `experiments/ts-event-loop/blocking2.ts`：先安排一个 10ms timer，再在 JavaScript 主线程 busy loop 约 50ms。
@@ -73,6 +82,10 @@ C Node 10ms timer + 50ms busy loop 延迟:  n=30 min=59.6ms p50=61.0ms p95=61.5m
 三组分布给出比单次输出更硬的判断：Go 的 `time.Sleep(10ms)` 唤醒延迟集中在 0–2ms（runtime 在睡眠期间把执行权交给其他 goroutine，唤醒后回队列很快）；Node 空事件循环下 10ms timer 的 p50 是 11.2ms；同一个 timer 前插 50ms busy loop 后 p50 变成 61.0ms——多出的约 50ms 正是 busy loop 完整占住主线程的代价，timer 必须等当前调用栈结束才有执行机会。p95 与 p50 相差不到 0.5ms，说明这是结构性推迟，不是随机抖动。30 轮原始样本、Node/Go 版本与命令见 `evidence/typescript-event-loop-vs-gmp/2026-08-19-local/multi-round-dist.txt` 与 `run.out`。
 
 本次 raw、Node/Go 版本和命令保存在 `evidence/typescript-event-loop-vs-gmp/2026-08-17-local/`；运行 `.ts` 文件需要 Node 24.19.0 这一执行环境，旧 Node 版本可能把 `.ts` 当作未知扩展名拒绝。
+
+
+
+![Node.js 多核并行：Worker Threads、SharedArrayBuffer 与 Atomics 原语](../../../public/images/worker-threads-sharedarraybuffer-atomics.svg)
 
 ## 四、不要把 `time.Sleep`、busy loop 和系统调用混成“阻塞”
 

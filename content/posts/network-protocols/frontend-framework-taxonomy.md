@@ -11,6 +11,11 @@ series: "前端全景手记"
 
 **TL;DR：** 渲染、响应式、状态三根轴适合做第一张地图，但不是任何框架的完整规格书。它们分别帮助你追问“组件更新到哪里”“依赖怎样失效”“数据由谁拥有”；之后还要核对编译/运行时、SSR/水合、可访问性、调试工具、生态和团队迁移成本。React、Vue、Svelte、Solid、Angular 不是几个固定坐标，而是各自版本和构建模式下的一组取舍。
 
+
+---
+
+![响应式范式对比：React 粗粒度全组件重渲染 vs Vue 属性级依赖收集 vs SolidJS 细粒度 Signals 节点更新](../../../public/images/frontend-framework-reactivity-vdom-signals.svg)
+
 ## 一、三根轴：先把"这是什么问题"讲清楚
 
 上一篇[前端框架为什么这么乱](/writing/frontend-framework-history)把历史压成了四层地层。这一篇给一张工作地图：大多数 UI 框架都能沿三根轴提出问题，但一个完整选型还需要把编译器、运行时、渲染目标和生态单独列出来。每一根轴，都先问“这是哪道题”，再看当前版本的实现和代价。
@@ -56,6 +61,10 @@ flowchart LR
 
 第三档是被误解最多的：很多人把“组件间的共享数据”和“来自服务端的数据”混进同一个 store，然后发现缓存、重试、失效和编辑冲突互相耦合。先分开建模，再决定哪些数据需要本地副本、哪些交给缓存层，通常能减少重复协议；这不是禁止所有服务端数据进入 store 的硬规则。
 
+
+
+![细粒度响应式依赖追踪拓扑：Signal 自动订阅、派生 Memo 与批量更新](../../../public/images/fine-grained-reactivity-dependency-graph.svg)
+
 ## 二、主流框架在三根轴上的位置
 
 | 框架 | 渲染模型 | 响应式模型 | 状态档位 | 形态 |
@@ -82,6 +91,10 @@ flowchart LR
 - **运行时**：上一集[容器层](/writing/js-ecosystem-layers)的 Node/Bun 是运行时；RN 的 Hermes 也是。
 
 React 与 Angular 的争论有一半是层级的争论——拿"框架"的批评（替你决定太多）去批评一个"库"，不成立。先分清它是库还是框架，再谈它做得好不好。
+
+
+
+![渲染模式多维决策矩阵：CSR vs SSR vs SSG vs ISR 性能与时效性对比](../../../public/images/ssr-ssg-isr-render-tradeoff-matrix.svg)
 
 ## 四、选型决策树：什么时候选什么
 

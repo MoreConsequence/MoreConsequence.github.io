@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 在构建企业级 Coding Agent 时，**Token 费用中 85% 以上来自长上下文的重复输入（Input Tokens）**。各大模型厂商（Anthropic、OpenAI、DeepSeek）相继推出了 **Prompt Caching（KV Cache 缓存）** 技术——命中缓存的前缀 Token 享受 **50% 至 90% 的价格折扣**，且首字延迟（TTFT）降低 80%。然而，Prompt Cache 对请求结构的**“前缀字节级一致性”**要求极其严苛：只要在系统提示词中动态插入了一个当前时间戳、或者调换了两个工具定义的顺序，整个缓存就会彻底击穿。本文作为《Pi Agent 全景通才教程》第二十三课，带你深入 KV Cache 物理对齐机制，掌握**零缓存击穿的请求头排布法则**。
 
+
+---
+
+![把每一分钱省到极致：KV Cache 字节级对齐与 Prompt Caching 实战](../../../public/images/pi-kv-cache-byte-level-prompt-caching.svg)
+
 ## 一、Prompt Caching 的底层物理机制
 
 大模型在生成回复前，需要对输入的所有 Prompt Tokens 计算 Key 和 Value 矩阵并存入显存（KV Cache）。
@@ -44,6 +49,10 @@ flowchart TD
 | **最小缓存块大小** | 1,024 Tokens 起存（Claude 3.5 / 3.7） | 1,024 Tokens 起存 |
 | **缓存生命周期** | 默认 5 分钟滑动窗口（每次命中自动续期 5 分钟） | 动态 TTL（通常 5~10 分钟） |
 | **价格折扣** | **读取 0.1x（节省 90%）**，首次写入 1.25x | **读取 0.5x（节省 50%）**，写入无加价 |
+
+
+
+![大模型 KV Cache 深度剖析：Prefill (计算密集) 与 Decode (访存密集) 双阶段](../../../public/images/pi-kv-cache-prefill-decode-phase-breakdown.svg)
 
 ## 二、导致 KV Cache 瞬间击穿的五大“自杀式”写法
 
@@ -81,6 +90,10 @@ flowchart TD
 1. **静态前置，动态下沉**：所有动态变化的信息（当前时间、当前 Git 分支、剩余 Token 预算）**严格放在最后一条 User Message 的末尾**，绝不玷污 System Prompt；
 2. **工具列表确定性排序**：对所有工具按名称字母序 `tools.sort((a, b) => a.name.localeCompare(b.name))` 强制排序后再序列化为 JSON；
 3. **Anthropic 显式断点放置**：在第二梯队（项目静态规则）末尾打上第 1 个 `cache_control`，在倒数第二条消息（稳定历史）打上第 2 个 `cache_control`。
+
+
+
+![基数树 (Radix Tree) KV Cache 前缀共享与跨请求复用拓扑](../../../public/images/pi-radix-tree-kv-cache-sharing-topology.svg)
 
 ## 四、动手实战：编写 Cache-Optimized 组装器
 

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">RFC 3550 抖动 (Jitter) 一阶 IIR 滤波数学演算模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">J(i) = J(i-1) + (|D(i-1, i)| - J(i-1)) / 16 ｜ 权重系数 α = 1/16 = 0.0625 ｜ 平滑瞬时尖峰，精确度量真实网络微观抖动</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 样本差量绝对值计算 (Sample Transit Delta: D(i-1, i))</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">D(i-1, i) = |Delay[i] - Delay[i-1]| ──► 计算连续两次 ping 往返耗时的绝对差值</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">度量相邻采样点之间的瞬时抖动偏离幅度！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 递归指数衰减平滑滤波 (Exponential Moving Average Filter)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Jitter = Jitter + (Delta - Jitter) / 16.0 ──► 相当于 Jitter = (15/16)*Old + (1/16)*New</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">既能敏锐感知持续性网络恶化，又不会被单次偶发 GC/WiFi 干扰所误导！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 空闲 Ping 抽取策略 (Idle Ping Extraction: Min Value)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">10 次采样: [12ms, 11ms, 15ms, 11ms, 30ms, 12ms...] ──► 最终 Ping = Min(11ms)</text>
+        <text x="15" y="62" font-size="8" fill="#047857">最小值代表排队延迟为 0 时的纯物理光纤传播时延！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 工业级音频与网络度量标准 (RTP / VoIP Benchmark)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">严格遵循 IETF RFC 3550 规范 ──► 广泛应用于 WebRTC、Zoom 与全球骨干网监测！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">具备无可挑剔的数学与物理理论支撑！</text>
+      </g>
+    </g>
+  </g>
+</svg>

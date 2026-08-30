@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 当单台测速服务器面对 40Gbps~100Gbps 的并发下行测速请求时，**性能瓶颈往往不是物理光纤，而是服务端的 CPU 周期和内存总线带宽**。传统的 `read()` / `write()` 调用模式会导致数据在“内核页缓存 $\to$ 用户态堆空间 $\to$ 内核套接字缓冲区 $\to$ 网卡 DMA”之间发生多达 4 次上下文切换和 4 次内存复制，单核 CPU 在 5Gbps 吞吐时就会被软中断与 `memcpy` 占满。本文作为《网络测速与极限吞吐工程》系列第二篇，带你深入 Linux 内核零拷贝（Zero-Copy）体系，手写基于内存文件描述符（`memfd_create`）的 `sendfile` 零拷贝推流引擎，并详解万兆网卡的多队列 RSS、RPS 与 CPU 亲和性（CPU Pinning）调优。
 
+
+---
+
+![下行压榨万兆网卡：sendfile、splice 零拷贝与高熵数据持续灌水架构](../../../public/images/speedtest-zero-copy-downlink-sendfile-splice.svg)
+
 ## 一、传统 I/O 模型的内存总线危机
 
 在下行测速中，服务端需要向客户端全速发送数以 GB 计的数据流。传统的用户态发送循环如下：
@@ -36,6 +41,10 @@ flowchart TD
 
 1. **CPU 内存带宽饱和（Memory Bus Saturation）**：双通道 DDR4-3200 内存的理论带宽仅约 50GB/s。如果每 10Gbps（1.25GB/s）的网络流量需要经过 2 次 CPU `memcpy`，单是内存数据搬运就会吃掉数个 CPU 核心的全部 L3 Cache 与内存总线带宽；
 2. **上下文切换开销（Context Switch Storm）**：每次 `write()` 64KB 数据，在 40Gbps 吞吐下每秒需要触发近 **80,000 次用户态与内核态的上下文切换**，CPU 周期全部被页表切换与中断处理浪费。
+
+
+
+![零拷贝下行推流架构：memfd_create 匿名内存文件与 sendfile DMA 直通](../../../public/images/memfd-create-sendfile-zero-copy-pipeline.svg)
 
 ## 二、零拷贝进化：`memfd_create` + `sendfile` 内存推流
 
@@ -126,6 +135,10 @@ void tune_speedtest_socket(int sock_fd) {
     setsockopt(sock_fd, IPPROTO_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
 }
 ```
+
+
+
+![网卡中断亲和性与 CPU 绑核 (CPU Pinning)：NUMA 跨节点内存访问陷阱](../../../public/images/cpu-pinning-numa-irq-affinity.svg)
 
 ## 四、网卡中断亲和性与 CPU 绑核（CPU Pinning）
 

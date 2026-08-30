@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">业务领域状态机天然单向幂等流转模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">INIT (初始) ──► PROCESSING (处理中) ──► SUCCESS (成功终态) ｜ UPDATE ... SET status='SUCCESS' WHERE id=1 AND status='PROCESSING'</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. INIT ──► PROCESSING</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">UPDATE orders</text>
+          <text x="10" y="34" fill="#86efac">SET status = 'PROCESSING',</text>
+          <text x="10" y="50" fill="#86efac">    updated_at = NOW()</text>
+          <text x="10" y="66" fill="#38bdf8">WHERE id = 1001</text>
+          <text x="10" y="82" fill="#4ade80">  AND status = 'INIT';</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 仅首个请求成功更新 1 行！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 数据库行级排他锁原子保障；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 并发重复请求 rows_affected == 0；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 纯 SQL 级 0 外部依赖防重。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. PROCESSING ──► SUCCESS</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">UPDATE orders</text>
+          <text x="10" y="34" fill="#86efac">SET status = 'SUCCESS',</text>
+          <text x="10" y="50" fill="#86efac">    pay_time = NOW()</text>
+          <text x="10" y="66" fill="#4ade80">WHERE id = 1001</text>
+          <text x="10" y="82" fill="#38bdf8">  AND status = 'PROCESSING';</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 严格单向不可逆跃迁！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 无论重发多少次回调通知；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 已处于 SUCCESS 终态的记录绝不重复扣款；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造稳固状态跃迁防线。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 异常补偿与终态固化</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">超时 / 扣款失败流转：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">• PROCESSING ──► FAILED / CLOSED</text>
+          <text x="10" y="54" fill="#38bdf8">• 状态机禁止任何逆向跃迁</text>
+          <text x="10" y="70" fill="#34d399">• 晚到的成功回调识别为已关闭</text>
+          <text x="10" y="86" fill="#4ade80">• 自动触发退款工单系统！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 100% 账目平整与资金安全！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 将复杂分布式并发转化为确定性状态机；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 业务系统架构最高审美标准；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 资深工程师核心内功！</text>
+      </g>
+    </g>
+  </g>
+</svg>

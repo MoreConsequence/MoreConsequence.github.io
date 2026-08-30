@@ -11,6 +11,11 @@ series: "网络协议"
 
 **TL;DR：** TCP 握手不是一次性的“动作”，而是**两道队列的排队过程**。服务端收到 SYN 后先入 **SYN 队列**（半连接，等第三次握手的 ACK），收到 ACK 后移入 **accept 队列**（完整连接，等应用调 `accept()`）。Linux 上实际容量受 `listen(backlog)`、`net.core.somaxconn` 和 `net.ipv4.tcp_max_syn_backlog` 等参数共同影响；满队列的表现还取决于内核策略，不能把一个平台的数字外推到另一个平台。仓库内 probe 在 Darwin 25.5.0 上用 backlog=2、6 个并发连接得到 2 个成功、4 个超时，这个结果用于观察排队现象，不是跨平台容量合同。
 
+
+---
+
+![TCP 半连接队列 (SYN Queue) 与全连接队列 (Accept Queue) 溢出丢包模型](../../../public/images/tcp-syn-queue-accept-backlog-overflow.svg)
+
 ## 一、先纠正直觉：TCP 握手是"两个队列的接力"
 
 教科书把三次握手画成三次箭头的往返：SYN → SYN+ACK → ACK。架构上，服务端的处理是一段**两段式流水线**：
@@ -27,6 +32,10 @@ flowchart LR
 - **accept 队列（established queue）**：三次握手完成后移入，**等应用调 accept() 取走**。第一段由内核完成，第二段要用户进程来取。
 
 排队是数学：**只要应用 accept() 的速度比连接到达的速度慢，accept 队列就会堆满**；只要客户端答应 ACK 的速度跟不上，SYN 队列就会堆满。超时的本质不是"谁慢了"，而是"容不下排队的人"。
+
+
+
+![SYN 洪水攻击防御：tcp_syncookies 哈希计算与无状态握手机理](../../../public/images/tcp-syn-flood-cookie-mitigation.svg)
 
 ## 二、capacity 从哪里来：listen(backlog) 与内核参数的合同
 
@@ -70,6 +79,10 @@ LISTEN 2    4096  0.0.0.0:443    ...
 2. netstat -s | grep "SYNs to LISTEN sockets dropped"  → 半连接溢出
 3. 看两队列溢出的计数器对比，判断哪条堵
 ```
+
+
+
+![Accept Queue 全连接队列溢出排查：netstat -s 与 ListenDrops 指标观测](../../../public/images/tcp-accept-queue-drop-overflow-metrics.svg)
 
 ## 四、真实的重灾区：accept 队列满 ≠ 应用挂
 

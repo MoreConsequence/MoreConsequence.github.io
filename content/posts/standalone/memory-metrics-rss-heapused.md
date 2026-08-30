@@ -10,6 +10,11 @@ updatedAt: "2026-08-19"
 
 **TL;DR：** 内存监控不能只看一个数。本机 Node 实验（堆内 200MB 数组）四阶段实测：分配时 RSS 211.3MB / heapUsed 156.3MB 同步涨；**释放引用但不 GC，两层都不降**（垃圾还留在堆里，RSS 和 heapUsed 同时骗你）；**GC 后 RSS 59.4MB、heapUsed 4.4MB——都降了 70%+**（V8 会把空闲页还给 OS）；再分配时从归还后的水位重新申请。另一组实验暴露更隐蔽的坑：分配 200MB `Buffer` 时 RSS 涨到 247.4MB，**heapUsed 却几乎不动（3.6→3.7MB）**——Buffer/TypedArray 主体在 V8 堆外。结论：**RSS 回答"进程吃了多少"、heapUsed 回答"V8 堆里有多少活对象"、GC 后保留量回答"还有多少没法还"**——三张表各有一个主人，只盯一张必然漏。
 
+
+---
+
+![内存指标三剑客：RSS、heapUsed 与 GC 后保留量的物理意义与排查矩阵](../../../public/images/memory-metrics-rss-heapused-gc-retention-table.svg)
+
 ## 一、三张表各回答什么问题
 
 | 指标 | 回答的问题 | 看不见的 |
@@ -19,6 +24,10 @@ updatedAt: "2026-08-19"
 | GC 后保留量（gc 后 heapUsed） | 把垃圾清掉后还剩多少——即"必须常驻"的下界 | 被持有的资源（文件描述符、worker）不算堆 |
 
 追问一句就能抓住区别：你想证明"内存泄漏"，该看哪张？——GC 后保留量的增长。你想证明"Node 进程吃掉了机器"，看 RSS。你想证明"这段 JS 代码本身分配了多少"，看 heapUsed。三张表各有一个主人，一份监控面板至少要两路（RSS + heapUsed），只盯 heapUsed 会漏掉最大的一块内存。
+
+
+
+![进程内存全景物理剖析：VSS, RSS, PSS, USS 与 V8 / Go runtime 堆内存分层](../../../public/images/process-memory-rss-vs-heapused-anatomy.svg)
 
 ## 二、本机四阶段实验：堆内对象
 
@@ -48,6 +57,10 @@ updatedAt: "2026-08-19"
 | 分配 Buffer 200MB | 247.4MB | **3.7MB** |
 
 heapUsed 几乎不动。原因：Node 的 `Buffer` / `TypedArray` 底层数据块分配在 V8 堆外（ArrayBuffer 外部内存区），heapUsed 只统计 V8 堆内的 JS 对象外壳。**这个反例的价值：服务里凡是用 Buffer/流/原生模块（zlib、crypto、gRPC C++ 层）的，heapUsed 会系统性低估内存**——真实案例里"heapUsed 才 200MB 却 OOM"的通常就是这个原因。RSS 才有资格回答"进程吃了多少"。
+
+
+
+![Linux 内存释放系统调用：madvise(MADV_DONTNEED) 瞬间降 RSS vs MADV_FREE 延迟懒回收](../../../public/images/madvise-dontneed-vs-free-page-reclaim.svg)
 
 ## 四、监控姿势：至少两路 + 采样时机
 

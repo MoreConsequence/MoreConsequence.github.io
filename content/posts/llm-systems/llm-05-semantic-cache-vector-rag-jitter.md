@@ -148,6 +148,10 @@ export class ProductionSemanticCache {
 
 ---
 
+
+
+![语义缓存相似度门限与混淆矩阵：Precision、Recall 与误命中灾难](../../../public/images/semantic-cache-similarity-threshold-confusion-matrix.svg)
+
 ## 四、 RAG 链路中的检索防抖与缓存失效策略
 
 在企业级知识库问答（RAG）场景中，除了用户 Prompt 之外，还引入了**检索出来的上下文片段（Context Chunks）**。

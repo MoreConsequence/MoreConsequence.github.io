@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Garbage 端点零分配推流：1MB 预分配不可压缩缓冲区循环泵出</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">服务启动时 crypto/rand 预生成 1MB 高熵随机数据 ──► 每次请求循环推流 ──► 0 动态内存申请 ──► GC 压力彻底归零</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 服务启动期单次预热 (Global Initialization: 1MB Random Buffer)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">var randomChunk [1048576]byte; crypto.Read(randomChunk[:]) ──► 高熵随机字节填满</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">全生命周期常驻内存，严禁在每次 HTTP 请求到来时动态 make([]byte)！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 入参安全钳制与边界防御 (Param Clamping: ckSize 1~1024)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">ckSize = min(max(ckSize, 1), 1024) ──► 限制单次下行最大传输 1024 个 Chunk (1GB)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">防止恶意客户端传入 ckSize=9999999 耗尽服务器带宽！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 极速循环推流与反压探测 (Zero-Alloc Stream Loop)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">for i := 0; i &lt; ckSize; i++ { _, err := w.Write(randomChunk[:]) } ──► 0 堆内存分配！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">若客户端关闭连接，立即捕获 broken pipe 退出，0 CPU 浪费！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 纯净二进制流输出 (Raw Octet-Stream)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Content-Type: application/octet-stream | Cache-Control: no-store ──► 极限榨干物理网卡带宽</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">单机万兆测速服务必备核心实现！</text>
+      </g>
+    </g>
+  </g>
+</svg>

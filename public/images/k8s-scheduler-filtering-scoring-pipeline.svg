@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">K8s kube-scheduler 调度框架五大阶段流水线 (Scheduling Framework)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. Filter (硬性约束过滤) ──► 2. Score (软性加权打分) ──► 3. Reserve (内存预扣账本) ──► 4. Permit ──► 5. Bind (异步向 etcd 写入绑定)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Filter 阶段: 候选节点硬性过滤 (Predicate Filtering: NodeResourcesFit / MatchNodeSelector)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">检查可用 CPU/内存、污点容忍 (Tolerations)、端口冲突 ──► 从 1,000 个节点中筛选出 50 个合格节点</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">并发无锁快速初筛，一票否决淘汰不合规宿主！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Score 阶段: 多策略综合加权打分 (Prioritizing: NodeResourcesBalancedAllocation / ImageLocality)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">评估镜像是否已预热缓存 (+20分)、资源碎片比例平衡度 (+40分)、拓扑分散防单点故障 (+30分) ──► 选出最高分胜出节点</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">实现集群资源利用率与高可用容灾的数学最优解！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Reserve 阶段: 内存账本乐观预扣 (Optimistic Resource Reservation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">在调度器本地账本中瞬间预先扣减目标节点资源 ──► 0ms 瞬间进入下一个 Pod 的调度！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">杜绝等待 etcd 网络写入期间发生资源超卖踩踏！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Bind 阶段: 异步持久化至 etcd (Asynchronous Binding to API Server)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">后台 Goroutine 发起 Binding 创建请求 ──► 目标节点 Kubelet 监听到事件 ──► 启动容器运行！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">支持每秒上千 Pod 极限并发吞吐调度的核心秘诀！</text>
+      </g>
+    </g>
+  </g>
+</svg>

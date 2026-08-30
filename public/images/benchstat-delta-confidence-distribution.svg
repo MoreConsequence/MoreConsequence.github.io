@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">benchstat 差异统计检验决策模型 (Statistical Significance)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">单次运行结果对比 (被抖动欺骗) vs 10 轮采样 + 曼-惠特尼 U 检验 (Mann-Whitney U Test, p &lt; 0.05 证明真实有效)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Flawed Single-Run -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 单次基准对比：被系统随机噪音蒙蔽</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">Old: BenchmarkProcess-8   10000   120 ns/op</text>
+          <text y="28" fill="#f87171">New: BenchmarkProcess-8   10000   110 ns/op (-8.3%)</text>
+          
+          <text y="50" fill="#ef4444">致命的虚假繁荣：</text>
+          <text y="64" fill="#ef4444">• 仅运行 1 次，恰逢后台 CronJob 结束导致 New 略快</text>
+          <text y="78" fill="#fca5a5">• 上线到生产环境后发现吞吐毫无变化甚至恶化！</text>
+          <text y="92" fill="#ef4444">• 耗费团队数周时间排查幽灵优化。</text>
+          
+          <text y="116" fill="#f87171">🔴 毫无统计学意义的伪实验！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 把噪音当优化，合并了劣化代码；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 缺乏科学严谨度；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 严禁将单次基准写入 PR 描述！</text>
+      </g>
+    </g>
+
+    <!-- Right: benchstat Standard -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ benchstat 权威验证：置信度与方差收敛</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">$ benchstat old.txt new.txt</text>
+          <text y="28" fill="#86efac">name          old time/op    new time/op    delta</text>
+          <text y="42" fill="#38bdf8">Process-8     120ns ± 1%     95ns ± 2%      -20.83% (p=0.000 n=10)</text>
+          <text y="56" fill="#34d399">Process-8     24.0B ± 0%     0.0B           -100.00% (p=0.000 n=10)</text>
+          
+          <text y="80" fill="#4ade80">数学级铁证结论：</text>
+          <text y="94" fill="#34d399">• p=0.000 &lt; 0.05 证明差异并非偶然</text>
+          <text y="108" fill="#34d399">• 堆分配彻底归零，性能提升 20.8% 稳固可复现！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 获得团队与开源社区 100% 信任与通过；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 交付绝对确定性的性能收益；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 资深工程师核心专业素养！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LSM 树极致写入流水线：将全部随机写转换为顺序写 (Append-Only)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">客户端 Put(k, v) ──► 顺序写 WAL 日志 ──► 写入内存 MemTable (SkipList) ──► 冻结为 Immutable ──► 异步顺序 Flush 至 L0 SSTable</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 顺序追加 WAL 预写日志 (Append-Only WAL)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">仅执行简单的文件尾部追加 ──► 0 磁盘寻道开销，榨干 SSD 顺序写百万 IOPS 潜力</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">确保掉电崩溃时内存数据 100% 可回放还原！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 内存跳表并发写入 (In-Memory Concurrent SkipList)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">在内存中按 Key 字典序自动排序 ──► O(log N) 纳秒级完成写入与更新 ──► 立即向客户端回包成功！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">写入延迟控制在微秒级，完全屏蔽底层磁盘慢速 I/O！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 内存表冻结切换 (MemTable to Immutable MemTable)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">当前 MemTable 达到阈值 (如 64MB) ──► 切换为只读 Immutable ──► 分配全新 MemTable 继续接纳写入</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">前台写入 0 阻塞，后台管道顺畅流转！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 顺序刷盘生成 L0 SSTable 文件 (Sequential SSTable Flush)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">后台线程将不可变跳表整块顺序写出为磁盘文件 ──► 生成不可变 SSTable ──► 释放旧 WAL 日志</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">RocksDB / LevelDB / Cassandra 的核心写入引擎哲学！</text>
+      </g>
+    </g>
+  </g>
+</svg>

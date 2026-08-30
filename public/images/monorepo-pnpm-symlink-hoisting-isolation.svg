@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Node.js 包管理架构演进：npm 扁平化幻影依赖 vs pnpm 硬链接隔离</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">npm Hoisting 扁平化 (产生幽灵依赖 Phantom Dependency) vs pnpm CAS 寻址 + Symlink 隔离 (严格杜绝未声明依赖访问)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ npm/yarn 扁平化：幽灵依赖与版本不确定</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 你的 package.json 并没有声明 lodash</text>
+          <text y="30" fill="#fca5a5">1. 但 A 库依赖了 lodash ──► npm 将其提升 (Hoist) 到顶层</text>
+          <text y="48" fill="#ef4444">2. 你的业务代码 import _ from 'lodash' 本地运行正常！</text>
+          <text y="66" fill="#ef4444">3. 某天 A 库升级移除了 lodash 依赖：</text>
+          <text y="92" fill="#ef4444">🔴 生产构建瞬间爆雷: Cannot find module 'lodash'！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 本地能跑但 CI/生产经常离奇失败；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• node_modules 膨胀达数 GB，磁盘重复占用严重；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 必须引入严格包拓扑！</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ pnpm 内容寻址存储 + 符号链接隔离</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 基于全局哈希 CAS 存储与精确 Symlink 软链接</text>
+          <text y="28" fill="#86efac">1. 顶层 node_modules 仅且仅包含 package.json 声明的包</text>
+          <text y="44" fill="#38bdf8">2. 访问任何未声明的幽灵依赖在本地立刻报错拦截！</text>
+          <text y="60" fill="#34d399">3. 跨项目 100% 共享全局硬链接，节省 90% 磁盘空间！</text>
+          <text y="88" fill="#4ade80">✓ 保证本地环境与 CI 生产构建 100% 绝对一致！</text>
+          <text y="104" fill="#4ade80">✓ 安装速度提升 3~5 倍！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 现代 Monorepo 工程事实标准；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消灭幽灵依赖与依赖漂移隐患；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚固的大型项目工程基建！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">IVF-PQ 倒排乘积量化：1536 维向量压缩 97% 与非对称查表计算 (ADC)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">IVF 倒排分桶粗筛 (K-Means) ──► PQ 子空间正交切分与码本量化 ──► ADC 非对称查表 (0 浮点乘法，吞吐飙升 10 倍)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: PQ Compression -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. PQ (Product Quantization) 极限压缩</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 原始 1536 维 FP32 向量: 6,144 字节</text>
+          <text y="28" fill="#86efac">1. 切分为 M=64 个子空间 (每个 24 维)</text>
+          <text y="44" fill="#86efac">2. 每个子空间聚类出 256 个质心 (8-bit 索引)</text>
+          <text y="60" fill="#34d399">3. 向量被压缩为 64 个字节的 Uint8 数组！</text>
+          
+          <text y="88" fill="#4ade80">✓ 内存占用从 6.1KB 骤降至 64B (压缩比 96:1)！</text>
+          <text y="106" fill="#4ade80">✓ 1 亿向量仅需 6.4GB 内存，单机即可装下！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 彻底解决海量向量内存爆炸难题；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 牺牲约 3%~5% 召回率换取百倍容量；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造低成本海量向量检索基座。</text>
+      </g>
+    </g>
+
+    <!-- Right: ADC Distance Lookup -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. ADC (Asymmetric Distance) 非对称查表</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 查询向量保持 FP32 原始高精度</text>
+          <text y="28" fill="#86efac">1. 预先计算 Query 与 64 个码本各 256 质心的距离表</text>
+          <text y="44" fill="#38bdf8">   构建 64 x 256 查找表 (仅 16KB，完美装入 L1 Cache！)</text>
+          
+          <text y="68" fill="#34d399">2. 遍历底库向量时: 0 浮点乘加！仅需 64 次内存查表累加！</text>
+          <text y="84" fill="#fed7aa">   Dist = LUT[0][v[0]] + LUT[1][v[1]] + ... + LUT[63][v[63]]</text>
+          
+          <text y="108" fill="#4ade80">✓ 检索计算速度提升 20 倍以上！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯查表操作对 CPU 缓存极其友好；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 IVF 粗筛进一步将搜索范围缩小 99%；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 支撑十亿级超大规模图像与文本检索引擎！</text>
+      </g>
+    </g>
+  </g>
+</svg>

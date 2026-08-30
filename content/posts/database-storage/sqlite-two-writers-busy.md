@@ -10,11 +10,20 @@ series: "数据库原理手记"
 
 **TL;DR：** 把 MySQL 的锁直觉搬到 SQLite 会翻车。用 `node:sqlite` 双连接实测（`experiments/sqlite-concurrency/`）：A 持写锁时 B 尝试写入，**0.38ms 内直接返回 `database is locked`**——不是排队等待；`busy_timeout=200` 给了耐心，结果也是等满 **224.39ms** 后同样失败。WAL 模式改变的是读写关系（写进行中读者以快照照常读，0.06ms 返回且看不到未提交行），写-写互斥在哪种模式下都一样。结论：SQLite 的 BUSY 不是死锁也不是排队，是"现在不行"的即时裁决——应用层必须把重试当正常路径来设计。
 
+
+---
+
+![SQLite WAL 模式并发模型与 SQLITE_BUSY 锁冲突机制](../../../public/images/sqlite-wal-two-writers-busy-lock.svg)
+
 ## 一、从 MySQL 直觉到 SQLite 现实
 
 在 MySQL/Postgres 里，两个事务写同一行，后到者会**排队**等行锁，等到 `innodb_lock_wait_timeout` 才放弃。直觉迁移到 SQLite 就错了：SQLite 没有行级锁，它的并发单位是**整个数据库文件**（WAL 下精确到"写者独占 + 读者快照"）。第二个写者面对的不是"等你提交"，而是文件级的写锁判定——本机实测，这个判定在 **0.38ms** 内就给出了否决。
 
 这个差异决定了错误处理的形态：MySQL 里锁等待是常态路径，SQLite 里 BUSY 是必须显式处理的返回值。
+
+
+
+![SQLite WAL 共享内存 (WAL-Index / .shm) 哈希表与多读一写并发](../../../public/images/sqlite-wal-index-shm-ring-buffer.svg)
 
 ## 二、实验：三个场景的实测
 
@@ -39,6 +48,10 @@ series: "数据库原理手记"
 3. **它甚至不是死锁检测**。死锁是环状等待需要仲裁者打破；这里只有单向的资源占用，B 从头到尾没有持有任何 A 需要的东西。
 
 顺带修正一个常见误解——实验里它也打了我自己的脸：我原本预期 journal 模式下"写入中的表不可读"，实测 S1 的读者照样成功。原因是 `BEGIN IMMEDIATE` 加的是 RESERVED 锁，允许共享读者继续；真正挡住读者的是提交瞬间的 EXCLUSIVE 升级。所以两种模式的差别比传言里小，真正的分水岭在下面。
+
+
+
+![SQLITE_BUSY 冲突解套：busy_timeout 内核等待与随机退避重试](../../../public/images/sqlite-busy-timeout-retry-jitter.svg)
 
 ## 四、WAL 改变读写关系，不改变写写互斥
 

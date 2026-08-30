@@ -75,6 +75,10 @@ $$\text{TTFB}_{dca} = 3 \times 4\text{ ms} + 155\text{ ms} + 20\text{ ms} = 187\
 
 ---
 
+
+
+![智能覆盖网（Smart Overlay Routing）：实时多路径探测与次优路径避障](../../../public/images/cdn-smart-overlay-mesh-probing-route.svg)
+
 ## 三、 全球实时探测智能覆盖网（Smart Overlay Routing）
 
 长途跨洋物理链路的质量是瞬息万变的。公网原生 BGP 路由器只依据商业跳数选路，缺乏对链路丢包、抖动和队列积压的实时感知。

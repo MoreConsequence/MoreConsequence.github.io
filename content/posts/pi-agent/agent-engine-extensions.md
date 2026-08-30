@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 01 篇的「刻意不做」清单如果只是宣传就毫无意义，但 Pi 用 3001 行的 extensions 文档 + 79 个官方示例证明了它是可兑现的架构承诺：每个被砍掉的功能都有扩展路径，其中权限弹窗只要 34 行（`examples/extensions/permission-gate.ts`），plan mode、subagents、sandbox、SSH 执行全部有官方示例。扩展 API 的核心是**与 agent loop 全生命周期对齐的事件钩子**（startup/session/agent/turn/tool 五组事件）加上 `registerTool`、`pi.sendUserMessage`、`ui` 等能力面。自修改（让 agent 写扩展、改自己、`/reload` 热加载）把这个架构推向闭环：**功能不是缺的，只是没在核心包里。**
 
+
+---
+
+![34 行代码写出权限弹窗：Pi Agent 进程内扩展 API 与零内置功能哲学](../../../public/images/pi-agent-extensions-api-permission-dialog.svg)
+
 ## 一、扩展不是插件系统，是「第二套 loop 接口」
 
 先看一个反直觉的事实：Pi 没有独立的"插件 SDK"。扩展就是**普通 TypeScript 模块**，导出默认函数 `(pi: ExtensionAPI) => void`，和 agent 跑在同一个进程里，共享同一套类型：
@@ -33,6 +38,10 @@ export default function (pi: ExtensionAPI) {
 | 工具 | `tool_execution_start/update/end`、`context` | 调用前后门禁与改写 |
 
 这套事件表和 02 篇的 loop 一一对应——`turn_end`、`tool_execution_end` 这些在 `agent-loop.ts` 里 `emit` 出来的事件，就是扩展的入口点。**扩展 API 不是另起炉灶，是把 loop 已经存在的事件流公开给第三方**。这是"第二套 loop 接口"的含义：你在 loop 里看到的每一个钩子，都对应一个扩展可以订阅的事件。
+
+
+
+![Agent 插件扩展系统生命周期钩子：onSessionStart -> beforeToolCall -> afterToolCall -> onSessionEnd](../../../public/images/agent-plugin-extension-lifecycle-hooks.svg)
 
 ## 二、34 行的权限弹窗：被砍功能的范本
 
@@ -65,6 +74,10 @@ pi.on("tool_call", async (event, ctx) => {
 扩展机制的最后一块是自我指涉：扩展能 `registerTool` 注册新工具（`dynamic-tools.ts` 演示运行中按需注册，配合 Kimi/Anthropic 的 deferred tool loading 还能保持 prompt cache）、能 `pi.sendUserMessage` 往会话里注入消息、能改自己的 TUI。而这一切的落点是**让 agent 修改自己的扩展文件后，`/reload` 热重载继续跑**——官网原话是"Pi can modify Pi"。
 
 这个闭环的价值被大多数工具低估：不用等厂商实现你的 workflow，直接把 workflow 写进扩展文件，让 agent 自己迭代它。Databricks 基准里的"Omnigent 元 harness"想要做的事（模型与 harness 解耦、按任务换 harness），Pi 在单进程内用扩展 API 给了个人开发者同等的能力。
+
+
+
+![插件沙箱安全隔离边界：WASM / QuickJS 独立沙箱与能力权限最小化](../../../public/images/agent-extension-sandbox-isolation-boundary.svg)
 
 ## 四、结论：功能的默认状态是「可后装」，不是「没有」
 

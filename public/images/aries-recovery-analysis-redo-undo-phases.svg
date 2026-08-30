@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ARIES 崩溃恢复三阶段算法全景 (ARIES Recovery Algorithm)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. Analysis 分析阶段 (确定脏页与未提交活跃事务) ──► 2. Redo 重做阶段 (历史重演 Repeat History) ──► 3. Undo 回滚阶段 (逆向消除未完成事务)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Analysis 分析阶段</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">从最近 Checkpoint LSN 开始正向扫描：</text>
+          
+          <text x="10" y="42" fill="#86efac">1. 重建事务表 (Transaction Table)</text>
+          <text x="10" y="58" fill="#cbd5e1">   识别出崩溃瞬间处于活跃状态的事务集合</text>
+          
+          <text x="10" y="82" fill="#38bdf8">2. 重建脏页表 (Dirty Page Table - DPT)</text>
+          <text x="10" y="98" fill="#34d399">   确定全库最小的 recovery_lsn 起点！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">核心目标：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 摸清崩溃瞬间战场的全貌；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 确定 Redo 的精确扫描起点；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造恢复行动路线图。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. Redo 重做阶段 (历史重演)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">从 recovery_lsn 开始向后顺序重放：</text>
+          
+          <text x="10" y="42" fill="#fed7aa">"Repeating History" 原则：</text>
+          <text x="10" y="58" fill="#cbd5e1">• 无论事务最终是否提交，一律重放！</text>
+          <text x="10" y="74" fill="#34d399">• 若数据页 page_lsn ≥ log_lsn 则跳过 (幂等)</text>
+          <text x="10" y="90" fill="#fed7aa">• 将物理数据库完美还原至崩溃瞬间的精确状态！</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 幂等物理状态完全复原！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 将复杂的状态恢复简化为纯顺序前滚；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 彻底消除数据半写损坏；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级崩溃安全的核心！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Undo 回滚阶段 (清理战场)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">从日志尾部反向扫描回滚活跃事务：</text>
+          
+          <text x="10" y="42" fill="#86efac">1. 对所有未提交活跃事务执行 ROLLBACK</text>
+          <text x="10" y="58" fill="#38bdf8">2. 写入 CLR (Compensation Log Record) 补偿日志</text>
+          <text x="10" y="74" fill="#34d399">   确保回滚过程中若再次崩溃绝不重复回滚！</text>
+          
+          <text x="10" y="104" fill="#4ade80">✓ 数据库正式宣告恢复完毕，对外开放服务！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">终审收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 保证事务原子性与一致性 100% 不受损；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 获得图灵奖级别的经典算法实现；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库系统理论的终极王冠！</text>
+      </g>
+    </g>
+  </g>
+</svg>

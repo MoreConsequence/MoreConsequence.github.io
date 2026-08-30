@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">并发调度内核对比：Go GMP 模型 vs Node.js Libuv 事件循环</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Go (M:N 抢占式协程调度，多核并行计算) vs Node.js (单线程 Reactor 反应器模式，异步非阻塞 I/O 极致轻量)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Go GMP -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Go GMP：多核 M:N 抢占式调度</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">• G (Goroutine): 2KB 极轻量协程</text>
+          <text y="28" fill="#38bdf8">• M (OS Thread): 绑定物理 CPU 核心</text>
+          <text y="42" fill="#38bdf8">• P (Processor): 本地可运行队列与 Work-stealing</text>
+          
+          <text y="66" fill="#34d399">调度特性：</text>
+          <text y="80" fill="#cbd5e1">• 基于 sysmon 的异步信号强行抢占死循环</text>
+          <text y="94" fill="#cbd5e1">• 多核天然并行，适合海量并发与混合型计算！</text>
+          
+          <text y="118" fill="#4ade80">✓ 优势：CPU 密集计算不阻塞其他协程执行！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">心智特征：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 同步阻塞语法书写，底层异步调度；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 共享内存需严格加锁保护或用 channel；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业后端标准高并发引擎。</text>
+      </g>
+    </g>
+
+    <!-- Right: Node.js Libuv -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Node.js Libuv：单线程事件循环 (Reactor)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">• 单一主主线程执行 JS 逻辑代码 (0 线程锁)</text>
+          <text y="28" fill="#4ade80">• Libuv 事件驱动调度 (epoll / kqueue / IOCP)</text>
+          <text y="42" fill="#4ade80">• Worker 线程池处理磁盘 I/O 与加密哈希</text>
+          
+          <text y="66" fill="#38bdf8">调度特性：</text>
+          <text y="80" fill="#cbd5e1">• 协作式调度：主线程不让出，任何宏任务都不走</text>
+          <text y="94" fill="#cbd5e1">• 纯 I/O 场景吞吐量极高，内存开销极致紧凑！</text>
+          
+          <text y="118" fill="#4ade80">✓ 优势：内存单写者天然免疫数据竞态死锁！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">心智特征：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 绝对不能在主线程执行同步长计算；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 异步重入需要 Actor Mailbox 守卫；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造敏捷高效的现代 Web 应用！</text>
+      </g>
+    </g>
+  </g>
+</svg>

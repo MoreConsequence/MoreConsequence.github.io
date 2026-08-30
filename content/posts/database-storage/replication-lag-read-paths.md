@@ -14,7 +14,7 @@ series: "数据库原理手记"
 
 先看一条写入从"主库提交"到"从库可见"经过的全部环节：
 
-![MySQL 主从复制链路与延迟构成示意图:binlog、IO 线程、relay log、SQL 线程](/images/replication-lag-bill.svg)
+![MySQL 主从复制链路与延迟构成示意图:binlog、IO 线程、relay log、SQL 线程](../../../public/images/replication-lag-bill.svg)
 
 *图注：主库提交只保证 binlog 已落盘（与事务原子）；从库要经网络拉取、relay log 暂存、SQL 线程重放等步骤才可见。哪一段占主导取决于网络、事务形状、从库负载和恢复状态。*
 
@@ -47,6 +47,10 @@ MTS 的并行语义，MySQL 8.0 官方文档（`replica_parallel_type` 一节）
 两个只有踩过坑才懂的细节：第一，写集依赖有一个历史窗口 `binlog_transaction_dependency_history_size`（默认 25000）——源端只记住最近 N 个事务的写集，窗口之外的事务与任何事务都视为无依赖，也就是"更可并行"；**窗口不是安全阀，是并行度旋钮**，调大它从库并行度会变保守，调小则更激进。第二，WRITESET_SESSION 的存在本身就是一种承认：无脑并行可能把"同一用户会话的写入顺序"打乱（两条跨批次但写同一行的更新除外），所以"要并行又要保序"的会话场景，官方给的就是这个折中值。
 
 延迟的组成没有跨环境固定比例。大事务、慢 SQL、无索引的 UPDATE、DDL 可能让重放成为瓶颈；网络抖动、relay 堵塞、磁盘压力和恢复也可能改变主导项。**这些因素都会把延迟曲线推成阶梯**，所以应分别观测 IO 线程、relay、SQL worker 和事务依赖，而不是把一个总秒数归因给单一环节。
+
+
+
+![主从复制延迟水位线：Binlog Dump 线程与 GTID 执行进度比对](../../../public/images/replication-lag-channel-gtid-watermark.svg)
 
 ## 二、位点与 GTID：给"追到哪了"一个精确坐标
 
@@ -164,6 +168,10 @@ STOP SLAVE IO_THREAD; START SLAVE IO_THREAD;
 | 读主 | 强一致 | 无 | 无 | 零 |
 | 读从 + 版本校验 | 预算内一致，预算外重读 | 无 | 有 | 中 |
 | 半同步 + 读从 | 窗口缩到重放级 | +1 次从库 RTT | 有 | 中高（运维面多一层） |
+
+
+
+![读写分离一致性保障方案：强制主库路由、缓存标记法与 GTID 水位线比对](../../../public/images/read-write-splitting-consistency-guard.svg)
 
 ## 四、读己之写：写后读的一致性最短路径
 

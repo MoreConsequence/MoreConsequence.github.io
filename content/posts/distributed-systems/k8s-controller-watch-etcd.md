@@ -11,6 +11,11 @@ series: "架构原则"
 
 **TL;DR：** Kubernetes 控制面不是“每个 watcher 直连 etcd”的广播总线，而是 **apiserver 解释 API 语义、维护 watch/cache、向客户端提供 list + watch；etcd 保存持久化权威状态**。`resourceVersion` 是服务端版本字符串：对象的值表示该对象最近一次修改，列表的值表示集合快照；只能在同一 API resource type 内按文档比较，客户端应原样回传，不能把它当跨资源的全局时钟。watch 落后到服务端不再保留的版本时可能得到 `410 Gone`，需要重新 list 再接 watch；`resourceVersion=0` 也不是“从 etcd revision 0 重放”。
 
+
+---
+
+![Kubernetes 控制面莫比乌斯环：Reflector、DeltaFIFO 增量队列与 WorkQueue 调谐循环](../../../public/images/k8s-controller-watch-etcd-reflector-deltafifo.svg)
+
 ## 一、控制面不是三剑客，是 API 权威、缓存与事件流
 
 初学者最常见的印象是“apiserver + scheduler + etcd 三个二进制”。更准确的切法是：**客户端把 API 请求交给 apiserver，apiserver 负责认证、准入、默认值、校验、版本和 watch 语义；etcd 负责持久化；控制器通过 list/watch 在自己的进程内维护缓存和期望状态**。
@@ -36,6 +41,10 @@ flowchart LR
     A2 --> W2["watch cache / 事件分发"]
     K2["kubelet"] -->|"list + watch API"| W2
 ```
+
+
+
+![Kubernetes client-go Informer 核心架构：Reflector (List-Watch), DeltaFIFO, Indexer 与 WorkQueue](../../../public/images/k8s-informer-reflector-lister-indexer-architecture.svg)
 
 ## 二、resourceVersion：同类资源的游标，不是全局时钟
 
@@ -83,6 +92,10 @@ flowchart LR
 etcd lease 也不能被泛化成“所有 Pod 状态都靠 lease 续期”。lease 是 etcd 的租约原语；Kubernetes 的节点心跳、对象生命周期、控制器重试和 kubelet 状态各有自己的 API 合同。讲控制面时，要把“etcd 提供的机制”和“Kubernetes 哪个组件实际使用它”分开。
 
 **真正的代价账**是：watch cache 能减少重复 list 和每个 watcher 的持久化读取，但它需要内存、事件分发和重建成本；要求更强读语义时，apiserver 需要确认缓存已经追平持久化层，或者走更昂贵的路径。读的“新鲜度”、watch 的“连续性”和 etcd 的“持久化权威”是三种不同承诺。
+
+
+
+![Kubernetes 水平触发 (Level-Triggered) 调谐哲学：基于最新状态对齐与自愈](../../../public/images/k8s-reconciliation-loop-level-vs-edge-trigger.svg)
 
 ## 四、用一个真实集群观察 list/watch 的两段状态
 

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DTO 边界出入流量脱敏流水线：字段级装饰器与零泄漏响应拦截</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">原始数据库实体 (包含 password_hash, id_card) ──► DTO 序列化拦截器 ──► @Mask() 动态打码 ──► 绝对干净的安全 JSON 响应</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 实体层与 DTO 严格分层隔离 (Entity vs DTO Separation)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">class UserEntity { id, name, passwordHash, secretKey } ──► 严禁直接 return 给前端！</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">将内部数据库实体与面向公众的传输对象物理隔离，确立安全第一道防线！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 声明式字段级脱敏注解 (@Mask &amp; @Exclude Decorators)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">@Mask(MaskType.MOBILE) mobile: string; ──► @Exclude() passwordHash: string;</text>
+        <text x="15" y="62" font-size="8" fill="#047857">通过 Reflect Metadata 收集字段脱敏元数据，代码自解释且集中维护！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 响应序列化拦截器全局兜底 (Global Response Interceptor)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">在框架层 (NestJS/Fastify) 统一执行 plainToInstance + classToPlain 转换</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">即使个别新人手误直接返回了 Entity，全局拦截器也能 100% 自动剥离危险字段！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 日志审计与大模型提示词注入防护 (Audit &amp; Prompt Sanitation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">向 LLM 发送上下文或落盘日志前统一过脱敏管道 ──► 彻底杜绝 API Key 或密码泄露进日志！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">满足 GDPR 与金融级数据合规审计标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

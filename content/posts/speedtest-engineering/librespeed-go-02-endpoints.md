@@ -10,6 +10,15 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** LibreSpeed Go 版的三个测速端点各回答一个测量学问题。**下行**（`/garbage`）：载荷必须是随机字节——既防缓存命中又防压缩，且在进程启动时一次性预生成 1 MiB，运行时零分配；客户端可用 `ckSize` 协商倍数，但服务端把上限钳制在 1024 chunks = **1 GiB**（实测恰好 1,073,741,824 字节）。**上行与延迟**共用 `/empty`：服务端把请求体整体拷贝进 `ioutil.Discard`——上行的计量完全发生在客户端，服务端只负责"接住并扔掉"。所有端点还挂着 `.php` 后缀的影子路由和 `?cors=true` 查询参数——那是一份活的 PHP 兼容合同。
 
+
+---
+
+![LibreSpeed Go 核心测速端点实现：garbage 下行灌水 (1GiB 截断) 与 empty 上行黑洞丢弃](../../../public/images/librespeed-go-endpoints-garbage-empty-backend.svg)
+
+
+
+![下行推流零内存分配流水线：1MB 预热随机块循环复用与 io.CopyBuffer](../../../public/images/garbage-chunk-writer-zero-alloc-pipeline.svg)
+
 ## 一、下行端点 garbage：随机、预热、钳制
 
 `web.go:161-193` 是完整的 `garbage` handler，不到 30 行，却浓缩了测速服务端的三个核心决策。
@@ -68,6 +77,10 @@ for i := 0; i < chunks; i++ {
 ### 决策三：响应头的"伪装"
 
 `garbage` 设置了四个响应头：`Content-Disposition: attachment; filename=random.dat`、`Content-Type: application/octet-stream` 等。这不是装饰：历史上有人直接在浏览器地址栏打开 garbage URL，浏览器若按文本渲染会卡死标签页；声明成附件二进制流让浏览器走下载通道。兼容性细节，但正是这类细节决定一个端点敢不敢公开。
+
+
+
+![Empty 端点双重职责：GET 延迟探测 (Ping) 与 POST 上行黑洞 (Sink)](../../../public/images/empty-endpoint-dual-purpose-sink.svg)
 
 ## 二、empty 端点：上行与延迟共用的"黑洞"
 

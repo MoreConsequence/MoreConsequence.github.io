@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">手写 50 行最小 Agent Harness：调度循环与状态机本质</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">上下文列表 messages ──► while 循环请求 LLM ──► 检测 tool_calls ──► 执行本地函数 ──► 追加 tool 结果 ──► 直至 LLM 自然回复</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: 50 Lines Source Code -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 50 行完整调度循环源码</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">async function runAgent(prompt) {</text>
+          <text y="28" fill="#86efac">  const messages = [{ role: 'user', content: prompt }];</text>
+          <text y="42" fill="#38bdf8">  while (true) {</text>
+          <text y="56" fill="#38bdf8">    const res = await llm.chat({ messages, tools });</text>
+          <text y="70" fill="#86efac">    messages.push(res.message);</text>
+          <text y="84" fill="#fb923c">    if (!res.message.tool_calls?.length) return res.message.content;</text>
+          <text y="98" fill="#fed7aa">    for (const call of res.message.tool_calls) {</text>
+          <text y="112" fill="#fed7aa">      const out = await tools[call.name](call.args);</text>
+          <text y="126" fill="#86efac">      messages.push({ role: 'tool', tool_call_id: call.id, content: out });</text>
+          <text y="140" fill="#fed7aa">    }</text>
+          <text y="154" fill="#38bdf8">  }</text>
+          <text y="168" fill="#4ade80">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 剥离一切花哨概念，还原 Agent 物理本质；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 状态存在于 messages 数组中，大模型作为状态转移函数；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造 Agent 认知的坚实理论起点！</text>
+      </g>
+    </g>
+
+    <!-- Right: State Machine Evolution -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 从脚本到工业级状态机演进</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">工业级演进三部曲：</text>
+          
+          <text y="34" fill="#86efac">1. 状态外置与持久化: messages 内存数组 ──► session.jsonl 树</text>
+          <text y="54" fill="#38bdf8">2. 错误与重试熔断: 注入 AbortSignal + MaxSteps + 死循环检测</text>
+          <text y="74" fill="#fb923c">3. 权限与副作用治理: 纯函数工具 ──► Linux Bubblewrap 沙箱</text>
+          
+          <text y="104" fill="#4ade80">✓ 50 行核心骨架可无缝升级为 94k Stars 工业巨作！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构思考：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 复杂性来自于异常处理、持久化与安全性；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 保持核心 Harness 调度循环的极简与透明；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 资深工程师架构设计的克制与纯粹！</text>
+      </g>
+    </g>
+  </g>
+</svg>

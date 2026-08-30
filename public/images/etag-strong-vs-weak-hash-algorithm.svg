@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ETag 算法深度对比：强校验 (Strong ETag) vs 弱校验 (Weak W/ ETag)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">强 ETag (SHA-256 全量字节精确哈希，支持 Range 断点续传) vs 弱 ETag (基于 mtime/size 或 gzip 语义等价，计算开销极低)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 强 ETag (Strong Validator: "33a64df5")</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">ETag: "68b329da9893e34099c7d8ad5cb9c940"</text>
+          
+          <text y="38" fill="#86efac">物理承诺：</text>
+          <text y="52" fill="#cbd5e1">• 字节级 100% 绝对一致（Byte-for-byte identical）</text>
+          <text y="66" fill="#cbd5e1">• 即使改动 1 个空格也会生成全新哈希</text>
+          <text y="80" fill="#cbd5e1">• 完美支持 Range 断点续传与字节补丁！</text>
+          
+          <text y="106" fill="#4ade80">✓ 适合大文件下载、固件升级与金融对账文件！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 服务端需读取全量文件计算哈希，存在一定 I/O 开销；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 字节级严谨可靠；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业级强一致性保障。</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 弱 ETag (Weak Validator: W/"1234-abcd")</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">ETag: W/"108a-18e4726f9b0"</text>
+          
+          <text y="38" fill="#86efac">物理承诺：</text>
+          <text y="52" fill="#cbd5e1">• 语义等价即可（Semantically equivalent）</text>
+          <text y="66" fill="#cbd5e1">• 通常基于 stat() 的 mtime + size 快速生成 (0 CPU)</text>
+          <text y="80" fill="#cbd5e1">• 即使经过 gzip / brotli 压缩不同依然判定命中！</text>
+          
+          <text y="106" fill="#4ade80">✓ Nginx 与 Web 服务器默认高效协商方案！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纳秒级极速生成，0 磁盘与 CPU 读取负担；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 完美适应动态网页与 CDN 动态压缩场景；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 互联网超高并发流量事实标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

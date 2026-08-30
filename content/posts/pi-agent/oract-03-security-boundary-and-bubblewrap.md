@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：零信任安全边界、Secret 动态脱敏与 Linux Bubblewrap 深度隔离](../../../public/images/oract-security-boundary-secret-masking-bubblewrap.svg)
+
 ## 一、威胁建模：Agent 系统的三大致命漏洞
 
 ```mermaid
@@ -35,6 +40,10 @@ flowchart LR
 3. **宿主机逃逸与资源耗尽（Host Destruction）**：恶意代码在宿主机启动 Fork 炸弹或写入 `/dev/sda` 导致宿主操作系统瘫痪。
 
 ---
+
+
+
+![Oract Bubblewrap 沙箱资源配额与 Cgroups 限制管道](../../../public/images/oract-bubblewrap-namespace-cgroup-pipeline.svg)
 
 ## 二、防线一：Policy 策略评估与动态 Approval 机制
 
@@ -163,6 +172,10 @@ func (r *SecretRedactor) Redact(input []byte) []byte {
 无论工具执行的输出中包含了多少明文敏感信息，在进入 Journal 落盘与大模型上下文投影之前，全部被强制替换为 `[REDACTED_SECRET]`，彻底切断外泄通道。
 
 ---
+
+
+
+![Oract 零环境权威 (Zero Ambient Authority) 安全边界拓扑](../../../public/images/oract-zero-ambient-authority-security-boundary.svg)
 
 ## 四、防线三：Linux Bubblewrap 原生沙箱隔离
 

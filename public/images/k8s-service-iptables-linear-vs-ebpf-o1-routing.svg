@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kubernetes Service 转发性能演进：iptables O(N) vs eBPF O(1)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">iptables 规则链 (5,000 个 Service 产生 25,000 条顺序规则，每个包线性遍历耗时暴涨) ｜ eBPF (BPF Hash Map 毫秒 O(1) 直达)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: iptables O(N) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ iptables 模式：大规模集群性能断崖</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// KUBE-SERVICES 顺序规则链</text>
+          <text y="28" fill="#fca5a5">-A KUBE-SERVICES -d 10.96.0.1/32 -j KUBE-SVC-XXX</text>
+          <text y="42" fill="#fca5a5">-A KUBE-SERVICES -d 10.96.0.2/32 -j KUBE-SVC-YYY</text>
+          <text y="56" fill="#f87171">... (线性排列 20,000+ 条规则！)</text>
+          
+          <text y="80" fill="#ef4444">🔴 物理瓶颈：</text>
+          <text y="96" fill="#fca5a5">1. 每个数据包必须从头到尾线性比对，CPU 软中断被打满！</text>
+          <text y="112" fill="#fb7185">2. 每次 Pod 变动触发 iptables-restore 全量全表加锁刷新！</text>
+          <text y="128" fill="#ef4444">► 刷新耗时达 10s+，期间内核网络锁死造成大量丢包！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产死穴：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 集群规模超过 1,000 个节点或 5,000 个服务时无法承载；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 导致首包延迟飙升，吞吐量严重受限；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 成为云原生超大规模落地的最大拦路虎！</text>
+      </g>
+    </g>
+
+    <!-- Right: eBPF O(1) -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Cilium eBPF：内核 BPF Map O(1) 极速哈希</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// eBPF TC / XDP 挂载点程序</text>
+          <text y="28" fill="#86efac">struct bpf_map_def cilium_lb4_services</text>
+          <text y="42" fill="#38bdf8">svc = bpf_map_lookup_elem(&amp;cilium_lb4_services, &amp;ip);</text>
+          
+          <text y="66" fill="#34d399">1. O(1) 哈希表查找：无论 10 个还是 10 万个服务，耗时恒定 50ns！</text>
+          <text y="82" fill="#4ade80">2. 增量更新：Pod 上下线仅修改单一 Map Key，零锁阻塞！</text>
+          <text y="98" fill="#34d399">3. Socket 级重定向 (sockops): 绕过 TCP/IP 协议栈直接内存直连！</text>
+          <text y="114" fill="#4ade80">✓ 网络吞吐提升 300%，时延降低 40%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底解耦服务数量与网络转发性能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支撑数万 Pod 的超大规模 Kubernetes 集群；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 现代云原生网络数据平面的终极方向！</text>
+      </g>
+    </g>
+  </g>
+</svg>

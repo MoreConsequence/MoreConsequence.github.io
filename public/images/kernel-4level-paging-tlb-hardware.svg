@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">x86-64 Linux 虚拟内存转换与四级页表 (4-Level Paging) 硬件流</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">CR3 寄存器 ──► TLB 硬件快表检索 ──► PGD / P4D / PUD / PMD / PTE 四级硬件遍历 ──► 物理内存 Page Frame</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Virtual Address Decomposition (48-bit Canonical Virtual Address) -->
+    <g transform="translate(20, 20)">
+      <rect width="860" height="60" rx="4" fill="#0f172a"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#38bdf8">
+        48 位虚拟地址切片 (48-bit Virtual Address Decomposition: 9 + 9 + 9 + 9 + 12):
+      </text>
+
+      <!-- Slices -->
+      <g transform="translate(12, 28)" font-family="ui-monospace, monospace" font-size="8">
+        <rect width="150" height="22" rx="2" fill="#1e293b"/>
+        <text x="75" y="15" fill="#93c5fd" text-anchor="middle">PGD 索引 (9位 [47:39])</text>
+
+        <rect x="156" width="150" height="22" rx="2" fill="#1e293b"/>
+        <text x="231" y="15" fill="#93c5fd" text-anchor="middle">PUD 索引 (9位 [38:30])</text>
+
+        <rect x="312" width="150" height="22" rx="2" fill="#1e293b"/>
+        <text x="387" y="15" fill="#93c5fd" text-anchor="middle">PMD 索引 (9位 [29:21])</text>
+
+        <rect x="468" width="150" height="22" rx="2" fill="#1e293b"/>
+        <text x="543" y="15" fill="#93c5fd" text-anchor="middle">PTE 索引 (9位 [20:12])</text>
+
+        <rect x="624" width="210" height="22" rx="2" fill="#334155"/>
+        <text x="729" y="15" fill="#34d399" text-anchor="middle">页内物理偏移 (12位 [11:0] 4KB)</text>
+      </g>
+    </g>
+
+    <!-- Lower Section: Left TLB fast path (260px), Center 4-Level Page Walk (360px), Right Physical Frame (220px) -->
+    <g transform="translate(20, 95)">
+      <!-- Box 1: TLB Fast Path -->
+      <g>
+        <rect width="260" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="260" height="30" rx="6" fill="#dcfce7"/>
+        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">
+          ① TLB 硬件快表 (Fast Path)
+        </text>
+
+        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <rect width="236" height="60" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#15803d">CPU L1/L2 TLB 缓存查找：</text>
+          <text x="10" y="32" font-size="8" fill="#166534">✓ TLB Hit: 仅需 <tspan font-weight="700" fill="#047857">0.5 ~ 1 个时钟周期</tspan></text>
+          <text x="10" y="46" font-size="7.5" fill="#64748b">直接输出物理页基址 (Physical Base Address)</text>
+
+          <rect y="70" width="236" height="90" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">❌ TLB Miss 代价：</text>
+          <text x="10" y="32" font-size="7.5" fill="#7f1d1d">• 触发硬件 Page Table Walker</text>
+          <text x="10" y="46" font-size="7.5" fill="#7f1d1d">• 产生 4 次连续内存访问 (4 Memory Accesses)</text>
+          <text x="10" y="60" font-size="7.5" fill="#dc2626">• 延迟骤增至 <tspan font-weight="700">100 ~ 200 个 CPU 周期</tspan>！</text>
+        </g>
+      </g>
+
+      <!-- Conveyor Arrow 1 -->
+      <path d="M 270 115 L 290 115" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+      <text x="280" y="105" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7" fill="#dc2626" text-anchor="middle">Miss</text>
+
+      <!-- Box 2: 4-Level Page Table Walk (360px) -->
+      <g transform="translate(295, 0)">
+        <rect width="320" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="320" height="30" rx="6" fill="#dbeafe"/>
+        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
+          ② 四级页表遍历 (Page Table Walk)
+        </text>
+
+        <!-- Page Table Levels -->
+        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <g transform="translate(0, 0)">
+            <rect width="296" height="36" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+            <text x="8" y="16" font-size="8.5" font-weight="700" fill="#1d4ed8">CR3 寄存器 ──► PGD (Page Global Dir)</text>
+            <text x="8" y="28" font-size="7.5" fill="#64748b">包含 512 个 8B 描述符，覆盖 512GB/项</text>
+          </g>
+
+          <g transform="translate(0, 42)">
+            <rect width="296" height="36" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+            <text x="8" y="16" font-size="8.5" font-weight="700" fill="#1d4ed8">PGD Entry ──► PUD (Page Upper Dir)</text>
+            <text x="8" y="28" font-size="7.5" fill="#64748b">包含 512 个描述符，覆盖 1GB/项 (1GB大页截断点)</text>
+          </g>
+
+          <g transform="translate(0, 84)">
+            <rect width="296" height="36" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+            <text x="8" y="16" font-size="8.5" font-weight="700" fill="#1d4ed8">PUD Entry ──► PMD (Page Middle Dir)</text>
+            <text x="8" y="28" font-size="7.5" fill="#64748b">包含 512 个描述符，覆盖 2MB/项 (2MB大页截断点)</text>
+          </g>
+
+          <g transform="translate(0, 126)">
+            <rect width="296" height="36" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
+            <text x="8" y="16" font-size="8.5" font-weight="700" fill="#1d4ed8">PMD Entry ──► PTE (Page Table Entry)</text>
+            <text x="8" y="28" font-size="7.5" fill="#166534">指向最终 4KB 物理页基址 (Physical Base)</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- Conveyor Arrow 2 -->
+      <path d="M 625 115 L 645 115" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
+
+      <!-- Box 3: Physical Memory Frame (240px) -->
+      <g transform="translate(650, 0)">
+        <rect width="230" height="235" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+        <rect width="230" height="30" rx="6" fill="#ffedd5"/>
+        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">
+          ③ 物理内存定位
+        </text>
+
+        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
+          <rect width="206" height="85" rx="4" fill="#ffffff" stroke="#fed7aa"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#9a3412">物理地址合成：</text>
+          <text x="10" y="34" font-family="ui-monospace, monospace" font-size="8" fill="#c2410c">Phys_Addr =</text>
+          <text x="10" y="48" font-family="ui-monospace, monospace" font-size="8" fill="#c2410c">PTE.Base + Offset[11:0]</text>
+          <text x="10" y="66" font-size="7.5" fill="#64748b">回填 TLB 缓存，完成本次数据加载</text>
+
+          <rect y="95" width="206" height="85" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#7e22ce">大页 (HugePages) 威力：</text>
+          <text x="10" y="34" font-size="7.5" fill="#6b21a8">• 2MB 大页直接在 PMD 截断</text>
+          <text x="10" y="48" font-size="7.5" fill="#6b21a8">• 省略 PTE 遍历，省 1 次内存访问</text>
+          <text x="10" y="62" font-size="7.5" font-weight="700" fill="#166534">• TLB 覆盖率暴涨 512 倍！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Insight Bar -->
+    <g transform="translate(20, 335)">
+      <rect width="860" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">
+        💡 <tspan font-weight="700" fill="#0f172a">性能本质：</tspan> 四级页表遍历需要 4 次串行内存访问；<tspan font-weight="700" fill="#2563eb">静态大页（HugePages 2MB）不仅降低 1 级遍历开销，更让单条 TLB 条目覆盖范围从 4KB 扩大到 2MB</tspan>，大幅提升命中率！
+      </text>
+    </g>
+  </g>
+</svg>

@@ -11,6 +11,11 @@ series: "数据库原理手记"
 
 **TL;DR：** 建了索引不代表会被用。MySQL 优化器从不因为你建了索引就用它，它只比较两套路径的估算代价——走索引（先在索引页定位，再拿主键回表逐行取整行）vs 顺序扫全表，谁便宜选谁。它拿来估代价的输入只有两类：range 优化用的 index dives（真钻 B+Tree 数页）和一般等值选择用的统计信息（cardinality），后者可能过期、可能被倾斜分布骗。所以『我建了索引它为什么不用』绝大多数时候不是索引坏了，而是军师按当前统计下注，算下来走全表更便宜——它算错的可能是 rows，不是你的索引。读 EXPLAIN 只看 key 列会漏掉真相，type/rows/filtered/Extra 四列才是账单，optimizer_trace 能让你看到最终选路与具体代价数字。核心纪律一句话：先 ANALYZE TABLE 再下结论。
 
+
+---
+
+![MySQL 优化器代价模型 (Cost Model) 与 EXPLAIN 决策树](../../../public/images/mysql-optimizer-cost-model-explain.svg)
+
 ## 一、先立反直觉：索引存在 ≠ 会被用，优化器只比较代价
 
 先摆一个必然会打脸看 `key` 列的人的场景。表 `orders_skew` 上有普通索引 `idx_status(status)`，100 万行里 99% 是 `status=0`、1% 是 `status=1`：
@@ -25,6 +30,10 @@ EXPLAIN SELECT * FROM orders_skew WHERE status = 1;
 同一条索引，换一个常量，一条全表扫、一条走索引。不是索引坏了，是优化器对两条查询的代价估算给出了不同答案。MySQL 的优化器不认『我有索引』，只认『走这条路要花多少钱』：路径 A『走 idx_status：先扫索引页拿到主键列表，再逐行回聚簇索引取整行』；路径 B『从主键 B+Tree 顺序扫全表』。谁便宜选谁，仅此而已。
 
 第一层认知因此是：**不走你的索引，不是军师瞎了，是军师按手头的信息算下来『走全表更便宜』。** 它下注的筹码只有统计信息，不是真实数据。它算错的往往不是『该不该用这个索引』，而是 `rows`——把某个环节的行数/页数估歪了，账单就歪了。接下来三节，把军师下注的这张账单逐项读出来。
+
+
+
+![基于成本的优化器 (CBO) 数学模型：I/O 成本 + CPU 成本量化公式](../../../public/images/cost-based-optimizer-cbo-math-model.svg)
 
 ## 二、EXPLAIN 的关键列：type、rows、filtered、Extra
 
@@ -70,6 +79,10 @@ EXPLAIN SELECT * FROM orders_skew WHERE status = 1;
 - `innodb_stats_auto_recalc` 默认 **ON**：行数变化超过约 10% 时，InnoDB 在**后台异步**重算统计。注意『后台』和『异步』：刚灌完 100 万行、刚删掉一大片数据，统计很可能还是旧的。
 
 所以 `ANALYZE TABLE orders_skew;` 该什么时候跑：**大批量导入/删除之后、或者你确认分布变了但 auto_recalc 来不及反应时。** 另外 8.0 引入直方图，`ANALYZE TABLE t UPDATE HISTOGRAM ON col WITH 100 BUCKETS;` 能补**非索引列**的选择性——那些没索引、但在过滤和 join 里很重要的列，统计信息原本根本不采。
+
+
+
+![关联算法进化：Block Nested Loop (BNL) vs MySQL 8.0 现代 Hash Join](../../../public/images/join-algorithm-hash-join-vs-bnl.svg)
 
 ## 四、代价模型：MySQL 8 的价目表
 

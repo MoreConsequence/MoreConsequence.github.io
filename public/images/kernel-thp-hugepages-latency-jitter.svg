@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大页方案对比：标准 4KB vs 静态 HugePages vs 透明大页 (THP) 延迟陷阱</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">为什么 Redis / MySQL 生产环境强制禁用 THP？透明大页内存规整 (Compaction) 导致毫秒级停顿抖动</text>
+  </g>
+
+  <!-- 3 Comparison Columns (285px each, spaced by 15px) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- Col 1: Standard 4KB Paging -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f8fafc"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 标准 4KB 分页 (Base Page)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="135" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="8" fill="#f8fafc">
+          <text x="10" y="18" fill="#94a3b8">// 128GB 内存大服务</text>
+          <text x="10" y="34" fill="#f8fafc">页表总条目: 33,554,432 条 (3300万)</text>
+          <text x="10" y="50" fill="#fca5a5">页表内存开销: 约 256MB 物理内存</text>
+          <text x="10" y="70" fill="#fbbf24">CPU L1 dTLB: 仅 64 条目</text>
+          <text x="10" y="86" fill="#f87171">TLB 覆盖率: 64 × 4KB = 256KB !</text>
+          <text x="10" y="106" fill="#94a3b8">高并发随机访问时 TLB Miss 率高</text>
+          <text x="10" y="122" fill="#94a3b8">产生大量 4 级页表 Walk 延迟</text>
+        </g>
+
+        <!-- Evaluation Box -->
+        <rect y="148" width="255" height="110" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#334155">📊 综合评价：</text>
+        <text x="10" y="34" font-size="7.5" fill="#475569">• 内存粒度最细，零内部碎片；</text>
+        <text x="10" y="48" font-size="7.5" fill="#475569">• 缺页中断代价最小（每次仅拷 4KB）；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 缺点：大内存应用 TLB 缺失率居高不下。</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Static HugePages (2MB / 1GB) -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 静态大页 (HugePages 2MB)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="135" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="8" fill="#f8fafc">
+          <text x="10" y="18" fill="#34d399">// 预分配连续大物理页</text>
+          <text x="10" y="34" fill="#f8fafc">页表总条目: 仅 65,536 条 (减少512倍)</text>
+          <text x="10" y="50" fill="#4ade80">页表内存开销: 约 512KB (暴降99.8%)</text>
+          <text x="10" y="70" fill="#38bdf8">CPU L1 dTLB: 32 条目 (2MB大页)</text>
+          <text x="10" y="86" fill="#34d399">TLB 覆盖率: 32 × 2MB = 64MB !</text>
+          <text x="10" y="106" fill="#86efac">✓ TLB 命中率提升至 99.9% 以上</text>
+          <text x="10" y="122" fill="#86efac">✓ DPDK / 高性能向量检索首选</text>
+        </g>
+
+        <!-- Evaluation Box -->
+        <rect y="148" width="255" height="110" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">📊 综合评价：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 吞吐与延迟最极致稳定；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 缺点：需启动时预分配，无法动态换出；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 极适合 DPDK / SPDK / 向量数据库。</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Transparent Huge Pages (THP) -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">3. 透明大页 (THP 性能陷阱)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="135" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="8" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">// khugepaged 后台动态拼凑</text>
+          <text x="10" y="34" fill="#fca5a5">陷阱 1: 直接内存规整 (Compaction)</text>
+          <text x="10" y="50" fill="#ef4444">分配 2MB 失败时阻塞应用线程！</text>
+          <text x="10" y="70" fill="#fca5a5">陷阱 2: Redis BGSAVE 写时复制 (COW)</text>
+          <text x="10" y="86" fill="#ef4444">改动 1 字节导致复制整个 2MB 大页！</text>
+          <text x="10" y="106" fill="#f87171">► 内存暴涨 512 倍，触发 OOM 杀进程</text>
+          <text x="10" y="122" fill="#fb7185">► 产生数百毫秒严重长尾延迟尖刺！</text>
+        </g>
+
+        <!-- Evaluation Box -->
+        <rect y="148" width="255" height="110" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">🛠️ 生产标准操作：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• Redis / MySQL 生产环境强制执行：</text>
+        <text x="10" y="48" font-family="ui-monospace, monospace" font-size="7" font-weight="700" fill="#991b1b">echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled</text>
+        <text x="10" y="66" font-size="7.5" fill="#dc2626">• 彻底消除 khugepaged 内存规整停顿！</text>
+      </g>
+    </g>
+  </g>
+</svg>

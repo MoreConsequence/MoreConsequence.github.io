@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** string 和 `[]byte` 的转换**默认是拷贝**：统一基准中，32B 的 `string(b)` 是 **14.06ns、32B/1 alloc**，`[]byte(s)` 是 **14.83ns、32B/1 alloc**；8KiB 转换分别是 **1233ns** 和 **1170ns**，各分配 8192B。特定 map 查找上下文里，编译器可以把 `m[string(b)]` 降成临时字符串视图，实测 **7.512ns、0 alloc**；`unsafe.String` 为 **1.144ns、0 alloc**，但把不可变性和生命周期责任交给调用者。默认复制仍是正确边界：只有能证明“只读、不过期、不保存”的局部路径，才值得考虑优化。
 
+
+---
+
+![Go string 与 []byte 零拷贝转换：编译器只读 Map 优化 vs unsafe.String / Slice 规范合同](../../../public/images/go-string-bytes-zero-copy-unsafe-slice.svg)
+
 ## 一、为什么转换要花钱：两个结构体的本质差异
 
 在本次 64 位 arm64 环境中，`string` header 是 16 字节的只读结构（data 指针 + len），`[]byte` header 是 24 字节的可变结构（data 指针 + len + cap）。这只是当前 ABI/架构下的 header 大小，不是语言层面对所有架构的固定承诺。转换的本质矛盾：
@@ -19,6 +24,10 @@ series: "Go 的设计边界"
 - **`string(b)` 默认也拷贝**：string 要求不可变，若直接引用 []byte 的数据，之后 b 被修改（比如 `b[0] = 'x'`）会破坏 string。
 
 所以语言层面的默认行为是：**需要独立生命周期时，转换就是新分配 + memcpy**。这不只是实现细节，也是安全承诺——只有编译器能证明结果不会逃逸，或调用者明确承担 `unsafe` 的共享存储合同，才有资格绕过拷贝。
+
+
+
+![string (16B) 与 []byte (24B) 内存结构体差异与只读性语义契约](../../../public/images/string-struct-vs-slice-header-layout.svg)
 
 ## 二、三类路径实测：默认拷贝、编译器临时转换与 unsafe 视图
 
@@ -52,6 +61,10 @@ go test ./go-runtime-boundary -run '^$' -gcflags='all=-m=2' 2>&1 | rg -F -e 'str
 benchmem 的数字一致：map 查找是 0 allocs、7.512ns；本次统一分组没有把“直接使用 string key”的对照纳入 raw 输出，因此不对那条路径给出未经保存的数字。
 
 **这个优化的前提是“只读不存”**：转换结果只用作查找键，查找完就没了。把 `string(b)` 结果存进变量、数组或字段时，编译器必须维护独立 string 的语义，通常就会回到拷贝路径；具体是否逃逸仍应以当前 Go 版本的 `-m=2` 输出和 benchmark 为准。所以 `m[string(b)]` 的低成本不是魔法，而是编译器在一个受限上下文里替你完成了生命周期分析。
+
+
+
+![Go 1.20+ unsafe.StringData 零拷贝转换：从 reflect 黑魔法到官方标准实现](../../../public/images/unsafe-string-bytes-zero-copy-cast.svg)
 
 ## 四、unsafe 的边界：零拷贝买到了什么，卖掉什么
 

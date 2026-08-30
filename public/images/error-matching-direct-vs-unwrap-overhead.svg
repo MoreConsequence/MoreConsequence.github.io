@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 错误判定三种方式的性能与灵活性权衡</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">直接 == 比对 (0.3ns 但无法识别包装错误) ｜ errors.Is (4ns 递归比对，通用首选) ｜ errors.As (45ns 重度依赖反射，仅用于特定类型提取)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 直接 == 比较 (Direct Equality)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">if err == io.EOF { ... }</text>
+          
+          <text x="10" y="38" fill="#86efac">性能指标：</text>
+          <text x="10" y="54" fill="#34d399">• 耗时: 0.3 ns/op (纯寄存器整数比对)</text>
+          <text x="10" y="70" fill="#34d399">• 堆分配: 0 B/op, 0 allocs</text>
+          
+          <text x="10" y="94" fill="#f87171">⚠️ 致命缺陷：</text>
+          <text x="10" y="110" fill="#fca5a5">• 一旦 err 被 fmt.Errorf("%w") 包装立即失效！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 紧凑循环内的纯标准库已知未包装错误；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 对纳秒级延迟极其敏感的热点路径；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 内部私有小范围流转。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. errors.Is (递归 Unwrap 比对)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">if errors.Is(err, sql.ErrNoRows) { ... }</text>
+          
+          <text x="10" y="38" fill="#86efac">性能指标：</text>
+          <text x="10" y="54" fill="#34d399">• 耗时: 3.5 ~ 6.0 ns/op</text>
+          <text x="10" y="70" fill="#34d399">• 堆分配: 0 B/op (0 逃逸)</text>
+          
+          <text x="10" y="94" fill="#4ade80">✓ 健壮性：</text>
+          <text x="10" y="110" fill="#4ade80">• 完美支持任意层级的 %w 包装与 Join 树！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 99% 的日常业务错误判定黄金标准；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼具健壮代码契约与极高执行性能；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 官方强力推荐！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. errors.As (反射类型提取)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">var pathErr *os.PathError</text>
+          <text x="10" y="32" fill="#fb923c">if errors.As(err, &amp;pathErr) { ... }</text>
+          
+          <text x="10" y="54" fill="#fed7aa">性能指标：</text>
+          <text x="10" y="70" fill="#cbd5e1">• 耗时: 45 ~ 60 ns/op (慢 15 倍)</text>
+          <text x="10" y="86" fill="#cbd5e1">• 堆分配: 0 B/op (受编译器优化)</text>
+          
+          <text x="10" y="110" fill="#34d399">✓ 能够提取结构体内部携带的丰富元数据！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 需要解包获取自定义错误字段时使用；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 避免在热点纳秒级核心循环中频繁调用；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级丰富上下文提取器。</text>
+      </g>
+    </g>
+  </g>
+</svg>

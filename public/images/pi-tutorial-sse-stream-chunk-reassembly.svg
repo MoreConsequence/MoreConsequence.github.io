@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">流式 Tool Call JSON 片段动态拼接与增量组装算法</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Chunk 1: '{"path":' ──► Chunk 2: '"src/' ──► Chunk 3: 'main.ts"}' ──► 动态缓冲区追加 ──► 结束瞬间 JSON.parse() 触发执行</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Tool Call Start 事件捕获 (Tool Call Header Event)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">捕获 tool_call_id = "call_abc123" 与函数名 name = "view_file" ──► 初始化内存参数字符串缓冲区</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">开启工具参数接收槽位！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 增量 JSON 参数片段流式灌入 (Incremental Chunk Ingestion)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">逐包接收 arguments_delta 字符串并顺序追加至 buffer ──► 同时向 TUI 渲染工具调用参数动画</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将微小数据包无缝聚合成完整数据体！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 流结束与强类型反序列化 (Stream End &amp; Strict JSON Parse)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">收到 finish_reason = "tool_calls" ──► 执行 JSON.parse(buffer) ──► 转化为强类型参数对象</text>
+        <text x="15" y="62" font-size="8" fill="#047857">严密防范非法残缺 JSON 导致的运行时 Panic！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 极速触发本地函数执行 (Instant Dispatch to Local Tool Handler)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">0 毫秒延迟直接调用本地 view_file(params) ──► 达成最高性能的自主交互闭环！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代 LLM 流式通信核心基石算法！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis Set 底层编码演进：intset 紧凑数组 ──► hashtable 哈希表内存跳跃</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">纯整数且 &lt; 512 个 (intset 仅 8 字节/元素) ──► 混入一个字符串或超限 ──► 瞬间跃迁为 dict (dictEntry + robj 耗费 64 字节/元素)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: intset -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. intset: 极致紧凑的连续内存整数数组</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#34d399">typedef struct intset {</text>
+          <text y="28" fill="#86efac">    uint32_t encoding; // INTSET_ENC_INT16/32/64</text>
+          <text y="42" fill="#86efac">    uint32_t length;   // 元素数量</text>
+          <text y="56" fill="#86efac">    int8_t contents[]; // 物理连续二进制内存</text>
+          <text y="70" fill="#34d399">} intset;</text>
+          
+          <text y="94" fill="#38bdf8">✓ 内存开销: 存储 500 个 int64 仅需 ~4KB 内存！</text>
+          <text y="110" fill="#4ade80">✓ CPU 缓存极度友好 (L1/L2 Cache 预取)，二分查找 O(log N) 极速！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制亮点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 随着数值增大自动从 int16 升档为 int32/int64；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 零指针开销，零内存碎片；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 百万级用户 ID 标签集合的最佳存储结构！</text>
+      </g>
+    </g>
+
+    <!-- Right: hashtable Mutation -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">2. hashtable: 跃迁后内存膨胀 8 倍</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 触发跳跃阈值: 元素 &gt; 512 或 SADD 混入 1 个字符串 "abc"</text>
+          <text y="30" fill="#fca5a5">1. 结构彻底退化为 dict 哈希表</text>
+          <text y="46" fill="#fca5a5">2. 每个元素必须包装为: dictEntry (24B) + robj (16B) + SDS (16B+)</text>
+          <text y="62" fill="#ef4444">3. 加上 Jemalloc 内存对齐，单元素开销飙升至 ~64 字节！</text>
+          
+          <text y="88" fill="#ef4444">🔴 物理内存实测：</text>
+          <text y="104" fill="#fb7185">存储 500 个元素内存从 4KB 瞬间暴涨至 32KB (800% 暴增！)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产降本优化：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 调整 set-max-intset-entries 为 1024~2048；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 严禁在纯数字 ID 集合中误塞入 "id_123" 字符串前缀；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 单机 Redis 内存直接节约 70% 以上！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">内存指标三剑客：RSS、heapUsed 与 GC 后存活量各回答什么问题</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">RSS (操作系统物理常驻内存，回答 OOM 风险) ｜ heapTotal (申请堆空间) ｜ heapUsed (真实对象占用) ｜ GC 后保留量 (真实泄漏指标)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. RSS (物理常驻内存)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 核心回答：进程会不会被 OOM Killer 杀掉？</text>
+          <text x="10" y="34" fill="#93c5fd">• 包含全部物理页 (V8 Heap + C++ 扩展</text>
+          <text x="10" y="48" fill="#93c5fd">  + Buffer 外部内存 + 线程栈 + 共享库)</text>
+          
+          <text x="10" y="70" fill="#4ade80">特点：</text>
+          <text x="10" y="86" fill="#cbd5e1">• GC 回收后，内存并不一定归还 OS</text>
+          <text x="10" y="100" fill="#cbd5e1">• 会保留在 glibc / jemalloc 内存池中</text>
+          <text x="10" y="118" fill="#fbbf24">► RSS 高不等于内存泄漏！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">排查场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 容器 Cgroup 内存限制达到 95% 时告警；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 检查 Buffer / C++ Addon 是否未释放；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 服务运维容量规划的核心依据。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. heapUsed (堆对象占用)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 核心回答：业务代码当前存活了多少 JS 对象？</text>
+          <text x="10" y="34" fill="#86efac">• 包含 String、Object、Array、Closure 闭包</text>
+          
+          <text x="10" y="56" fill="#38bdf8">特点：</text>
+          <text x="10" y="70" fill="#cbd5e1">• 随着业务请求快速波动（锯齿状锯齿图）</text>
+          <text x="10" y="86" fill="#cbd5e1">• 包含大量"即将被回收的临时短命对象"</text>
+          
+          <text x="10" y="108" fill="#34d399">► 瞬间峰值高代表瞬时吞吐大，不代表泄漏！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">排查场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 评估单次请求产生的内存垃圾量；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 指导代码进行对象复用与 Buffer 优化；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 优化 CPU GC 消耗。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. GC 后保留量 (真实泄漏指标)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 核心回答：代码是否存在真正的内存泄漏？</text>
+          <text x="10" y="34" fill="#fed7aa">• 每次 Full GC 结束后的基线内存水平</text>
+          
+          <text x="10" y="56" fill="#f87171">判断标准：</text>
+          <text x="10" y="70" fill="#f87171">• 正常系统: 每次 GC 后基线保持平稳</text>
+          <text x="10" y="86" fill="#ef4444">• 泄漏系统: 每次 GC 后的基线单调持续上升！</text>
+          
+          <text x="10" y="108" fill="#4ade80">✓ 唯有 GC 后保留量持续上涨才是铁证！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">排查军规：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 抓取两次 Full GC 后的 Heap Snapshot 做对比；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 排查全局 Map、事件未注销、闭包引用；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 彻底根治生产内存泄漏恶疾！</text>
+      </g>
+    </g>
+  </g>
+</svg>

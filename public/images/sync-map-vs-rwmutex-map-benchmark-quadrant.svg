@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">并发 Map 选型三维决策矩阵：sync.Map vs RWMutex vs 分段锁</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">读多写少且 Key 集合稳定 (sync.Map 胜出) vs 频繁插入删除新 Key (sync.Map 发生 dirty 频繁重建退化，RWMutex / 分段锁胜出)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. sync.Map (只读稳定场景)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">适用场景：</text>
+          <text x="10" y="34" fill="#86efac">• 读写比 &gt; 9:1</text>
+          <text x="10" y="50" fill="#86efac">• Key 集合写入一次后几乎只读</text>
+          <text x="10" y="66" fill="#38bdf8">• 多个 Goroutine 并发更新互不相交的 Key</text>
+          
+          <text x="10" y="92" fill="#34d399">性能优势：</text>
+          <text x="10" y="108" fill="#4ade80">多核并行扩展吞吐量高出 10 倍！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">经典应用：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 反射类型元数据缓存 (reflect/type)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 证书与连接单例持有池；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造稳固只读缓存。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. RWMutex + Map (通用写多)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">适用场景：</text>
+          <text x="10" y="34" fill="#86efac">• 频繁追加写入全新随机 Key</text>
+          <text x="10" y="50" fill="#86efac">• 频繁 delete 删除老 Key</text>
+          
+          <text x="10" y="74" fill="#38bdf8">结构优势：</text>
+          <text x="10" y="90" fill="#34d399">• 强类型泛型安全 (Map[K]V)，0 装箱！</text>
+          <text x="10" y="106" fill="#34d399">• 0 dirty 重建复制开销</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">经典应用：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 用户在线状态会话表；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 业务领域标准实体缓存；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 通用业务主力军。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 分段锁 Map (超高并发写)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">适用场景 (orcaman/concurrent-map):</text>
+          <text x="10" y="34" fill="#fed7aa">• 百万级 QPS 高频并发写入与更新</text>
+          
+          <text x="10" y="58" fill="#38bdf8">分片机制：</text>
+          <text x="10" y="74" fill="#34d399">• 按哈希划分 32 个独立小分片 (Shard)</text>
+          <text x="10" y="90" fill="#34d399">• 每个分片独立一把 Mutex 互斥锁</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 锁竞争概率暴降 32 倍！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">经典应用：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 高并发计数器、本地大容量内存缓存；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 网关 Session 与路由分发表；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级吞吐巅峰架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

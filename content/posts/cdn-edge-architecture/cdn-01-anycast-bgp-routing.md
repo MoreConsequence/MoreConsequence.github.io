@@ -142,6 +142,10 @@ QUIC（基于 UDP 的新一代传输协议）从协议层彻底根治了该问�
 
 ---
 
+
+
+![BGP Anycast 路由震荡与 TCP 连接重置 (RST) 防御拓扑](../../../public/images/bgp-anycast-route-flapping-tcp-reset-mitigation.svg)
+
 ## 四、 四层 TCP/TLS 终结代理与分段时延削减
 
 当流量被 Anycast 稳定吸附到边缘 PoP 后，CDN 消除协议延迟的核心机制就是 **四层 TCP/TLS 终结代理（TCP Termination Proxy）**。

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Goroutine 泄漏本质与 pprof profile 排查定位树</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Channel 悬空阻塞 ｜ 未设置超时导致 HTTP 连接挂死 ｜ pprof /debug/pprof/goroutine?debug=2 聚合栈</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Leak Causes -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ Goroutine 泄漏三大高发元凶</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="60" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="9" font-weight="700" fill="#991b1b">1. 无缓冲 Channel 接收者提前退出：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">发送者 ch &lt;- val 永久阻塞在 chanrecv 队列，永远无法被 GC！</text>
+        <text x="10" y="48" font-size="7.5" fill="#dc2626">• 导致该 Goroutine 及其栈上引用的全部对象常驻内存！</text>
+
+        <g transform="translate(0, 68)">
+          <rect width="405" height="60" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#991b1b">2. 未设置超时的外部 I/O 阻塞：</text>
+          <text x="10" y="34" font-size="7.5" fill="#7f1d1d">http.Get(url) 未设 Client.Timeout，对端断网导致永远阻塞在 readLoop</text>
+          <text x="10" y="48" font-size="7.5" fill="#dc2626">• 每天累积数万个僵尸 Goroutine，最终触发 OOM 崩溃！</text>
+        </g>
+
+        <g transform="translate(0, 136)">
+          <rect width="405" height="60" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#991b1b">3. sync.WaitGroup / Lock 忘调 Done / Unlock：</text>
+          <text x="10" y="34" font-size="7.5" fill="#7f1d1d">发生 panic 时未在 defer 中释放，下游大量协程永久等待 semacquire</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right: pprof Diagnosis -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ pprof 快速诊断与代码治理铁律</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 1. 抓取聚合调用栈</text>
+          <text y="30" fill="#93c5fd">curl "http://localhost:6060/debug/pprof/goroutine?debug=2"</text>
+          
+          <text y="50" fill="#f87171">goroutine 8888 [chan send, 500 minutes]:</text>
+          <text y="66" fill="#fca5a5">runtime.gopark(0x..., 0x..., 0x6, 0x17)</text>
+          <text y="82" fill="#fca5a5">runtime.chansend(0x..., 0x...)</text>
+          <text y="98" fill="#fb7185">myproject/worker.PushJob(...)  &lt;-- 瞬间锁定泄漏代码行！</text>
+
+          <text y="122" fill="#34d399">✓ 关注状态标签: [chan send], [select], [semacquire]</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">生产三定律：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">1. 谁创建 Goroutine，谁必须负责明确其退出生命周期；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">2. 跨协程通信统一传入 context.Context 监听 ctx.Done()；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">3. 在单元测试中引入 goleak (uber-go/goleak) 自动化拦截！</text>
+      </g>
+    </g>
+  </g>
+</svg>

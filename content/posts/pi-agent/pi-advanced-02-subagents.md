@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 许多多 Agent 框架（如 AutoGen、CrewAI）在核心库中硬编码了复杂的“角色分配”、“集中式路由器”与“多方聊天室”机制。这种设计在实际工程中极易导致 **Token 消耗雪崩（多个 Agent 互相寒暄复读）**、**死锁阻塞** 与 **上下文污染**。Pi 的工程哲学坚持：**核心只管单 Agent 循环，多 Agent 协作通过操作系统进程或轻量扩展来组装**。本文作为《Pi Agent 全景通才教程》第二十课，带你编写工业级的 `subagent.ts` 扩展，掌握父子进程上下文物理隔离、并发扇出与结果汇聚（Fan-out / Fan-in），并实现严格的防递归与深度熔断机制。
 
+
+---
+
+![Subagents 协作模式：用轻量进程编排多 Agent 并行开发与隔离分支](../../../public/images/pi-subagents-orchestration-parallel-development.svg)
+
 ## 一、单体大上下文 vs 隔离 Subagent 模式
 
 当一个任务非常复杂（例如：同时重构后端 API、编写前端组件并执行集成测试）时，两种模式的对比：
@@ -37,6 +42,10 @@ flowchart TD
 1. **上下文物理隔离（Context Isolation）**：子 Agent 在探索过程中产生的上百条调试命令、编译报错和临时中间文件，全部留在子进程的私有会话中，**绝不污染主 Agent 的整洁上下文**；
 2. **多模型特化（Model Specialization）**：主 Agent 可以使用高智力、高成本模型（如 Claude 3.7 Sonnet）做统筹规划，而分发给 Subagent 的重复性子任务（如“给 10 个函数补齐 JSDoc 注释”）可以使用极速低成本模型（如 GLM 4 / DeepSeek V3）；
 3. **天然支持并行执行（Parallel Execution）**：多个 Subagent 在独立进程中并行跑测试或跑代码生成，耗时从串行线性累加缩短为最长子任务时间。
+
+
+
+![Pi Subagent 层级化任务委派树：Root Agent -> Specialized Leaf Agents](../../../public/images/pi-subagent-tree-hierarchical-delegation.svg)
 
 ## 二、架构设计：Subagent 的生命周期与数据流
 
@@ -154,6 +163,10 @@ export default function (pi: ExtensionAPI) {
   });
 }
 ```
+
+
+
+![Pi Subagent 点对点消息协议与 Token 预算层级控制](../../../public/images/pi-subagent-message-passing-and-budget-control.svg)
 
 ## 四、多 Agent 系统的三大反模式（Anti-Patterns）
 

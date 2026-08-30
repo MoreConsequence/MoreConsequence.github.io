@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">秒杀库存扣减三层闸门体系：Redis Lua 预扣减与异步排队落库</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">100 万 QPS 洪峰 ──► 闸门 1: 客户端/网关限流 (拦 90%) ──► 闸门 2: Redis Lua 原子预扣减 (拦 9.9%) ──► 闸门 3: Kafka 削峰写入 MySQL</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 第一道闸门：网关风控与限流</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 面对 100 万 QPS 突发流量</text>
+          <text x="10" y="34" fill="#93c5fd">1. 静态资源 CDN 缓存，答题验证码削峰</text>
+          <text x="10" y="50" fill="#93c5fd">2. 用户 UID 频次限制 (单用户 1 秒 1 次)</text>
+          <text x="10" y="68" fill="#34d399">3. 黑产设备指纹与 WAF 拦截：</text>
+          <text x="16" y="82" fill="#4ade80">   直接在 Nginx 边缘丢弃 90% 恶意脚本流量！</text>
+          <text x="10" y="104" fill="#38bdf8">✓ 仅放行 10 万合法有效请求穿透到后端！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 保护核心业务集群不被第一波海啸冲垮；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 纯内存令牌桶极速丢弃；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚固的流量入口防洪堤。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 第二道闸门：Redis Lua 预扣减</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// Lua 脚本单线程原子执行</text>
+          <text x="10" y="34" fill="#86efac">local stock = redis.call('get', KEYS[1])</text>
+          <text x="10" y="48" fill="#86efac">if tonumber(stock) &gt;= tonumber(ARGV[1]) then</text>
+          <text x="16" y="62" fill="#34d399">  redis.call('decrby', KEYS[1], ARGV[1])</text>
+          <text x="16" y="76" fill="#34d399">  return 1 -- 扣减成功</text>
+          <text x="10" y="90" fill="#f87171">else return 0 -- 库存售罄</text>
+          <text x="10" y="104" fill="#86efac">end</text>
+          <text x="10" y="122" fill="#4ade80">✓ 纯内存 10 万 QPS 极速计算，100% 0 超卖！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 100 件商品瞬间被前 100 个请求扣完；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 后续 9.99 万个请求直接在 Redis 内存中秒拒；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 真正到达数据库的只有 100 个成功订单！</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 第三道闸门：异步削峰与落库</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 仅 100 个成功请求投递至 MQ</text>
+          <text x="10" y="34" fill="#fed7aa">kafka.Send("seckill_success_topic", order)</text>
+          
+          <text x="10" y="56" fill="#38bdf8">1. 订单消费端平稳消费 (速度 100 单/秒)</text>
+          <text x="10" y="70" fill="#4ade80">2. MySQL 最终事务落盘:</text>
+          <text x="16" y="84" fill="#86efac">   UPDATE goods SET stock = stock - 1</text>
+          <text x="16" y="98" fill="#86efac">   WHERE id = 1 AND stock &gt;= 1;</text>
+          <text x="10" y="116" fill="#34d399">✓ 数据库 CPU 波动 &lt; 5%，丝滑完成数十亿秒杀！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 将海量不可控洪峰转化为平稳均匀的清流；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 彻底消灭行锁争用导致的数据库死锁暴跌；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造现代电商大促最高殿堂级架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

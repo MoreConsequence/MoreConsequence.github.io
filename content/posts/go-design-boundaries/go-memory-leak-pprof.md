@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 内存泄漏的证明方法不是“某一刻内存很高”，而是**同一进程两个时刻的差**。`go tool pprof` 默认看 `inuse_space`，但它不能替代 `MemStats` 和 goroutine profile：`Sys` 涨不等于 `HeapAlloc` 涨，`TotalAlloc` 狂涨不等于对象仍被引用，goroutine 泄漏也可能主要体现为栈/调度资源。仓库内 probe 固定保留 32×64KiB 缓冲并阻塞 100 个 goroutine，记录前后 HeapAlloc、对象数和 goroutine 数；正确姿势是先看总账，再用 `-base` 对拍两帧。
 
+
+---
+
+![Go 堆内存排查：inuse_space / inuse_objects 真实常驻 vs alloc_space 累计分配](../../../public/images/go-heap-pprof-inuse-alloc-objects.svg)
+
 ## 一、先分清三本账：RSS、HeapAlloc 与 goroutine
 
 “进程内存涨了”至少可能指三件不同的事：
@@ -22,6 +27,10 @@ series: "Go 的设计边界"
 | goroutine profile | 有多少 goroutine，以及它们按调用栈分成哪些等待组 | 不直接告诉你每组持有了多少业务对象 |
 
 因此有两种常见误判：RSS 涨了就判定堆泄漏，或者 HeapAlloc 没明显变化就忽略不断增加的 goroutine。正确的问题不是“哪个数字大”，而是“哪个资源在同一时间窗口内持续增长、由谁持有、能否释放”。
+
+
+
+![pprof 堆内存四大指标：inuse_space (当前存活) vs alloc_space (历史累计)](../../../public/images/pprof-heap-alloc-space-vs-inuse-space.svg)
 
 ## 二、用受控输入建立两帧基线
 
@@ -69,6 +78,10 @@ curl -s 'localhost:6060/debug/pprof/goroutine?debug=1' > /tmp/goroutine.2.txt
 ```
 
 看二进制 profile 时，`-top` 适合回答“谁的累计值最高”，`-traces` 适合回答“调用链在哪里等待”；看 `debug=1` 文本时，第一行的总数和每组栈尾的业务行号通常更快定位阻塞点。上一组 `go-goroutine-leak-pprof` 的 probe 就是用三组源码行把这件事固定下来。
+
+
+
+![Go 内存泄漏暗坑：runtime.SetFinalizer 循环引用与小切片持有大底层数组](../../../public/images/finalizer-slice-hold-memory-leak-chains.svg)
 
 ## 四、三个误报：现象相似，修复动作完全不同
 

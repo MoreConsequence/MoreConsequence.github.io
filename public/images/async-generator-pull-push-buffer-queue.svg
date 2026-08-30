@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">AsyncGenerator 协同拉取模型：天然背压 (Backpressure) 物理机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">for await (... of stream) 按需拉取 ──► 消费者消费完一个 Chunk 才请求下一个 ──► 内存占用恒定 1MB 处理 100GB 大文件</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 消费者发起按需拉取请求 (Consumer Calls iterator.next())</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">for await (const chunk of readHugeFile()) ──► 向生产生成器发出单次数据拉取指令</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">拉取式（Pull-based）架构天然具备流控，消费者掌控整个节奏！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 生产者按需执行并挂起 (Producer Yields Chunk &amp; Suspends)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">生产者读取 64KB 块 ──► 执行 yield chunk ──► 生成器函数执行权立即暂停并保存协程上下文</text>
+        <text x="15" y="62" font-size="8" fill="#047857">在消费者处理完毕前，生产者绝不主动继续读取下一块数据！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 慢消费者下游处理 (Slow Consumer Processing)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">await processChunkInSlowDB(chunk) ──► 耗时 50ms 写入外部存储</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">上游生产者在此 50ms 期间处于完全睡眠状态，内存中始终只有 1 个 64KB 块！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 恒定内存占用与零 OOM 崩溃 (Flat Memory Profile: O(1) RAM)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">处理 100GB 大文件或数十万长文本 LLM 流 ──► 内存占用始终平稳压制在 5MB 以内！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代 TypeScript 流式编程的最优雅核心范式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

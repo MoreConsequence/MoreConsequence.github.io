@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Diff-Aware 行级代码编辑：模糊锚点匹配与语法树安全校验</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">大文件全量重写 (容易在长文本中截断丢代码，浪费 95% Token) vs 精准行级差分替换 (模糊空格容错 + 唯一性校验 + AST 验证)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Full Rewrite Bug -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 全量文件重写：极其危险的粗暴修改</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 修改 2000 行文件中的 1 个变量</text>
+          <text y="28" fill="#fca5a5">1. 要求模型重新生成全部 2000 行代码</text>
+          
+          <text y="50" fill="#ef4444">🔴 致命惨案：</text>
+          <text y="66" fill="#fb7185">• 模型中途输出省略号 "// ... 其余保持不变 ..."</text>
+          <text y="82" fill="#ef4444">• 直接写盘导致 1800 行核心业务代码永久丢失！</text>
+          <text y="98" fill="#f87171">• 消耗 8,000 输出 Tokens，耗时长达 20 秒！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 输出 Token 成本极高；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 极容易破坏已有注释、缩进与未修改逻辑；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 严禁在生产级代码 Agent 中使用！</text>
+      </g>
+    </g>
+
+    <!-- Right: Diff-Aware Edit -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Diff-Aware 精准替换：模糊锚点定位</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">edit({ path: "main.go", old_str: "...", new_str: "..." })</text>
+          
+          <text y="38" fill="#38bdf8">1. Levenshtein / 空格折叠模糊匹配锚点代码块</text>
+          <text y="54" fill="#86efac">2. 校验在文件中出现且仅出现 1 次 (保证唯一性)</text>
+          <text y="70" fill="#34d399">3. 内存执行精确替换，未触及行 100% 保持原貌</text>
+          
+          <text y="96" fill="#4ade80">✓ 仅消耗 30 个 Token，耗时 &lt; 200ms！</text>
+          <text y="112" fill="#4ade80">✓ 100% 杜绝代码被意外吞掉或截断！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 速度提升 100 倍，成本降低 99%；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 生成的 Git Diff 极其干净，人类审查体验极佳；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 现代专业级编程智能体的标配核心武器！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">应用层反压编程范式：Node.js Drain 事件 vs Go Channel 阻塞</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">若忽略反压疯狂 write() ──► 内存暴涨引发 OOM 崩溃 ｜ Node.js 监听 write()=false + once('drain') ｜ Go 原生基于带缓冲 Channel 挂起</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Node.js Drain -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Node.js Stream 反压治理 (highWaterMark &amp; drain)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">const canWrite = socket.write(chunk);</text>
+          <text y="28" fill="#86efac">if (!canWrite) { // 缓冲区超过 16KB highWaterMark！</text>
+          <text y="44" fill="#fb923c">  source.pause(); // 立即暂停上游读取！</text>
+          <text y="58" fill="#34d399">  socket.once('drain', () =&gt; {</text>
+          <text y="72" fill="#4ade80">    source.resume(); // 缓冲区排空后恢复抽取！</text>
+          <text y="86" fill="#34d399">  });</text>
+          <text y="100" fill="#86efac">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 内存占用恒定在 16KB 水位线以内；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 彻底杜绝大文件流式转发时的 OOM 崩溃；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造金融级健壮网关。</text>
+      </g>
+    </g>
+
+    <!-- Right: Go Channel Blocking -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Go 语言 CSP 原生阻塞 (Channel Backpressure)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 带缓冲 Channel 作为天然流量阀门</text>
+          <text y="28" fill="#86efac">queue := make(chan []byte, 100)</text>
+          
+          <text y="50" fill="#38bdf8">1. 生产者推入: queue &lt;- data (队列满时 Goroutine 自动挂起)</text>
+          <text y="66" fill="#34d399">2. 消费者抽水: data := &lt;-queue (消费完成后自动唤醒生产者)</text>
+          <text y="82" fill="#34d399">3. 0 回调嵌套、0 状态标志位判断！</text>
+          
+          <text y="108" fill="#4ade80">✓ GMP 调度器纳秒级原语，优雅天成！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 借助语言级并发机制轻松实现全链路反压；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 高并发微服务吞吐与稳定性的终极法宝；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代化服务端工程典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

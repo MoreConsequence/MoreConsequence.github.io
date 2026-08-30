@@ -10,6 +10,11 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 这个系列读到这里可以回答最重要的问题了：**客户端和服务端到底怎么配合完成一次测速？**答案是：一个 Web Worker 按 `test_order` 字符串（默认 `"IP_D_U"`）调度六类 HTTP 交互；客户端握有几乎全部**计量权**（采样、窗口、补偿系数），服务端只保留两类权力——资源上限裁量（`ckSize` 钳制）与"接得住"。本文给出完整交互时序、每个请求的字段级拆解、以及三组此前没人放在一起讲的算法细节：grace time 重置、`time_auto` 加速收尾、抖动的非对称加权平均。全部结论可在 `web/assets/speedtest_worker.js`（724 行）与服务端 handler 上逐行复核。
 
+
+---
+
+![LibreSpeed 测速协议合同：Web Worker 调度剧本、端点交互时序与不对称计量权](../../../public/images/librespeed-go-contract-worker-lifecycle-script.svg)
+
 ## 一、总剧本：一个字符串就是一台状态机
 
 Worker 收到 `start` 命令后不写一行 if-else 编排——测试流程完全由 `settings.test_order` 字符串驱动（`speedtest_worker.js:41`）：
@@ -22,6 +27,10 @@ test_order: "IP_D_U",
 `runNextTest` 每次取出当前字符、switch 到对应函数、指针前移；字符 `_` 就是硬编码的一秒停顿；同一字母重复出现会被 `iRun/dRun/uRun/pRun` 标志拦住。**改测速流程 = 改一个字符串**，比如 `"IP_P_D_U"` 会插入独立延迟测试段。
 
 这里有一个源码级的意外发现：**默认序列 `IP_D_U` 里没有 `P`**。也就是说按默认配置部署，页面上的 Ping/Jitter 根本不会被测量（`pingTest` 只由字符 `P` 触发，全仓库无其他调用点）。部署者必须显式传入含 `P` 的顺序。这是"默认值即产品决策"的绝佳反例——它不是 bug，但每一个没注意到它的部署者都在无声地砍掉两个指标。
+
+
+
+![遥测上报与 ID 混淆：ULID 可排序主键与伪随机字符串映射](../../../public/images/librespeed-go-telemetry-ulid-obfuscation.svg)
 
 ## 二、完整交互时序
 
@@ -75,6 +84,10 @@ xhr[i].open("GET", url_dl + sep + (mpot?"cors=true&":"") + "r=" + Math.random() 
 3. **`time_auto` 提前收尾**（`:365-369`）：每 200ms 给 `bonusT += min(400, 5×speed/100000)`——速率越高测试越短，快连接十几秒的预算能被压缩掉一大半。最终 `dlStatus = totLoaded/(t/1000) × 8 × overheadCompensationFactor ÷ 1e6`，其中**开销补偿系数 1.06** 是给 TCP/IP 协议头留的还原比例（可配，见其 doc.md）。
 
 容错也有明确档位：`xhr_ignoreErrors` 0=失败终止 / 1=重启该流（默认）/ 2=静默忽略。每条流 `onload` 后主动 `abort()` 再重启——单请求 100 MiB 只是上限，实际靠不断重启维持持续流量。
+
+
+
+![非对称计量权模型：下行客户端计量 vs 上行服务端计量权威性对照](../../../public/images/asymmetric-measurement-authority-flow.svg)
 
 ## 四、上行合同：Blob、identity 与一条 IE11 血泪分支
 

@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 清单的价值不是让人“记得做”，而是让每个勾都指向一份可以复核的证据。当前 `experiments/service/docs/release-checklist.md` 把本地教学原型能证明的内容，与需要持久化数据库、GitHub Actions run、staging smoke、监控和回滚演练的内容分开。现在能勾的是局部代码和测试，不能勾的外部项不会因为文章系列收官而自动变绿。
 
+
+---
+
+![发布清单与客观证据闸门：把每一项打勾与自动化机器证据强绑定](../../../public/images/service-release-checklist-evidence-gate.svg)
+
 ## 一、先按证据等级分层，而不是把所有项目都画成绿色
 
 当前清单使用三种状态：
@@ -22,6 +27,10 @@ series: "把原理变成服务"
 | 当前未实现 | PostgreSQL 幂等、staging deploy、告警和回滚 | 外部系统、故障注入和恢复记录 |
 
 清单不能把第二行和第三行改成第一行。它的第一条使用纪律是：勾选时写日期、commit、命令和 evidence 路径；没有证据就保留未勾。
+
+
+
+![生产发布 Go/No-Go 严格核对清单：Schema 兼容、回滚预案、降级开关与监控就绪](../../../public/images/production-release-go-no-go-checklist.svg)
 
 ## 二、代码层先检查“不变量”，不要只看启动成功
 
@@ -78,6 +87,10 @@ rollback_artifact=<previous-digest>
 ```
 
 其中 `schema_migration` 不能被“回滚代码”一笔带过。破坏性删列或改消息格式可能让旧版本无法启动；更稳的发布顺序是 expand（先加兼容结构）→ 双读/双写观察 → contract（最后清理旧结构），并把每一步的停止条件写进清单。
+
+
+
+![数据库无停机迁移法：扩展与收缩 (Expand and Contract / Parallel Run) 阶段演进](../../../public/images/expand-and-contract-database-migration.svg)
 
 ## 四、SLO 与回滚是运行记录，不是 Markdown 复选框
 

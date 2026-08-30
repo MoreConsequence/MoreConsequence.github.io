@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">模型所见必留痕：Append-Only Session Log 与多维会话投影 (Projection)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">底账层 (不可变 JSONL 全量日志) ──► 投影引擎 ──► 投影 A: LLM 上下文消息流 ｜ 投影 B: 终端 TUI 渲染视图 ｜ 投影 C: 遥测成本账本</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Append-Only Immutable Log -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 不可变底层事实账本 (Source of Truth)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 唯一事实来源: session.jsonl</text>
+          <text y="28" fill="#86efac">{"seq":1,"type":"USER","content":"修复死锁"}</text>
+          <text y="42" fill="#86efac">{"seq":2,"type":"THINKING","content":"分析 mutex..."}</text>
+          <text y="56" fill="#fed7aa">{"seq":3,"type":"TOOL_CALL","name":"read","args":{"path":"a.go"}}</text>
+          <text y="70" fill="#86efac">{"seq":4,"type":"TOOL_RES","stdout":"package main..."}</text>
+          
+          <text y="94" fill="#34d399">✓ 严禁在内存中偷偷修改状态而不记账！</text>
+          <text y="110" fill="#4ade80">✓ 任何输入、模型生成、环境反馈 100% 顺序物理落盘！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 借鉴分布式系统的 WAL (Write-Ahead Logging) 原则；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 任何派生状态均可由该日志 100% 确定性重放；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造银行级审计与复现基石。</text>
+      </g>
+    </g>
+
+    <!-- Right: Multi-View Projection Engine -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 多维无副作用投影 (Projections)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 纯函数投影转换: state = project(log)</text>
+          
+          <text y="34" fill="#38bdf8">1. LLM Context 投影: 过滤掉非标准字段，注入 System Prompt</text>
+          <text y="50" fill="#86efac">2. TUI 视图投影: 提取思考链折叠卡片与高亮 Diff 代码块</text>
+          <text y="68" fill="#fb923c">3. Token 记账投影: 统计输入/输出/缓存 Tokens 与账单金额</text>
+          <text y="86" fill="#34d399">4. SWE-Bench 评测投影: 提取最后的 Git Patch 用于自动化验证</text>
+          
+          <text y="110" fill="#4ade80">✓ 表现层与存储层彻底解耦，演进自由度极高！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 业务逻辑全部写成纯函数，单元测试覆盖率达 100%；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 新增 Web/IDE 前端无需修改底层核心状态；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代响应式 Agent 架构的经典范式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

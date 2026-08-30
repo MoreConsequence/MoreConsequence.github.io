@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Oract 状态机重入与幂等恢复拓扑 (Reentrancy Invariant)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统易失 Agent (崩溃后重新发起 Tool 调用导致重复扣费/重复提交 PR) vs Oract 耐久重入 (日志短路拦截，数学级证明 Exactly-Once 语义)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Volatile Disaster -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 易失 Agent：重启引发重复破坏性副作用</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">第 5 步: create_pull_request() 成功后突发断电：</text>
+          
+          <text y="38" fill="#ef4444">致命重复执行：</text>
+          <text y="52" fill="#fca5a5">• 重启后无状态内存为空，重新从第 1 步执行</text>
+          <text y="68" fill="#ef4444">• 再次执行 create_pull_request() ──► 报错 "PR Already Exists"</text>
+          <text y="84" fill="#ef4444">• 或者创建了 10 个重复垃圾 PR，打乱线上 Git 分支！</text>
+          
+          <text y="106" fill="#f87171">🔴 缺乏副作用幂等控制！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 在金融、支付、发布等核心场景极其危险；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 无法胜任生产级关键任务；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 必须引入耐久重入证明！</text>
+      </g>
+    </g>
+
+    <!-- Right: Oract Proof -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Oract 耐久重入：副作用短路与严格幂等</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">基于操作指纹的短路拦截机制：</text>
+          
+          <text y="36" fill="#86efac">1. 每个副作用拥有确定性 hash(step_id, tool_name, params)</text>
+          <text y="50" fill="#38bdf8">2. 重启回放遇到第 5 步 ──► 命中已落盘的执行结果</text>
+          <text y="64" fill="#34d399">3. 0 发起网络请求，直接返回历史 PR URL 证据</text>
+          <text y="78" fill="#4ade80">4. 严格保障物理副作用 Exactly-Once 语义！</text>
+          
+          <text y="104" fill="#4ade80">✓ 达到金融级、工业级绝对可靠性标准！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 赋予自主 Agent 抵抗任意时刻硬件断电的钢铁之躯；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支持超长耗时（跨数天）任务的绝对可靠交付；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Oract 耐久架构核心技术精髓！</text>
+      </g>
+    </g>
+  </g>
+</svg>

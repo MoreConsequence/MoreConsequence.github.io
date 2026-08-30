@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 错误包装链 (Error Wrapping) 与 errors.Is / As 递归树</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">fmt.Errorf("%w", err) 嵌套包装 ──► errors.Is (递归调用 Unwrap() 比对哨兵错误) ｜ errors.As (通过 reflect 递归查找目标结构体类型)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 多层错误嵌套包装 (fmt.Errorf with %w: wrapError)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">err = fmt.Errorf("read db: %w", fmt.Errorf("network timeout: %w", sql.ErrNoRows))</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">将上下文信息与底层根因错误串联为单向/树状引用链！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. errors.Is 哨兵错误等值探测 (errors.Is(err, sql.ErrNoRows))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">逐层检查 target.Is(err) 或 err == target ──► 未命中则调用 Unwrap() 深入下一层 ──► 成功返回 true</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">彻底替代传统的裸 err == ErrNotFound 脆弱比对！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. errors.As 类型断言提取 (errors.As(err, &amp;pgErr))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">基于 reflect 反射递归检查整条错误链 ──► 找到匹配目标类型 *pgconn.PgError ──► 赋值并返回 true</text>
+        <text x="15" y="62" font-size="8" fill="#047857">优雅提取包含具体错误码与字段的自定义错误结构体！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Go 1.20+ 多错误树遍历 (errors.Join / Unwrap() []error)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">支持返回 []error 切片 ──► 形成多叉树 ──► errors.Is / As 采用 DFS 深度优先遍历全量节点！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代化 Go 错误处理体系的终极形态！</text>
+      </g>
+    </g>
+  </g>
+</svg>

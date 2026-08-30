@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 哈希表底层布局：hmap 与 bmap 桶内拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">hmap (count, B 桶数对数, buckets 数组指针) ｜ bmap (tophash[8] 快速初筛 + 8 keys + 8 values + overflow 溢出指针)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. hmap 头部元数据</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">type hmap struct {</text>
+          <text x="10" y="34" fill="#86efac">    count     int            // 键值对总数 len(m)</text>
+          <text x="10" y="50" fill="#86efac">    B         uint8          // 桶总数为 2^B 个</text>
+          <text x="10" y="66" fill="#34d399">    buckets   unsafe.Pointer // 桶数组首地址</text>
+          <text x="10" y="82" fill="#fed7aa">    oldbuckets unsafe.Pointer// 渐进扩容旧桶</text>
+          <text x="10" y="98" fill="#cbd5e1">    flags     uint8          // 并发读写检测位</text>
+          <text x="10" y="114" fill="#38bdf8">}</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 哈希低 B 位定位目标桶 (bucket index)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 哈希高 8 位填入 tophash 用于快速比较；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速两级查找。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. bmap 紧凑桶排列 (8 槽位)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">bmap 连续内存排列优化：</text>
+          
+          <text x="10" y="38" fill="#38bdf8">• tophash [8]uint8  (8 字节连续高位哈希)</text>
+          <text x="10" y="54" fill="#86efac">• keys    [8]keytype(8 个 Key 连续存放)</text>
+          <text x="10" y="70" fill="#34d399">• values  [8]valtype(8 个 Value 连续存放)</text>
+          <text x="10" y="86" fill="#fed7aa">• overflow *bmap     (指向下一个溢出桶)</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 8Key 连续存放避免字节对齐填充浪费！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免 key/value/key/value 造成的内存 padding 浪费；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 桶大小严控在 1 个或数个缓存行内；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 硬件友好设计。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 渐进式扩容 (Incremental Evacuate)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">触发条件：</text>
+          <text x="10" y="34" fill="#fed7aa">1. 装载因子 count/(2^B) &gt; 6.5 (翻倍扩容 B+1)</text>
+          <text x="10" y="50" fill="#fed7aa">2. 溢出桶太多 (等量扩容，重排紧凑内存)</text>
+          
+          <text x="10" y="74" fill="#38bdf8">渐进分摊：</text>
+          <text x="10" y="90" fill="#34d399">• 每次写入/删除时顺便搬迁 2 个旧桶</text>
+          <text x="10" y="106" fill="#4ade80">• 0 集中停顿卡顿！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 将 O(N) 巨量数据迁移平摊为每次 O(1)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 维持极端并发下的低时延；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级哈希表最高典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

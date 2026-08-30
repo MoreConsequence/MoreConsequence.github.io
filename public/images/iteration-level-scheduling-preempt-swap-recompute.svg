@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Continuous Batching 显存超卖抢占机制：Swap-Out 到 CPU 内存 vs 重计算</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">突发流量导致 GPU VRAM 耗尽 ──► 调度器优雅抢占低优先级请求 ──► Swap-Out 暂存主机内存 ──► 空闲时极速恢复</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Swap-Out Pipeline -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Swap-Out / Swap-In 内存换页模式</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 当 GPU VRAM 水位 &gt; 98% 时</text>
+          <text y="28" fill="#fb923c">1. 选定最晚到达的在途 Decode 请求</text>
+          <text y="44" fill="#86efac">2. PCIe 4.0/5.0 DMA 将其 KV 块换出至 Host CPU RAM</text>
+          <text y="60" fill="#34d399">3. 释放 GPU 显存，保全前序高优先级请求顺利生成！</text>
+          
+          <text y="88" fill="#38bdf8">4. 待高优请求完成后，DMA Swap-In 恢复现场！</text>
+          <text y="106" fill="#4ade80">✓ 0 重复计算，恢复仅需 20 毫秒！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 适合单次生成较长（&gt;500 Token）的重请求；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 充分利用主机几百 GB 的充沛 CPU 内存；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 杜绝 OOM 崩溃导致整批请求陪葬！</text>
+      </g>
+    </g>
+
+    <!-- Right: Recompute Pipeline -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Recompute 丢弃与极速重计算模式</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 对于刚生成几个 Token 的短请求</text>
+          <text y="28" fill="#86efac">1. 直接释放其全部 GPU KV Cache 块，0 DMA 开销</text>
+          <text y="44" fill="#38bdf8">2. 调度器将其重新推入 Waiting 待调度就绪队列</text>
+          
+          <text y="68" fill="#34d399">3. 再次调度时执行 Prefill 重新计算:</text>
+          <text y="82" fill="#fed7aa">   • Prefill 阶段由 Tensor Core 极速并行运算 (10ms)</text>
+          
+          <text y="106" fill="#4ade80">✓ 节省宝贵的 PCIe 总线带宽，适合短平快场景！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 智能权衡 PCIe 传输时延与 GPU 算力；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 动态混合调度 (Hybrid Swap-Recompute)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造永不停歇的万级高并发推理引擎！</text>
+      </g>
+    </g>
+  </g>
+</svg>

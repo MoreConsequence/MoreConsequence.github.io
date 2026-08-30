@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">电商秒杀系统四层高并发漏斗拦截架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">100 万 QPS 流量 ──► 1. CDN 静态页面拦截 90% ──► 2. API 网关令牌桶限流 ──► 3. Redis Lua 纯内存原子扣库存 ──► 4. MQ 异步写 DB 保护底座</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 第 1 层: CDN 边缘静态化与动态路径混淆 (Edge Caching: 1,000,000 -&gt; 100,000 QPS)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">商品详情页 HTML/JS/CSS 100% 命中 CDN 边缘 ──► 秒杀按钮时间未到前置灰 ──► 动态下发随机 md5 抢购路径</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">将 90% 的疯狂刷新请求在最外层直接挡回！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 第 2 层: API 网关多维度风控与黑产拦截 (Gateway Anti-Bot: 100,000 -&gt; 20,000 QPS)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">校验用户 Token 与设备指纹 ──► 单用户单 IP 频次限制 ──► 识别自动化脚本与黑产黄牛并直接拒绝</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">保障真实正常用户的公平抢购权益！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 第 3 层: Redis Lua 脚本纯内存原子扣减 (Atomic In-Memory Lua: 20,000 -&gt; 100 QPS)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">EVAL lua_script ──► 单线程校验 stock &gt; 0 并 DECR ──► 仅 100 位真实抢中库存的用户获得下单权！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">0 数据库行锁竞争，0 超卖发生！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 第 4 层: 消息队列异步削峰入库 (RocketMQ / Kafka DB Writer: 100 QPS)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">将成功订单投递至 MQ ──► 后台 Worker 平稳插入 MySQL 创建正式订单并锁定 15 分钟待支付！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">百万流量冲击下数据库依然如丝般平稳呼吸！</text>
+      </g>
+    </g>
+  </g>
+</svg>

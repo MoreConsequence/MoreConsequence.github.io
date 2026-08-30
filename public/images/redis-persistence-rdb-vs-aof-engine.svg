@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis 持久化底层机制：RDB 点备份 vs AOF 增量流水 vs 混合持久化</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">fork() 写时复制 (COW) 内存开销 ｜ appendfsync 刷盘策略 ｜ AOF 重写 (Rewrite) 瘦身机制</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: RDB -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. RDB (全量内存二进制快照)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// BGSAVE 与 fork() COW 机制</text>
+          <text x="10" y="34" fill="#93c5fd">1. 主进程 fork() 出子进程</text>
+          <text x="10" y="48" fill="#93c5fd">2. 父子进程共享物理内存页 (只读标记)</text>
+          <text x="10" y="62" fill="#93c5fd">3. 主进程写时复制 (COW) 产生新页</text>
+          <text x="10" y="76" fill="#93c5fd">4. 子进程串行将快照写入 dump.rdb</text>
+          <text x="10" y="96" fill="#34d399">✓ 恢复速度极快 (直接加载二进制数据)</text>
+          <text x="10" y="112" fill="#34d399">✓ 文件体积紧凑</text>
+          <text x="10" y="130" fill="#f87171">❌ 故障丢失整个快照周期 (如5分钟) 数据</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 灾难异地冷备份 (每夜上传 S3/OSS)</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 主从全量同步初始同步基线</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 容忍数分钟数据丢失的非核心缓存</text>
+      </g>
+    </g>
+
+    <!-- Col 2: AOF -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. AOF (写命令追加日志)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// RESP 协议文本追加流水</text>
+          <text x="10" y="34" fill="#fed7aa">三档 appendfsync 刷盘策略：</text>
+          <text x="10" y="48" fill="#fed7aa">• always: 每次写强制 fsync (吞吐暴跌)</text>
+          <text x="10" y="62" fill="#34d399">• everysec (推荐): 后台每秒刷盘 (最多丢1秒)</text>
+          <text x="10" y="76" fill="#fed7aa">• no: 交由 OS 操作系统自主调度</text>
+          <text x="10" y="96" fill="#34d399">✓ 数据安全性极高 (最多丢失 1 秒数据)</text>
+          <text x="10" y="112" fill="#f87171">❌ 文件膨胀快，恢复时需重放全部命令</text>
+          <text x="10" y="128" fill="#fca5a5">启动加载极慢 (可能需要数十分钟)</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 对数据丢失极度敏感的业务</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 开启 bgrewriteaof 自动重写瘦身</text>
+        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 配合 AOF 缓冲区规避主线程阻塞</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Hybrid -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 混合持久化 (Redis 4.0+ 标配)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// RDB 头部 + AOF 增量尾部</text>
+          <text x="10" y="34" fill="#86efac">1. AOF 重写时，将前半部内存转为 RDB 二进制</text>
+          <text x="10" y="48" fill="#86efac">2. 重写期间的新增命令以 AOF 格式追加在尾部</text>
+          <text x="10" y="68" fill="#38bdf8">文件布局: [ RDB Header ] + [ AOF Delta ]</text>
+          <text x="10" y="88" fill="#34d399">✓ 兼具 RDB 秒级快速加载与恢复</text>
+          <text x="10" y="104" fill="#34d399">✓ 兼具 AOF 最多丢失 1 秒的高可靠性</text>
+          <text x="10" y="120" fill="#34d399">✓ 完美平衡了恢复速度与数据安全性！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">🎯 生产标准配置：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• aof-use-rdb-preamble yes (默认开启)</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• appendfsync everysec</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代 Redis 生产集群唯一推荐方案！</text>
+      </g>
+    </g>
+  </g>
+</svg>

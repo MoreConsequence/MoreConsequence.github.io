@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** defer 的成本取决于位置：**函数尾部的一次性 defer 接近直接调用**（当前基线 3.41ns/0 allocs）；**循环里的 defer 会走慢路径**（100 个 defer 一次函数调用为 3009ns/1609B/101 allocs，约为直接循环的 13.7 倍）；**panic/recover 也不是零成本**——浅调用链 73.96ns、100 层 953ns，而 error 返回约 1.03ns。生产规则仍然是：资源释放可以放心用 defer，但循环里的 defer 要先测；异常路径使用 panic/recover 前要想清楚调用深度和进程语义。
 
+
+---
+
+![Go defer 三代演进：堆上 defer (30ns) vs 栈上 defer vs 开放编码内联 defer (3ns)](../../../public/images/go-defer-open-coded-heap-panic.svg)
+
 ## 一、open-coded defer：为什么函数尾部的 defer 接近直接调用
 
 Go 1.14 引入 open-coded defer：当函数尾部（编译器可证明的返回路径）的 defer 满足条件（数量有限、无循环、可内联）时，不再注册到运行时 defer 链表，而是**直接展开成返回路径上的普通调用**。本机实测（Go 1.25.1，arm64 8 核）：
@@ -22,6 +27,10 @@ Go 1.14 引入 open-coded defer：当函数尾部（编译器可证明的返回�
 | 分配 | 0 |
 
 defer 一个可内联的函数甚至和直接调用同价——这就是为什么"defer 有开销"是过时知识：**函数尾部的 defer 已经是编译期展开的代码，不是运行时注册**。日常代码里 `defer f.Close()`、`defer mu.Unlock()` 的成本可以忽略。
+
+
+
+![Go defer 三代演进：堆分配 -> 栈分配 -> Go 1.14+ 开放编码 (Open-Coded Defer 0 开销)](../../../public/images/open-coded-defer-vs-heap-defer-evolution.svg)
 
 ## 二、循环里的 defer：约 13.7 倍税的真实来源
 
@@ -51,6 +60,10 @@ panic 的真实成本是两段：**构造与抛出的固定开销 + 栈展开的
 3. **性能不是 panic 的主要风险**：不 recover 的 panic 会打印栈并终止进程；跨 goroutine 的 panic 也不会被另一个 goroutine 的 recover 接住，语义风险比几十 ns 更重要。
 
 另一个 hidden cost：**不 recover 的 panic 会打印全栈**（1M 层递归的栈回溯本身就是 ms 级）且进程退出——panic 的贵不是性能，是它终止进程的语义。
+
+
+
+![Panic 抛出与栈展开 (Stack Unwinding) 时序：逐层回放 defer 与 recover 捕获](../../../public/images/panic-recover-stack-unwinding-flow.svg)
 
 ## 四、defer 与 panic 的分工：谁该用谁
 

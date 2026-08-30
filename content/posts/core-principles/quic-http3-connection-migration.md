@@ -29,6 +29,10 @@ QUIC + HTTP/3:     [ 流1 数据 ] [ 流2 数据 ] [ 流3 数据 ]  ← 丢流2�
 - QUIC 的逻辑**跑在用户态**（库里，如 quiche/ngtcp2），升级协议版本不升级内核。
 - 每包都要带**连接 ID + 流 ID + 偏移 + 确认号**，包头比 TCP 段大，小请求的协议开销占比升高。
 
+
+
+![QUIC 连接迁移时序：Connection ID (CID) 与四元组动态切换](../../../public/images/quic-connection-id-cid-migration-flow.svg)
+
 ## 二、握手账：1-RTT 建立连接，0-RTT 重建连接
 
 TLS 1.3 把"TCP 握手 + TLS 握手"合并，QUIC 在此基础上再合一步：**首次连接 1-RTT**（ClientHello → ServerHello+证书+配置），重连 0-RTT（客户端缓存的服务器配置直接发请求）。
@@ -67,6 +71,10 @@ TCP 的换网    →  四元组失效   →  必须重连, 重新握手, 至少�
 ```
 
 这为移动场景的路径变化提供了协议支持，但不是“换网免费不断连”：端点要维护一组可轮换的 Connection ID，服务器要对新路径做验证，拥塞控制和 NAT/LB 状态也可能重新收敛。CID 在适用的 QUIC 包头中可被中间设备读取，但长度、是否轮换和路由编码由连接协商/实现决定，不是固定 8 字节；负载均衡器若需要无状态转发，必须理解部署方的 CID 路由合同，或者把连接固定到同一后端。
+
+
+
+![QUIC 路径验证与防放大攻击：PATH_CHALLENGE 与 3 倍流量限制](../../../public/images/quic-path-validation-anti-amplification.svg)
 
 ## 四、复现：先证明协议可用，再分别测 0-RTT 与迁移
 

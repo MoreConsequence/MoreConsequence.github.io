@@ -11,6 +11,11 @@ series: "硬核底层原理"
 
 **TL;DR：** 丢一个包，TCP 无法立即知道是“丢了”还是“只是慢”。它唯一确凿的证据链是**按时重传**，但重传又带来**重传二义性**：收到确认时，分不清它确认的是第一次发送还是重传的那次。本文把 RTO 计算、Karn 规则、快速重传与 SACK 分开，用固定输入的 RFC 6298 风格时间线模型展示 180ms → 360ms → 720ms 的退避；这个模型解释协议关系，不冒充 Linux `tc netem` 的实测曲线。
 
+
+---
+
+![TCP 重传超时 (RTO) 算法：Jacobson/Karels 平滑估计与 Karn 算法防混淆](../../../public/images/tcp-rto-srtt-rttvar-karn-algorithm.svg)
+
 ## 一、重传二义性：TCP 为自己设计的死循环
 
 网络延迟天然抖动：一个包可能 10ms 回来，也可能 200ms。TCP 维护一个 **RTO（Retransmission Timeout）**，超时未确认就重传。RTO 依赖 **SRTT（平滑 RTT）**，SRTT 依赖每次收 ACK 的 RTT 采样——**问题出在这里**：
@@ -18,6 +23,10 @@ series: "硬核底层原理"
 假设回合：2ms 发一份数据，100ms ACK 回来（RTT=98ms，正常）→ RTO 算成 120ms。但你等 120ms 没到，120ms 时重传了。结果那份数据 130ms 才回到（其实第一次发的那份还在路上，是 ACK 迟到）。你收到 ACK：**它确认的是哪一份？** 如果是第一次发的，那 RTT=128ms（合法）；如果是重传的，RTT=30ms。**你根本分不清楚**——这就是重传二义性（retransmission ambiguity）。
 
 如果把 30ms 当真，SRTT 被压低 → RTO 被算小 → 更容易误判超时 → 更早重传 → **把正常不丢的网络搞成重传病毒**。这就是为什么 TCP 必须"不敢快"。
+
+
+
+![Jacobson / Karels RTO 动态计算数学模型：SRTT、RTTVAR 与指数加权移动平均](../../../public/images/jacobson-karels-rto-calculation-math.svg)
 
 ## 二、Karn 算法：一条"忘掉"的规则
 
@@ -61,6 +70,10 @@ sequenceDiagram
 | RTO 重传 + Karn 退避 | 超时无 ACK | 兜底，指数退避防拥塞 |
 | 快速重传 | 连续 3 个重复 ACK | 不等超时，提前重发 |
 | SACK | 对端开启（默认） | 精确定位丢失段，避免整段重传 |
+
+
+
+![快速重传 (Fast Retransmit 3 冗余 ACK) vs 超时重传 (RTO) 性能断崖对照](../../../public/images/fast-retransmit-duplicate-ack-vs-rto.svg)
 
 ## 四、固定输入模型：把 RTO 退避的顺序算出来
 

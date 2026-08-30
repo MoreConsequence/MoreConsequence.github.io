@@ -9,6 +9,11 @@ featured: false
 
 **TL;DR：** 所有测速服务——Ookla Speedtest、Fast.com、Cloudflare Speed、自托管 LibreSpeed——共享同一张架构地图：**目录调度、测量边缘、载荷源、结果上报**四类节点，加上一个做编排的客户端。下行测量的本质是"把管道灌满再算账"：并行多条流绕开单连接窗口限制，抛弃慢启动段，用滚动窗口取稳态；上行是同一套算法套在 POST 载荷上，但参数更保守。延迟必须区分空载 RTT 与加载延迟，后者才是 bufferbloat 的照妖镜。国内还有一套**标准驱动的本网化体系**：工信部 YD/T 2400 规定测试方法，运营商平台按"本省本网"部署，商业测速网的节点长在城域网里——同一张节点地图，不同的调度哲学。本篇只做架构层分析；中国大陆的服务端资源与成本话题见[测速服务端设计](/writing/app-speed-test-architecture-cost)专篇。
 
+
+---
+
+![现代测速服务架构体系：全球边缘节点地图、双向管道与高吞吐度量算法](../../../public/images/speedtest-service-architecture-node-map-calculation.svg)
+
 ## 一、所有测速服务共享的一张节点地图
 
 剥掉各家 UI，一次测速都是同一条流水线：
@@ -34,6 +39,10 @@ flowchart LR
 | 上报存储 | 固化结果、生成分享链接 | 各家后端 API；LibreSpeed 可完全关闭 |
 
 这张图解释了测速圈最常见的争议——"为什么不同网站测出来差这么多"：**因为它们把"测谁"这个变量设成了不同的值**。Ookla 选的是到 ISP 接入节点（同城、运营商内网）的路径；Fast.com 测的是到 Netflix CDN 的路径；Cloudflare 测的是到它自家边缘的路径。路径不同，瓶颈不同，数字当然不同。
+
+
+
+![测速边缘节点动态调度：GeoDNS + BGP Anycast + 实时 TCP Ping 探测](../../../public/images/speedtest-edge-node-selection-geo-anycast.svg)
 
 ## 二、下行：把管道灌满的三件事
 
@@ -62,6 +71,10 @@ flowchart LR
 3. **计费与滥用面**。上行端点是公开的写入接口，无上限的 POST 就是免费流量出口——[服务端设计篇](/writing/app-speed-test-architecture-cost)把它列为高价值流量出口的第一道防线；因此上行测试的时长、并发度与总字节几乎总是小于下行。
 
 所以读到"上行只有下行的 1/N"时，先别急着怪运营商：非对称接入是常态，且上行估计的置信区间天然更宽。真正值得警惕的信号是**同一服务多次重测间上行剧烈波动**——那更像是 WiFi 干扰或终端调度问题，而不是架构问题。
+
+
+
+![测速服务端 0 分配数据生成器：预分配 64MB 循环缓冲区与零拷贝直接下发](../../../public/images/speedtest-zero-allocation-chunk-generator.svg)
 
 ## 四、延迟家族：空载、加载与抖动是三个指标
 

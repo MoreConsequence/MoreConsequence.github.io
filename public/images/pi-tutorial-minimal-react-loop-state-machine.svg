@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 极简 ReAct 状态机闭环与递归调用拓扑 (Minimal ReAct Loop)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 用户提出任务 ──► 2. LLM 推理思考 (Thought) ──► 3. 结构化工具调用 (Action) ──► 4. 沙箱执行获取物理观测 (Observation) ──► 循环直到完成</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 用户意图注入 (User Prompt Injection)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">用户输入: "把 main.go 里的端口改成 8080 并运行测试" ──► 组装为首条 UserMessage 入队</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">驱动状态机运转的始发动力！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 大模型推理与工具决策 (Thought &amp; Action Dispatch)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">大模型输出思维链: "先读取 main.go" ──► 生成 tool_call: { name: "view_file", path: "main.go" }</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将自然语言目标映射为结构化函数调用！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 本地工具安全执行 (Local Tool Execution &amp; Observation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">读取真实文件系统内容 ──► 组装为 role: "tool" 观测消息 ──► 重新回填入会话上下文</text>
+        <text x="15" y="62" font-size="8" fill="#047857">让大模型看到真实物理系统的客观反馈！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 终止条件判定与交付 (Termination Check &amp; Delivery)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">模型判定修改完成且测试通过 ──► 不再发起 Tool 调用 ──► 输出最终答复并退出当前循环！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">50 行代码即可实现的 Agent 经典最简内核！</text>
+      </g>
+    </g>
+  </g>
+</svg>

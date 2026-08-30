@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Exactly-Once 语义系统边界：全链路三段式精确一次交付契约</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 生产者 PID + SequenceID 幂等 ──► 2. Kafka 2PC 跨分区事务提交 ──► 3. 消费端业务数据库唯一键去重防重复消费</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 生产端：PID 幂等写入</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">enable.idempotence = true</text>
+          <text x="10" y="34" fill="#93c5fd">1. Broker 为 Producer 分配唯一 PID</text>
+          <text x="10" y="50" fill="#93c5fd">2. 每条消息携带单调递增 SequenceNumber</text>
+          <text x="10" y="68" fill="#34d399">3. 网络丢包重试时：</text>
+          <text x="16" y="82" fill="#4ade80">   Broker 自动去重丢弃重复 Seq 消息！</text>
+          <text x="10" y="104" fill="#38bdf8">✓ 保证单分区内单会话生产 0 重复！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 自动解决网络 ACK 超时引发的重发重复；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 零额外业务代码侵入；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 性能几乎无额外损耗。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 管道层：跨分区原子事务</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">transactional.id = "tx_order_01"</text>
+          <text x="10" y="34" fill="#86efac">1. 事务协调器 (Transaction Coordinator)</text>
+          <text x="10" y="50" fill="#86efac">2. 写入 __transaction_state 事务日志</text>
+          <text x="10" y="68" fill="#38bdf8">3. "Consume-Transform-Produce" 流程：</text>
+          <text x="16" y="82" fill="#34d399">   消息发送与 Offset 提交原子绑定！</text>
+          <text x="10" y="104" fill="#4ade80">✓ 确保下游 read_committed 仅见已提交数据！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 跨多个 Topic 和 Partition 的原子批写；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 Flink/Kafka Streams 构建流计算闭环；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造强一致流处理基础设施。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 消费端：业务去重与幂等</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 消费端业务数据库防御</text>
+          <text x="10" y="34" fill="#fed7aa">1. 唯一业务键 (BizID / OrderID)</text>
+          <text x="10" y="48" fill="#fed7aa">2. 插入消息消费去重表 (唯一索引):</text>
+          <text x="16" y="64" fill="#f87171">   INSERT INTO msg_dedup (msg_id)...</text>
+          <text x="10" y="84" fill="#34d399">3. 业务扣减与去重表写入处于同一本地事务</text>
+          <text x="10" y="104" fill="#4ade80">✓ 即使消息重发 100 次，业务状态绝对不漂移！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">终极事实：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 世界上没有离开消费端配合的绝对 Exactly-Once；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 消费端幂等是分布式系统的最终救赎；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造固若金汤的分布式消息工程体系！</text>
+      </g>
+    </g>
+  </g>
+</svg>

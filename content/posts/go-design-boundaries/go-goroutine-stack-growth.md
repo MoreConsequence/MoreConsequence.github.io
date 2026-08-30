@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** goroutine 的栈从 `stackMin = 2048` 字节起步，空间不足时分配约 2 倍的新栈，把旧栈内容搬过去，再修正指向旧栈的指针。一次本机 evidence snapshot 中，复用 `WaitGroup` 发射并等待一个 goroutine 的完整生命周期为 **380.3ns/op、16B/1 alloc**；在每个 sample 都使用新 goroutine、且只计时递归本身的 probe 中，1,000/100,000/1,000,000 层递归中位数分别为 **61.833µs、4.224542ms、41.959750ms**。这些数字证明的是当前函数帧、编译器和机器下的总耗时，不是“创建指令成本”、固定的栈大小或生产 p99。真正需要避开的不是递归这个词，而是不可控的大栈帧、深调用链和没有生命周期管理的 goroutine。
 
+
+---
+
+![Goroutine 连续栈扩容 (copystack)：2KB 初始栈、翻倍重分配与栈内指针重定位](../../../public/images/go-stack-growth-copystack-pointer-adjust.svg)
+
 ## 一、2KB 起步与连续栈：把常驻空间换成搬家成本
 
 Go 的 goroutine 栈是可移动的连续栈。Go 1.25.1 的 `runtime/stack.go` 中，`stackMin = 2048`；当当前栈放不下下一帧时，runtime 会申请更大的连续区域，把旧栈搬过去，并通过 `adjustinfo` 修正栈内指针。下一次容量通常按 2 倍增长，但“最终栈有多大”不能只由递归深度决定，还取决于每层函数帧的大小。
@@ -29,6 +34,10 @@ flowchart LR
 ```
 
 不要把这理解成“每次函数调用都在复制栈”。搬家只发生在增长点；但增长点的成本是一次集中成本，不能用平均 ns/op 掩盖它的尾部形状。
+
+
+
+![连续栈扩容 (Continuous Stack) 机理：2KB 初始栈 -> 翻倍扩容 -> 栈帧指针修正](../../../public/images/continuous-stack-growth-reallocation-copy.svg)
 
 ## 二、一次本机 probe：生命周期成本与递归总耗时不是一回事
 
@@ -75,6 +84,10 @@ go run ./go-runtime-boundary/cmd/stack-growth -depths=1000,100000,1000000 -repea
 这是搬运字节数的几何级数，不是固定的延迟，也不是最终栈的 2 倍。真正延迟还受内存带宽、栈扫描中的指针数量、调度和 CPU 状态影响。没有对目标函数做 frame-size 与 trace 测量，就不应该把某个“1–10ms”写成通用毛刺价格。
 
 工程上的反直觉结论是：**递归深度不是唯一的风险指标，栈帧形状才决定增长点在哪里。** 大局部数组、深递归解析器和把不受控数据放在栈上的函数，都应该先用 `-gcflags=-m=2`、trace 或 profile 看清楚，再决定改成迭代、移动到堆，还是限制输入深度。
+
+
+
+![分段栈 (Segmented Stack) 热分裂灾难 vs 连续栈 (Continuous Stack) 对比](../../../public/images/segmented-stack-hot-split-vs-continuous.svg)
 
 ## 四、栈可以移动，所以栈地址不能离开它的生命周期
 

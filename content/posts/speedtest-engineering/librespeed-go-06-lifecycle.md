@@ -10,6 +10,11 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 前几篇分别讲了端点、合同与接口；这一篇把它们串成一条时间线，把**每一次测速背后的每一步算术**摊开：为什么单条流有吞吐天花板（`吞吐 ≤ 窗口/RTT`）、grace time 重置如何切除慢启动坡道、屏幕上那个 Mbps 是 `字节 × 8 × 1.06 ÷ 1e6` 的哪一步、上行的 progress 事件到底在数什么、以及 ping 取最小值和抖动加权公式的手算示例。读完后你应当能对任何测速结果回答："这个数字是从哪些字节、经过哪些运算得来的。"
 
+
+---
+
+![一次测速的完整生命周期：握手、Ping 探测、下行多路灌水、上行黑洞推流与遥测落库时序](../../../public/images/librespeed-go-speedtest-full-lifecycle-timeline.svg)
+
 ## 一、开测之前：两件预备工作
 
 **Worker 隔离**。测量循环是每 50–200ms 一次的密集计算加多条并发连接——放在主线程会把页面卡成幻灯片，也会污染自己的计时。所以全部逻辑住在 Web Worker 里，主线程只通过 postMessage 收进度。这是测量类前端的铁律。
@@ -19,6 +24,10 @@ series: "LibreSpeed Go 源码行纪"
 ## 二、阶段 I：身份请求
 
 `GET /getIP?isp=true&distance=km&r=0.5312…`。响应是 JSON：`processedString` 给人看（IP + ISP + 距离），`rawIspInfo` 给遥测存档。`r=` 随机数防缓存；多节点模式（mpot）会追加 `cors=true` 走 PHP 口径的头。这一步同时是**连通性预检**——它失败的话后续阶段大概率也失败，但 Worker 选择继续跑完而不是提前终止（`getIp failed, done()` 照常回调）。
+
+
+
+![稳态速率提取算法：100ms 离散采样序列与 P90 截尾均值滤波](../../../public/images/librespeed-go-p90-trimmed-mean-filter.svg)
 
 ## 三、阶段 D：下行的完整演算
 
@@ -64,6 +73,10 @@ dlStatus = (speed * 8 * overheadCompensationFactor)      // ×8：字节→比�
 2. **`Content-Encoding: identity` 显式禁用压缩**：随机 Uint32 数据本就不可压，这层声明防的是中间代理自作聪明地"优化"。
 
 IE11/Edge/PS4 有专门的降级分支（这些浏览器 `upload.onprogress` 不触发）：改发 256KB 小包、用 `onload` 计次——源码注释自己承认精度受损。统计层（grace 3 秒、time_auto、15s 上限）与下行对称。
+
+
+
+![RFC 3550 抖动计算公式与一阶 IIR 低通滤波数学模型](../../../public/images/librespeed-go-latency-jitter-filter-math.svg)
 
 ## 五、阶段 P：延迟与抖动的手算
 

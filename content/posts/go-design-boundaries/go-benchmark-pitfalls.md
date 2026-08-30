@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** benchmark 的第一道质量门不是“数字看起来合理”，而是确认你测到的工作确实发生了：**七宗罪**——① 死代码消除；② sink 改变逃逸；③ `alloc_space` 是采样估计，不是单次 `B/op`；④ 并发 bench 错分 `b.N`；⑤ 阻塞操作与 `-benchtime=Nx` 相乘；⑥ `GOMAXPROCS` 改变调度路径；⑦ 结果不消费导致循环提升。当前 checkout 的 Go 实验统一绑定 Go 版本、输入、`-cpu`、`-benchmem` 和 raw；没有保存的历史样张不继续当作当前数字。
 
+
+---
+
+![Go 基准测试七大陷阱：编译器死代码消除 (DCE)、内联优化与全局变量逃逸](../../../public/images/go-benchmark-compiler-dce-escape.svg)
+
 ## 一、死代码消除：越快越要先证明工作发生
 
 编译器可以证明循环结果不会影响可观察状态时，整个循环、常量构造甚至调用都可能被删掉。于是一个“0 alloc、不到 1ns”的 benchmark 可能只是在测循环控制，不能拿来说明装箱、转换或函数调用免费。
@@ -18,6 +23,10 @@ series: "Go 的设计边界"
 当前仓库的有效对照是 `experiments/go-runtime-boundary/bench_test.go` 中的 `BenchmarkInterfaceBoxInt` 与 `BenchmarkInterfaceBoxBigValue`：输入随 `i` 变化，结果写入包级 `anySink`，并通过 `-benchmem` 观察分配。文章不再保留旧 checkout 中没有 raw 的 `BenchmarkBoxBigStruct`、0.79ns 或修正后 12.8ns 样张。
 
 检查清单：输入使用循环变量；结果通过返回值、包级 sink 或 `runtime.KeepAlive` 形成可观察使用；运行 `-gcflags=-m` 看编译器的逃逸/内联判断；再用不同输入确认数字没有只对常量路径成立。
+
+
+
+![基准测试陷阱：编译器死码消除 (DCE) 与全局逃逸槽 (Global Sink)](../../../public/images/compiler-dce-escape-sink-benchmark.svg)
 
 ## 二、逃逸干扰：同一行代码，两种 allocs
 
@@ -33,6 +42,10 @@ series: "Go 的设计边界"
 两者回答不同问题：`-benchmem` 在固定 benchmark 形状下报告每次操作的分配统计，heap profile 则是在运行期以采样方式定位累计分配或存活空间。一个 profile 样本显示某个函数很热，不足以推出一次调用的对象大小，更不能从单帧推出泄漏。
 
 检查清单：**采样型 profile 只用于定位热点，不用来报精确单次数字**；精确对照使用同一输入的 `-benchmem`；记录 `MemProfileRate`、采样持续时间和 `sample_index`；发现矛盾先检查采样设置、输入规模和统计口径，而不是凭“512B 粒度”解释。
+
+
+
+![Benchmark 规范生命周期：b.ResetTimer 预热排除与 b.RunParallel 多核压测](../../../public/images/b-reset-timer-b-runparallel-lifecycle.svg)
 
 ## 四、并发 bench 的整除陷阱
 

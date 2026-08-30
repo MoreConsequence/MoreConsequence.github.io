@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">两种语言的取消模型分界：Go Context (拉取) vs JS AbortSignal (推送)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Go ctx.Done() (显式 select Channel 阻塞监听) vs JS signal.addEventListener (事件驱动订阅回调与内存泄漏防范)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Go Context -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Go: Context 树与 Channel 显式拉取</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">select {</text>
+          <text y="28" fill="#93c5fd">case &lt;-ctx.Done():</text>
+          <text y="42" fill="#f87171">    return ctx.Err() // 主动检查取消信号</text>
+          <text y="56" fill="#86efac">case res := &lt;-ch:</text>
+          <text y="70" fill="#34d399">    process(res)</text>
+          <text y="84" fill="#38bdf8">}</text>
+          
+          <text y="108" fill="#34d399">✓ 显式同步控制流，代码走向一目了然</text>
+          <text y="124" fill="#38bdf8">✓ 协程树级联关闭，支持 Value 跨层透传</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 必须作为第一入参显式传递：func Do(ctx context.Context)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 协程不退出 ctx 也会常驻，必须记得 defer cancel()；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高并发后端最严格的生命周期控制。</text>
+      </g>
+    </g>
+
+    <!-- Right: JS AbortSignal -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. JS: AbortSignal 事件发布订阅</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">signal.addEventListener('abort', () =&gt; {</text>
+          <text y="28" fill="#f87171">    socket.destroy(); // 响应式回调推模式</text>
+          <text y="42" fill="#4ade80">}, { once: true });</text>
+          
+          <text y="68" fill="#38bdf8">if (signal.aborted) throw new AbortError();</text>
+          
+          <text y="94" fill="#34d399">✓ 完美集成 Fetch API / Node Streams / EventTarget</text>
+          <text y="110" fill="#fbbf24">⚠️ 监听未移除易造成内存泄漏 (Memory Leak)</text>
+          <text y="126" fill="#34d399">✓ 推荐使用 AbortSignal.any([...]) 多源组合！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 适合 I/O 驱动的异步微任务回调体系；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 避免长生命周期 signal 挂载过多短生命周期监听；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代全栈前端与 Node 统一的标准取消协议！</text>
+      </g>
+    </g>
+  </g>
+</svg>

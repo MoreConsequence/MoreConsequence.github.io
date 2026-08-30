@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux splice() 管道页结构体传递 (pipe_buffer Zero-Copy)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">源 fd ──► 提取内核 Page Cache 结构体指针 ──► 挂载到 pipe_buffer 环形数组 ──► 直接映射至目标 Socket TX Buffer (0 物理字节内存拷贝)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 源端文件 DMA 加载 (Source DMA to Page Cache)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">磁盘控制器通过 DMA 直接将数据块搬移至内核 Page Cache ──► CPU 0 参与</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">物理内存中仅存在一份真实的数据副本！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. pipe_buffer 指针转移 (Transfer struct page* to Pipe)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">splice(fd_in, pipe) 仅将 Page Cache 的 struct page 指针填入内核匿名管道的 pipe_buffer</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">仅仅传递 64 位内存指针与 offset/len，0 字节物理数据复制！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 目标端指针映射 (Transfer Pipe Buffer to Target Socket)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">splice(pipe, fd_out) 将 pipe_buffer 中的页指针直接挂载进网卡 Socket 发送队列 (sk_buff)</text>
+        <text x="15" y="62" font-size="8" fill="#047857">完成内核空间内的极速管道流转！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 网卡 Scatter-Gather DMA 直发 (Zero-Copy NIC Egress)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">网卡通过 SG-DMA 直接从原始 Page Cache 物理内存读取数据帧并发射到光纤网络！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">全程 0 用户态拷贝、0 内核态重复拷贝，吞吐吃满 100Gbps 物理网卡！</text>
+      </g>
+    </g>
+  </g>
+</svg>

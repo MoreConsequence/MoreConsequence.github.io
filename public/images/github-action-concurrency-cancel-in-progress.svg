@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">CI/CD 并发流水线自动熔断优化 (cancel-in-progress)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">同一分支连续 Push 代码 (旧 Commit 的重型测试仍在浪费排队计算) vs concurrency group (自动秒级 cancel 旧 Run，算力 100% 聚焦最新提交)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Waste -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 无并发控制：CI Runner 堆积与海量账单浪费</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">开发者在 5 分钟内连续 Push 3 次修正：</text>
+          
+          <text y="38" fill="#ef4444">无脑并行堆积：</text>
+          <text y="52" fill="#fca5a5">• Commit 1 的 20 分钟 E2E 测试仍在死板运行</text>
+          <text y="68" fill="#ef4444">• Commit 2 紧接着霸占另一个 Runner 机器</text>
+          <text y="84" fill="#ef4444">• 真正有意义的 Commit 3 被迫排队等待半小时！</text>
+          
+          <text y="106" fill="#f87171">🔴 GitHub 算力分钟数急剧耗尽，开发反馈极其迟缓！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">典型后果：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 云端 CI 构建费用暴涨数倍；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 阻塞其他同事紧急 Hotfix 的 Runner 排队；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 必须规范并发组！</text>
+      </g>
+    </g>
+
+    <!-- Right: Cancel In Progress -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ concurrency group: 自动取消旧构建</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">concurrency:</text>
+          <text y="28" fill="#86efac">  group: ${{ github.workflow }}-${{ github.ref }}</text>
+          <text y="42" fill="#86efac">  cancel-in-progress: true</text>
+          
+          <text y="64" fill="#38bdf8">极速智能流转：</text>
+          <text y="78" fill="#34d399">1. 新 Commit 3 到达 ──► 立即瞬间杀掉正在跑的 Commit 1 &amp; 2</text>
+          <text y="92" fill="#4ade80">2. 立即将全部硬件资源调拨给最新代码！</text>
+          
+          <text y="114" fill="#4ade80">✓ 节省 70% CI 费用，反馈速度提升 300%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 每一个工程师 PR 都能获得最高优先级资源响应；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 极佳的研发效能与成本控制规范；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 顶级工程实践标配！</text>
+      </g>
+    </g>
+  </g>
+</svg>

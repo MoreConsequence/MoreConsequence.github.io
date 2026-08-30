@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Saga 分布式事务架构：协同式 (Choreography) vs 编排式 (Orchestration)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">协同式 (去中心化事件发布订阅，简单但易陷入事件死循环) vs 编排式 (中心化 Saga 状态机调度，执行路径清晰，逆向补偿直观)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Choreography -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">协同式 Saga (Choreography: 事件链触发)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">订单创建 ──► 发送 OrderCreated 事件</text>
+          <text y="28" fill="#86efac">支付服务监听 ──► 扣款成功 ──► 发送 PaymentSuccess 事件</text>
+          <text y="42" fill="#34d399">库存服务监听 ──► 扣减库存 ──► 发送 InventoryDeducted 事件</text>
+          
+          <text y="66" fill="#fb923c">逆向补偿机制：</text>
+          <text y="80" fill="#fca5a5">• 库存不足 ──► 发送 InventoryFailed 事件</text>
+          <text y="94" fill="#ef4444">• 支付服务监听后触发退款，订单服务监听后关闭订单！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 0 中心化协调者，服务间松耦合；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 业务流程跨 5 个以上服务时极难理解与排查；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 适合简短 2~3 步简单流转。</text>
+      </g>
+    </g>
+
+    <!-- Right: Orchestration -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">编排式 Saga (Orchestration: 状态机中枢)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">Saga Orchestrator (如 Temporal / Seata / Cadence):</text>
+          
+          <text y="38" fill="#86efac">1. 状态机显式发起: Execute(CreateOrder)</text>
+          <text y="52" fill="#38bdf8">2. 状态机显式发起: Execute(ProcessPayment)</text>
+          <text y="66" fill="#f87171">3. 若扣库存失败 ──► 状态机主动执行逆向工作流：</text>
+          <text y="80" fill="#ef4444">   • Compensate(ProcessPayment) 触发退款</text>
+          <text y="94" fill="#ef4444">   • Compensate(CreateOrder) 撤销订单</text>
+          
+          <text y="118" fill="#4ade80">✓ 链路状态一览无余，100% 确定性回滚！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 集中管理复杂长事务生命周期；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 避免事件网状交织形成的环形死锁；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 大型企业级复杂分布式事务首选方案！</text>
+      </g>
+    </g>
+  </g>
+</svg>

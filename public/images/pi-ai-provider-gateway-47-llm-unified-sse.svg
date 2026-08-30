@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">pi-ai 多模型统一网关：47 家供应商 API 归一化架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">OpenAI / Anthropic / DeepSeek / Gemini 异构协议 ──► pi-ai 统一适配层 ──► 标准 EventEmitter (text, thinking, tool_call) ──► 0 业务改造</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Fragmented APIs -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 碎片化模型接口：业务代码深陷适配泥潭</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">1. OpenAI: choices[0].delta.tool_calls[i].function</text>
+          <text y="30" fill="#fca5a5">2. Anthropic: content_block_delta (type: text_delta / input_json_delta)</text>
+          <text y="46" fill="#fca5a5">3. Google Gemini: candidates[0].content.parts[0].functionCall</text>
+          <text y="64" fill="#ef4444">4. DeepSeek: delta.reasoning_content 思考链非标字段！</text>
+          
+          <text y="90" fill="#ef4444">🔴 业务代价：每换一个模型，业务必须重写解析器！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">维护痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 业务层充斥大量 if (provider === 'openai') 分支；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 难以实现多模型智能路由、故障自动降级与测速；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 严重拖慢 AI 应用的工程演进速度！</text>
+      </g>
+    </g>
+
+    <!-- Right: pi-ai Normalized Gateway -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ pi-ai 统一标准流：纯事件驱动抽象</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">const stream = await pi.chat({ model: 'anthropic/claude-3-5-sonnet' });</text>
+          
+          <text y="38" fill="#38bdf8">stream.on('thinking', delta =&gt; renderThinking(delta));</text>
+          <text y="54" fill="#34d399">stream.on('text', delta =&gt; renderMarkdown(delta));</text>
+          <text y="70" fill="#fb923c">stream.on('tool_call', call =&gt; executeTool(call));</text>
+          <text y="86" fill="#38bdf8">stream.on('done', summary =&gt; recordTokenCost(summary));</text>
+          
+          <text y="110" fill="#4ade80">✓ 无论切换 47 家中任意供应商，业务代码 0 变更！</text>
+          <text y="126" fill="#4ade80">✓ 内置指数退避与自动熔断切流！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯 TypeScript 实现，轻量零冗余依赖；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 自动处理 SSE 分包粘包与非标 JSON 修复；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 现代 Agent 基础设施最坚实的通信桥梁！</text>
+      </g>
+    </g>
+  </g>
+</svg>

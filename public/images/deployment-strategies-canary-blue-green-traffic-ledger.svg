@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">现代服务发布策略流量账本：滚动、蓝绿与金丝雀灰度深度对比</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">滚动更新 (资源 0 冗余但新旧混部) ｜ 蓝绿发布 (100% 资源冗余与毫秒瞬切) ｜ 金丝雀灰度 (按 1% ──► 10% ──► 100% 爆炸半径控制)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 滚动发布 (Rolling Update)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// K8s 默认 Deployment 策略</text>
+          <text x="10" y="34" fill="#93c5fd">• maxSurge: 25%, maxUnavailable: 25%</text>
+          <text x="10" y="50" fill="#93c5fd">• 逐步杀掉旧 Pod，启动新 Pod</text>
+          
+          <text x="10" y="74" fill="#fbbf24">⚠️ 核心隐患：长达 15 分钟的新旧共存期！</text>
+          <text x="10" y="90" fill="#cbd5e1">• 若前后版本数据库 DTO Schema 不兼容</text>
+          <text x="10" y="104" fill="#f87171">• 导致部分请求读写数据发生严重错乱！</text>
+          <text x="10" y="122" fill="#4ade80">✓ 优势: 零额外服务器硬件成本</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 纯无状态、API 严格向前兼容的微服务；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 硬件资源预算紧张的集群；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 绝大多数日常常规部署。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 蓝绿发布 (Blue-Green)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 两个完全独立的环境 (Blue/Green)</text>
+          <text x="10" y="34" fill="#86efac">1. Blue (当前生产 100% 流量)</text>
+          <text x="10" y="48" fill="#38bdf8">2. Green (新版本 100% 预热与自测)</text>
+          <text x="10" y="66" fill="#34d399">3. 负载均衡/DNS 毫秒级瞬切至 Green！</text>
+          
+          <text x="10" y="90" fill="#34d399">✓ 发现问题 1 秒原地切回 Blue，秒级回滚！</text>
+          <text x="10" y="106" fill="#fbbf24">⚠️ 缺点: 需要 200% 的双倍机器成本</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 核心网关、高风险底层基础框架升级；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 对业务停机 0 容忍的金融交易系统；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 具备充沛算力冗余的私有云集群。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 金丝雀灰度 (Canary)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 最小爆炸半径控制</text>
+          <text x="10" y="34" fill="#fed7aa">1. 引导 1% 内部员工/测试用户流量</text>
+          <text x="10" y="48" fill="#fed7aa">2. 监控 10 分钟: 观察错误率与 p99 延迟</text>
+          <text x="10" y="66" fill="#4ade80">3. 指标正常 ──► 自动升档到 10% ──► 50% ──► 100%</text>
+          <text x="10" y="86" fill="#f87171">4. 若错误率 &gt; 0.5%: 自动触发熔断回滚！</text>
+          <text x="10" y="106" fill="#34d399">✓ 现代云原生最稳健的持续交付标准！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• C 端海量用户高并发产品；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 结合 Argo Rollouts / Flagger 自动化度量；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 彻底消灭发布故障导致的全局瘫痪！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">HTTP/2 二进制多路复用与 TCP 传输层队头阻塞 (HoL Blocking) 矛盾</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">应用层消除了 HTTP/1.1 阻塞 ──► 但单一 TCP 丢包导致该连接上全部 100 个 Stream 瞬间全部卡死</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: HTTP/2 Streams -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 应用层：多路流交织 (Multiplexing)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 单条 TCP 连接并发承载多个 Stream</text>
+          
+          <rect y="24" width="70" height="20" rx="2" fill="#2563eb"/>
+          <text x="8" y="38" fill="#ffffff">Stream 1 (HTML)</text>
+          
+          <rect x="75" y="24" width="80" height="20" rx="2" fill="#0284c7"/>
+          <text x="82" y="38" fill="#ffffff">Stream 3 (CSS)</text>
+          
+          <rect x="160" y="24" width="100" height="20" rx="2" fill="#0d9488"/>
+          <text x="168" y="38" fill="#ffffff">Stream 5 (JS)</text>
+
+          <rect x="265" y="24" width="80" height="20" rx="2" fill="#2563eb"/>
+          <text x="272" y="38" fill="#ffffff">Stream 1 (Data)</text>
+
+          <text y="70" fill="#34d399">✓ 零连接建立开销，共享单条 TCP 管道</text>
+          <text y="88" fill="#34d399">✓ 二进制帧交错并发传输，消灭应用层排队</text>
+          <text y="106" fill="#86efac">✓ 支持流优先级与双向服务端推送 (Server Push)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">应用层收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 解决 HTTP/1.1 浏览器 6 个并发连接限制；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• HPACK 算法压缩头部，节省 80%+ 协议头开销；</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 在优质光纤网络下加载速度极快。</text>
+      </g>
+    </g>
+
+    <!-- Right: TCP HoL Blocking Trap -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">2. 传输层：TCP 丢包导致全量挂死</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// TCP 内核协议栈严格保证字节顺序连续 (In-Order)</text>
+          
+          <rect y="24" width="70" height="20" rx="2" fill="#ef4444"/>
+          <text x="8" y="38" fill="#ffffff">❌ 丢包 (Pkt 1)</text>
+
+          <rect x="75" y="24" width="280" height="20" rx="2" fill="#475569"/>
+          <text x="90" y="38" fill="#fca5a5">Pkt 2 ~ 10 全部已到达，但在内核缓冲区被活活挂起！</text>
+
+          <text y="70" fill="#f87171">🔴 只要 Pkt 1 没有重传成功：</text>
+          <text y="88" fill="#fca5a5">内核拒绝向上层应用交付后续任何已到达的包！</text>
+          <text y="106" fill="#fb7185">► 导致该 TCP 连接上的全部 Stream 3/5/7/9 共同陪葬卡死！</text>
+          <text y="124" fill="#ef4444">在 2% 丢包弱网下，HTTP/2 性能反而显著劣于 HTTP/1.1！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">HTTP/3 (QUIC) 终极破局：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 底层基于 UDP，将流控与重传搬到用户态；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• Stream 1 丢包仅阻塞 Stream 1，其余流照常并行消费；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 彻底终结 30 年 TCP 队头阻塞历史难题！</text>
+      </g>
+    </g>
+  </g>
+</svg>

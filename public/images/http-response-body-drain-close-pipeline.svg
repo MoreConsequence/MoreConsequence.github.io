@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">HTTP 响应体排空与 persistConn 归还全景流转</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 业务读取数据 ──► 2. io.Copy(Discard) 排空残留字节 ──► 3. resp.Body.Close() ──► 4. persistConn.readLoop 将连接塞回 idleConn 池</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 前台业务读取部分载荷 (Application Partial Read)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">例如只读取响应头或前 100 字节 JSON ──► 缓冲区剩余 5KB 数据尚未消费</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">此时底层 socket 仍处于该 HTTP 请求的未决数据流中！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 强制排空残留字节 (io.Copy(io.Discard, resp.Body))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">通过快速丢弃器读完剩下的 5KB ──► 确保 TCP 数据流到达下一个 HTTP 报文边界 (EOF/Clean Stream)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">为连接的安全复用扫清障碍！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 触发 Body.Close() 释放语义 (bodyEOFSignal Notification)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">向后台 persistConn.readLoop 协程发送 earlyCloseFn=nil 信号 ──► 宣告本轮请求完美结束</text>
+        <text x="15" y="62" font-size="8" fill="#047857">零报错优雅交接连接控制权！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 归还连接池并等待下次复用 (Put Back into idleConn Pool)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Transport.putOrCloseIdleConn ──► 成功压入 idleLRU 队列 ──► 下次发往该 Host 的请求 0ms 瞬间直发！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 语言在网络 I/O 领域无与伦比的工业级成熟度！</text>
+      </g>
+    </g>
+  </g>
+</svg>

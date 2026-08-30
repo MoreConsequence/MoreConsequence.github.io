@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：无副作用 Playback 回放、会话投影与 Fork 分叉](../../../public/images/oract-journal-projection-playback-fork.svg)
+
 ## 一、心智模型：可回放性是复杂系统的生命线
 
 在传统 Agent 系统中，所谓的“排障”通常是去日志平台翻看零散的字符串。然而，非结构化日志无法回答以下关键问题：
@@ -38,6 +43,10 @@ flowchart TB
 ORACT 确立了架构设计铁律：**系统中的任何状态变更，都必须是不可变历史事件序列的确定性投影。**
 
 ---
+
+
+
+![Oract 确定性事件日志重放与时光机分支构建流水线](../../../public/images/oract-journal-deterministic-replay-pipeline.svg)
 
 ## 二、无副作用 Playback 引擎架构
 
@@ -162,6 +171,10 @@ func ProjectConversation(events []core.Event) []ConversationMessage {
 由于该函数没有任何外部状态依赖，其执行速度在 Go 中达到每秒数十万次投影，内存开销极低。
 
 ---
+
+
+
+![事件溯源 (Event Sourcing) vs 传统全量状态快照 (CRUD Snapshot) 权衡对比](../../../public/images/oract-event-sourcing-vs-state-snapshot-tradeoff.svg)
 
 ## 四、时间旅行与会话分叉 (Session Fork)
 

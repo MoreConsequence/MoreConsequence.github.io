@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 隐蔽内存泄漏双重死穴：切片挂接与 SetFinalizer 循环引用</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">死穴 1: 仅截取 1KB 小切片导致 100MB 整个底层数组无法回收 ｜ 死穴 2: SetFinalizer 闭包捕获自身形成循环引用导致对象永生</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Subslice hold -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 死穴 A：小切片挂死 100MB 大数组</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">func GetHeader() []byte {</text>
+          <text y="28" fill="#f87171">    bigData := read100MBFile() // 100MB 字节数组</text>
+          <text y="42" fill="#ef4444">    return bigData[0:16]       // 仅返回前 16 字节头部！</text>
+          <text y="56" fill="#38bdf8">}</text>
+          
+          <text y="78" fill="#ef4444">💥 泄漏后果：</text>
+          <text y="92" fill="#fca5a5">• 返回切片的 Data 指针依然钉死 100MB 底层数组！</text>
+          <text y="106" fill="#ef4444">• 只要这 16 字节存活，GC 就绝对无法回收整整 100MB 内存！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">正确解法：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• res := make([]byte, 16); copy(res, bigData[:16])；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 主动脱钩指针，让 100MB 数组在函数退出时瞬间被 GC 释放；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 文件与大包解析必修课！</text>
+      </g>
+    </g>
+
+    <!-- Right: Finalizer trap -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">❌ 死穴 B：SetFinalizer 循环引用导致对象永生</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">type Node struct { child *Node }</text>
+          <text y="28" fill="#86efac">runtime.SetFinalizer(n, func(obj *Node) {</text>
+          <text y="42" fill="#ef4444">    // 闭包或节点间互相引用形成环！</text>
+          <text y="56" fill="#86efac">})</text>
+          
+          <text y="78" fill="#ef4444">💥 运行时死锁陷阱：</text>
+          <text y="92" fill="#fca5a5">• Go GC 无法决定谁先析构，被迫延后回收！</text>
+          <text y="106" fill="#ef4444">• 导致对象及其引用的全部子树永久赖在内存中！</text>
+          <text y="120" fill="#4ade80">✓ 生产严禁使用 Finalizer，一律用 defer Close()！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 建立显式生命周期管理契约 (Explicit Ownership)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底根除隐藏在底层析构函数中的幽灵泄漏；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业级代码纯洁性保障！</text>
+      </g>
+    </g>
+  </g>
+</svg>

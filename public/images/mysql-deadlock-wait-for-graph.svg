@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB 间隙锁 (Gap Lock) 互锁与 Wait-for Graph 死锁有向环检测</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">事务循环等待有向环 ──► 50ms 周期 Wait-for Graph 拓扑检测 ──► 自动回滚 Undo 最小代价事务</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left: Interlocking Transactions (420px) -->
+    <g transform="translate(20, 20)">
+      <rect width="420" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="420" height="30" rx="6" fill="#dbeafe"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">1. 经典死锁产生时序 (Gap Lock 冲突)</text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="390" height="60" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1d4ed8">T1: Trx 1 申请并持有 (10, 20) 间隙锁 (S-Gap)</text>
+        <text x="10" y="34" font-size="8.5" font-weight="700" fill="#1d4ed8">T2: Trx 2 同样申请并持有 (10, 20) 间隙锁 (S-Gap)</text>
+        <text x="10" y="48" font-size="7.5" fill="#64748b">间隙锁与间隙锁彼此兼容，双方均成功持锁</text>
+
+        <g transform="translate(0, 70)">
+          <rect width="390" height="75" rx="4" fill="#fee2e2" stroke="#f87171"/>
+          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">T3: Trx 1 尝试插入 id=15 ──► 等待 Trx 2 释放间隙！</text>
+          <text x="10" y="36" font-size="8.5" font-weight="700" fill="#991b1b">T4: Trx 2 尝试插入 id=16 ──► 等待 Trx 1 释放间隙！</text>
+          <text x="10" y="56" font-size="8" font-weight="700" fill="#dc2626">🔴 双方互相等待对方释放，陷入物理死锁死结！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right: Wait-for Graph Cycle Detection (420px) -->
+    <g transform="translate(460, 20)">
+      <rect width="420" height="345" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="420" height="30" rx="6" fill="#dcfce7"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">2. Wait-for Graph 环路检测与回滚</text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="390" height="150" rx="4" fill="#0f172a"/>
+        
+        <!-- Directed Cycle Graph -->
+        <g transform="translate(195, 75)">
+          <!-- Node Trx 1 -->
+          <circle cx="-90" cy="0" r="28" fill="#2563eb"/>
+          <text x="-90" y="4" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">Trx 1</text>
+          <text x="-90" y="42" font-size="7.5" fill="#93c5fd" text-anchor="middle">(Undo 量: 10)</text>
+
+          <!-- Edge T1 -> T2 -->
+          <path d="M -60 -15 Q 0 -45 60 -15" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+          <text x="0" y="-35" font-size="7.5" fill="#fca5a5" text-anchor="middle">等待 Trx 2</text>
+
+          <!-- Node Trx 2 -->
+          <circle cx="90" cy="0" r="28" fill="#ea580c"/>
+          <text x="90" y="4" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">Trx 2</text>
+          <text x="90" y="42" font-size="7.5" fill="#fdba74" text-anchor="middle">(Undo 量: 2)</text>
+
+          <!-- Edge T2 -> T1 -->
+          <path d="M 60 15 Q 0 45 -60 15" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow-red)"/>
+          <text x="0" y="38" font-size="7.5" fill="#fca5a5" text-anchor="middle">等待 Trx 1</text>
+        </g>
+
+        <rect y="165" width="390" height="65" rx="4" fill="#dcfce7" stroke="#34d399"/>
+        <text x="10" y="18" font-size="9" font-weight="700" fill="#065f46">InnoDB 自动解除死锁策略：</text>
+        <text x="10" y="34" font-size="7.5" fill="#047857">• 深度优先搜索 (DFS) 发现闭环瞬间触发介入</text>
+        <text x="10" y="48" font-size="7.5" fill="#047857">• 评估 Undo Log 量：Trx 2 (权重2) &lt; Trx 1 (权重10)</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#166534">• 自动主动回滚代价最小的 Trx 2，释放锁让 Trx 1 成功提交！</text>
+      </g>
+    </g>
+  </g>
+</svg>

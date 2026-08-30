@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![三位一体能力缝隙 (Capability Seams)：文件系统、进程与网络三层零信任沙箱隔离](../../../public/images/dsh-capability-seams-and-sandbox.svg)
+
 ## 一、心智模型：为什么需要“三位一体能力缝隙 (Capability Seam)”？
 
 在许多开源 Agent 实现中，工具（Tool）通常直接硬编码宿主机的系统调用：
@@ -61,6 +66,10 @@ flowchart TD
 在 Cordis 配置文件中只需切换一行 Provider，整个 Agent 所有的文件读写与命令执行瞬间无缝平移至隔离沙箱。
 
 ---
+
+
+
+![DSH 基于 Capability 的权限安全缝隙：Token 授权与沙箱系统调用拦截](../../../public/images/dsh-capability-token-grant-validation-flow.svg)
 
 ## 二、跨平台零信任沙箱矩阵 (`packages/sandbox`)
 
@@ -134,6 +143,10 @@ flowchart TD
 3. **级联取消防死锁**：若用户在等待审批期间点击了取消按钮，`AbortSignal` 会立即触发并拒绝等待 Promise，彻底清理资源。
 
 ---
+
+
+
+![DSH Bubblewrap 与 Seccomp 物理沙箱内核隔离拓扑](../../../public/images/dsh-bubblewrap-seccomp-namespace-isolation.svg)
 
 ## 四、架构启示与工程收获
 

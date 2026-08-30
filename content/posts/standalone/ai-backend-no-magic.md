@@ -32,9 +32,13 @@ flowchart LR
 
 真正变化的是参数：一次模型调用可能比典型进程内 RPC 慢很多，重试一次也可能重新消耗完整输入和输出 token；缓存未命中还会改变 TTFT 与账单。老问题没有消失，只是账单和用户等待都更敏感了。重试会放大错误，见[重试会放大一切错误：幂等性工程的完整账本](/writing/idempotency-engineering)。
 
-![LLM 与传统 RPC 的延迟与失败重试代价对比图](/images/ai-backend-cost-scaling.svg)
+![LLM 与传统 RPC 的延迟与失败重试代价对比图](../../../public/images/ai-backend-cost-scaling.svg)
 
 *图注：示意同一类调用的数量级差异；具体延迟必须按模型、网络、提示词、排队和流式阶段实测。重试还会重新消耗 token 与预算。*
+
+
+
+![AI 网关流式传输流水线：SSE 解析、Backpressure 反压控制与 Token 计费挂钩](../../../public/images/ai-gateway-streaming-chunk-pipeline.svg)
 
 ## 二、 LLM 网关：老问题，新账单
 
@@ -242,6 +246,10 @@ flowchart LR
 | 主要风险 | 前缀一变即失效 | 相似不等于正确 | 无业务风险 |
 
 工程判断：先在目标供应商上核对精确前缀缓存的命中与价格，再决定是否投入 prompt 整理；KV 缓存是供应商与推理框架的内部机制，只有自托管推理才需要深入调优；语义缓存只在自己的留出集和线上数据证明“查询高度重复且答案可复用”之后才建。
+
+
+
+![多模型高可用容灾架构：供应商限流降级、超时重试与故障熔断](../../../public/images/ai-service-fallback-circuit-breaker.svg)
 
 ## 四、 RAG 检索质量：召回是召回，答案是答案
 

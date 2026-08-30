@@ -23,6 +23,11 @@ series: "从 Go 到 TypeScript"
 
 下面的示例都按 `strict: true` 理解。刻意展示编译错误的地方用 `@ts-expect-error` 标记，这样示例本身仍然可以交给 TypeScript 编译器检查。
 
+
+---
+
+![Go 后端转 TypeScript 核心避坑矩阵：结构类型 vs 名义类型、异步并发、错误处理与类型擦除](../../../public/images/typescript-pitfalls-for-go-developers-matrix.svg)
+
 ## 一、先划清边界：类型不会替你验证外部输入
 
 ### `interface` 和 `type` 会被擦掉
@@ -137,6 +142,10 @@ console.log(annotated.port, onlyProd);
 - 变量本来就应该被限制为某个类型时，用类型注解：`const config: ServerConfig = ...`。
 - 你确实已经在运行时验证过，只是要把结果告诉编译器时，才用 `as`；它不应该替代验证。
 - 你想检查一个对象是否符合约定，同时保留它更具体的推断类型时，用 `satisfies`，常和 `as const` 一起出现。
+
+
+
+![JavaScript 原型链继承与属性遮蔽 (Property Shadowing) 内存拓扑](../../../public/images/js-prototype-chain-property-shadowing.svg)
 
 ## 二、值语义比类型注解更容易出错
 
@@ -352,6 +361,10 @@ notHandled();
 ```
 
 Go 代码里错误通常作为返回值沿着调用栈传递；JavaScript 里有人可以 `throw` 字符串、数字甚至普通对象，Promise rejection 也不一定是 `Error`。`catch` 变量在严格配置下应该先当成 `unknown`，再做 `instanceof Error` 或自定义守卫。
+
+
+
+![Go 开发者踩坑之二：IEEE-754 双精度浮点精度丢失与 BigInt 金融计费模型](../../../public/images/floating-point-ieee754-precision-trap.svg)
 
 ## 四、`this` 是运行时绑定，不是方法的永久属性
 

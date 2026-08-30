@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">并发任务取消模型跨语言对决：Go Context vs JS AbortSignal</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Go context.Context (通道 select 轮询 + 树形父子协程生命周期强约束) vs JS AbortController (EventTarget 订阅发布 + 异步微任务触发)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Go Context -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">Go context.Context (Channel 轮询树)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">ctx, cancel := context.WithTimeout(parent, 2*time.Second)</text>
+          <text y="28" fill="#86efac">defer cancel()</text>
+          
+          <text y="50" fill="#cbd5e1">协程监听模型：</text>
+          <text y="64" fill="#38bdf8">select {</text>
+          <text y="78" fill="#34d399">case &lt;-ctx.Done(): // 通道关闭广播，所有子树瞬间感知！</text>
+          <text y="92" fill="#4ade80">case res := &lt;-ch: handle(res)</text>
+          <text y="106" fill="#38bdf8">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 强制显式作为函数第一参数传递 (func Do(ctx ...))；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 父取消必然级联广播杀死全部子 Goroutine；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 服务端并发基石。</text>
+      </g>
+    </g>
+
+    <!-- Right: JS AbortSignal -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">JavaScript AbortSignal (事件发布订阅)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">const controller = new AbortController()</text>
+          <text y="28" fill="#86efac">const signal = AbortSignal.timeout(2000)</text>
+          
+          <text y="50" fill="#cbd5e1">异步监听机制：</text>
+          <text y="64" fill="#38bdf8">fetch('/api', { signal }) // 浏览器底层直接中断 TCP 连接！</text>
+          <text y="78" fill="#34d399">signal.addEventListener('abort', () =&gt; {</text>
+          <text y="92" fill="#4ade80">  cleanupLocalResources() // 事件触发式回调</text>
+          <text y="106" fill="#34d399">})</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 深度集成 Web 标准 API (fetch, addEventListener)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支持 AbortSignal.any([s1, s2]) 复合组合取消；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代 TS/JS 异步流控制金标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">测速服务端 100Gbps 吞吐 0 内存分配引擎 (Zero-Alloc Stream Engine)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">每次动态 make/rand 生成数据 (CPU 100% 打满，GC 频繁卡顿) vs 预分配全局不可压缩伪随机 RingBuffer + splice 零拷贝直发网卡</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Dynamic Alloc -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 动态生成与全量堆分配：CPU 与 GC 崩溃</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">for {</text>
+          <text y="28" fill="#ef4444">  chunk := make([]byte, 1024*1024) // 每次申请 1MB 堆内存</text>
+          <text y="42" fill="#ef4444">  rand.Read(chunk)                 // 消耗海量 CPU 生成随机数</text>
+          <text y="56" fill="#fca5a5">  conn.Write(chunk)</text>
+          <text y="70" fill="#f87171">}</text>
+          
+          <text y="92" fill="#ef4444">💥 10Gbps 并发下产生 1.25GB/s 的堆垃圾！</text>
+          <text y="106" fill="#f87171">🔴 GC STW 频繁卡顿，测速服务端自身成为最大瓶颈！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 单机只能跑满 2Gbps 网卡带宽；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• CPU 全在做无意义的随机数运算与垃圾回收；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 严重限制单机并发承载上限！</text>
+      </g>
+    </g>
+
+    <!-- Right: Zero Alloc Ring -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 预热 RingBuffer + 0 分配复用直发</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 启动时预分配全局 64MB 不可压缩高质量随机数据</text>
+          <text y="28" fill="#86efac">var GlobalPayload = makeRandomBytes(64 * 1024 * 1024)</text>
+          
+          <text y="48" fill="#38bdf8">发送流水线 (0 Allocs):</text>
+          <text y="62" fill="#34d399">for {</text>
+          <text y="76" fill="#34d399">  // 纯只读切片引用，0 堆内存分配！</text>
+          <text y="90" fill="#4ade80">  _, err := conn.Write(GlobalPayload[offset : offset+64*1024])</text>
+          <text y="104" fill="#38bdf8">}</text>
+          
+          <text y="122" fill="#4ade80">✓ 单机轻松压榨跑满 100Gbps 物理网卡！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• CPU 利用率从 100% 暴降至 3%；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消灭 GC 干扰，测速曲线绝对平滑；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 顶级网络测量服务器架构范式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

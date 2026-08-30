@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** API 契约不只规定 200 的 JSON 长什么样，还要规定校验失败、重复请求和同 key 不同 payload 怎么结束。订单服务把错误统一成 `{error:{code,message,details?}}`，并让 `saveByKey` 返回权威结果：100 个并发同 key 请求得到 1 个 201、99 个相同订单的 200；同 key 携带不同 body 得到 409。进程内原型用同步临界段修复 check-then-act，PostgreSQL 实现用唯一约束做原子 claim——两版本机都通过了并发、冲突与重放实验，仍未验证多实例与真实部署。
 
+
+---
+
+![API 形状即服务合同：错误形状、可重试性标记、版本冲突与幂等契约定义](../../../public/images/service-api-shape-error-retry-conflict-contract.svg)
+
 ## 一、先定失败形状，再定成功形状
 
 外部输入失败时，调用方需要知道三件事：机器应该分支到哪里，人应该读什么，Agent 应该修正哪个字段。服务统一返回。下面是 schema 关键节选，完整文件还需要导入 Zod 并接入 validator：
@@ -30,6 +35,10 @@ const ApiErrorSchema = z.object({
 ```
 
 `code` 是稳定的机器合同，`message` 是诊断文本，`details` 是结构化校验问题。Zod validator 的失败路径会直接返回响应，不会抛给 `app.onError`；因此当前代码使用第三个参数 hook，把 `error.issues` 映射到自己的错误合同。这个判断来自当前依赖源码，不是把异常处理当成万能出口。
+
+
+
+![API 范式全景架构对比：RESTful (通用资源) vs gRPC (高性能二进制 Protobuf) vs GraphQL (按需查询)](../../../public/images/api-design-rest-vs-grpc-vs-graphql-matrix.svg)
 
 ## 二、成功与失败的输出要能从当前工件重跑
 
@@ -101,6 +110,10 @@ flowchart LR
 ```
 
 路由只把 `created: true` 映射成 201；重放是 200；指纹不同是 409。进程内版本的“原子”只在单个事件循环内成立；下面第四节用 PostgreSQL 唯一约束把同一个合同搬到数据库层。
+
+
+
+![API 版本演进与向后兼容防御：Additive Changes 原则与废弃策略](../../../public/images/api-versioning-breaking-change-defense.svg)
 
 ## 四、反例先写进测试：100 个并发请求会怎样
 

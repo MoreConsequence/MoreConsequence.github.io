@@ -10,6 +10,11 @@ series: "网络协议"
 
 **TL;DR：** "SSE 是 WebSocket 的廉价版"把两者关系说反了。SSE 是**服务端→客户端单向流**的正解，WebSocket 解决的是**双向实时**，后者为此付出一次升级握手 RTT、客户端帧掩码、心跳与死连接检测、断线重连与续传游标全部自己实现的复杂度。LLM 的 token 流是纯单向，默认该选 SSE——它是 HTTP 流（`text/event-stream`），浏览器 EventSource 原生，重连语义（`Last-Event-ID` + `retry:`）协议内置。本机一轮（Node 24.19.0 / macOS 26.5.1）：每事件线上字节 SSE 49.9B vs WS 42.9B（32B payload）；服务端掐断连接后 SSE 一次自动重连 50/50 无缺口，WS 要自己重连、把续传游标塞进重连请求的 query。判定标准就一句：**你的场景需不需要客户端随时上行。需要，才上 WebSocket。**
 
+
+---
+
+![Server-Sent Events (SSE) vs WebSocket 协议选型与大模型流式网关账本](../../../public/images/sse-vs-websocket-protocol-comparison.svg)
+
 ## 一、反直觉先立住：SSE 不是降级方案，是单向流的正解
 
 "SSE 是 WebSocket 的廉价版"这句话暗示 SSE 是功能残缺的 WebSocket——去掉双向、去掉二进制、去掉消息推送，剩下个残次品。这不是退化：单向推送本来就不需要双向协议。
@@ -17,6 +22,10 @@ series: "网络协议"
 把场景摆开。一条 LLM 流式响应里，数据只朝一个方向流动：模型在服务端逐个产出 token，客户端只负责接收和渲染。这是**单向管道**：源头在服务端，水只往客户端流。WebSocket 是**对讲机**：两边都能按住说话键。用对讲机去解决"水往一个方向流"，你为用不到的说话键付了整套对讲机的钱——频率协商、按住才能说、随时可能被对方打断。对单向往下送数据，管道才是对的那个工具。
 
 这不是比喻层面的洁癖，工程上贵得很具体。WS 的固定成本包括：一次升级握手 RTT、客户端帧掩码、心跳与判死、断线重连与续传游标。SSE 把这四样里除心跳外的三样都做成协议内置（心跳用一行注释也能糊弄过去）。当你只需要单向时，这些成本没有对应收益。
+
+
+
+![SSE 自动重连与状态机：Last-Event-ID 序号断点补发与零数据丢失](../../../public/images/sse-reconnect-last-event-id-state-machine.svg)
 
 ## 二、SSE 机制：text/event-stream 的四行字段与 Last-Event-ID 重连
 
@@ -72,6 +81,10 @@ WS 协议（RFC 6455）的复杂度分三笔。
 **第二笔，帧格式**（RFC 6455 §5.2、§5.3）：FIN + opcode（1=text、2=binary、8=close、9=ping、10=pong）+ MASK 位 + 7/16/64 位长度 + 4 字节掩码密钥。规则是客户端→服务端帧必须掩码、服务端→客户端禁止掩码。没有掩码帧处理，就没有 WS。
 
 **第三笔，生命周期全得自己写。** ping/pong 控制帧定义了，但"多久发一次 ping、多久没 pong 算死连接"没有规定；浏览器 API 没有心跳、没有自动重连、没有续传游标。断线重连要应用层自己做，而"上次发到哪了"的续传状态，协议里没有任何字段——必须自己约定（本实验里是塞进重连请求的 query）。这三笔摊开在 `experiments/sse-vs-ws/ws-server.mjs` 的百来行里，是完整的、可运行的本地教学原型，不是能直接上线的实现。
+
+
+
+![WebSocket 协议底层帧结构：Mask 掩码异或算法与 101 Switching Protocols 握手](../../../public/images/websocket-frame-masking-handshake-wire.svg)
 
 ## 四、关键差异账：五条对比与各自的坑
 

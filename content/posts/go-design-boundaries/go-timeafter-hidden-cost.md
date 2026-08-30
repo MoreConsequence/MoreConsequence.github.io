@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** `time.After` 返回的是 `NewTimer(d).C`，它方便，但每次调用仍会建立新的 timer 状态。统一入口在 Go 1.25.1/arm64 下测得：`time.After` **190.6ns、248B/3 allocs**；每轮 `NewTimer` 再 `Stop` 仍是 **157.2ns、248B/3 allocs**；循环外创建一次并 `Reset` 复用则是 **40.83ns、0 allocs**。这证明 `Stop` 取消的是 timer 的等待语义，不是已经发生的分配；高频循环才值得改成复用 timer，低频一次性等待不必为了一个 benchmark 数字增加复杂度。
 
+
+---
+
+![time.After 隐式内存泄漏：select 循环创建 248B time.Timer 导致直到超时前无法 GC](../../../public/images/go-time-after-timer-leak-channel-gc.svg)
+
 ## 一、先看真相：time.After 不是定时器，是定时器的构造函数
 
 很多人把 `time.After(d)` 当作"免费的等待"——和 `time.Sleep` 并列。源码里它是这样的（Go 1.25.1）：
@@ -44,6 +49,10 @@ go test ./go-runtime-boundary -run '^$' -bench '^(BenchmarkTimeAfterHour|Benchma
 ```
 
 248B/3 次分配——这个数字本身不大，但在高频循环里会按调用次数线性累加。**`time.After` 没有配套的 `Stop` 入口**：你拿到的是 channel，不是 `*Timer`。是否回收、何时从 runtime 队列移除由运行时版本和 timer 状态决定；文章只把当前 benchmark 的分配结果当作证据，不把它外推成固定 GC 周期。
+
+
+
+![time.After 循环内存泄漏陷阱：未触发定时器堆积与 runtime.timer 链表阻塞](../../../public/images/time-after-timer-leak-heap-accumulation.svg)
 
 ## 二、三档实测：账单到底记在哪个账户
 
@@ -102,6 +111,10 @@ for {
 - Go runtime 会根据 timer 状态和版本实现清理队列，不能用一次 `heapAlloc` 读数替代分配速率和 GC 观测。
 
 所以热循环 + `time.After` 的核心画像是“高分配速率”，不是一条可以跨版本复用的“每 3ms 一次 GC”定律；诊断时应同时看 `alloc_space`、`/gc/cycles/total`、CPU 和请求延迟。
+
+
+
+![Go 1.23 定时器重大重构：无缓冲通道、自动垃圾回收与无需排空 timer.C](../../../public/images/go-123-timer-channel-drain-evolution.svg)
 
 ## 四、为什么 Stop 不救你：API 的语义差
 

@@ -10,6 +10,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 幂等实现的缺陷几乎从不出现在 PR 自述的场景里：它藏在"两个相同请求同时到达"的间隙中。本文用仓库内可复现的评审工件演示标准流程——被评审实现（check 与 act 隔着两次存储往返）在 100 个同 key 并发请求下创建出 **100 个订单**（`expected 100 to be 1`）；把同一个测试对准合并后的实现则全绿。结论：评审幂等 PR 时不要先读 diff 的 happy path，先把并发反例写成可执行断言——红灯就是议价筹码。
 
+
+---
+
+![评审幂等 PR 核心方法论：先让 100 个并发相同请求同时到达，再看锁粒度与状态防线](../../../public/images/review-idempotent-pr-100-concurrent-requests.svg)
+
 ## 一、PR 自述没有撒谎，它只是没说全
 
 设想一个典型 PR：为订单服务补充幂等能力。描述写着"按幂等键去重，重复请求返回已创建订单"，附带三四个顺序用例，全部通过。它的核心逻辑长这样（`experiments/service/src/pr-review/before-store.ts`，节选）：
@@ -29,6 +34,10 @@ async saveByKey(idempotencyKey, order, requestFingerprint) {
 ```
 
 逐行看没有任何"错误"：查一次、没有就写、有就返回旧值。`roundTrip` 用 `setTimeout(0)` 模拟一次异步存储往返——这不是故意埋雷，任何由数据库驱动的真实实现都长这样。问题不在某一行的写法，而在 **check 与 act 之间的时间间隙**：顺序用例永远不会踩进去。
+
+
+
+![Git PR 并发合并冲突模型：Base Commit 乐观校验与 CI 自动化保镖](../../../public/images/git-pr-concurrency-optimistic-merge-conflict.svg)
 
 ## 二、评审的第一动作：把"同时到达"写成断言
 
@@ -78,6 +87,10 @@ sequenceDiagram
 ```
 
 这就是 check-then-act 竞争的本质：**检查结果的有效期只到下一个 `await`**。它与语言无关——Go 里不持锁跨 channel 查写、SQL 里两条独立语句之间，都是同一个缺口。[测试策略篇](/writing/service-testing-strategy)把它称为"最容易被顺序 happy path 掩盖的反例"，本篇是那个原则在评审场景的具体化。
+
+
+
+![GitHub Actions 并发控制组：concurrency group 与 cancel-in-progress 算力节约模型](../../../public/images/github-action-concurrency-cancel-in-progress.svg)
 
 ## 四、修在哪一层：把 claim 收缩成存储的一个原子动作
 

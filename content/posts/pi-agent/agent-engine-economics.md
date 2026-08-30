@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 编码 Agent 的竞争早已不是“谁的模型单价更便宜”，而是“谁的 Harness 更加节约 Token”。Databricks 针对百万行真实企业代码库的基准测试表明：同一模型在不同 Harness 下，单任务成本差可达 2 倍以上；GLM 5.2 搭配 Pi（$1.25/任务）能以接近一半的成本打平 Opus 4.8 跑在 Claude Code 上的通过率（~87.5%），其核心在于 Pi 每轮喂给模型的上下文比全能型竞品少约 3 倍。在 Shopify 工业级工程实践中，极简 Harness 驱动的 Liquid PR #2056 实现了 53% 的提速与 93 次持续提交。本文作为系列终篇，剖析 `pi-telemetry`（935 行）的供应商中立记账机制，并给出贯穿全系列 9 篇的完整工程承诺与架构矩阵。
 
+
+---
+
+![Agent Token 经济学实战：轻量 Harness 架构、Prompt 字节级对齐与 80% 成本削减](../../../public/images/pi-agent-economics-token-reduction-harness.svg)
+
 ## 一、Token 单价不是任务成本的预测因子
 
 在评估 Agent 时，常见的误区是直接按模型厂商公开的每百万 Token 价格（$ / M tokens）去估算实际使用成本。然而，Databricks 在 2026 年 7 月 8 日发布的百万行企业级代码基准测试给出了完全不同的结论：**Harness 的上下文装配策略与工具调用开销，对最终任务成本起着决定性作用。**
@@ -30,6 +35,10 @@ series: "Agent 的方方面面"
 1. **03 篇系统提示词克制**：08-20 首测模板主体仅约 322 tokens，工具只保留单行简述（08-23 复测已涨至约 1.2k tokens，见 03 篇对照表——克制是纪律，需要持续监督而不是一次性认证）；
 2. **05 篇四工具极简主义**：没有臃肿的专用检索和状态查询工具，避免模型每轮调用产生大量冗余的 schema 与中间返回值；
 3. **03 篇 Compaction 严格闸门**：`16384 reserve / 20000 keep` 确定性压缩，防止无效历史轮次在上下文中无限滚雪球。
+
+
+
+![Agent 经济学与成本 ROI 预算分配模型：模型选型梯度 (Small -> Medium -> Large) 与任务路由](../../../public/images/agent-token-cost-roi-budget-allocation.svg)
 
 ## 二、工业级实证：Shopify 生产环境的大规模提效
 
@@ -64,6 +73,10 @@ export interface UsageRecord {
 1. **抹平 47 家供应商的用量口径**：将 OpenAI、Anthropic、Google、本地 llama.cpp 的计费与缓存字段转换为统一的 `UsageRecord`；
 2. **延迟与成本精确归因**：在 06 篇统一重试层中，将网络重试等待时间、模型生成时间和工具执行时间分开记账；
 3. **会话级预算刹车**：结合 02 篇的 Agent Loop，实时累加会话花费，达到预算上限时触发确定性收敛。
+
+
+
+![Agent Token 预算硬熔断与无限死循环保护机制](../../../public/images/agent-token-budget-circuit-breaker-guard.svg)
 
 ## 四、全系列总结：Harness 的工程承诺矩阵
 

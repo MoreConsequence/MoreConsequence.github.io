@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 堆内存 profile 四大指标与真实内存泄漏排查</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">inuse_space (当前存活物理内存) ｜ alloc_space (历史累计分配总量) ｜ 消除 RSS 虚高与 madvise 异步归还误报</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: pprof Metrics -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. pprof heap profile 四维透视表</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 抓取实时堆快照</text>
+          <text y="30" fill="#cbd5e1">go tool pprof http://localhost:6060/debug/pprof/heap</text>
+          
+          <text y="52" fill="#4ade80">• inuse_space (重点！): 当前存活且未被 GC 的堆字节数</text>
+          <text y="68" fill="#4ade80">• inuse_objects: 当前存活的小对象总数 (查小对象泄漏)</text>
+          <text y="86" fill="#fbbf24">• alloc_space: 自程序启动以来累计分配的堆字节数</text>
+          <text y="102" fill="#fbbf24">• alloc_objects: 历史累计分配的对象数 (查高频短命分配)</text>
+          
+          <text y="124" fill="#34d399">✓ 查内存泄漏必须使用默认的 inuse_space！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">对比分析指令：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 采样间隔 10 分钟生成两份 profile；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 执行 go tool pprof -base base.pb.gz current.pb.gz；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 用 top/list 定位增量大于 0 的绝对净增长函数！</text>
+      </g>
+    </g>
+
+    <!-- Right: False Alarms -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 生产三大常见假性泄漏误报</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">误报 1: top / ps 显示 RSS 居高不下</text>
+          <text y="28" fill="#fed7aa">• Go 运行时 GC 清扫后，默认通过 MADV_DONTNEED / FREE</text>
+          <text y="42" fill="#fed7aa">  标记页可用，OS 只有在全局内存吃紧时才真正回收物理页！</text>
+          
+          <text y="62" fill="#fb923c">误报 2: sync.Pool 占用不释放</text>
+          <text y="76" fill="#fed7aa">• Pool 在两次 GC 之间充当本地缓存，属于正常生命周期；</text>
+          
+          <text y="96" fill="#f87171">真泄漏: 全局 Map / Slice 无上限 Append</text>
+          <text y="110" fill="#fca5a5">• 常驻对象引用的子指针未置 nil，导致整个树无法被 GC 扫描释放！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">排查标准军规：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 观察 Go Runtime 内部监控: runtime.ReadMemStats(&amp;ms)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 对比 HeapAlloc 与 HeapInuse，区分物理持有与逻辑存活；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 生产统一配置 GOMEMLIMIT 彻底告别容器 OOM 惊魂！</text>
+      </g>
+    </g>
+  </g>
+</svg>

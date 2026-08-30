@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">美团 Leaf-Segment 号段模式双 Buffer 异步预加载架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">单 Buffer 用尽同步阻塞查 DB (发生毛刺卡顿) vs 双 Buffer 异步机制 (当前 Buffer 消耗至 10% 异步线程自动加载下一个号段，业务请求 100% 纯内存 0ms 响应)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Single Buffer Bug -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 单 Buffer 同步加载：突发时延毛刺</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">当前号段 [1..1000] 用尽：</text>
+          <text y="28" fill="#ef4444">1. 第 1001 个并发请求到达 ──► 内存已空</text>
+          <text y="42" fill="#ef4444">2. 业务线程被迫同步发起 DB UPDATE max_id = max_id + 1000</text>
+          <text y="56" fill="#fca5a5">3. 恰逢 DB 遇到锁等待或主从切换耗时 200ms</text>
+          <text y="70" fill="#ef4444">4. 导致数百个前端请求全部阻塞挂起超时！</text>
+          
+          <text y="94" fill="#ef4444">💥 监控大盘周期性出现剧烈 P99 延迟尖刺！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 数据库抖动直接反噬业务请求；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 无法满足苛刻金融级的低时延承诺；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 必须引入双缓冲解耦！</text>
+      </g>
+    </g>
+
+    <!-- Right: Double Buffer -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 双 Buffer 异步平滑换弹：100% 内存直出</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">双缓冲异步预热机制：</text>
+          <text y="28" fill="#86efac">1. 业务线程从 Buffer A [1..1000] 极速原子发号</text>
+          
+          <text y="50" fill="#38bdf8">2. 当 Buffer A 消耗超过 10% (到达 100):</text>
+          <text y="64" fill="#34d399">   • 异步工作线程在后台静默向 DB 申请 Buffer B [1001..2000]</text>
+          <text y="78" fill="#34d399">3. Buffer A 用尽时 ──► 0ms 瞬间原子切换至 Buffer B！</text>
+          
+          <text y="104" fill="#4ade80">✓ 业务请求永远从内存中秒出，时延恒定 &lt; 0.1ms！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底熨平数据库 I/O 抖动；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 即使数据库宕机 1 小时，内存号段仍可继续发号；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业级分布式发号器最高架构典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

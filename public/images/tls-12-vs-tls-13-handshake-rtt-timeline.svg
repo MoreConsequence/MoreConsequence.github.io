@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TLS 协议演进：TLS 1.2 (2-RTT) vs TLS 1.3 (1-RTT / 0-RTT)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">TLS 1.2 (先选密码套件再换秘钥，耗时 2-RTT) vs TLS 1.3 (ClientHello 直送 Key Share，1-RTT 即刻完成握手并发送加密数据)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: TLS 1.2 -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. TLS 1.2 握手流程 (2-RTT: 耗时漫长)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">RTT 1: ClientHello ──► ServerHello + Certificate + ServerKeyExchange</text>
+          <text y="30" fill="#cbd5e1">       (仅协商支持的加密算法，尚未生成密钥)</text>
+          
+          <text y="54" fill="#fb923c">RTT 2: ClientKeyExchange + ChangeCipherSpec + Finished</text>
+          <text y="70" fill="#fed7aa">       ──► Server Finished</text>
+          
+          <text y="96" fill="#34d399">RTT 3: 此时才能正式发送第 1 个应用层 HTTP GET 请求！</text>
+          <text y="116" fill="#f87171">🔴 首包延迟高达 2~3 个 RTT (150ms+)！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制缺陷：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 握手交互轮次过多，移动端首屏极慢；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 包含大量不安全陈旧密码套件 (如 RSA 密钥协商)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 缺乏前向安全性保障。</text>
+      </g>
+    </g>
+
+    <!-- Right: TLS 1.3 -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ TLS 1.3 极速握手 (1-RTT: 性能减半)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">RTT 1: ClientHello + Key Share (ECDHE 公钥切片预先发送！)</text>
+          <text y="30" fill="#38bdf8">       ──► ServerHello + Key Share + EncryptedExtensions</text>
+          <text y="46" fill="#34d399">       ──► 双方瞬间算出相同对称主密钥！</text>
+          
+          <text y="70" fill="#4ade80">RTT 2: 客户端直接发送加密的 HTTP GET 请求！</text>
+          <text y="88" fill="#38bdf8">支持 0-RTT: 会话恢复时携带 Early Data 0ms 直发！</text>
+          
+          <text y="114" fill="#4ade80">✓ 握手时间缩短 50%，首屏秒开！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强制仅支持 ECDHE，绝对保障完美前向安全 (PFS)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 废弃全部弱加密算法；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代化安全通信事实标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

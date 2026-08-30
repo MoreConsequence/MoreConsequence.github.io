@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Nagle 算法与延迟 ACK (Delayed ACK) 的 40ms 死锁互等陷阱</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">发送端等 ACK 才发小包 (Nagle) ──► 接收端等第二个包才回 ACK (Delayed ACK) ──► 触发 40ms/200ms 硬延时惩罚</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Deadlock Sequence (860px) -->
+    <g transform="translate(20, 20)">
+      <rect width="860" height="175" rx="6" fill="#0f172a"/>
+      <text x="15" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#38bdf8">
+        客户端连续两次 write() 触发的物理互等死结：
+      </text>
+
+      <g transform="translate(15, 45)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="260" height="105" rx="4" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="10" y="20" font-size="9" font-weight="700" fill="#60a5fa">① 客户端 write(Header: 100B)</text>
+        <text x="10" y="38" font-size="7.5" fill="#cbd5e1">当前管道无在途包，立即发出！</text>
+        <text x="10" y="56" font-size="7.5" fill="#93c5fd">紧接着 write(Body: 200B)</text>
+        <text x="10" y="74" font-size="7.5" font-weight="700" fill="#fbbf24">Nagle 介入：发现 Header 未被确认，强行将 Body 扣押在发送缓冲区！</text>
+
+        <g transform="translate(275, 0)">
+          <rect width="260" height="105" rx="4" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="10" y="20" font-size="9" font-weight="700" fill="#fbbf24">② 服务端收到 Header (100B)</text>
+          <text x="10" y="38" font-size="7.5" fill="#cbd5e1">服务端开启了延迟 ACK (Delayed ACK):</text>
+          <text x="10" y="56" font-size="7.5" fill="#fca5a5">"我期望攒满 2 个包或等回包再捎带 ACK"</text>
+          <text x="10" y="74" font-size="7.5" font-weight="700" fill="#ef4444">服务端停止发送 ACK，开启 40ms 倒计时器！</text>
+        </g>
+
+        <g transform="translate(550, 0)">
+          <rect width="295" height="105" rx="4" fill="#450a0a" stroke="#ef4444"/>
+          <text x="10" y="20" font-size="9.5" font-weight="700" fill="#f87171">③ 致命的 40ms/200ms 死锁僵局</text>
+          <text x="10" y="38" font-size="7.5" fill="#fca5a5">客户端在等服务端回 ACK 才发 Body</text>
+          <text x="10" y="56" font-size="7.5" fill="#fca5a5">服务端在等客户端发 Body 才捎带回 ACK</text>
+          <text x="10" y="74" font-size="8" font-weight="700" fill="#ef4444">双方陷入死等！直到服务端 40ms 定时器超时才强制回复孤立 ACK！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Guidance (860px) -->
+    <g transform="translate(20, 210)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="100" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+      <text x="15" y="22" font-size="10.5" font-weight="700" fill="#166534">🛠️ 生产环境彻底破除 40ms 延迟死锁三大法则：</text>
+      <text x="15" y="42" font-size="8.5" fill="#15803d">1. <tspan font-weight="700">客户端一律开启 TCP_NODELAY</tspan>：彻底禁用 Nagle 算法（Nginx, Netty, gRPC, Go net.Conn 默认全部开启）；</text>
+      <text x="15" y="60" font-size="8.5" fill="#15803d">2. <tspan font-weight="700">使用 writev (向量 I/O)</tspan>：将 Header 与 Body 合并为一个单一系统调用发送，规避分包；</text>
+      <text x="15" y="78" font-size="8.5" fill="#15803d">3. <tspan font-weight="700">应用层合并 Buffer</tspan>：在内存中拼装好完整报文再调用 send()，从根源消除小包！</text>
+    </g>
+  </g>
+</svg>

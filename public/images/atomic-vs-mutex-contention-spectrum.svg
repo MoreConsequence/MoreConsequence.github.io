@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">并发同步选型象限：sync/atomic vs sync.Mutex</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">低冲突与单个标量状态 (Atomic 耗时仅 4ns 性能快 10 倍) vs 复杂临界区与高竞争 (Mutex 自旋失败自动挂起休眠，保护 CPU 不被打爆)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Atomic -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. sync/atomic (硬件无锁 CAS)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">atomic.AddInt64(&amp;counter, 1) / atomic.Value</text>
+          
+          <text y="38" fill="#86efac">核心优势：</text>
+          <text y="52" fill="#34d399">• 单次操作耗时仅 ~4ns</text>
+          <text y="66" fill="#34d399">• 0 Goroutine 挂起与上下文切换开销</text>
+          
+          <text y="90" fill="#f87171">⚠️ 局限与盲区：</text>
+          <text y="104" fill="#fca5a5">• 仅适用于单个基础标量类型 (int/bool/ptr)</text>
+          <text y="118" fill="#ef4444">• 无法保证复合操作的多行代码原子性！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 全局 QPS 指标统计、序列号生成；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 服务优雅关闭标志位 (closing uint32)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速轻量计数器。</text>
+      </g>
+    </g>
+
+    <!-- Right: Mutex -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. sync.Mutex (自适应混合互斥锁)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">mu.Lock(); defer mu.Unlock();</text>
+          
+          <text y="38" fill="#86efac">三级自适应流转：</text>
+          <text y="52" fill="#38bdf8">1. 快速路径: CAS 抢锁成功 (~10ns)</text>
+          <text y="66" fill="#34d399">2. 慢速路径: CPU 积极自旋 4 次</text>
+          <text y="80" fill="#34d399">3. 挂起路径: 沉睡进入等待队列 (通过 sema 休眠)</text>
+          
+          <text y="106" fill="#4ade80">✓ 保护复杂业务临界区，防止 CPU 活锁！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• Map 读写、链表节点操作等多步骤临界区；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 高冲突并发下的 CPU 负载保护；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 标准并发编程主力军！</text>
+      </g>
+    </g>
+  </g>
+</svg>

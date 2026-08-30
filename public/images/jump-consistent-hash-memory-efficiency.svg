@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Jump Consistent Hash (Google) 极简无内存哈希算法</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统环哈希 (需维护数万虚拟节点的红黑树数组，占用数 MB 内存) vs Jump Hash (纯数学伪随机跳跃，0 内存常驻，执行仅需 5 行汇编)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Ring Cost -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">传统虚拟节点环 (Ring Hash)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">100 个物理节点 * 200 虚拟节点 = 20,000 个槽位</text>
+          
+          <text y="38" fill="#cbd5e1">物理开销构成：</text>
+          <text y="52" fill="#38bdf8">• 维护 20,000 个 uint32 排序数组与红黑树</text>
+          <text y="66" fill="#cbd5e1">• 每次查询需在内存中执行 binary search 二分查找</text>
+          <text y="80" fill="#38bdf8">• 跨线程并发需要加 RWMutex 读写锁保护</text>
+          
+          <text y="106" fill="#34d399">✓ 适合支持任意节点随机上下线场景</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 灵活性最高，支持删除任意中间节点；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 内存占用中等 (约几百 KB)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 通用分布式键值存储标准。</text>
+      </g>
+    </g>
+
+    <!-- Right: Jump Hash -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Google Jump Hash：5 行代码 0 内存神技</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">int32_t JumpConsistentHash(uint64_t key, int32_t num_buckets) {</text>
+          <text y="28" fill="#86efac">    int64_t b = -1, j = 0;</text>
+          <text y="42" fill="#38bdf8">    while (j &lt; num_buckets) {</text>
+          <text y="56" fill="#34d399">        b = j; key = key * 2862933555777941757ULL + 1;</text>
+          <text y="70" fill="#38bdf8">        j = (b + 1) * (double(1LL &lt;&lt; 31) / double((key &gt;&gt; 33) + 1));</text>
+          <text y="84" fill="#86efac">    }</text>
+          <text y="98" fill="#4ade80">    return b; // 0 内存！速度快 10 倍！</text>
+          <text y="112" fill="#4ade80">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯数学概率几何分布模拟；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 0 锁、0 内存结构体、极致 CPU 寄存器运算；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 连续编号桶 (0..N-1) 场景下的终极神器！</text>
+      </g>
+    </g>
+  </g>
+</svg>

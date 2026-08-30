@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 01 篇讲过 pi-ai 的定位：唯一认识供应商的层。这篇把"认识"拆成三个具体工程问题：**一个兼容模型**（47 个 provider 文件 + 流式统一）、**一次可信调用**（重试/退避/限流，但重试睡觉得能被取消）、**一个准确的失败分类**（20+ 家供应商的"上下文超限"文案长得完全不同，还有两家干脆静默）。agent 直连各家 SDK 的幻觉在于：每家 SDK 都帮你重试，但重试定时器不听你的 AbortSignal；每家都说自己错了，但错法各有各的方言。pi-ai 把这些全部抹平在 [`packages/ai`](https://github.com/earendil-works/pi/tree/main/packages/ai) 这一层（30.9k 行 LOC，2026-08-23 复测 @ b23741269；08-20 首测 23.5k @ 5cd93f6）。
 
+
+---
+
+![换模型不是换代码：pi-ai 多模型网关如何把 47 家供应商折叠成一层标准 SSE 流式 API](../../../public/images/pi-ai-provider-gateway-47-llm-unified-sse.svg)
+
 ## 一、一个兼容模型：47 个 provider 文件背后的统一流式协议
 
 `packages/ai/src/providers/` 下现有 47 个 provider 实现文件（不含 `.models.ts` 目录），覆盖 OpenAI、Anthropic、Google、Bedrock、Azure、Groq、xAI、MoonshotAI、ZAI、小米 Token Plan 三区、Qwen Token Plan、llama.cpp 本地路由等。每个 provider 把自家 REST/SSE 协议翻译成 pi-ai 的 `Api` 接口（流式消息事件、停止原因、用量结构）。
@@ -20,6 +25,10 @@ series: "Agent 的方方面面"
 **模型目录（catalog）**：`models.generated.ts` 是构建时从厂商模型元数据生成的全量模型表（工具用 `npm run build` 刷新，离线用 `--offline-model-data` 重建——模型表与代码分离，catalog 是可以热更新的数据而不是代码）。`/model` 中途切换模型，改的是 catalog 里的选择，不是任何业务代码。
 
 **统一消息结构**：`AgentMessage`/`Message` 双形态（02 篇的文件头注释："循环内部用 AgentMessage，只在 LLM 调用边界转换"）——转换函数 `convertToLlm` 是唯一认识 "OpenAI 的 assistant 消息长什么样 vs Anthropic 的 user message 含 blocks" 的地方。transform 只在边界发生，循环里永远只见自己的类型。
+
+
+
+![多模型服务商流式 SSE 协议归一化管道：Claude, OpenAI, DeepSeek 差异抹平](../../../public/images/agent-provider-streaming-sse-event-normalization.svg)
 
 ## 二、一次可信调用：retry 像 SDK，但睡眠能被取消
 
@@ -40,6 +49,10 @@ series: "Agent 的方方面面"
 ## 三、限流不是绕过，是尊重
 
 说"限流"容易让人联想到暴力重试，pi-ai 的纪律恰恰相反——它**尊重**限流信号。`retry-after` 系头按原值等待（超 60s 才拒绝）、`x-should-retry: false` 立即放弃，绝不在供应商明确说"别打了"之后继续撞。这不是心慈手软，是经济学：429 常常伴随配额扣费或排队惩罚，乱撞的代价远高于等一等。真正的"重试策略"是**有信号的等待 + 有据可依的放弃**。
+
+
+
+![模型服务商故障自愈降级矩阵：限流 (429) -> 超时 -> 自动重试与备用厂商漂移](../../../public/images/agent-provider-fallback-circuit-breaker-matrix.svg)
 
 ## 四、一个准确的失败分类：溢出检测的方言问题
 

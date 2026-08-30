@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed 隐私工程：IP 物理脱敏 (RedactIP) 四步流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">IPv4 (123.45.67.89 ──► 123.45.67.0/24) ｜ IPv6 (2001:db8:1234:5678:... ──► 2001:db8:1234::/48) ｜ 满足 GDPR 匿名化合规</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. IPv4 物理末段抹零 (IPv4 Masking)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">func RedactIPv4(ip string) string {</text>
+          <text y="28" fill="#86efac">  // 正则匹配并替换最后 1 个字节为 0</text>
+          <text y="42" fill="#86efac">  return reIPv4.ReplaceAllString(ip, "$1.0");</text>
+          <text y="56" fill="#38bdf8">}</text>
+          
+          <text y="80" fill="#34d399">输入: 114.248.172.85 (中国北京 电信家庭宽带)</text>
+          <text y="96" fill="#4ade80">输出: 114.248.172.0 (掩码 /24 网段)</text>
+          
+          <text y="120" fill="#4ade80">✓ 保留城市与运营商属性，彻底抹除单户追踪特征！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 数据库中仅持久化脱敏后的 IP 地址；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 任何日志与公开分享卡片 100% 匿名化；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 满足欧盟 GDPR 与中国个人信息保护法要求。</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. IPv6 前缀截断 (IPv6 Prefix Truncation)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">func RedactIPv6(ip string) string {</text>
+          <text y="28" fill="#86efac">  // 仅保留前 3 段 (48-bit)，其余全部替换为 ::</text>
+          <text y="42" fill="#86efac">  return reIPv6.ReplaceAllString(ip, "$1::$2");</text>
+          <text y="56" fill="#4ade80">}</text>
+          
+          <text y="80" fill="#38bdf8">输入: 240e:390:1234:5678:abcd:ef01:2345:6789</text>
+          <text y="96" fill="#4ade80">输出: 240e:390:1234:: (仅保留 /48 路由前缀)</text>
+          
+          <text y="120" fill="#4ade80">✓ 杜绝利用 SLAAC EUI-64 逆向推算设备 MAC 地址！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底封死硬件设备指纹泄露途径；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼顾网络拓扑分析与个人隐私保护；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造负责任的现代遥测系统！</text>
+      </g>
+    </g>
+  </g>
+</svg>

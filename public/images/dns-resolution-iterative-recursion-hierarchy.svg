@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DNS 全球树状解析拓扑与缓存层级 (DNS Hierarchy)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">客户端 ──► Local DNS 递归解析器 ──► Root 根服务器 ──► .io TLD 顶级域 ──► Authoritative 权威 DNS (TTL 缓存逐级生效)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 客户端与 Local DNS 递归查询 (Client to Recursive Resolver)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">检查 OS Hosts 与内存缓存 ──► 未命中则向 8.8.8.8 / 运营商 Local DNS 发送 UDP 53 报文</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">客户端完全放权，静等递归解析器完成全球代查！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 根域名服务器迭代寻址 (Root Servers: 13 Anycast Clusters)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Local DNS 问根: "blog.example.io 在哪？" ──► 根返回: "去问 .io 顶级域服务器 (TLD NS)"</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">全球互联网域名系统的根基！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 权威域名服务器精准回包 (Authoritative DNS: Cloudflare/NS1)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">向 example.io 权威 DNS 询问 ──► 返回精确 A 记录: 104.21.32.1，附带 TTL = 300 秒</text>
+        <text x="15" y="62" font-size="8" fill="#047857">域名拥有者配置真实 IP 的唯一权威源头！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 逐级 TTL 缓存与秒开 (TTL Caching &amp; Sub-millisecond Response)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Local DNS 缓存 300s ──► 随后的 100 万个用户请求全部在 Local DNS 0ms 直接命中！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">全球抗海量并发流量的分布式缓存典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

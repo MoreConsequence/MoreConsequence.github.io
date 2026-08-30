@@ -11,6 +11,11 @@ series: "前端全景手记"
 
 **TL;DR：** 前端框架的“乱”可以用四个反复出现的问题来解释：DOM 操作、状态与视图同步、规模化治理与更新成本、编译/运行时边界。本文的“地层”是分析模型，不是严格的历史分期，也不是每个框架的唯一动因；同一时期的工具会重叠，今天的框架也常同时回答多层问题。记住每个答案留下的代价，比背一张会变化的名单更有用。
 
+
+---
+
+![前端框架四代演化史：从原生 DOM 操作、MVC、VDOM 声明式到编译期 Signals 无 VDOM](../../../public/images/frontend-frameworks-four-generations-evolution.svg)
+
 ## 一、乱象的真相：选择瘫痪是地层叠加的症状
 
 截至本文修订日，前端生态同时存在 UI 库、应用框架、编译器、运行时和跨端工具：React、Vue、Angular、Svelte、Solid、Preact、Qwik、Lit，以及 Next.js、Nuxt、Astro 等上层框架都不能放进同一张“框架名单”后直接比较。初学者面对这份名单的典型反应是“我该学哪个”，以及随之而来的焦虑：选错是不是就完了。
@@ -26,6 +31,10 @@ flowchart LR
     G3["地层三<br/>规模之墙<br/>题目:大应用的状态与性能"] -->|"答案"| A3["Redux / Fiber / Hooks<br/>代价:心智复杂度"]
     G4["地层四<br/>编译器时代<br/>题目:运行时开销能否归零"] -->|"答案"| A4["Svelte / Solid / Qwik<br/>代价:编译期约束"]
 ```
+
+
+
+![虚拟 DOM (Virtual DOM) 树形 Diff 协调算法与批量 Patch 拓扑](../../../public/images/virtual-dom-reconciliation-diffing-tree.svg)
 
 ## 二、地层一 · DOM 抽象：重复的选择器与事件逻辑太贵（约 2005–2012）
 
@@ -64,6 +73,10 @@ sequenceDiagram
 地层二的重要分岔点之一，是**模板 vs JSX/JavaScript 表达式**：模板可以提供更强的静态约束和 HTML 心智，JSX 则把 UI 描述与 JavaScript 逻辑放在同一语言环境里。两者都能通过编译器、插件和约定扩展；Vue 支持 JSX，React 生态也存在模板和编译工具，所以不要把它们写成互斥阵营。
 
 地层二留下的未答题是：更新工作并没有消失，只是从手写同步转为组件渲染、比较、调度和提交；大型应用的状态所有权、缓存失效和跨团队约束也没有被单靠声明式 UI 解决。
+
+
+
+![React Fiber 链表架构：可中断工作单元与时间切片 (Time Slicing) 调度](../../../public/images/react-fiber-reconciliation-time-slicing.svg)
 
 ## 四、地层三 · 规模之墙：大应用的状态与性能（2015–2019）
 

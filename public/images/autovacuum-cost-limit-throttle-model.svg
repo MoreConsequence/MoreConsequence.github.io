@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">PostgreSQL Autovacuum 成本限流与 I/O 调优模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">hit(1) + miss(10) + dirty(20) 达到 cost_limit ──► sleep cost_delay (2ms) ｜ 防止后台垃圾回收抢占业务磁盘 I/O</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 成本积分累计器 (Cost Accumulator)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">每次 I/O 累加对应成本点数：</text>
+          
+          <text x="10" y="38" fill="#86efac">• vacuum_cost_page_hit = 1</text>
+          <text x="10" y="54" fill="#cbd5e1">  (在共享缓冲区命中)</text>
+          <text x="10" y="70" fill="#fed7aa">• vacuum_cost_page_miss = 10</text>
+          <text x="10" y="86" fill="#cbd5e1">  (从 OS/磁盘读取)</text>
+          <text x="10" y="102" fill="#f87171">• vacuum_cost_page_dirty = 20</text>
+          <text x="10" y="118" fill="#cbd5e1">  (修改页面写回)</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 真实量化后台操作对磁盘资源的消耗；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 脏页写回成本权重最高；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造精细化控制水表。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 强制休眠限流 (Throttle Sleep)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 当累计成本达到阈值上限：</text>
+          <text x="10" y="34" fill="#fed7aa">current_cost &gt;= autovacuum_vacuum_cost_limit</text>
+          
+          <text x="10" y="58" fill="#38bdf8">触发休眠：</text>
+          <text x="10" y="74" fill="#34d399">pg_usleep(autovacuum_vacuum_cost_delay * 1000)</text>
+          <text x="10" y="90" fill="#cbd5e1">• 主动交出磁盘 I/O 控制权给业务查询</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 保证前台核心业务响应 0 抖动！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 默认参数太保守导致清理速度赶不上写入；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 进而引发表膨胀失控；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• NVMe SSD 上需大幅调大 limit！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 现代 SSD 黄金调优配置</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// postgresql.conf 生产推荐：</text>
+          <text x="10" y="34" fill="#86efac">autovacuum_vacuum_cost_limit = 2000</text>
+          <text x="10" y="50" fill="#86efac">autovacuum_vacuum_cost_delay = 2ms</text>
+          <text x="10" y="66" fill="#38bdf8">autovacuum_max_workers = 5</text>
+          
+          <text x="10" y="92" fill="#34d399">性能收益：</text>
+          <text x="10" y="108" fill="#4ade80">清理吞吐量提升 10 倍，彻底终结膨胀！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 充分释放现代高 IOPS NVMe 硬盘潜能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼顾系统极速清理与前台业务吞吐；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• PostgreSQL DBA 必备调优功底！</text>
+      </g>
+    </g>
+  </g>
+</svg>

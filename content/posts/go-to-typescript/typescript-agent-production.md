@@ -31,6 +31,11 @@ flowchart LR
 
 因此，`replayed: true` 只能说明“这次调用等待了同一个进行中 Promise”，不能被解释成“副作用已经持久化且可永久重放”。
 
+
+---
+
+![TypeScript Agent 生产服务化架构：并发合并、幂等状态机与成本单位计费](../../../public/images/typescript-agent-production-idempotency-queue.svg)
+
 ## 一、并发合并：占位 Promise 必须先入表
 
 请求合并（request coalescing）处理的是“同时到达”：多个调用等待同一个进行中的 Promise，任务只启动一次。关键顺序不是 `task()` 写在哪，而是占位 Promise 必须在 task 启动前入表。下面是关键控制流节选：
@@ -53,6 +58,10 @@ void Promise.resolve()
 
 一个必须保留在测试里的反例是：第一次 task 已经让外部系统产生副作用，但本进程在返回前断开；随后同 key 重试时，当前 Map 没有任何完成记录，只能再次启动 task。即使 task 的业务结果看起来一样，副作用是否重复已经无法由这个原型回答。
 
+
+
+![生产级幂等性窗口模型：Idempotency-Key 与分布式原子状态机](../../../public/images/idempotency-token-dedup-window.svg)
+
 ## 二、幂等：成功、重放和失败重试不能用一个 Set 糊过去
 
 幂等回答的是“先后重试是否重复副作用”。当前原型用 Map 保存执行 Promise，并返回 `replayed` 标记。下面是关键控制流节选：
@@ -73,6 +82,10 @@ try {
 ```
 
 这比“成功后才 `executed.add(key)`”多表达了一件事：并发调用能够共享执行结果，失败可以被观察到，而不是被伪装成已完成。它仍有明确限制：进程重启丢状态，多实例不共享，第一个执行成功但响应丢失时仍需要持久化的结果记录来处理未知结果。
+
+
+
+![事务发件箱 (Transactional Outbox) 与 PostgreSQL CDC 异步事件拓扑](../../../public/images/distributed-outbox-pg-cdc-flow.svg)
 
 ## 三、成本单位：`/1k` 是公式的一部分
 

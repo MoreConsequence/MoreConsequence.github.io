@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 编写一个能在网页中展示 Markdown 的富文本组件很简单，但在字符网格的黑白终端（Terminal）中，要实现**流式实时的 Markdown 语法高亮与绝对对齐**，会踩遍计算机排版系统中最隐蔽的几大“深水坑”：**未闭合的代码块（Unclosed Fences）在流式输出中会使整个屏幕着色错乱；中文、日文、Emoji 等全角字符（Full-width CJK）在终端中占据 2 个字符宽度，导致原本对齐的表格与边框瞬间支离破碎；在 ANSI 彩色文本中随意截断字符串会导致终端整屏变色**。本文作为《Pi Agent 全景通才教程》第二十二课，带你深入 `pi-tui` 的底层算法，手写一个支持**流式状态机高亮**与 **CJK 宽度校准**的终端文本引擎。
 
+
+---
+
+![终端渲染深水区：流式 Markdown 语法高亮与 CJK 中文字符精准对齐算法](../../../public/images/pi-tui-markdown-highlight-cjk-alignment.svg)
+
 ## 一、终端排版的三大“地狱级”深坑
 
 ```mermaid
@@ -37,6 +42,10 @@ Chunk 3: "10;\n"
 - `'🚀'.length === 2`（UTF-16 代理对），在终端占 **2 列**。
 
 如果仅使用 `str.slice(0, 80)` 来做终端 80 列宽度折行，遇到中文时终端实际输出宽度会变成 120 列，导致终端自动换行并破坏垂直布局！
+
+
+
+![Pi TUI 终端中英文 (CJK) 与 Emoji 字符宽度对齐与渲染算法](../../../public/images/pi-tui-wcwidth-cjk-layout-alignment.svg)
 
 ## 二、CJK 字符宽度算法：手写轻量 `wcwidth`
 
@@ -181,6 +190,10 @@ export class StreamingMarkdownHighlighter {
   }
 }
 ```
+
+
+
+![Pi TUI 流式增量 Markdown 语法解析与 ANSI 终端高亮流水线](../../../public/images/pi-tui-streaming-markdown-parser-pipeline.svg)
 
 ## 四、小结与课后自检
 

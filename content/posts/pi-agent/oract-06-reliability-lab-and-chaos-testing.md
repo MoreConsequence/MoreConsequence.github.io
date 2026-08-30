@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：混沌工程与 Reliability Lab 给 Agent 做确定性故障注入](../../../public/images/oract-reliability-lab-chaos-injection.svg)
+
 ## 一、Agent 系统的测试绝境：为什么常规单测彻底失效？
 
 在传统 Web 系统测试中，我们习惯于编写简单的 Mock 对象来模拟外部 HTTP 接口。但对于长链路自主 Agent 系统，常规测试方法存在三大致命盲区：
@@ -34,6 +39,10 @@ flowchart TB
 ORACT 确立了测试第一性原则：**系统的可靠性证据必须是确定性的、可完全复现的、且能在无外部凭据的受限 CI 环境中 100% 独立运行。**
 
 ---
+
+
+
+![Oract 可靠性实验室与混沌工程矩阵：进程强杀 (SIGKILL)、磁盘满、网络丢包与超时注入](../../../public/images/oract-chaos-testing-fault-injection-matrix.svg)
 
 ## 二、CrashLab 确定性故障注入引擎 (Failpoints)
 
@@ -132,6 +141,10 @@ sequenceDiagram
 这种设计使得包含数百个复杂 Agent 交互场景的完整单测套件，能在 **30 秒内全部跑完**，且完全不受外部模型网络抖动、Token 计费或 API 变更的影响。
 
 ---
+
+
+
+![Oract CI 自动化混沌质量门禁：1,000 次随机故障注入与 100% 恢复率断言](../../../public/images/oract-automated-chaos-pipeline-ci-gate.svg)
 
 ## 四、自动化可靠性证据报告 (Reliability Evidence)
 

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">流式分词与增量 TUI 渲染：Thinking 块与 ToolCall 聚合流控</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">SSE 原始流 ──► 词法解析状态机 ──► 思考链 (实时灰色流式折叠) ｜ 工具调用 (JSON 增量累加校验) ｜ 最终回答 (Markdown 流式渲染)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 思考链 (Thinking Stream)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// DeepSeek-R1 思考流</text>
+          <text x="10" y="34" fill="#93c5fd">&lt;think&gt; ...正在分析竞态条件...</text>
+          
+          <text x="10" y="56" fill="#4ade80">渲染机制：</text>
+          <text x="10" y="70" fill="#86efac">• 终端开辟独立灰色浅色背景框</text>
+          <text x="10" y="86" fill="#86efac">• 打字机效果逐 Token 高频输出</text>
+          <text x="10" y="104" fill="#34d399">• 遇到 &lt;/think&gt; 自动折叠为摘要卡片！</text>
+          <text x="10" y="122" fill="#4ade80">✓ 保持界面极度整洁优雅。</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 给用户即时的认知反馈，缓解等待焦虑；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 思考链不计入最终正文历史；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代推理大模型的标准交互形态。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 工具调用增量聚合</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// JSON 碎片动态拼装</text>
+          <text x="10" y="32" fill="#86efac">delta: {"path": "sr</text>
+          <text x="10" y="46" fill="#86efac">delta: c/main.go", "offset": 10}</text>
+          
+          <text x="10" y="68" fill="#38bdf8">聚合状态机：</text>
+          <text x="10" y="82" fill="#34d399">1. 累加字符串缓冲区</text>
+          <text x="10" y="98" fill="#34d399">2. 收到 finish_reason = tool_calls</text>
+          <text x="10" y="114" fill="#4ade80">3. JSON.parse() 反序列化并分发！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 容忍网络粘包与分包切片；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结构化数据解析 100% 健壮；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚不可摧的协议解析器。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 差分光标渲染 (Cursor Diff)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 终端 VT100 转义控制</text>
+          <text x="10" y="34" fill="#fed7aa">[2K (清除当前行)</text>
+          <text x="10" y="48" fill="#fed7aa">[1A (光标上移一行)</text>
+          
+          <text x="10" y="70" fill="#38bdf8">1. 仅重绘发生变化的局部行</text>
+          <text x="10" y="86" fill="#34d399">2. 0 闪烁，保持 CPU 占用 &lt; 1%</text>
+          <text x="10" y="104" fill="#4ade80">3. 媲美本地 GUI 应用的丝滑质感！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 解决低性能终端环境下的渲染卡顿；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 提供极致优雅的开发者交互体验；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级 CLI 工具的核心竞争力！</text>
+      </g>
+    </g>
+  </g>
+</svg>

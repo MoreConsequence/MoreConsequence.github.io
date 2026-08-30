@@ -85,6 +85,10 @@ Jepsen 是一个用 Clojure 构建的专业分布式黑盒检验框架，其架�
 
 ---
 
+
+
+![Jepsen 线性一致性验证算法：Knossos (WGL) 状态空间剪枝与非线性执行冲突定位](../../../public/images/jepsen-knossos-wgl-linearizability-checker-graph.svg)
+
 ## 四、 历史轨迹验证算法：Knossos (WGL) 与 Elle
 
 故障注入结束后，集群可能已经经历了数次 Leader 选举、分区愈合与日志覆盖。如何证明系统在这段混沌时间内**始终保持了线性一致性**？

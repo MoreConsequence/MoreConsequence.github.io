@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** 系列第七篇[《流式与背压》](/writing/typescript-streams-backpressure)讲的是数据如何一段段到达；回到 Agent 工具循环，真正难的是“这一段结果现在还合法吗”。核心结论：**只用布尔变量和 if 分支表达 Agent 状态，非法事件很容易被静默吞掉；把状态、事件和转移表拆开，非法转移才能变成可测试的错误。** 本文实验 `experiments/ts-state-machine/fsm.ts` 对同一条事件序列做对照：隐式版本把 `done` 后的 `tool_result` 留在原地，显式版本的 `transition` 主动抛出错误。状态表只是第一步；异步工具还必须携带 `requestId`，把过期结果、重试守卫、持久化和副作用分开处理。
 
+
+---
+
+![Agent 状态机重构：从 if-else 混乱分支到严格状态转移表 (State Transition Table)](../../../public/images/typescript-agent-state-machine-transition-table.svg)
+
 ## 一、隐式状态为什么会静默吞掉事件
 
 工具循环最初通常很短：调用一次工具，成功就结束，失败就重试。复杂度来自后来加上的规则：最多重试三次、用户可以取消、工具超时要恢复、模型可能在工具返回后又发一条消息。若这些规则都继续追加到原来的 `if`，状态就不再是一个字段，而是多个变量的组合：
@@ -40,6 +45,10 @@ const implicitStep = (a: ImplicitAgent, event: { type: string }): ImplicitAgent 
 这里的 `done` 分支并没有说明事件为何非法，也没有记录是哪一个请求发来的结果。对调用方而言，三种情况完全相同：事件还没到、事件被延迟、事件已经被错误地丢弃。
 
 这不是“if 写得不够漂亮”的问题，而是状态空间没有被显式定义。`toolCalled × done × retries > 3` 等组合都可能出现；新增一个 `paused` 布尔变量，又会让组合数量翻倍。状态一旦进入组合爆炸，测试通常只覆盖顺序成功路径，覆盖不到“终态后又收到结果”这种更有价值的反例。
+
+
+
+![分层状态机 (HSM) 状态迁移保护与非法跃迁拦截矩阵](../../../public/images/hierarchical-state-machine-transition-guard.svg)
 
 ## 二、先定义状态与事件，再定义转移
 
@@ -131,6 +140,10 @@ const acceptResult = (run: Run, event: ResultEvent): Run => {
 ```
 
 这里有一个容易被忽略的取舍：过期结果可以被记录后丢弃，也可以把运行标成需要人工检查。不能默认“谁最后到谁赢”。在本地闭包里，丢弃通常足够；如果状态已经持久化或请求会跨进程重试，则应把 `runId`、`requestId`、`attempt` 一起写入事件或数据库，并让消费者按身份去重。
+
+
+
+![Actor 模型邮箱队列：单信道串行化与重入 (Re-entrancy) 竞态防御](../../../public/images/actor-model-mailbox-reentrant-protection.svg)
 
 ## 四、重试、取消和持久化是守卫，不是更多布尔变量
 

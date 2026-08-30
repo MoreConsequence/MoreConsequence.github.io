@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 只要「业务库」和「消息队列」是两个独立存储，任何「两边各写一份」的实现都必然存在一扇窗：要么 **DB 提交成功、MQ 没发出去（丢事件）**，要么 **MQ 发出去了、DB 事务回滚（脏事件）**。这不是网络抖动，是**两个存储之间不存在共同事务**的结构性结果。Transaction Outbox 的解法是把事件表写进业务库的**同一个本地事务**，让「业务提交」与「事件落库」原子发生，再让一个可重试的 relay 去背 at-least-once；binlog CDC（canal / Debezium）则是「把 binlog 当现成 outbox」的偷懒版——它省掉事件表和 relay，代价是事件语义（格式、DELETE、schema 演进、生命周期）全部跟着数据库走。两条路都只承诺**最终一致 + 消费幂等**，区别是这扇窗由谁关、开在哪一层。
 
+
+---
+
+![双写一致性取舍：本地事务 Outbox 表模式 vs Debezium Binlog CDC 管道架构](../../../public/images/transactional-outbox-cdc-binlog-dual-write.svg)
+
 ## 一、双写为什么必有一扇窗：两个反例
 
 「双写」就是应用代码自己动手，先写业务库、再发消息：
@@ -52,6 +57,10 @@ sequenceDiagram
 ```
 
 两扇窗说的是同一件事：**跨两个存储没有原子性**。单库的原子性靠它自己的提交协议（WAL + 锁）在一台机器内实现；两个存储之间不存在「共同提交」这个动作，两次写之间的任何失败都会让两侧进入不一致。想把两个存储塞进同一个提交，就得引入 2PC 那样的协调者——而[分布式事务：2PC 为什么没人敢用](/writing/distributed-transactions-2pc-saga)讲过，协调者自己的崩溃会让所有参与者悬挂锁死。所以「双写必然有窗」不是实现没写好，是问题形状决定的：要么接受这扇窗，要么付出协调者的代价。
+
+
+
+![事务外箱模式 (Transactional Outbox)：本地 ACID 事务 + CDC Binlog 异步投递 MQ](../../../public/images/transactional-outbox-pattern-pipeline.svg)
 
 ## 二、事务性 Outbox：把事件请进业务事务
 
@@ -118,6 +127,10 @@ CDC 的代价，对照 outbox 的代价看：
 - **schema 演进**：binlog 事件格式跟随表结构。加一列、改字段类型，CDC 的解析就要跟着升级——Debezium 用 schema history 处理版本演进，canal 得自己管。而 outbox 的 payload 是你手写的 JSON，改事件结构只动生产端。
 - **数据生命周期不在你手里**：binlog 有保留期（MySQL 8.0 的 `binlog_expire_logs_seconds` 官方默认 30 天），position 落后于清理点就**永久断流**，只能全量重建。outbox 的 SENT 行你随时能删。
 - **没有「发完」这个水位**：binlog 不能删（它服务主从复制与恢复），CDC 也没有 SENT 状态——它只有 position 一个滑窗，处理到哪完全靠 offset，追不上的代价比 outbox 大。
+
+
+
+![分布式双写致命反模式：写 DB + 发 MQ 竞态时序导致数据永久撕裂](../../../public/images/dual-write-race-condition-disaster.svg)
 
 ## 四、Outbox 与 CDC：八维对照
 

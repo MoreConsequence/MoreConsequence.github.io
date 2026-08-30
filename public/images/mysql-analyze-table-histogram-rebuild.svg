@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL 统计信息运维自愈与直方图治理 (Statistics Governance)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 调大 innodb_stats_persistent_sample_pages (20 -&gt; 100) ｜ 2. 业务低峰期触发 ANALYZE TABLE ｜ 3. MySQL 8.0 倾斜字段构建 Histogram</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 采样页数调优 (Sample Pages)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">SET GLOBAL innodb_stats_persistent_sample_pages = 64;</text>
+          
+          <text x="10" y="40" fill="#86efac">采样深度升级：</text>
+          <text x="10" y="56" fill="#cbd5e1">• 默认仅采样 20 个随机叶子页</text>
+          <text x="10" y="72" fill="#34d399">• 提升至 64~128 页大幅提升基数准确度</text>
+          <text x="10" y="88" fill="#4ade80">• 彻底消灭因采样偏差导致的选错索引</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 优化器稳定性提升 10 倍！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 适合数千万行大型核心业务表；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 采样耗时极低但收益巨大；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 生产数据库标准化配置。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. ANALYZE TABLE 周期校准</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">ANALYZE TABLE orders;</text>
+          
+          <text x="10" y="40" fill="#86efac">执行机制：</text>
+          <text x="10" y="56" fill="#38bdf8">• 重新扫描叶子页并刷新 mysql.innodb_index_stats</text>
+          <text x="10" y="72" fill="#34d399">• 仅持有轻量只读意向锁，毫秒级快速完成</text>
+          <text x="10" y="88" fill="#4ade80">• 瞬间纠正走错执行计划的慢 SQL！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 线上慢查询应急排障第一杀招！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">运维建议：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 在每日凌晨业务低峰期定时巡检执行；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 大批量数据导入或删改后必须主动触发；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库健康保障。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. MySQL 8.0 列直方图</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">ANALYZE TABLE t UPDATE HISTOGRAM ON status WITH 32 BUCKETS;</text>
+          
+          <text x="10" y="42" fill="#fed7aa">倾斜字段杀手锏：</text>
+          <text x="10" y="58" fill="#38bdf8">• 针对 99% 为 1，1% 为 0 的非索引列</text>
+          <text x="10" y="74" fill="#34d399">• 记录等宽/等深直方图分布</text>
+          <text x="10" y="90" fill="#4ade80">• 0 索引维护开销，100% 精准估算！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 彻底解决数据倾斜导致的优化器误判；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 媲美 Oracle 的高级统计分析能力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• MySQL 8.0 核心架构演进亮点！</text>
+      </g>
+    </g>
+  </g>
+</svg>

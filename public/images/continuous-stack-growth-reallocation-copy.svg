@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 连续栈扩容与栈帧重定位机理 (Continuous Stack Growth)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">函数序言检查 SP &lt; stackguard0 ──► 调用 runtime.morestack ──► 分配 2x 连续新栈 ──► 复制数据并修正内部所有指针地址 (gentraceback)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 函数入口栈溢出检查 (Stack Preamble Check)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">编译器在每个非叶子函数入口插入指令: CMPQ SP, 16(R14) ──► 判断剩余栈空间是否低于 stackguard0</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">纳秒级单条比较指令，严格守卫栈边界！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 触发扩容与新栈分配 (morestack -&gt; copystack: 2x Allocation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">当前 2KB 栈空间不足 ──► runtime.newstack 从栈内存池分配全新的 4KB 连续内存段</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">连续内存模型彻底解决了旧版分段栈 (Segmented Stack) 的热分裂性能灾难！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 栈帧全量数据拷贝与指针修正 (Memory Copy &amp; Pointer Adjustment)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">memmove 拷贝旧栈数据 ──► gentraceback 遍历栈帧元数据 ──► 将指向旧栈的指针全部加上偏移量 delta！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">所有指针安全无缝平移至新栈空间！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 释放旧栈与恢复执行 (Free Old Stack &amp; Resumption)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">释放旧 2KB 栈 ──► 重新调整 g.stack 与寄存器 ──► 重新执行触发扩容的目标函数！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 单机百万协程轻量并发的终极魔法！</text>
+      </g>
+    </g>
+  </g>
+</svg>

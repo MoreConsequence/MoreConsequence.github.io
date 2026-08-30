@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** “协议栈”是本文的分析模型，不是一个由七层组成的官方标准。模型 API、MCP、A2A、`AGENTS.md`、UI 事件协议、商务/支付规范、OpenTelemetry 和 OAuth 解决的是不同边界，但成熟度、治理方和版本状态各不相同，也不保证可以直接拼接。最稳的判断顺序是：先写清 agent 要调用什么、委派什么、代表谁授权，再核对目标协议的版本、权限、取消、重试、幂等和审计语义；MCP 与 A2A 的区别可以保留为一个起点，但“先 MCP”不是所有项目的通用上线建议。
 
+
+---
+
+![AI Agent 协议分层与七条系统接缝：模型推理、上下文编排、工具执行与状态持久化](../../../public/images/ai-agent-seven-seams-protocol-stack.svg)
+
 ## 一、先纠正一个误读：从来没有"唯一的 Agent 协议"
 
 很多项目把“AI Agent 用 MCP”当成完整答案。这个结论只覆盖了一半——MCP 主要解决 LLM 应用与外部工具、资源和提示之间的连接，任务编排、跨 agent 委派、用户授权和业务幂等仍需另外定义。
@@ -18,6 +23,10 @@ series: "系统设计手记"
 一个 agent 反复执行"观察 → 决策 → 行动"，每向外迈一步，就触碰一条不同的**接缝**：调模型、用工具、读项目规矩、跟别的 agent 协作、把输出渲染给用户看、替用户下单付钱、被观测审计。**几乎每条接缝都长出了自己的协议或约定。** 因此真正该问的不是"MCP 好还是 A2A 好"，而是：**这些协议各锁住哪条缝、我需不需要、从哪一层开始。**
 
 一个一手证据先收下：**你正在读的这篇文章，本身就是这句话的实例**——它由一个读 AGENTS.md 的 agent 编写，靠 MCP 与 Skills 调用工具，写完后再按 AGENTS.md 里的写作守则自查。第五节末尾再回来细看它。
+
+
+
+![模型上下文协议 (MCP) 分层拓扑：Host, Client 与 Local/Remote Server JSON-RPC 通信](../../../public/images/mcp-model-context-protocol-json-rpc-topology.svg)
 
 ## 二、先把协议认到层：一张总表
 
@@ -151,6 +160,10 @@ flowchart TB
     A -->|"⑥ 替人办事"| COMM["商务层: UCP + AP2"]
     A -.->|"贯穿"| OBS["观测与授权: OTel GenAI + OAuth"]
 ```
+
+
+
+![ReAct 自主代理认知循环：Thought (思考) -> Action (行动) -> Observation (观测)](../../../public/images/agent-rephrase-action-observation-loop.svg)
 
 ## 四、把"卖什么"排成一张能作决定的表
 

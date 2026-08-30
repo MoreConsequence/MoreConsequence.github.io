@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 下行测速考验的是服务端的推流性能，而**上行测速则是对“移动端内存稳定性”与“服务端消费吞吐极限”的双向极限压榨**。在千兆上行测试中，移动端 App 必须以每秒上百兆的速率向外推送数据，极易触发 Android ART 的 Stop-the-World GC 掉帧或 iOS Autoreleasepool 的 OOM Crash；而在服务端，只要应用层读取稍微迟缓哪怕几个毫秒，Linux 内核套接字接收队列（`Recv-Q`）瞬间溢出并向客户端通告 `TCP ZeroWindow`（零窗口），导致测速曲线断崖暴跌归零。本文作为《网络测速与极限吞吐工程》系列第三篇，手把手拆解移动端**零堆分配（Zero Heap Allocation）只读切片架构**，并实现单核吞吐超 40Gbps 的**服务端极速无锁数据黑洞（Sink Buffer）**。
 
+
+---
+
+![上行吞吐的内存黑洞：移动端零堆分配推流与服务端极速 Sink 架构](../../../public/images/speedtest-zero-alloc-uplink-blackhole-sink.svg)
+
 ## 一、移动端的致命内存陷阱（Android & iOS）
 
 在 1000Mbps 上行测速中，客户端每秒需产生约 125MB 二进制数据并推入套接字。在持续 10 秒的测试期间，累计需要处理超过 1.25GB 的数据流。
@@ -82,6 +87,10 @@ export class MobileSpeedtestUploader {
   }
 }
 ```
+
+
+
+![Linux splice 管道零拷贝黑洞：内核态 Socket 直通 /dev/null](../../../public/images/splice-pipe-zero-copy-sink.svg)
 
 ## 二、服务端 TCP Zero-Window 反压：测速断崖的幕后元凶
 
@@ -175,6 +184,10 @@ func (s *SpeedtestSinkServer) HandleUplinkConnection(conn net.Conn) {
 ```
 
 该实现单协程对数据的消费速度可达 **40Gbps+**，CPU 占用率极低，彻底杜绝了服务端产生 `TCP ZeroWindow` 反压的物理可能。
+
+
+
+![TCP 接收窗口自动调优：tcp_rmem 三元组与快速内存回收机制](../../../public/images/tcp-rmem-auto-tuning-reclaim.svg)
 
 ## 四、权威计量确认：客户端 Write vs 服务端 Read 差异
 

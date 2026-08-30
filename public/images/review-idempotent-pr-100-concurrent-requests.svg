@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">评审幂等 PR 铁律：100 并发相同请求压力测试与三道物理防线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">防线 1: 内存/Redis 互斥锁 (防并发重试) ｜ 防线 2: 数据库唯一索引 (保底唯一性) ｜ 防线 3: 状态机单向流转 (防乱序逆流)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 防线一：分布式锁互斥</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 入口第一道门禁</text>
+          <text x="10" y="34" fill="#93c5fd">SET lock:biz_id random_val NX PX 5000</text>
+          
+          <text x="10" y="56" fill="#4ade80">100 个并发相同请求同时到达时：</text>
+          <text x="10" y="72" fill="#86efac">• 仅有 1 个请求能成功抢到锁并执行</text>
+          <text x="10" y="88" fill="#f87171">• 其余 99 个请求直接拦截返回：</text>
+          <text x="16" y="104" fill="#cbd5e1">  "处理中，请勿重复提交"</text>
+          <text x="10" y="122" fill="#34d399">✓ 阻断 99% 的无效数据库并发争用！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 必须按精确的业务维度加锁 (如 order_id)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 设置合理的超时时间，防止死锁；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 大幅减轻底层存储压力。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 防线二：DB 唯一索引保底</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 绝对兜底防线 (不信锁！)</text>
+          <text x="10" y="34" fill="#86efac">UNIQUE KEY uniq_req_id (request_id)</text>
+          
+          <text x="10" y="56" fill="#38bdf8">即使 Redis 挂了或锁过期发生并发穿透：</text>
+          <text x="10" y="72" fill="#34d399">1. MySQL 保证仅 1 条 INSERT 成功</text>
+          <text x="10" y="88" fill="#f87171">2. 其余并发抛出 DuplicateKeyException</text>
+          <text x="10" y="104" fill="#34d399">3. 代码捕获异常后优雅返回已有结果！</text>
+          <text x="10" y="122" fill="#4ade80">✓ 数据层 100% 杜绝产生重复脏数据！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 业务主表或独立幂等记录表建立唯一键；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 将并发安全锚定在 ACID 关系型数据库底层；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚如磐石的物理防线。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 防线三：状态机单向跃迁</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 乐观锁条件更新 (CAS)</text>
+          <text x="10" y="34" fill="#fed7aa">UPDATE orders SET status = 'PAID'</text>
+          <text x="10" y="48" fill="#fed7aa">WHERE id = 100 AND status = 'UNPAID';</text>
+          
+          <text x="10" y="70" fill="#38bdf8">1. 检查 Rows Affected 影响行数</text>
+          <text x="10" y="86" fill="#34d399">2. 若返回 0 行: 证明已被前序请求推进</text>
+          <text x="10" y="102" fill="#34d399">3. 此时直接幂等返回已支付成功！</text>
+          <text x="10" y="120" fill="#4ade80">✓ 杜绝网络乱序导致的旧状态覆盖新状态！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">评审准则：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 严禁无条件 UPDATE，必须带旧状态谓词；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 状态机只进不退；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 彻底规避网络延时导致的幽灵请求破坏！</text>
+      </g>
+    </g>
+  </g>
+</svg>

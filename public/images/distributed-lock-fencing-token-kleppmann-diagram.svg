@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Fencing Token 终极防护：抵御 GC STW 停顿导致的并发重叠写入</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Client 1 发生 GC 停顿导致锁租约过期 ──► Client 2 获取锁并写入 (Token=34) ──► Client 1 苏醒携旧 Token=33 写入被存储层坚决拒绝</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Client 1 成功获取锁，获得递增 Fencing Token = 33</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">LockService.Acquire() ──► 授予 10 秒租约与递增版本号 33 ──► Client 1 准备向存储层写入</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">客户端认为自己持有排他锁，但由于异构网络不可预测性，其掌控权随时可能丢失！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">2. Client 1 遭遇长时间 GC 停顿 / 进程挂起 (GC STW Pause)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">Client 1 陷入 STW 停顿长达 15 秒 ──► 锁服务租约到期 ──► 锁被自动释放！</text>
+        <text x="15" y="62" font-size="8" fill="#7f1d1d">此时 Client 1 根本不知道自己的锁已经被系统收回，成为僵尸客户端！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Client 2 获取锁并成功写入 (Token = 34)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Client 2 获锁得到 Token=34 ──► 向存储写入 Data_B(Token=34) ──► 存储层将最高水位更新为 34</text>
+        <text x="15" y="62" font-size="8" fill="#047857">存储层记录当前已被确认的最高令牌水位线为 34！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Client 1 苏醒并尝试写入，被存储层坚决拦截 (Fencing Rejection)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Client 1 发起 Write(Token=33) ──► 存储层校验 33 &lt; 34 ──► 判定为过期请求，直接抛错拒绝！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">成功保护存储层数据免遭幽灵写入破坏，实现绝对的物理安全性！</text>
+      </g>
+    </g>
+  </g>
+</svg>

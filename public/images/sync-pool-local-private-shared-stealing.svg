@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go sync.Pool 底层双层拓扑与无锁窃取 (poolLocal Architecture)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. private 私有槽位 (单 P 独占，0 锁 3ns 命中) ──► 2. shared 双端环形队列 (poolChain: 本地 push/popHead) ──► 3. 跨 P 无锁 popTail 窃取</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. private (P 独占单槽位)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">private any // 仅当前 P 可访问</text>
+          
+          <text x="10" y="38" fill="#86efac">存取极速路径：</text>
+          <text x="10" y="54" fill="#38bdf8">• 0 互斥锁、0 CAS 原子指令</text>
+          <text x="10" y="70" fill="#34d399">• pin() 锁定当前 P 并提取对象</text>
+          <text x="10" y="86" fill="#34d399">• 命中后瞬间返回</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 单次提取耗时仅 ~3.2ns！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 绝大多数协程局部复用在此极速命中；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 完全规避多核总线与缓存一致性开销；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造终极复用体验。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. shared (双端链表 poolChain)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">shared poolChain (双向环形池链)</text>
+          
+          <text x="10" y="38" fill="#86efac">双端无锁流转：</text>
+          <text x="10" y="54" fill="#34d399">• 本地 P: pushHead / popHead 存取</text>
+          <text x="10" y="70" fill="#38bdf8">• 外部 P: popTail 偷取</text>
+          <text x="10" y="86" fill="#34d399">• 头部与尾部分离，0 竞争冲突！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 容量翻倍自适应扩张！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 环形无锁队列 (Lock-Free Ring Buffer)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 支撑大容量对象积攒；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 空间与并发弹性缓冲。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 跨 P 窃取与 New 兜底</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">本地私有与共享全空时：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">1. 遍历其他 P 的 poolLocal.shared</text>
+          <text x="10" y="54" fill="#38bdf8">2. popTail 窃取对方闲置对象</text>
+          <text x="10" y="70" fill="#34d399">3. 若全系统均空 ──► 调用 Pool.New()</text>
+          
+          <text x="10" y="96" fill="#4ade80">✓ 动态平衡，0 内存浪费！</text>
+          <text x="10" y="112" fill="#4ade80">✓ 杜绝突发分配冲击！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 全局负载均衡，各 P 互通有无；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 解决多核下的内存不均；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• Go 并发池化的终极设计！</text>
+      </g>
+    </g>
+  </g>
+</svg>

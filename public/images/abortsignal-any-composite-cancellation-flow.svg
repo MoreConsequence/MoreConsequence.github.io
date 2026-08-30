@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">多源取消信号聚合架构：AbortSignal.any 与 WithCancelCause</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">用户点击取消 ｜ 服务端 5s 硬超时 ｜ 路由切换 ──► 复合聚合为单一 Signal ──► 只要任一触发立即精准熔断并保留原始原因 (Cause)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 多源取消条件汇聚 (Multiple Inbound Cancellation Signals)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">来源 A: 用户在 UI 点击 Stop ｜ 来源 B: AbortSignal.timeout(5000) ｜ 来源 C: 前序任务报错</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">涵盖超时、人工打断与前置依赖失败！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 复合信号原子合并 (AbortSignal.any([userSig, timeoutSig]))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">ES2024 / Node.js 20+ 原生支持 ──► 内部维护统一的事件监听 ──► 任一信号率先 abort 立即触发复合信号</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">消除传统手工 addEventListener 多次绑定的内存泄漏隐患！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 深入底层 I/O 与传输层熔断 (Underlying Socket &amp; Resource Teardown)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">向 fetch / ReadableStream 下发 abort ──► 浏览器立即向服务端发送 TCP RST / HTTP2 RST_STREAM</text>
+        <text x="15" y="62" font-size="8" fill="#047857">即刻切断下游数据流，绝不多跑一个字节！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 根因精确溯源 (Accurate Reason &amp; Cause Extraction)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">signal.reason / context.Cause(ctx) ──► 明确判定是 TimeoutError 还是 UserCancel ──► 针对性呈现 UI 友好提示！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代跨语言取消架构的最高艺术！</text>
+      </g>
+    </g>
+  </g>
+</svg>

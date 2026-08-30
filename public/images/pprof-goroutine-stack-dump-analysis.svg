@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go Goroutine 泄漏排查实战流水线 (pprof Diagnosis Pipeline)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 监控告警发现协程数暴涨 ──► 2. 拉取 /debug/pprof/goroutine?debug=1 聚合分析 ──► 3. 定位异常堆栈与阻塞原语 ──► 4. 灰度热修上线</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Prometheus 监控水位告警 (Metric: go_goroutines &gt; 50,000)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">服务上线后 Goroutine 数量呈严格单调线性递增趋势 ──► 内存不断被蚕食 ──► 触发 SRE 核心告警</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">精准捕捉泄漏初期的异常指标偏离！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. pprof 聚合抓取分析 (curl /debug/pprof/goroutine?debug=1)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">获取按调用栈自动聚合的摘要 ──► 瞬间发现 48,200 个协程停留在同一行代码: "chan send (runtime.chansend)"</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">瞬间收敛定位到具体的问题函数！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. debug=2 详细调用栈深度审查 (Exact Line Number &amp; Wait State)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">打印全量堆栈: goroutine 18029 [chan send, 320 minutes]: api/v1/handler.go:88 ──► 确认是超时分支漏读通道</text>
+        <text x="15" y="62" font-size="8" fill="#047857">铁证如山，精准还原事故代码现场！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 修复验证与协程水位回落 (Fix &amp; Watermark Verification)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">给 channel 增加容量 1 ──► 发布灰度补丁 ──► 协程总数瞬间平稳收敛至 200 个以内！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 后端工程师生产排障必备技能！</text>
+      </g>
+    </g>
+  </g>
+</svg>

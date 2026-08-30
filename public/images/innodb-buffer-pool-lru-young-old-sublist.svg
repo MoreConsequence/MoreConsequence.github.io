@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB Buffer Pool 改进版 LRU 链表拓扑 (Sublist Architecture)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">5/8 Young 区域 (热点常驻) ｜ 3/8 Old 区域 (冷数据缓冲区) ｜ innodb_old_blocks_time (1000ms) 彻底阻断全表扫描与预读污染</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Young Sublist -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Young 热区 (前 63%：5/8 链表头)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">LRU Head ─────────────────────────► Midpoint</text>
+          
+          <text y="38" fill="#86efac">晋升规则：</text>
+          <text y="52" fill="#cbd5e1">• 数据页在 Old 区驻留超过 1000ms</text>
+          <text y="66" fill="#cbd5e1">• 且再次被访问，才被允许移动到 Young 区头部！</text>
+          <text y="80" fill="#34d399">• 若在 Young 区前 1/4 被访问，甚至不移动节点以减少锁竞争</text>
+          
+          <text y="106" fill="#4ade80">✓ 保护高频热点行永远不会被偶发查询挤出！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 承载业务 95% 以上的高频点查与热点更新；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 内存命中率稳定在 99.8% 以上；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速查询缓存。</text>
+      </g>
+    </g>
+
+    <!-- Right: Old Sublist -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. Old 冷区 (后 37%：3/8 尾部隔离区)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">Midpoint ─────────────────────────► LRU Tail</text>
+          
+          <text y="38" fill="#fed7aa">防御全表扫描与线性预读污染：</text>
+          <text y="52" fill="#cbd5e1">• 任何新载入的页（如 SELECT * FROM big_table）</text>
+          <text y="66" fill="#cbd5e1">• 一律强制放入 Midpoint (Old 区头部)！</text>
+          <text y="80" fill="#fed7aa">• 扫描结束后由于没有后续访问，迅速从 LRU Tail 被淘汰！</text>
+          
+          <text y="106" fill="#4ade80">✓ 核心热区数据毫发无损！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 彻底解决传统 LRU 算法遇全表扫描缓存全毁缺陷；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 生产级数据库内核必备调优参数；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级经典缓存算法标杆！</text>
+      </g>
+    </g>
+  </g>
+</svg>

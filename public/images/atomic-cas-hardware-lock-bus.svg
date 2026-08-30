@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go sync/atomic 硬件级实现机理 (LOCK Instruction &amp; Cache Locking)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">LOCK CMPXCHG 汇编指令 ──► 若数据在 Cache Line 内部，直接触发 MESI 缓存锁 (10ns) ──► 若跨缓存行则降级为总线锁 (Bus Lock)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Go 原子操作汇编生成 (atomic.CompareAndSwapInt64)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">编译器直接发射: LOCK CMPXCHGQ 指令 ──► 0 Goroutine 调度、0 系统调用、0 操作系统锁</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">纯硬件单指令级原子执行保证！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 缓存行锁定极速通道 (Cache Locking via MESI: ~10ns)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">若变量完全对齐在一个 64 字节缓存行内 ──► 硬件仅锁定该 Cache Line 并阻止其他核心并发修改</text>
+        <text x="15" y="62" font-size="8" fill="#047857">极高并发下的黄金纳秒级执行路径！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 跨行未对齐总线锁惩罚 (Bus Locking Penalty: ~100ns)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">若 64 位整数未 8 字节对齐跨越了两个 Cache Line ──► CPU 只能拉低 #LOCK 引脚锁住整个系统总线！</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">瞬间阻塞所有核心访问内存，性能暴跌 10 倍！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 极速内存写屏障与可见性 (Memory Barrier &amp; Store Buffer Drain)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">LOCK 前缀隐式充当 Full Memory Barrier ──► 刷新 Store Buffer ──► 全 CPU 核心瞬间可见最新值！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代无锁并发数据结构的物理基底！</text>
+      </g>
+    </g>
+  </g>
+</svg>

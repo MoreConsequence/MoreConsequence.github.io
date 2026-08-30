@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">网络分区下旧 Leader 读穿透脏读危机 (Stale Read Hazard)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">直接本地读 (被隔离的旧 Leader 1 毫不知情，持续返回已被更新的过期脏数据) vs 线性一致性读 (强制确认多数派，隔离期拒绝读服务保护强一致)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Stale Read -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 直接读取本地状态机：读穿透脏数据</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">网络分区时序：</text>
+          <text y="28" fill="#fca5a5">1. 节点 1, 2 与 节点 3, 4, 5 发生网络分裂</text>
+          <text y="42" fill="#86efac">2. 多数派分区 (3,4,5) 选出新 Leader 3 并写入 key=200</text>
+          
+          <text y="64" fill="#ef4444">3. 读请求到达少数派分区的旧 Leader 1：</text>
+          <text y="78" fill="#ef4444">   • 旧 Leader 1 误以为自己依然合法</text>
+          <text y="92" fill="#ef4444">   • 直接从本地读出旧值 key=100 回传客户端！</text>
+          
+          <text y="116" fill="#f87171">🔴 发生严重破坏线性一致性的时间倒流读！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 金融交易可能读到已被消费的旧余额；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 分布式锁可能产生双重授权；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 严禁在强一致存储中裸读内存！</text>
+      </g>
+    </g>
+
+    <!-- Right: Linearizable Guard -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 线性一致性读屏障：多数派确权防御</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">ReadIndex / Lease 确权流转：</text>
+          
+          <text y="36" fill="#86efac">1. 读请求到达旧 Leader 1 ──► 触发心跳确认</text>
+          <text y="50" fill="#38bdf8">2. 旧 Leader 1 无法收到多数派心跳 ACK</text>
+          <text y="64" fill="#34d399">3. 判定自己已失去合法领导权 ──► 立即拒绝请求并报错</text>
+          <text y="78" fill="#4ade80">4. 客户端自动重试将请求路由至新 Leader 3 ──► 读到最新 200！</text>
+          
+          <text y="104" fill="#4ade80">✓ 100% 绝对线性一致，0 脏读可能！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 捍卫分布式数据一致性的最终防线；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• Kubernetes 与顶级 NewSQL 绝对信赖的基础；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 分布式系统最严密的数学证明！</text>
+      </g>
+    </g>
+  </g>
+</svg>

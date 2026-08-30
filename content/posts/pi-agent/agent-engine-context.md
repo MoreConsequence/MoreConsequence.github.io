@@ -11,11 +11,20 @@ series: "Agent 的方方面面"
 
 **TL;DR：** Databricks 基准里 Pi 每轮少喂约 3 倍上下文的秘密不在"压缩技术"，而在装配纪律：首篇基线（@5cd93f6）测得模板主体 1288 个字符、约 322 tokens；但 2026-08-23 在新 commit（@b23741269）复测，整文件已是 5877 字符 / 1415 tokens，去注释主体 4823 字符 / **1197 tokens**——「小于 1000 token」的承诺已被上游演进打破，AGENTS.md 按「全局 → 逐级父目录 → 当前目录」的确定性顺序装载，会话超限时按 `16384 reserve / 20000 keep` 两个数字闸门自动压缩，skills 只在被需要时按名加载（渐进披露）。本文把这四个机制在源码里的落点逐一定位——上下文工程的本质是"谁有资格进上下文"这件事不能由模型和直觉决定，只能由文件与规则决定。
 
+
+---
+
+![Pi Agent 上下文动态装配与预算控制：AGENTS.md、文件注入与生命周期钩子](../../../public/images/pi-agent-context-assembly-hooks-budget.svg)
+
 ## 一、每轮少 3 倍上下文，靠的不是魔法
 
 01 篇引用的 Databricks 官方基准（2026-07-08）有一个数字值得反复咀嚼：同一模型同一思考档位，Pi 每轮平均约 3x 少上下文，单任务成本差 2 倍以上。这个差异直接来自上下文组装策略——但组装策略不是某个聪明的压缩函数，而是一套**装配规则**：什么进、按什么顺序进、什么时候扔、扔多少。
 
 Pi 的装配规则全部写死在少量确定性的源码和文档里，本系列把它拆成四块：系统提示词模板（本节）、项目上下文文件（第三节）、会话压缩（第四节）、skills 渐进披露（第五节）。
+
+
+
+![Agent 上下文窗口预算与动态压缩流水线：滑动窗口、摘要提取与持久记忆切片](../../../public/images/agent-context-window-compaction-token-budget.svg)
 
 ## 二、系统提示词：从 322 到 1197 tokens，纪律还在吗
 
@@ -62,6 +71,10 @@ const candidates = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md",
 即 `AGENTS.override.md` 可以顶替同目录的 `AGENTS.md`（0.84.0 新增的 per-directory override，官方发布说明原文："replace AGENTS.md or CLAUDE.md in the same directory while preserving context from other directories"），且 Pi 顺带兼容 CLAUDE.md——跨 harness 迁移时项目不用改名。
 
 这段代码还处理了一个少见的坑：`findShadowedContextFile` 专门识别 git worktree 场景——主仓库与 linked worktree 的上下文文件指向同一个逻辑仓库，两个都加载会重复注入，所以被遮蔽的那个会被跳过。**上下文装配的边界问题已经细到"同仓库跨 worktree 不重复"**，这提醒我们：指令文件的继承链是状态，必须显式建模。
+
+
+
+![KV Cache 提示词前缀对齐与 Prompt Caching 成本归零法则](../../../public/images/kv-cache-prompt-caching-breakpoint-alignment.svg)
 
 ## 四、compaction：两个数字闸门加一道 LLM 摘要
 

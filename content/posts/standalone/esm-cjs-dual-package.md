@@ -9,6 +9,11 @@ featured: false
 
 **TL;DR：** `package.json` 的 `exports` 字段不是"谁能导入我"的开关，是**三套分辨率合同的唯一权威**：条件分发（`import`/`require` 各指向自己的文件）、路径映射（`./sub` 授权子路径）、以及**产物互斥**（同一代码一个进程只应加载一份）。本机实测三幕：① 有 `exports` 时 ESM 与 CJS 消费者各自拿到自己的产物；② 删掉 `exports` 只剩 `main` 后，ESM 具名导入 CJS 直接 `SyntaxError: Named export not found`；③ 用 `createRequire` 强制同进程双实例——两个模块实例状态互不可见（ESM 侧 `state=2`、CJS 侧 `state=1`），这就是著名的**双包陷阱**。结论：单例状态（连接池、配置、缓存）跨双包 = 双双作废，`exports` 字段是这种事故的第一道也是最后一道闸。
 
+
+---
+
+![ESM / CJS 双包模块分辨率合同：package.json exports 字段三层语义与 Dual Package Hazard](../../../public/images/esm-cjs-dual-package-exports-resolution.svg)
+
 ## 一、exports 的完整合同：三种字段三层语义
 
 | 字段 | 管什么 | 没写时行为 |
@@ -18,6 +23,10 @@ featured: false
 | `exports["./x"]` | 子路径白名单 + 分发 | **任意子路径都能被 require**（历史包袱） |
 
 本文聚焦最容易被低估的一条：**`exports["."]` 是"谁在什么条件下拿哪份产物"的分发器**。双包陷阱的三幕实验完整展示了它存在的必要性。
+
+
+
+![ESM 静态导入 (import) 与 CJS 动态加载 (require) 模块解析矩阵](../../../public/images/esm-vs-cjs-module-resolution-matrix.svg)
 
 ## 二、实验三幕：每个坑都是 exports 缺位
 
@@ -45,6 +54,10 @@ ESM 实例上了两次计数器、CJS 实例上一次，两者各回各家。**�
 * 单例配置 + env 覆盖：两边读到不同的初始值 → "我在 A 环境改了没生效"。
 
 识别方法：`node --trace-warnings` 或检查 `require.cache` / `import.meta` 下同包是否出现两份解析路径（`node_modules/dual-pkg/index.mjs` vs `index.cjs` 同时存在）。根因是 package.json 的 exports 把"两套产物"合法化了——**合法不意味着安全，只有消费方保证"同一进程只取一个分支"才安全**。
+
+
+
+![package.json conditional exports 双包陷阱 (Dual Package Hazard) 与 types 排序准则](../../../public/images/package-json-conditional-exports-dual-hazard.svg)
 
 ## 四、工程出口：何时该双包、何时该单包
 

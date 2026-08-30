@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Raft 共识算法物理机制：任期递增、多数派日志复制与状态机提交</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Leader 接收写请求 ──► AppendEntries RPC 广播 ──► 超过半数 (Quorum) 落盘 ──► 更新 commitIndex ──► Apply 状态机生效并返回客户端</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Leader 接收客户端写请求与本地日志追加 (Local Uncommitted Log)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Client.Set("k", "v") ──► Leader 追加 LogEntry { Term: 2, Index: 105, Command: Set("k", "v") }</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">此时该条日志处于 Uncommitted 未提交状态，禁止对外返回成功或应用到业务状态机！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. AppendEntries RPC 并行向 Follower 广播日志复制</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Leader ──► Follower 1 (ACK Ok), Follower 2 (ACK Ok), Follower 3 (超时丢包)</text>
+        <text x="15" y="62" font-size="8" fill="#047857">Follower 校验 prevLogTerm 与 prevLogIndex 一致性，一致则追加至本地 WAL 并返回成功！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 多数派法定票数达成 (Quorum 达到 3/5) 与 commitIndex 推进</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Leader 收到 2 个 Follower 成功响应 (加自身共 3 票 &gt; 5/2) ──► commitIndex 推进至 105！</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">Raft 强一致性定理保证：一旦某条日志在当前 Term 被多数派提交，未来任何 Leader 必包含该日志！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Apply 状态机生效与向客户端响应成功 (Linearizable Commit)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">applyChan &lt;- LogEntry ──► 业务 StateMachine 执行 Set("k", "v") ──► 向 Client 返回成功！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">在下一次心跳 RPC 中将 commitIndex 广播给所有 Follower，驱动整个分布式集群状态机完全对齐！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -10,6 +10,15 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 很多人以为网络测速就是“发起一个 HTTP 请求下载大文件并除以耗时”，这在千兆宽带和 5G 时代会导致严重失真的测量结果。**网络测速的物理本质是在受控时间内激发物理链路的瓶颈容量，并由接收端提取出平稳工作状态下的有效吞吐率（Goodput）。** 本文作为《网络测速与极限吞吐工程》系列第一篇，从物理层与传输层第一性原理出发，剖析带宽时延积（BDP）对飞行数据（In-flight Data）的硬性约束；推导香农信息熵（Shannon Entropy $\ge 7.999$）如何阻断电信运营商的硬件透明压缩加速；对比 TCP Cubic 与 BBR 拥塞控制算法在无线偶发丢包下的表现差异；并给出基于 100ms 离散切片的 P90 截尾加权滤波数学模型。
 
+
+---
+
+![测速的物理本质：为什么测速不是测文件下载？BDP 带宽时延积、TCP 拥塞控制与满载管道](../../../public/images/speedtest-physical-essence-bandwidth-delay-product.svg)
+
+
+
+![带宽时延积 (BDP) 管道物理模型：飞行数据量与滑动窗口吃满条件](../../../public/images/bdp-flight-data-pipe-model.svg)
+
 ## 一、传输瓶颈：带宽时延积（BDP）与飞行数据
 
 在物理网络中，单条连接的极限吞吐并不直接等于网卡的标称物理速率，而是受限于**带宽时延积（Bandwidth-Delay Product, BDP）**：
@@ -39,6 +48,10 @@ flowchart LR
 $$\text{Throughput}_{\max} = \frac{\text{Window Size}}{\text{RTT}} = \frac{64 \times 1024 \times 8}{0.03} \approx 17.47 \text{ Mbps}$$
 
 这就是为什么在千兆网络下，粗暴的单一 HTTP GET 请求永远测不准真实带宽的原因。
+
+
+
+![香农信息熵与防伪机制：硬件透明压缩阻断与高熵随机数据生成](../../../public/images/shannon-entropy-transparent-compression-bypass.svg)
 
 ## 二、防伪机制：香农信息熵与硬件透明压缩阻断
 

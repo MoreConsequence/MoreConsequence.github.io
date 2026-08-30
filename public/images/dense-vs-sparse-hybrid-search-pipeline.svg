@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">现代 RAG 混合检索与重排序流水线 (Hybrid Retrieval &amp; Rerank)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Dense Vector (语义近似) + Sparse BM25 (专有名词/精确代码) ──► RRF 倒数排名融合 ──► Cross-Encoder 深度重排 ──► 95% 召回准确率</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 双路并行并行召回 (Dual-Channel Parallel Retrieval)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">通道 A: HNSW 向量索引 (余弦相似度 Top-50) ｜ 通道 B: 倒排索引 BM25 精准词匹配 (Top-50)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">兼顾隐式语义关联与专有名词（如函数名、错误码）的绝对精确！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 倒数排名融合归一化 (Reciprocal Rank Fusion: RRF)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">RRF_Score(d) = Σ 1 / (k + rank_i(d)) (常数 k=60) ──► 无需调节不同维度的分数尺度</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将两路异构检索结果自适应融合为单一有序候选集 (Top-30)！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Cross-Encoder 深度重排序 (Deep Neural Reranker: bge-reranker)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">将 Query 与 Document 拼接输入交叉注意力 Transformer ──► 捕捉深度上下文交叉相关性 ──► 筛选 Top-5</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底剔除看似向量相近但实际毫无关联的伪相关文档！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 上下文组装与大模型推理 (Context Assembly &amp; Generation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">将最相关的 3~5 篇片段注入 System Prompt ──► 投喂 LLM ──► 0 幻觉精准生成专业技术答案！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">工业级高质量 RAG 架构标准形态！</text>
+      </g>
+    </g>
+  </g>
+</svg>

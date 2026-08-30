@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go netpoll 跨平台网络轮询器与 GMP 调度联动架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Socket 读写 EAGAIN ──► gopark 挂起 Goroutine ──► 内核 epoll_wait (Linux) / kqueue (macOS) 异步捕获就绪 ──► injectglist 批量注入可运行队列</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 同步非阻塞系统调用失败 (Non-blocking Read -&gt; EAGAIN)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Go 代码书写同步直观的 conn.Read() ──► 底层为 O_NONBLOCK 描述符 ──► 无数据返回 EAGAIN</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">向开发者呈现同步易读接口，内核底层完全异步执行！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 绑定 pollDesc 并沉睡协程 (poll_runtime_pollWait -&gt; gopark)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">当前 G 绑定至 pollDesc.rg ──► 调用 gopark 变为 _Gwaiting ──► 线程 M 立即解脱去执行其他 G</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">单机支撑数十万长连接而 0 线程阻塞开销！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 调度器主循环与 sysmon 轮询 (runtime.netpoll via epoll_wait)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">findrunnable / sysmon 周期性调用 netpoll(block) ──► 从 epoll 获取就绪事件 ──► 提取挂起的 G 链表</text>
+        <text x="15" y="62" font-size="8" fill="#047857">将操作系统 I/O 事件精准转化为协程唤醒指令！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 批量注入就绪队列恢复执行 (injectglist -&gt; _Grunnable)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">将就绪 G 批量塞入当前 P 的 runq 局部队列 ──► 协程被调度唤醒继续读取网络数据！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 语言高并发高性能网络编程的核动力引擎！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">读写分离读己所写 (Read-Your-Writes) 三大架构方案对照</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">方案 A: 关键业务强制主库直读 ｜ 方案 B: Redis 写入时间戳/标记位短暂路由主库 ｜ 方案 C: GTID 精确水位线等待</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 关键业务强制路由主库</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">/*force_master*/ SELECT balance</text>
+          
+          <text x="10" y="42" fill="#86efac">机制策略：</text>
+          <text x="10" y="58" fill="#cbd5e1">• 金融扣款、密码验证等强一致业务</text>
+          <text x="10" y="74" fill="#cbd5e1">• 绕过任何从库，100% 直连 Master 读</text>
+          <text x="10" y="90" fill="#34d399">• 普通非核心报表/浏览才走从库</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 逻辑极其简单纯粹！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">优劣权衡：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 0 额外中间件依赖与开发成本；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 若滥用会导致主库读压力暴增；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 适合中小型系统。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 缓存标记法 (Cache Marker)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 用户写操作成功后设置 2 秒缓存标记</text>
+          <text x="10" y="34" fill="#86efac">redis.set("user_written:" + uid, 1, "EX", 2)</text>
+          
+          <text x="10" y="58" fill="#38bdf8">后续读请求逻辑：</text>
+          <text x="10" y="74" fill="#cbd5e1">• 若该 Key 存在 ──► 路由到主库读</text>
+          <text x="10" y="90" fill="#34d399">• 2 秒后 Key 过期 ──► 平滑恢复走从库！</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 完美覆盖发帖/评论后的立即刷新！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">优劣权衡：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 99% 的读流量依然被从库吸收；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼顾主库负载与用户交互一致性体验；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 电商/社交业务黄金实践！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. GTID 水位线等待 (Precision GTID)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 主库返回写入事务的 gtid_pos</text>
+          <text x="10" y="34" fill="#fed7aa">SELECT WAIT_FOR_EXECUTED_GTID_SET(gtid, 1)</text>
+          
+          <text x="10" y="58" fill="#38bdf8">精准裁决：</text>
+          <text x="10" y="74" fill="#34d399">• 若从库已经回放到该 GTID ──► 立即返回 0</text>
+          <text x="10" y="90" fill="#cbd5e1">• 若超时未对齐 ──► 自动降级切主库读</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 绝对数学级一致性保障！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 数据库内核原生协议级保障；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• ShardingSphere 等分布式中间件标配；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级强一致读写分离巅峰！</text>
+      </g>
+    </g>
+  </g>
+</svg>

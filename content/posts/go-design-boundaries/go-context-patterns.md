@@ -31,6 +31,10 @@ type Context interface {
 
 业务参数不在这份清单里。订单号、分页大小和权限策略应该以明确的参数或类型出现。这句话不是风格偏好，是接口设计的结果：Context 的传递是隐式的，而函数签名里的参数是显式的；把业务参数塞进 Context，等于给每个函数藏了一个编译器看不见的入参。
 
+
+
+![Context 树状级联取消传播机理：parentCancelCtx 与 children map 清理](../../../public/images/context-tree-cancellation-propagation-cascade.svg)
+
 ## 二、四种实现，一条链
 
 标准库的 Context 没有魔法，`Background()` 返回的只是一个零值的 `emptyCtx`。真正的行为来自另外三种实现，它们通过嵌套组合成一条链：
@@ -44,7 +48,7 @@ type Context interface {
 
 每个 `WithCancel` / `WithTimeout` / `WithValue` 都是在外层包一层新节点。于是每次 `ctx.Value(key)` 都是一次沿链向上的线性查找——不是从全局容器里取数，而是从当前节点出发，逐层比较 key，找到第一个匹配就返回：
 
-![Go context 值链查找示意图：调用栈向下传值，Value 沿链向上逐层比对 key](/images/go-context-value-chain.svg)
+![Go context 值链查找示意图：调用栈向下传值，Value 沿链向上逐层比对 key](../../../public/images/go-context-value-chain.svg)
 
 *图注：`ctx.Value` 是链式查找而不是容器读取——从调用点沿 parent 指针向上，逐层比对 key；业务参数混进这条链，每个中间层都多一个隐式入参。*
 
@@ -243,6 +247,10 @@ func (c *cancelCtx) propagateCancel(parent Context, child canceler) {
 各条路径：父从不取消 → 什么都不注册；父已取消 → 立即取消子；父是标准 `cancelCtx`/`timerCtx` → 把子注册进 `p.children`，父取消时在父的 cancel() 里同步递归，零额外 goroutine；父实现了 `afterFuncer`（`AfterFunc`）→ 注册回调；只有父类型完全未知的自定义 Context，才起一个常驻 goroutine 监听兜底。
 
 这个设计把"用 Context 传值"从风格建议变成实现约束：级联依赖的是**派生时刻的注册**——只有 `With*(parent)` 调用时，子节点才被登记进父的 children。任何不经过当前链派生的用法（比如中途用 `context.Background()` 重开、把别的 Context 塞给子任务）都绕过了 propagateCancel 的注册时机，上游的取消信号再也到不了这一支——这就是"不切断 Context 链"这条惯例的源码根据。
+
+
+
+![Context.Value 链表查找代价：O(N) 线性向上追溯与类型断言开销](../../../public/images/context-value-lookup-linear-cost.svg)
 
 ## 四、AfterFunc 与取消原因：取消的两种现代姿势
 

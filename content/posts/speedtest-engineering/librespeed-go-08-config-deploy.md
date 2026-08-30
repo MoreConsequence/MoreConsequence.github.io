@@ -10,6 +10,15 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 系列终篇读配置与部署面。三块"化石"先摆出来：`settings.toml` 里的 `download_chunks` 与 `distance_unit` 在当前代码中**没有任何消费者**（garbage 的 chunk 数硬编码为 4）；viper 层的 `database_type` 默认值是 **postgresql**——不带配置文件启动会直接撞数据库连接错误；统计密码哨兵值 `"PASSWORD"` 表示功能关闭。部署面则展示了 Go 服务部署的标准姿势全集：TLS/HTTP2 组合矩阵（含"开 HTTP2 必须有 TLS 否则忽略并报错"）、Linux 变体的 systemd socket activation、独立端口的 proxy protocol 监听、以及禁用目录列举的 `http.FileSystem` 包装器。
 
+
+---
+
+![LibreSpeed Go 配置与部署面：三块历史配置兼容、环境变量优先级与平滑降级矩阵](../../../public/images/librespeed-go-config-deploy-graceful-downgrade.svg)
+
+
+
+![Viper 配置加载优先级：CLI 参数 -> 环境变量 -> 配置文件 -> 编译默认值](../../../public/images/viper-config-hierarchy-precedence.svg)
+
 ## 一、配置加载：viper 的默认值优先级
 
 `config/config.go` 用 viper 管理：`init()` 里绑定环境变量与显式指定的配置文件，未设置的键回落到 `SetDefault`。全部默认值里有两颗雷和一块化石：
@@ -22,6 +31,10 @@ series: "LibreSpeed Go 源码行纪"
 | `distance_unit` | K | 同样无消费者——距离单位实际由客户端查询参数 `?distance=` 决定 |
 
 死配置键是每个长寿命项目都会长出的东西：文档/示例承诺了一个旋钮，重构后接线断了但键还在。**审计配置面时，对每个键问一句"谁在读它"**——本仓库两个答案为空的键就是教训样本。
+
+
+
+![云原生生产部署拓扑：Docker 轻量镜像、K8s 无状态 Deployment 与 CDN 接入](../../../public/images/librespeed-go-cloud-native-deploy-topology.svg)
 
 ## 二、监听面：一份逻辑，三种平台形态
 

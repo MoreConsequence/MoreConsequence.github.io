@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis 八大内存淘汰策略 (maxmemory-policy) 决策矩阵</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">全量键集 (allkeys) vs 过期键集 (volatile) ｜ LRU (最近最少使用) ｜ LFU (最不经常使用) ｜ Random ｜ volatile-ttl ｜ noeviction</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Columns (210px each) -->
+    <g>
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. allkeys-lfu (热点强力)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#4ade80">全键频次感知：</text>
+          
+          <text x="8" y="38" fill="#86efac">• 依据对数访问计数器 (LD/Counter)</text>
+          <text x="8" y="54" fill="#38bdf8">• 完美抵御单次全表批量扫描冲垮热点</text>
+          <text x="8" y="70" fill="#34d399">• 保留长期高频访问的核心 Key</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 通用缓存生产首选策略！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 读多写少、幂律分布明显的场景；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 缓存命中率最高；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 推荐默认配置。</text>
+      </g>
+    </g>
+
+    <g transform="translate(225, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. allkeys-lru (时效优先)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#38bdf8">全键时效感知：</text>
+          
+          <text x="8" y="38" fill="#86efac">• 依据最后访问时间戳 (LRU Clock)</text>
+          <text x="8" y="54" fill="#38bdf8">• 优先淘汰长时间未被访问的冷数据</text>
+          <text x="8" y="70" fill="#34d399">• 适合具有明确时间局部性的业务</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 经典时间滑动窗口！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 社交信息流、近期新闻查看；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 越新的数据被查概率越高；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 时效型系统标配。</text>
+      </g>
+    </g>
+
+    <g transform="translate(450, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. volatile-ttl (过期就近)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#fb923c">剩余寿命最短优先：</text>
+          
+          <text x="8" y="38" fill="#fed7aa">• 仅从设置了 EXPIRE 的字典中抽样</text>
+          <text x="8" y="54" fill="#38bdf8">• 优先干掉即将过期的短命键</text>
+          <text x="8" y="70" fill="#34d399">• 保护未设过期时间的持久配置</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 兼顾持久化与临时缓存！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• Redis 既当数据库又当缓存；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 严防误删永久存储的重要数据；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 混合业务安全折中。</text>
+      </g>
+    </g>
+
+    <g transform="translate(675, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#fef2f2"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">4. noeviction (绝不丢弃)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#f87171">默认出厂保守配置：</text>
+          
+          <text x="8" y="38" fill="#fca5a5">• 内存达到 maxmemory 时拒绝新写入</text>
+          <text x="8" y="54" fill="#ef4444">• 直接报错: OOM command not allowed</text>
+          <text x="8" y="70" fill="#f87171">• 读请求 (GET/PING) 依然正常可用</text>
+          
+          <text x="8" y="100" fill="#ef4444">🔴 强一致性业务保障</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 纯内存主数据库、分布式锁持有器；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 严禁丢数据的交易结算系统；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 宁可报错不可静默丢数据！</text>
+      </g>
+    </g>
+  </g>
+</svg>

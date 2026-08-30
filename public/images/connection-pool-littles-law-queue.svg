@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">数据库连接池容量数学模型：Little 定律与超时防雪崩设计</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">并发连接数 L = 到达率 λ (QPS) × 平均等待/执行时延 W (RT) ──► 为什么连接池越大性能反而越烂？</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Little's Law -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Little 定律 (Little's Law) 物理容量推导</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="8" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">L = λ × W  (系统内并发量 = QPS × 响应时间)</text>
+          <text y="34" fill="#93c5fd">• 假设峰值 QPS λ = 10,000 req/s</text>
+          <text y="50" fill="#93c5fd">• 平均数据库执行耗时 W = 2ms (0.002s)</text>
+          <text y="68" fill="#34d399">► 稳态所需连接数 L = 10,000 × 0.002 = 20 个连接！</text>
+          
+          <text y="92" fill="#fb923c">// PostgreSQL 官方黄金公式：</text>
+          <text y="108" fill="#fed7aa">Max_Pool_Size = (Core_Count × 2) + Effective_Spindle_Count</text>
+          <text y="126" fill="#86efac">对于 16 核服务器，32 ~ 40 个连接即可榨干硬件算力！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">连接数过大的灾难反噬：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 500 个连接并不增加 CPU 核心，反而导致 CPU 频繁上下文切换；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 数据库内部锁竞争与 Buffer Pool 争抢急剧恶化；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 结果：QPS 暴跌 80%，响应时延飙升 50 倍！</text>
+      </g>
+    </g>
+
+    <!-- Right: Timeout Hierarchy -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 四级超时控制防线与排队闸门</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 超时金字塔 (上游必须小于下游)</text>
+          <text y="32" fill="#86efac">1. ConnectionTimeout (获取连接等待超时: 如 250ms)</text>
+          <text y="46" fill="#cbd5e1">   池满排队超时立即快速失败 (Fast-Fail)，不拖垮上游</text>
+          
+          <text y="64" fill="#86efac">2. StatementTimeout (SQL 执行超时: 如 2000ms)</text>
+          <text y="78" fill="#cbd5e1">   单条慢 SQL 自动被数据库内核 KILL，释放连接</text>
+          
+          <text y="96" fill="#86efac">3. IdleTimeout / MaxLifetime (空闲与最大寿命: 如 30min)</text>
+          <text y="110" fill="#cbd5e1">   定期回收旧连接，防止防火墙静默断开 TCP 伪存活</text>
+          
+          <text y="128" fill="#34d399">✓ 配合有界排队队列，实现平滑削峰与熔断保护！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">生产配置法则 (HikariCP / pgx)：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 保持小而紧凑的连接池容量；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 必须配置合理的连接等待超时，杜绝无限排队；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 宁可快速返回降级错误，绝不拖垮整条链路！</text>
+      </g>
+    </g>
+  </g>
+</svg>

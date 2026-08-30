@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">经典限流算法拓扑对决：令牌桶 (Token Bucket) vs 漏桶 (Leaky Bucket)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">令牌桶 (以恒定速率放 Token，桶满溢出，允许突发流量消费全部存量 Token) vs 漏桶 (以恒定速率平滑流出请求，水满直接溢出丢弃，绝对平滑整形)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Token Bucket -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 令牌桶算法 (Token Bucket：支持突发)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">RateLimiter (Guava / Go x/time/rate):</text>
+          
+          <text y="38" fill="#86efac">• 恒定速率注入令牌 (如 100 tokens/s)</text>
+          <text y="52" fill="#38bdf8">• 桶容量 Capacity = 200</text>
+          <text y="66" fill="#34d399">• 突发 50 个请求到达 ──► 瞬间取走 50 个令牌极速放行！</text>
+          <text y="80" fill="#4ade80">• 桶空时拒绝多余请求或排队等待！</text>
+          
+          <text y="106" fill="#4ade80">✓ 适合面向用户请求的 API 网关限流！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 充分兼顾突发流量弹性与系统负载上限；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 互联网大厂 API 限流通用第一首选；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代网关标配。</text>
+      </g>
+    </g>
+
+    <!-- Right: Leaky Bucket -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">漏桶算法 (Leaky Bucket：绝对恒定平滑)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">Traffic Shaping (Nginx limit_req):</text>
+          
+          <text y="38" fill="#86efac">• 无论突发涌入多少请求，流出速率恒定 (如 10 req/s)</text>
+          <text y="52" fill="#cbd5e1">• 超出水桶容量的水直接溢出丢失</text>
+          <text y="66" fill="#38bdf8">• 彻底熨平所有毛刺与尖峰</text>
+          
+          <text y="92" fill="#4ade80">✓ 适合下游保护弱依赖数据库或第三方接口！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 强制消除突发性，输出绝对平稳；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 网络流量整形 (Traffic Shaping) 首选；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 保护脆弱后端。</text>
+      </g>
+    </g>
+  </g>
+</svg>

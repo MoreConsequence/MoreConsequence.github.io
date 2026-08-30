@@ -10,6 +10,11 @@ featured: false
 
 **TL;DR：** 三个参数各有不同责任：temperature 在采样前缩放 logits，top-p 从累计概率前缀裁剪候选，seed 只初始化采样器 RNG。固定 50 个 logits 的本地模拟中，T=0 走本文实现定义的 argmax，p=0.9 保留 28/50 个 token，同 seed 得到同一随机序列；这些数字只证明数学模型和本地 RNG。真实 API 即使复用 seed，也可能因为模型/权重、tokenizer、system prompt、工具 schema、硬件和服务端配置变化而不同。**可复现性是一个带版本和容忍度的工程合同，不是 seed 一列。**
 
+
+---
+
+![大模型采样几何语义：Temperature 退火拉平、Top-P 累积截断与 Seed 确定性复现](../../../public/images/llm-sampling-temperature-topp-geometry-logits.svg)
+
 ## 一、 temperature 是 logits 的除法，不是"创造力度"
 
 模型每步输出一个 logits 向量（词表大小的实数），softmax 把它变成概率分布，然后采样。temperature 插在中间：`logits / T`。
@@ -23,6 +28,10 @@ featured: false
 | 2.0 | 0.081 | 0.066 | 0.035 |
 
 T 越小分布越尖锐（最优 token 概率从 22.5% 冲高到 57.7%），T 越大越平坦（三个 token 都快均分）。元信息：**T=0 时 `logits/0` 无定义，没有“极小概率”的通用 API 语义。本文脚本显式把它定义为 argmax 分支，RNG 不触发。** 因此在这份模拟里，“温度 0”和“温度 0.1”是两种路径；真实供应商如何解释边界值、是否接受该参数，必须以目标 API 文档和请求 raw 为准。即使 argmax 没有采样噪声，模型版本或 logits 本身变化仍会改变结果。
+
+
+
+![大模型采样参数物理机理：Temperature 平滑 Logits vs Top-P 核采样截断](../../../public/images/temperature-top-p-sampling-probability-curve.svg)
 
 ## 二、 top-p 是核采样：截掉长尾，重归一化
 
@@ -53,6 +62,10 @@ seed=7      → [13, 40, 27, 1, 1, 39, 0, 31]（不同）
 2. **system_fingerprint 变化**：官方把它定义为"模型配置的指纹",内部横滚更新会改变输出分布——即使 seed 相同。**可复现性断了不是 bug,是模型在变。**
 
 两个工程推论：同 seed 同参数的两次调用只能在服务端仍使用等价配置时作为复现线索；跨天、跨发布的测试不能只依赖 seed。还要锁定**输入快照、system prompt、工具 schema、模型版本、tokenizer、采样参数、fingerprint（若供应商提供）和允许的差异容忍度**。
+
+
+
+![GPU 浮点非确定性机理：并行规约顺序差异、原子加法与完全可复现性防线](../../../public/images/gpu-floating-point-non-determinism-reduction.svg)
 
 ## 四、 可复现测试要锁定输入与执行环境
 

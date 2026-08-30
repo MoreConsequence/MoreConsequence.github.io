@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![DeepSeek Harness (DSH) 核心铁律：Append-Only Session Log 与「模型所见必留痕」投影](../../../public/images/dsh-append-only-session-log-projection.svg)
+
 ## 一、为什么放弃快照？事件溯源 (Event Sourcing) 的必然性
 
 在传统的 Agent 存储设计中，开发者习惯于直接把 `messages: Message[]` 数组作为 JSON 存入数据库。当需要修改单条消息、插入工具结果或压缩上下文时，直接原地 `UPDATE` 数据库记录。
@@ -39,6 +44,10 @@ flowchart LR
 `dsh` 采用 **Event Sourcing（事件溯源）** 模式：**Session 唯一的物理实体就是一条只增不减的事件序列文件（`.jsonl` 或持久化存储）**。
 
 ---
+
+
+
+![DSH 会话日志重放与快照压缩机制：增量写入 -> 快照生成 -> 尾部增量重放](../../../public/images/dsh-session-log-replay-snapshot-compaction.svg)
 
 ## 二、“模型所见必留痕”铁律 (Model-Visible Means Logged)
 
@@ -159,6 +168,10 @@ export function deriveMessages(events: readonly SessionEvent[]): Message[] {
 - 内存开销极小，可以利用不可变切片实现 Zero-Copy 上下文重构。
 
 ---
+
+
+
+![DSH 读写分离与 CQRS 投影：写模型 (Append-Only Event) -> 读模型 (Session View)](../../../public/images/dsh-cqrs-read-write-projection-pipeline.svg)
 
 ## 四、高级能力：会话分叉 (Fork) 与时间旅行 (Time-Travel)
 

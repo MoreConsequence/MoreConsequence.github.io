@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">SSE 原生自愈协议：Last-Event-ID 断点续传与消息补发机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">网络抖动中断 ──► 浏览器 EventSource 自动按 retry: 3000 重连 ──► 携带 Last-Event-ID 请求头 ──► 服务端精准补发遗漏事件</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 稳态流式推送与 ID 记录 (Active Streaming: id: 104)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">id: 104
+data: {"token":"hello"}
+
+ ──► 浏览器底层自动记录最后成功收到的 eventId = 104</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">text/event-stream 标准协议内置的原生能力，开发者无需手写任何维护逻辑！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">2. 网络偶发中断与指数退避 (Network Drop &amp; Auto Reconnect)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">Wi-Fi 切换或网关超时断开 ──► 触发 onerror ──► 浏览器依据上次下发的 retry: 3000 自动等待重连</text>
+        <text x="15" y="62" font-size="8" fill="#7f1d1d">纯 C++ 引擎级自动重试，0 前端 JS 轮询开销！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 携带 Last-Event-ID 重建连接 (Reconnection Handshake)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">GET /stream HTTP/1.1 | Header: Last-Event-ID: 104 ──► 服务端拦截器提取历史游标</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">服务端明确知晓客户端的最后消费位置！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">4. 缓冲区差量补发与零数据丢失 (Catch-up &amp; Seamless Resume)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">从 Redis RingBuffer 读取 ID &gt; 104 的事件 (105, 106...) ──► 极速补发并无缝衔接实时流</text>
+        <text x="15" y="62" font-size="8" fill="#047857">用户界面完全无感知抖动，打造金融级与 AI 级高可靠单向推送通道！</text>
+      </g>
+    </g>
+  </g>
+</svg>

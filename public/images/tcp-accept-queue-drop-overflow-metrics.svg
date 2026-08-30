@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Accept 队列溢出排查：应用消费过慢引发的隐蔽丢包</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">三次握手成功但应用未及时 accept() ──► Accept Queue 满 ──► 内核依据 tcp_abort_on_overflow 丢包或发 RST</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ Accept Queue 溢出症状</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">ss -lnt | grep :8080</text>
+          <text y="28" fill="#fca5a5">State  Recv-Q  Send-Q  Local:Port</text>
+          <text y="42" fill="#ef4444">LISTEN 129     128     *:8080 (Recv-Q &gt; Send-Q 溢出！)</text>
+          
+          <text y="66" fill="#ef4444">🔴 核心危害：</text>
+          <text y="80" fill="#ef4444">1. 三次握手成功但被内核丢弃，客户端以为连接成功！</text>
+          <text y="94" fill="#ef4444">2. 客户端发送第一条 HTTP 请求时遭遇神秘超时或 RST 报错！</text>
+          <text y="108" fill="#f87171">3. 应用服务进程并没挂，但外部调用全面瘫痪！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 排查极度困难，应用日志没有任何报错记录；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 通常发生在 Java GC 停顿或 Node.js CPU 满载时；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 必须扩充 backlog 并调优应用调度！</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 内核调优与排查黄金准则</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 步骤 1: 扩充内核全局连接队列上限</text>
+          <text y="28" fill="#86efac">sysctl -w net.core.somaxconn=4096</text>
+          
+          <text y="50" fill="#38bdf8">// 步骤 2: 应用启动设置对应 backlog</text>
+          <text y="64" fill="#34d399">server.listen(8080, '0.0.0.0', 4096);</text>
+          
+          <text y="86" fill="#38bdf8">// 步骤 3: 观测丢包增量</text>
+          <text y="100" fill="#34d399">netstat -s | grep "listen queue"</text>
+          <text y="114" fill="#4ade80">✓ "0 times the listen queue of a socket overflowed"</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 轻松抵御秒杀与突发大流量冲击；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 为应用层 GC 停顿争取充裕的缓冲时间；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 高并发服务端必备基础配置！</text>
+      </g>
+    </g>
+  </g>
+</svg>

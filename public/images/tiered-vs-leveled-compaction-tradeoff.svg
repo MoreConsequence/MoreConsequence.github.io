@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LSM 压缩策略双雄对决：Size-Tiered vs Leveled</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Size-Tiered (同层等大 SST 一次性合并，写放大低至 2~5，但空间放大高达 200%) vs Leveled (逐层 10 倍有序合并，空间放大仅 1.1，点查极快)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Size-Tiered -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Size-Tiered Compaction (Cassandra 默认)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">等攒满 4 个大小相近的 SSTable 时一次性归并：</text>
+          
+          <text y="38" fill="#86efac">核心优势：</text>
+          <text y="52" fill="#34d399">• 写放大极低 (WA 约 2 ~ 5 倍)</text>
+          <text y="66" fill="#34d399">• 写入吞吐量巨大，极其适合时序监控与日志写入！</text>
+          
+          <text y="90" fill="#f87171">⚠️ 致命痛点：</text>
+          <text y="104" fill="#fca5a5">• 空间放大巨大 (SA 达 200%，合并时需预留 50% 磁盘空间)</text>
+          <text y="118" fill="#ef4444">• 同一层内 Key 重叠，读放大较高！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 纯追加写入为主的时序数据库 (InfluxDB)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 海量日志与审计流水归档；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造超强写入吞吐。</text>
+      </g>
+    </g>
+
+    <!-- Right: Leveled Compaction -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Leveled Compaction (RocksDB / LevelDB 默认)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">分层 10 倍放大，L1+ 每层内部 Key 严格全局有序不重叠：</text>
+          
+          <text y="38" fill="#86efac">核心优势：</text>
+          <text y="52" fill="#34d399">• 空间放大极小 (SA 仅 1.1 ~ 1.2 倍，空间利用率极高)</text>
+          <text y="66" fill="#34d399">• 点查极快，每层最多只需查 1 个 SSTable！</text>
+          
+          <text y="90" fill="#fed7aa">权衡代价：</text>
+          <text y="104" fill="#fed7aa">• 写放大相对较高 (WA 约 10 ~ 25 倍)</text>
+          <text y="118" fill="#4ade80">✓ 综合性能均衡，通用分布式数据库事实标准！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 读写均衡型业务 (TiKV / CockroachDB)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 对磁盘存储成本敏感的大型集群；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代存储引擎架构首选！</text>
+      </g>
+    </g>
+  </g>
+</svg>

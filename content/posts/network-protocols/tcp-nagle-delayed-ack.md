@@ -11,6 +11,11 @@ series: "网络协议"
 
 **TL;DR：** Nagle（发送端攒小包）与延迟 ACK（接收端攒 ACK）各自都在减少小包，但可能把等待叠加到同一条交互路径：Nagle 等 ACK，延迟 ACK 等更多数据。仓库内固定参数模型（RTT 100ms、延迟 ACK 40ms）得到：Nagle 先发 1 段、再发剩余 9 段，首段到最后一段相隔 140ms；`TCP_NODELAY` 则把 10 段同时送入模型。这个输出是因果时序模型，不是 Linux/Docker 抓包 benchmark。修法仍然是按交互粒度选择：小包交互先验证 `TCP_NODELAY`，批量写则先合并应用层 write。Go 的 `net` 包默认启用 NODELAY，但不能把 Go 的默认值外推到所有语言或框架。
 
+
+---
+
+![Nagle 算法 (TCP_NODELAY) 与延迟 ACK (Delayed ACK) 40ms 死锁等待模型](../../../public/images/tcp-nagle-vs-delayed-ack-deadlock.svg)
+
 ## 一、两个定时器的各自逻辑：为什么要"省包"
 
 TCP 是字节流协议，没有"消息"概念。应用写 12 字节，内核何时把它发出去，不全由应用决定——有两个内核策略在管：
@@ -26,6 +31,10 @@ TCP 是字节流协议，没有"消息"概念。应用写 12 字节，内核何�
 - 动机：ACK 是纯开销（无载荷），40ms 内到第二次交互的概率不低，少回一个纯 ACK 就能省一个包
 
 两个策略的代价都是"延迟"，收益都是"少包"。在本地回环（RTT ≈ 0）上，两者几乎无感；一旦 RTT 变大，就成了互相亏欠。
+
+
+
+![Nagle 算法与延迟确认 (Delayed ACK) 40ms 死锁踩踏时序模型](../../../public/images/nagle-algorithm-vs-delayed-ack-deadlock.svg)
 
 ## 二、踩踏现场：谁在等谁
 
@@ -69,6 +78,10 @@ nodelay     10              50.0             50.0        0.0
 | TCP_NODELAY | 10 | 50ms | 50ms | 0ms |
 
 模型支持的判断是：Nagle 路径的首段至末段间隔约为 `RTT + delayed_ack`，并且把 10 次小写合并成两个传输段；NODELAY 减少等待，但可能增加段数。模型没有实现 MSS、拥塞窗口、真实 ACK 策略、网卡聚合、调度抖动或丢包，因此不能从 `140ms` 推导某个内核的实际延迟。
+
+
+
+![Linux 套接字参数横评：TCP_NODELAY (低时延) vs TCP_CORK (极限吞吐)](../../../public/images/tcp-cork-vs-nodelay-throughput-matrix.svg)
 
 ## 四、修复的层次，从应用到内核
 

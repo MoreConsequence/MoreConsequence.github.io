@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 在生产环境中，用户不可能忍受等待 30 秒直到模型把整整 2000 个 Token 和 3 个工具调用全部生成完毕才看到屏幕变化。**生产级 Agent 必须是 100% 流式驱动的（Fully Streaming-Driven）**。然而，流式处理在工程上极具挑战性：模型输出被拆碎成几百个微小的 SSE（Server-Sent Events）数据包，思考过程（Thinking / Reasoning Block）、工具名称与 JSON 参数片段（`{"com`, `mand": `, `"ls"}`）混杂在一起到来。本文作为《Pi Agent 实战通才教程》第二课，手把手教你编写一个**零依赖的流式事件分流器**、**JSON 增量聚合器（Incremental JSON Parser）**，以及基于 ANSI 转义序列的高性能**终端差分渲染引擎（Differential TUI）**。
 
+
+---
+
+![流式传输与差分渲染：Thinking 块、ToolCall 增量聚合与 TUI 终端渲染引擎](../../../public/images/pi-streaming-thinking-toolcall-tui.svg)
+
 ## 一、流式协议拆解：OpenAI 与 Anthropic 的数据形态
 
 不同大模型厂商的流式协议存在结构差异，但核心都是基于 HTTP SSE（Content-Type: `text/event-stream`）。
@@ -46,6 +51,10 @@ flowchart TD
   采用显式事件分块类型（`content_block_start` $\to$ `content_block_delta` $\to$ `content_block_stop`），思维链由 `type: "thinking_delta"` 承载，工具参数由 `type: "input_json_delta"` 承载。
 
 Harness 必须在接入层将这些异构流抹平为统一的**内部增量事件流**。
+
+
+
+![Pi 流式 TUI 打字机与光标定位控制：ANSI Escape Codes 终端渲染原理](../../../public/images/pi-tutorial-streaming-tui-typewriter-render.svg)
 
 ## 二、核心实现：流式分流器与增量 JSON 聚合器
 
@@ -158,6 +167,10 @@ Pi 的 `pi-tui` 包之所以流畅且不闪屏，核心在于利用 **ANSI Escap
 | `\x1b[<N>A` | 将光标向上移动 $N$ 行 |
 | `\x1b[<N>B` | 将光标向下移动 $N$ 行 |
 | `\x1b[?25l` / `\x1b[?25h` | 隐藏光标 / 显示光标 |
+
+
+
+![Pi TUI 终端精美代码 Diff 视图：红绿行对比与语法高亮渲染](../../../public/images/pi-tutorial-terminal-diff-view-rendering.svg)
 
 ## 四、动手实战：手写轻量终端差分渲染器
 

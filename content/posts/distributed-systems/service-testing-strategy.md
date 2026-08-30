@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 测试的价值不在一张漂亮的覆盖率表，而在它能否把最容易被顺序 happy path 掩盖的反例固定下来。当前 `experiments/service/` 在 Node 24.19.0 下有 3 个测试文件、18 个测试通过：schema 约束、store 原子 claim、100 并发同 key、不同 payload 的 409、404/400/500 指标路径和双表容量不变量都被断言。当前覆盖率是 80% statements、71.62% branches、81.48% lines；它证明测试跑过了这些路径，不证明 PostgreSQL、多实例或部署闭环。
 
+
+---
+
+![分布式服务测试策略：单元测试、集成测试与并发反例断言金字塔](../../../public/images/service-testing-pyramid-concurrency-counterexamples.svg)
+
 ## 一、第一层不是“测框架”，而是钉住业务合同
 
 `orders.test.ts` 只测 `OrderSchema` 的三个产品决策：合法订单通过、`qty=0` 拒绝、未知状态拒绝。schema 看起来像声明，实际上决定了 API 能接受什么；它值得用小测试把行为固定，而不是把责任交给类型检查器。下面是测试节选：
@@ -24,6 +29,10 @@ it("拒绝未知 status", () => {
   expect(result.success).toBe(false);
 });
 ```
+
+
+
+![测试分层模型演进：经典测试金字塔 (Testing Pyramid) vs 现代测试奖杯 (Testing Trophy)](../../../public/images/testing-pyramid-vs-testing-trophy-model.svg)
 
 ## 二、store 测试要证明“权威结果”而不只是“不覆盖”
 
@@ -67,6 +76,10 @@ flowchart LR
 ```
 
 因此“18 个测试通过”只能把左侧四层固定下来；右侧不是再补几条内存单测就会自动出现，而要换证据类型和运行环境。
+
+
+
+![Testcontainers 临时真实数据库流水线：Docker 动态起停 -> 隔离测试 -> 自动销毁](../../../public/images/testcontainers-ephemeral-database-pipeline.svg)
 
 ## 四、当前本机结果：数字绑定环境，不能冒充历史快照
 

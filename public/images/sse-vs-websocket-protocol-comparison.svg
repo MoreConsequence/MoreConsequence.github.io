@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型流式输出协议选型：SSE (HTTP) vs WebSocket (TCP) 全方位权衡</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">纯单向文本流 (SSE, 天然兼容 HTTP/2, 穿透网关与无缝重连) vs 双向全双工二进制 (WebSocket, 专用于高频协同与游戏)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: SSE -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Server-Sent Events (SSE, LLM 推理首选)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#34d399">// 标准 HTTP text/event-stream 协议</text>
+          <text y="32" fill="#86efac">1. 底层就是普通 HTTP 请求，复用 HTTP/2 连接池</text>
+          <text y="50" fill="#86efac">2. 协议极简格式: data: {"token": "hello"}
+
+</text>
+          <text y="68" fill="#38bdf8">3. 内建断线自动重连 (Last-Event-ID 断点续传)</text>
+          <text y="86" fill="#34d399">4. 100% 穿透所有企业级 WAF、Nginx、Cloudflare 与代理</text>
+          <text y="104" fill="#34d399">5. 天然支持浏览器 fetch / EventSource 原生 API</text>
+          <text y="126" fill="#4ade80">► OpenAI / Anthropic / 全球 LLM 网关统一采用 SSE！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">工程优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 零额外握手开销，鉴权 Header 直接复用 Bearer Token；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支持流式反压 (Backpressure) 与中间件缓存；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 运维成本极低，与标准 REST API 完全同构！</text>
+      </g>
+    </g>
+
+    <!-- Right: WebSocket -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. WebSocket (全双工对等通信)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 独立 ws:// 与 wss:// 协议 (HTTP 升级握手)</text>
+          <text y="32" fill="#93c5fd">1. 支持客户端与服务端高频双向对等发送</text>
+          <text y="50" fill="#93c5fd">2. 支持二进制 ArrayBuffer / Blob 帧传输</text>
+          <text y="70" fill="#f87171">❌ 缺点：必须通过 HTTP Upgrade 建立独立长连接</text>
+          <text y="88" fill="#fca5a5">❌ 无法复用现有 HTTP/2 连接池；</text>
+          <text y="104" fill="#fca5a5">❌ 很多老旧代理与公司内网防火墙会强行切断 ws 连接；</text>
+          <text y="122" fill="#fb7185">❌ 必须手动手写心跳 Ping/Pong 与重连退避逻辑！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 在线多人联机协同画布 (Figma / Miro)</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 实时低延迟游戏 / 证券行情秒级跳动</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 客户端需要持续高频向服务端发送控制指令</text>
+      </g>
+    </g>
+  </g>
+</svg>

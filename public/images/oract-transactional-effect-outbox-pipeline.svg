@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Oract 事务性副作用发件箱 (Transactional Effect Outbox) 流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 状态机决策 ──► 2. 本地事务原子写入 Effect Outbox ──► 3. 异步 Dispatcher 执行外部 I/O ──► 4. 确认后标记 Effect Completed</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 副作用意图生成 (Effect Intent Generation: Send Slack / Write DB)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">模型决策触发外部操作 ──► 生成不可变副作用描述对象 Effect(id="eff_101", action="notify_slack")</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">将非确定性外部调用抽象为数据结构！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 本地事务原子落盘 (Atomic Outbox Commit in Local SQLite/WAL)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">在同一个事务中更新 Agent 状态并将 Effect 写入 Outbox 表 ──► 保证状态变更与外发意图 100% 同步</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">彻底消除双写不一致的天然隐患！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 异步重试调度派发器 (Reliable Async Effect Dispatcher)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">独立 Dispatcher 扫描未完成 Effect ──► 附带幂等键调用外部 API ──► 遇到网络超时自动指数退避重试</text>
+        <text x="15" y="62" font-size="8" fill="#047857">达成 At-Least-Once 可靠投递承诺！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 结果确认与状态闭环 (Effect ACK &amp; Journal Projection Update)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">收到 200 OK 确认 ──► 标记 Effect Completed ──► 将返回值装配为 Observation 唤醒 Agent 下一步！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代分布式系统与 Agent 工程融合的典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

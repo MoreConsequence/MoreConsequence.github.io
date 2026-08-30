@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">伪共享 (False Sharing) 物理踩踏与 64 字节内存对齐填充</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">不同核心修改同一 64B Cache Line 中的无关变量 (a 和 b) ──► 导致双方缓存行疯狂互相置为 Invalid (乒乓效应) ──► 填充 padding 消除冲突</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: False Sharing Bug -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 伪共享灾难：同一 64B 缓存行内的恶性乒乓踩踏</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">struct Data { int64_t a; int64_t b; }; // 紧凑排布在同一 64B 行</text>
+          
+          <text y="38" fill="#ef4444">Core 1 修改 a ｜ Core 2 修改 b：</text>
+          <text y="52" fill="#fca5a5">1. Core 1 写 a ──► 导致 Core 2 的整条 64B 缓存行强制失效 (Invalid)！</text>
+          <text y="68" fill="#ef4444">2. Core 2 写 b ──► 反向导致 Core 1 的整条 64B 缓存行强制失效！</text>
+          <text y="84" fill="#ef4444">3. 双方在总线上疯狂发起 Invalidate 广播，争夺总线独占权！</text>
+          
+          <text y="106" fill="#f87171">🔴 多核并发性能竟然比单核慢 10 倍！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 代码逻辑没有任何数据竞争（Data Race），但硬件极其痛苦；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• CPU L1 缓存命中率暴跌至 0%；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 高并发原子计数器重灾区！</text>
+      </g>
+    </g>
+
+    <!-- Right: Cache Line Padding Solution -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 硬件对齐填充：64 字节物理隔离</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// Go: cpu.CacheLinePad | Java: @Contended | C++: alignas(64)</text>
+          <text y="28" fill="#86efac">type PaddedCounter struct {</text>
+          <text y="42" fill="#38bdf8">    val int64</text>
+          <text y="56" fill="#34d399">    _   [56]byte // 物理填充垫片，强行占满 64 字节！</text>
+          <text y="70" fill="#86efac">}</text>
+          
+          <text y="92" fill="#4ade80">1. a 和 b 被物理隔离在两个完全独立的 Cache Line 中</text>
+          <text y="106" fill="#4ade80">2. Core 1 和 Core 2 拥有各自的独占 M 状态，0 总线干扰！</text>
+          <text y="120" fill="#4ade80">✓ 多核性能随核心数实现 100% 线性加速！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• Disruptor / Go sync.Pool / Netty 核心性能秘密；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 释放现代数十核 CPU 并发洪荒之力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 顶级系统底层硬核优化！</text>
+      </g>
+    </g>
+  </g>
+</svg>

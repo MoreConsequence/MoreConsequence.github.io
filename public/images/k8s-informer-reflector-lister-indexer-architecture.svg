@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kubernetes client-go Informer 底层核心工作流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">API Server (etcd) ──► Reflector (List-Watch) ──► DeltaFIFO ──► Indexer (本地只读内存缓存) ──► WorkQueue ──► Controller Reconcile()</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Reflector 建立 List-Watch 长连接 (Reflector: List + Watch HTTP/2 Stream)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">首次启动 List 获取全量资源快照 ──► 随后建立 Watch 长连接基于 resourceVersion 增量接收事件流</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">0 轮询开销，毫秒级感知集群资源变更！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. DeltaFIFO 增量事件缓冲队列 (DeltaFIFO Buffering &amp; Deduplication)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">将 Added, Updated, Deleted 事件压入 DeltaFIFO ──► 自动对同一对象的连续更新执行合并去重</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">保障事件传递的严格保序与防洪峰缓冲！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Indexer 本地线程安全内存缓存 (Indexer / Lister Cache)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">从 DeltaFIFO 弹出对象更新 Indexer ──► 控制器所有只读查询 100% 命中本地 Indexer 内存！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底保护 API Server 与 etcd 不被成千上万个控制器查爆！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. WorkQueue 与 Reconcile 调谐循环 (WorkQueue &amp; Reconciler)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">ResourceEventHandler 将 "namespace/name" 压入 WorkQueue ──► 触发 Reconcile() 对齐实际状态与期望状态！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Kubernetes 声明式自愈控制平面的核心发动机！</text>
+      </g>
+    </g>
+  </g>
+</svg>

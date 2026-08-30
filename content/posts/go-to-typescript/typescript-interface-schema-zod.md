@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** schema 的价值不是“少写几行 `typeof`”，而是让运行时校验、静态类型和错误路径从同一个协议定义出来。当前实验用固定的 esbuild 0.28.0、browser/ESM、minify、ES2022 参数重算三种入口：手写守卫 619B raw，`zod` 根入口 327428B，`zod/v4` named imports 68099B。错误输出保留 `path`、`code` 和 message，并用同语义 benchmark 实测：合法路径 zod/v4 约慢一个数量级（≈0.1x）、非法路径约慢 5 倍；这个倍数只约束本机单核解析，不约束生产全链路。
 
+
+---
+
+![TypeScript 接口边界三合一：Zod Schema 同时负责运行时校验、静态类型推导与精准错误路径](../../../public/images/typescript-runtime-zod-schema-validation.svg)
+
 ## 一、三份真相为什么会漂移
 
 手写 ToolCall 协议通常同时存在三份描述：TypeScript union、运行时字段检查、错误字符串。改了 `kind` 分支却漏改其中一份，编译器不一定能发现。
@@ -29,6 +34,10 @@ type ToolCall = z.infer<typeof ToolCallSchema>;
 ```
 
 这里的 `z` 是 type-only namespace，不会把一个运行时的 `z` 对象带进 bundle；值层使用 named imports，类型层使用 `z.infer`。这修复了原文“named imports 后直接写 `z.infer`，但作用域没有 `z`”的代码块错误。
+
+
+
+![Zod 运行时校验机理：parse vs safeParse、类型推导与 JIT 高性能转换](../../../public/images/zod-parse-vs-safeparse-jit-transform.svg)
 
 ## 二、体积实验：入口、目标和压缩口径必须固定
 
@@ -73,6 +82,10 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 ```
 
 对人来说，两种错误都能开始排查；对 Agent 来说，`path`、期望类型和实际类型可以直接进入下一轮修正。这个收益成立的前提是错误对象仍被当作不可信输入处理，不能把库内部 message 当成跨版本稳定 API。服务对外应继续包一层自己的 `error.code`。
+
+
+
+![JSON Schema 验证引擎横评：Zod 解释执行 vs Ajv 预编译代码生成 (Codegen)](../../../public/images/ajv-json-schema-validator-codegen-ast.svg)
 
 ## 四、取舍：schema 的成本要和信任边界对齐
 

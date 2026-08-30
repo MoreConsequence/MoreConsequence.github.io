@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DSH 会话快照压缩与极速重启流水线 (Snapshot &amp; Tail Replay)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 历史事件增量沉淀 ──► 2. 每 100 步生成 snapshot.bin 内存镜像 ──► 3. 重启仅需加载快照 + 重放尾部增量 ──► 4. 毫秒级恢复百万事件会话</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 基础事件流归档 (Continuous Event Append)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">全量不可篡改保存所有 User/Agent/Tool 事件至 session.jsonl ──► 保证审计合规 100% 完整性</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">全量事件归档基座！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 周期性状态快照固化 (Periodic Snapshot Compaction)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">每隔 100 轮交互，后台异步将投影状态序列化为 snapshot.bin ──► 记录当前事件序列号 seq_id = 500</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将历史重放成本从 O(N) 降低到 O(1)！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 极速启动与尾部增量重放 (Fast Snapshot Load &amp; Tail Replay)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">系统冷启动 ──► 0.5ms 直接 mmap 加载 snapshot.bin ──► 仅重放 seq_id &gt; 500 的最后 5 条增量事件</text>
+        <text x="15" y="62" font-size="8" fill="#047857">即使数万轮超长会话也能在 2ms 内瞬间秒开！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 内存只读投影无缝提供服务 (Serving Read Projections)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">向 UI 前端即刻提供完整消息树、Token 消耗大盘与历史分支 ──► 达到极致工业级响应性能！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">顶级事件溯源系统架构设计标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">多模型网关弹性流控：指数退避、抖动重试与可中断睡眠</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">遭遇 429 速率限制 / 503 超载 ──► 指数退避 (Full Jitter) ──► 可中断睡眠 (AbortSignal 唤醒) ──► 自动切流降级备用供应商</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Full Jitter 指数退避公式</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// AWS / Google 权威重试算法</text>
+          <text x="10" y="34" fill="#93c5fd">cap = min(max_delay, base * 2^attempt)</text>
+          <text x="10" y="50" fill="#38bdf8">sleep_ms = random(0, cap)</text>
+          
+          <text x="10" y="74" fill="#34d399">1. 严禁使用固定间隔重试</text>
+          <text x="10" y="90" fill="#4ade80">2. 随机抖动打散并发请求</text>
+          <text x="10" y="108" fill="#4ade80">✓ 杜绝万人重试冲垮刚刚恢复的 API！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 仅对 429、500、503、网络超时重试；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 400 Bad Request 坚决 0 次重试；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造具备自愈弹性的调用链。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 可中断睡眠 (Interruptible Sleep)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 结合 AbortSignal 的睡眠函数</text>
+          <text x="10" y="34" fill="#86efac">function sleep(ms, signal) {</text>
+          <text x="16" y="48" fill="#86efac">  return new Promise((resolve, reject) =&gt; {</text>
+          <text x="16" y="62" fill="#38bdf8">    const timer = setTimeout(resolve, ms);</text>
+          <text x="16" y="76" fill="#f87171">    signal?.addEventListener('abort', () =&gt; {</text>
+          <text x="22" y="90" fill="#fca5a5">      clearTimeout(timer); reject(new AbortError());</text>
+          <text x="16" y="104" fill="#f87171">    });</text>
+          <text x="10" y="118" fill="#86efac">  });</text>
+          <text x="10" y="132" fill="#4ade80">}</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 用户按下 Ctrl+C 瞬间中断 10 秒睡眠；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 0 挂起延迟，毫秒级即时响应；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造丝滑顺手的交互质感。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 跨供应商自动切流 (Fallback)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 多模型主备智能路由</text>
+          <text x="10" y="34" fill="#fed7aa">1. 主选: Anthropic Claude 3.5 Sonnet</text>
+          <text x="10" y="50" fill="#f87171">   ► 连续 3 次超时或 503 触发熔断</text>
+          <text x="10" y="68" fill="#38bdf8">2. 备选: DeepSeek-V3 自动无缝顶上</text>
+          <text x="10" y="86" fill="#34d399">3. 业务层完全无感知，会话持续推进！</text>
+          
+          <text x="10" y="110" fill="#4ade80">✓ 打造 99.99% 超高可用性 AI 服务！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 摆脱对单一模型供应商的强绑定风险；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 智能权衡各供应商费率与响应速度；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 企业级系统韧性的巅峰展现！</text>
+      </g>
+    </g>
+  </g>
+</svg>

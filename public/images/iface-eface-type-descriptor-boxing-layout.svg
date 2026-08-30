@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 接口底层物理布局：eface (空接口) vs iface (非空接口)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">任何接口变量在 64 位机器上均固定占用 16 字节 (2 个字长指针) ｜ eface (_type + data) ｜ iface (tab: itab 虚表 + data: 动态实体数据)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: eface -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 空接口结构体 (eface: any / interface{})</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">type eface struct {</text>
+          <text y="28" fill="#86efac">    _type *_type         // 8 字节: 指向底层类型元数据 (size, hash, kind)</text>
+          <text y="42" fill="#34d399">    data  unsafe.Pointer // 8 字节: 指向实际存储的底层堆/栈数据</text>
+          <text y="56" fill="#38bdf8">}</text>
+          
+          <text y="80" fill="#fb923c">经典 nil 判空陷阱：</text>
+          <text y="94" fill="#fed7aa">var p *MyStruct = nil; var i any = p</text>
+          <text y="108" fill="#f87171">i == nil 结果为 false！因为 i._type 已经被填充了 *MyStruct！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 只有当 _type 和 data 均为 nil 时，接口才等于 nil；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 装箱基础值类型 (int/string) 会发生堆逃逸；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 语言类型系统的基石。</text>
+      </g>
+    </g>
+
+    <!-- Right: iface -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 带方法接口结构体 (iface: io.Reader / error)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">type iface struct {</text>
+          <text y="28" fill="#86efac">    tab  *itab          // 8 字节: 虚函数表 (接口元数据 + 函数指针数组)</text>
+          <text y="42" fill="#34d399">    data unsafe.Pointer // 8 字节: 实例数据地址</text>
+          <text y="56" fill="#4ade80">}</text>
+          
+          <text y="78" fill="#38bdf8">itab 内部细节：</text>
+          <text y="92" fill="#cbd5e1">• inter: 接口类型描述 ｜ _type: 具体实体类型描述</text>
+          <text y="106" fill="#34d399">• fun[0]: 实体类型实现接口方法的具体函数入口指针数组！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 首次转换时动态生成 itab 并全局哈希缓存；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 接口方法调用仅需一次间接寻址 (tab.fun[i])；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 极其高效的非侵入式鸭子类型多态！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** `append` 的扩容税不是一个可以跨版本复制的固定倍数。Go 1.25.1/arm64 的真实增长 probe 对 100 万个 `int` 观察到 **36 次扩容、最终容量 1,055,744、累计搬运 4,154,012 个元素**，累计搬运约为最终容量的 **3.935 倍**；65536 个 `int` 则是 24 次扩容、约 3.510 倍。统一 benchmark 对 65536 个 `int` 的三次 run 得到：自然增长 **0.30–0.58ms / 26 allocs / 2.51MB**，预分配 **0.067–0.088ms / 1 alloc / 0.52MB**。这些结果绑定 Go 版本、元素类型和停止位置；扩容算法在 256 元素处从翻倍段转入平滑增长，但最终容量还会受到实际 `append` 路径和 allocator 的影响。
 
+
+---
+
+![Go Slice 底层结构 (24B Header) 与 growthslice 内存对齐扩容算法](../../../public/images/go-slice-header-growth-growthslice.svg)
+
 ## 一、扩容策略：256 元素的分界线
 
 Go 1.18 之后 `growslice` 的容量算法（runtime/slice.go:296）：
@@ -35,6 +40,10 @@ newcap += (newcap + 3*threshold) >> 2
 ```
 
 **翻倍在 256 处停止，但后续不是简单的 `oldCap * 1.25`。** 公式会平滑过渡，且最后一次增长要满足新的长度；不同元素大小、追加步长、目标长度和 Go 版本都可能改变实际容量序列。文章中的数字来自真实 `append` probe，而不是手抄一组容量常数。
+
+
+
+![Go 1.18+ 切片扩容平滑过渡算法：从 2x 到 1.25x 的数学递推曲线](../../../public/images/go-slice-growth-algorithm-transition-curve.svg)
 
 ## 二、真实增长 probe：停止位置会改变累计搬运比例
 
@@ -67,6 +76,10 @@ go run ./go-runtime-boundary/cmd/slice-growth -limit=65536
 | 预分配 `make([]int, 0, 65536)` | **0.067–0.088ms** | 1 | **0.52MB** |
 
 内存差 2.51/0.52 = **4.8 倍**；它与 65536 输入的累计搬运比例 3.51 倍不是同一个指标，因为 B/op 还包含多个旧数组分配、容量取整和分配器行为。自然增长与预分配的墙钟区间也不能压成一个稳定倍数；可重复的判断是：当前输入下，26 次扩容带来更多分配和搬运，`make` 的容量参数把终点提前告诉运行时。
+
+
+
+![SliceHeader 结构体与底层数组内存映射：扩容前共享 vs 扩容后指针脱钩](../../../public/images/slice-header-memory-layout-pointer-sharing.svg)
 
 ## 四、生产判断：容量参数怎么给
 

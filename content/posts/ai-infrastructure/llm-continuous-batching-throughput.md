@@ -10,6 +10,11 @@ series: "AI 工程"
 
 **TL;DR：** 一张 GPU 跑 LLM 解码，利用率低很少是算力不够，而是批的粒度太粗。prefill 是计算密集、decode 是内存带宽密集且逐 token 串行，静态批让整批等最慢的序列结束、末尾留空档，新请求只能排队。continuous batching（Orca 在 2022 年提出，vLLM 在 2023 年产品化）把调度粒度从「一批」缩到「一步」：序列完成立即腾槽、新请求随到随插。论文数字在这里：Orca 论文报告，同延迟水平下吞吐比请求级调度的 FasterTransformer 最高约 36.9 倍；vLLM 论文报告，比当时的先进系统高 2–4 倍。批的边界不在算力而在 KV cache 显存与延迟 SLO，这是第五节的内容。
 
+
+---
+
+![静态批处理 (Static Batching) 气泡浪费 vs 迭代级动态连续批处理 (Continuous Batching)](../../../public/images/llm-continuous-batching-step-iteration.svg)
+
 ## 一、 先立账：一次推理里有两笔形状不同的成本
 
 GPT 风格模型的生成分两个阶段，两阶段的成本形状完全不同。
@@ -21,6 +26,10 @@ GPT 风格模型的生成分两个阶段，两阶段的成本形状完全不同�
 这两笔成本形状不同，决定了「批」这个杠杆只对 decode 有效。decode 每步有一笔固定开销：读权重、kernel 启动、搬运 KV cache。批只有一条序列时，这笔开销摊在 1 个 token 上，算术强度（每字节内存搬运对应的浮点运算）太低，GPU 吃不饱；把批加到 B 条序列，固定开销摊到 B 个 token 上，算力才被真正用起来。所以在内存带宽打满之前，decode 吞吐近似随批大小线性涨。而 prefill 天生就把算力用满，批它并不涨吞吐。
 
 这一句话是全文的地基：**批是 decode 的杠杆，不是 prefill 的杠杆。** 后半句要加个限制——decode 单步时间严格说会随批大小上升，吞吐只是随批增长得更快；「单步时间近似与批大小无关」是批能带来收益的理想极限，第五节讲它的边界。
+
+
+
+![Iteration 级调度器抢占与恢复：Swap 交换到 CPU 内存 vs Recompute 重计算](../../../public/images/iteration-level-scheduling-preempt-swap-recompute.svg)
 
 ## 二、 静态批的排队税：一批等最慢的，末尾留空档
 
@@ -75,6 +84,10 @@ sequenceDiagram
 2023 年 vLLM（SOSP 2023）把 continuous batching 产品化的同时，解决了另一个卡住批大小的瓶颈：KV cache 内存。vLLM 论文报告，此前系统对 KV cache 的利用率只有约 20.4%–38.2%——显存碎片和预留浪费吃掉了大半；PagedAttention 把 KV 切成固定大小的块、用块表按 OS 虚拟内存的方式管理，把利用率拉回接近 100%。显存边界一放宽，批能更大，continuous batching 才有施展空间。vLLM 论文摘要报告，同样延迟水平下吞吐比当时的先进系统高 2–4 倍；项目发布博客给出的更激进的量级——与 HuggingFace Transformers 这类未做 KV 内存优化的朴素实现相比最高约 24 倍——对应的是基准里最有利的负载，别当普遍值（论文《Efficient Memory Management for Large Language Model Serving with PagedAttention》，SOSP 2023）。
 
 值得注意的是，continuous batching 与 PagedAttention 是两件正交的事：前者提高 GPU 的时间利用率，后者提高显存的空间利用率。少了任何一个，另一个都到不了论文里的数字——这正是 KV cache 的字节账成为独立话题的原因，见[显存不是算力：KV cache 的字节账，40GB 里到底塞得下几个并发](/writing/llm-kv-cache-memory-budget)。
+
+
+
+![连续批处理 QPS 负载与 P99 排队延迟拐点相图](../../../public/images/continuous-batching-queue-wait-time-p99-curve.svg)
 
 ## 四、 模拟器实测：同一条 trace 下利用率何时拉开
 

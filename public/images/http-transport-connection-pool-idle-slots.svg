@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go http.Transport 空闲连接池底层拓扑 (Connection Pool Topology)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">idleConn (按 Host 归类的长连接切片) ｜ idleLRU (双向链表生命周期淘汰) ｜ 默认 MaxIdleConnsPerHost = 2 致命参数陷阱</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">1. 默认参数陷阱 (MaxIdle=2)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">http.DefaultTransport 配置：</text>
+          <text x="10" y="34" fill="#fca5a5">• MaxIdleConns = 100</text>
+          <text x="10" y="50" fill="#ef4444">• MaxIdleConnsPerHost = 2 (致命！)</text>
+          
+          <text x="10" y="74" fill="#ef4444">💥 1000 QPS 压测单一下游：</text>
+          <text x="10" y="90" fill="#fca5a5">• 仅 2 个连接被复用，其余 998 个全部被关闭！</text>
+          <text y="106" fill="#f87171">• 产生海量 TIME_WAIT 并打爆端口！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 频繁建立 TCP 三次握手与 TLS 握手；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 下游网关报错 connection reset by peer；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 生产微服务第一大暗坑！</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 高并发黄金调优配置</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">var CustomTransport = &amp;http.Transport{</text>
+          <text x="10" y="34" fill="#86efac">    MaxIdleConns:        1000,</text>
+          <text x="10" y="50" fill="#38bdf8">    MaxIdleConnsPerHost: 200, // 扩大 100 倍！</text>
+          <text x="10" y="66" fill="#34d399">    IdleConnTimeout:     90 * time.Second,</text>
+          <text x="10" y="82" fill="#34d399">    DisableKeepAlives:   false,</text>
+          <text x="10" y="98" fill="#4ade80">}</text>
+          
+          <text x="10" y="118" fill="#4ade80">✓ 长连接复用率达到 99.8%！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 接口平均延迟暴降 80%；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消灭 TIME_WAIT 端口耗尽危机；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造超强 RPC 客户端基座。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">3. 响应体关闭铁律</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">resp, err := client.Do(req)</text>
+          <text x="10" y="34" fill="#38bdf8">if err != nil { return err }</text>
+          <text x="10" y="50" fill="#4ade80">defer resp.Body.Close() // 必须 defer 关闭！</text>
+          
+          <text x="10" y="74" fill="#fed7aa">// 若未读完必须排空：</text>
+          <text x="10" y="90" fill="#34d399">io.Copy(io.Discard, resp.Body)</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 确保底层 TCP 连接安全放回池中复用！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 漏关 Body 会导致连接泄漏；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 未排空 Body 会导致连接被强制销毁重建；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 客户端编程规范准则。</text>
+      </g>
+    </g>
+  </g>
+</svg>

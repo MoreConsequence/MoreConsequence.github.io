@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Zod 运行时校验架构：TypeScript 编译期抹除后的安全防线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">z.infer 静态类型推导 ｜ safeParse 结构化错误处理 ｜ 运行时数据过滤、剥离未知字段与强制类型转换</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Schema 单一事实源 (SSOT)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">const UserSchema = z.object({</text>
+          <text x="16" y="32" fill="#86efac">  id: z.string().uuid(),</text>
+          <text x="16" y="46" fill="#86efac">  age: z.number().min(18),</text>
+          <text x="16" y="60" fill="#86efac">  email: z.string().email(),</text>
+          <text x="10" y="74" fill="#38bdf8">});</text>
+          
+          <text x="10" y="96" fill="#34d399">type User = z.infer&lt;typeof UserSchema&gt;;</text>
+          <text x="10" y="112" fill="#4ade80">✓ 静态类型与运行时规则 100% 自动同步！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 告别 interface 与校验代码脱节的两张皮痛点；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 自动推导精确的 TypeScript 类型定义；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造现代全栈强类型基石。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. safeParse 零抛错防御 (Safe)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">const res = UserSchema.safeParse(req.body);</text>
+          <text x="10" y="34" fill="#86efac">if (!res.success) {</text>
+          <text x="16" y="48" fill="#f87171">  // 0 运行时异常，返回结构化错误树</text>
+          <text x="16" y="62" fill="#fca5a5">  return json(res.error.format(), 400);</text>
+          <text x="10" y="76" fill="#86efac">}</text>
+          
+          <text x="10" y="98" fill="#38bdf8">// res.data 类型被自动窄化为 User！</text>
+          <text x="10" y="114" fill="#4ade80">const user = res.data;</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 杜绝 throw 导致的性能开销与未捕获崩溃；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 输出精确到字段路径的详细报错信息；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 风格的 Result 模式优雅呈现。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 字段剥离与原型污染防御 (Strip)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 攻击者注入非法字段</text>
+          <text x="10" y="32" fill="#fed7aa">body: { ...data, isAdmin: true, __proto__: ... }</text>
+          
+          <text x="10" y="54" fill="#34d399">Zod 自动执行 Strip 操作：</text>
+          <text x="10" y="70" fill="#4ade80">• 未在 Schema 声明的字段直接被物理剥离！</text>
+          <text x="10" y="86" fill="#4ade80">• 免疫 Mass Assignment 越权漏洞！</text>
+          
+          <text x="10" y="112" fill="#4ade80">✓ 杜绝任何未知参数流入下游数据库！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 在 I/O 边界构建坚不可摧的安检闸门；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 彻底消灭类型混淆引发的逻辑 Bug；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级 TypeScript 架构标配！</text>
+      </g>
+    </g>
+  </g>
+</svg>

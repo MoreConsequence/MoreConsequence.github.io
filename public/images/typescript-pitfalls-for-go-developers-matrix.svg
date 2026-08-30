@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 后端转 TypeScript 四大心智陷阱与对照表</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">结构化类型系统 (Duck Typing) ｜ 类型擦除 (Type Erasure) ｜ 异步非阻塞事件循环 ｜ 浮点数 Number 精度</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Matrix Quadrants (435px x 185px each) -->
+    <!-- Q1: Type System -->
+    <g>
+      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="30" rx="8" fill="#eff6ff"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">1. 类型系统：名义类型 (Nominal) vs 结构类型 (Structural)</text>
+      
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
+        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：type UserId string 与 type OrderId string 互不兼容，编译器拦截；</text>
+        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：type UserId = string 只是别名，传错变量 TS 编译完全不报错！</text>
+        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：使用 Brand 品牌类型标记：type UserId = string &amp; { readonly __brand: unique symbol };</text>
+        <text y="68" fill="#64748b">彻底在编译期杜绝 ID 串用事故！</text>
+      </g>
+    </g>
+
+    <!-- Q2: Type Erasure -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="30" rx="8" fill="#fff7ed"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">2. 运行时真相：反射实体 vs 纯类型擦除 (Erasure)</text>
+      
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
+        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：runtime reflect 可动态检查 struct 标签与字段类型；</text>
+        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：编译成 JS 后所有 interface / type 灰飞烟灭，零运行时痕迹！</text>
+        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：外部 I/O 输入输出严禁直接 as 强转，坚决使用 Zod 运行时解析！</text>
+        <text y="68" fill="#64748b">确保生产运行时数据 100% 合规安全。</text>
+      </g>
+    </g>
+
+    <!-- Q3: Concurrency -->
+    <g transform="translate(0, 195)">
+      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="30" rx="8" fill="#f0fdf4"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">3. 并发模型：多线程抢占 vs 单线程事件循环 (Event Loop)</text>
+      
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
+        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：密集计算直接开 goroutine，调度器自动多核分发；</text>
+        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：主线程写死循环或大 JSON.parse 直接卡死所有用户连接！</text>
+        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：密集计算拆分子进程 (Worker Threads) 或下沉到 Rust/Go 扩展！</text>
+        <text y="68" fill="#64748b">主线程只负责纯 I/O 事件调度。</text>
+      </g>
+    </g>
+
+    <!-- Q4: Numbers -->
+    <g transform="translate(465, 195)">
+      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+      <rect width="435" height="30" rx="8" fill="#faf5ff"/>
+      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#7e22ce">4. 数值模型：int64 整数 vs IEEE 754 双精度浮点</text>
+      
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
+        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：分布式雪花算法 Snowflake ID (int64) 原样传递；</text>
+        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：JS Number 超过 2^53-1 (9007199254740991) 发生精度截断！</text>
+        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：分布式 ID 在 JSON 中一律序列化为 string 传输，TS 使用 bigint！</text>
+        <text y="68" fill="#64748b">彻底消灭末两位被吃掉的诡异 Bug。</text>
+      </g>
+    </g>
+  </g>
+</svg>

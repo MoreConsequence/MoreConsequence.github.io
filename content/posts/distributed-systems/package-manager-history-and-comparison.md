@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 包管理器不能只按“安装速度”比较，至少要问五件事：依赖由谁解析、文件由谁拥有、升级是否有事务边界、运行时是否隔离、供应链和回滚证据在哪里。`apt/dnf` 主要服务发行版一致性，`pacman/portage` 把发行版策略交给用户，Homebrew 服务 macOS 开发机，Nix 提供路径隔离与声明式/可回滚工作流，但“哈希路径”不自动证明构建 bit-for-bit 可复现；Flatpak、Snap、AppImage 面向桌面分发，隔离、更新和系统集成取舍不同。推荐只能按场景给起点，不能把 2026 年的生态偏好写成所有团队的默认答案。
 
+
+---
+
+![操作系统包管理器演进三十年：从 make install 源码编译到 dpkg/rpm 到 Nix / Homebrew 内容寻址存储 (CAS)](../../../public/images/package-manager-evolution-tarball-dpkg-nix-cas.svg)
+
 ## 一、起点：没有包管理器的时代在赌什么
 
 手工 `./configure && make && make install` 的世界，三项风险全裸着：
@@ -38,6 +43,10 @@ timeline
 
 时间线标的是项目形成、发布或进入生态的近似窗口，不等同于“首次出现”“成为默认”或当前维护状态；历史年份与当前默认值应回到项目官方档案和版本文档核对。
 
+
+
+![Node.js 包管理器三代演进：npm (嵌套大泥球) -> Yarn (扁平化与幽灵依赖) -> pnpm (硬链接内容寻址)](../../../public/images/node-package-managers-evolution-npm-yarn-pnpm.svg)
+
 ## 二、第一代：把"安装"变成可记录的——dpkg、rpm（1994–1995）
 
 dpkg 在 Debian 早期形成并于 1994 年进入公开历史，是 `.deb` 包的底层安装、查询和卸载工具。它把文件清单、包元数据和依赖声明写进可查询的本地数据库：**安装可记录、文件有归属、卸载有依据**。它本身不是完整的仓库解析与系统升级策略，这个边界很重要。
@@ -60,6 +69,10 @@ Red Hat 系先有 RPM，随后由 YUM 和 DNF 提供仓库、元数据和高层�
 | 解析器 | apt 依赖规则 | libsolv（SAT 求解） |
 | 仓库 | Debian 官方 + Ubuntu PPA | Fedora 官方 + EPEL |
 | 事务/回滚 | 有安装事务，但不等同于全系统快照 | `dnf history` 可记录/undo/rollback 部分事务，受当前状态和版本影响 |
+
+
+
+![pnpm 全局内容寻址存储 (Content-Addressable Store) 与 Hard-Link 拓扑](../../../public/images/pnpm-hard-link-content-addressable-store.svg)
 
 ## 四、第三代：把"选择权"交给用户——portage 与 pacman（2002）
 

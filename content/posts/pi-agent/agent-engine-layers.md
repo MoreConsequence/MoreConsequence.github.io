@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** Agent 做完一件事，表现差异主要来自 harness 而不是模型——Databricks 用同一模型、同一思考档位跑两个 harness，每任务成本差出 2 倍以上，Pi 每轮喂给模型的上下文比 Claude Code 少约 3 倍。这个"少"不是省钱的技巧，而是架构的结果：Pi 把 Agent 拆成五个职责清晰的包（telemetry / ai / agent-core / coding-agent / tui），并用一份「刻意不做」清单——不接 MCP、不做子 Agent、不做权限弹窗、不做 plan mode、不做 to-do、不做后台 bash——把核心维持在一个工程师一周能读完的体积。本文是一张地图：每一层回答什么问题、边界画在哪、删掉的功能由什么替代。
 
+
+---
+
+![Pi Agent 五层精简架构：94k Stars 核心仅 4 个工具的「刻意不做」哲学](../../../public/images/pi-agent-five-layers-architecture-four-tools.svg)
+
 ## 一、同一个模型，两个 harness，2 倍价差
 
 2026 年 7 月 8 日，Databricks 发布了对自家百万行代码库的编码 Agent 基准[^databricks]。它没有用 SWE-Bench 这类公开题集，而是把工程师真实合入的 PR 改写成任务、手工评审每一条、测试集全部执行。结论最扎眼的一条是：**模型的 token 单价预测不了任务成本**。
@@ -18,6 +23,10 @@ series: "Agent 的方方面面"
 同一模型、同一思考档位，跑在 Claude Code 和 Pi 两个 harness 上，成本差异超过 2 倍，通过率持平——差异来自"每个 turn 喂给模型多少上下文"：Pi 平均每轮约少 3 倍。GLM 5.2 跑在 Pi 上（$1.25/任务）和 Opus 4.8 high 跑在 Claude Code 上（$2/任务）通过率都是约 87.5%；全场最高通过率 90% 则是 Opus 4.8 xhigh 跑在 Pi 上拿到的。
 
 这不是广告。Databricks 的目的恰恰是论证"harness 与模型可以解耦"（他们为此做了 Omnigent 元 harness），Pi 只是被测试的对象之一。但对我们要理解的问题，这个实验是完美的入口：**一个只卖 4 个工具、提示词以千级 token 计的极简 harness，在同一模型上赢了功能最全的竞品。** 为什么？答案要从它的分层开始。
+
+
+
+![Agent 引擎四层分层架构：Driver (驱动层) -> Memory (状态层) -> Core Loop (内核) -> Protocol (协议)](../../../public/images/agent-engine-four-layer-modular-architecture.svg)
 
 ## 二、五层地图：每层回答一个问题
 
@@ -67,6 +76,10 @@ flowchart TB
 `pi-ai` 是唯一认识 OpenAI/Anthropic/Google/Mistral/Bedrock/Groq 等 15+ 供应商的包。它对外暴露统一的流式消息 API、把各家模型清单折进一份 catalog、把重试/退避/限流/多供应商路由做成 pi-ai 内部的事（`retry.ts`、`backoff.ts`、`rate-limit.ts`、`multi-vendor.ts` 都在它的 src 里）。
 
 这条分界线的代价是 30.9k 行（2026-08-23 复测）——比整个核心层还大。而这恰恰是买点：**核心层（以及所有 extension 作者）永远只对着 pi-ai 的接口编程，不需要知道"今天的模型是谁"**。Databricks 的 Omnigent、Pi 的 `/model` 会话中途换模型，依赖的都是这条边界。没有这层抽象，换模型就等于改 harness，我们开头说的"2 倍价差实验"根本做不出来——因为实验的前提就是同一模型能跑在两个 harness 上。
+
+
+
+![Agent 引擎依赖倒置与能力插拔接口设计 (DIP)](../../../public/images/agent-layered-architecture-dependency-inversion.svg)
 
 ## 四、分界线二：核心层只有 loop、工具与状态
 

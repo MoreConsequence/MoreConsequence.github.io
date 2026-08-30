@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LLM Embedding 检索几何数学：余弦夹角 vs 欧氏距离的等价性</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">L2 归一化 (|u|=1, |v|=1) ──► 欧氏距离平方 ||u-v||^2 = 2 - 2(u·v) ──► 向量检索直接退化为极速点积 (Dot Product)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Geometric Equivalence -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 单位超球面上的几何对偶性</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 欧氏距离与余弦相似度换算公式</text>
+          <text y="30" fill="#93c5fd">||u - v||² = ||u||² + ||v||² - 2(u · v)</text>
+          
+          <text y="54" fill="#4ade80">当向量经过 L2 归一化后 (||u|| = ||v|| = 1):</text>
+          <text y="70" fill="#34d399">||u - v||² = 1 + 1 - 2 cos(θ) = 2(1 - cos(θ))</text>
+          
+          <text y="96" fill="#38bdf8">✓ 欧氏距离最小 ⇐⇒ 余弦相似度最大 ⇐⇒ 点积 (Dot) 最大！</text>
+          <text y="114" fill="#4ade80">✓ 向量数据库只需计算一次矩阵乘法 (BLAS GEMM)！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">工程性能跃迁：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 预先归一化，将复杂的开根号与模长除法在入库时提前完成；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 在线检索仅需单条 AVX-512 / ARM Neon FMA 向量点积指令；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• QPS 吞吐暴增 10 倍以上！</text>
+      </g>
+    </g>
+
+    <!-- Right: High-Dimensional Pitfalls -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 高维维度灾难与各向异性 (Anisotropy)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">// LLM 向量空间的锥形退化现象</text>
+          <text y="28" fill="#fed7aa">1. 绝大多数文本 Embedding 挤在一个极其狭窄的圆锥体内</text>
+          <text y="44" fill="#f87171">2. 任意两个无关文本的 Cosine 相似度均高达 0.85+！</text>
+          
+          <text y="68" fill="#38bdf8">3. 破局解法：</text>
+          <text y="82" fill="#4ade80">   • 均值中心化减去全局均值 (u - μ)</text>
+          <text y="96" fill="#4ade80">   • PCA / Whitening 白化消除主成分偏置</text>
+          <text y="112" fill="#34d399">   • 引入 Reranker 交叉重排进行二次深层打分！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">RAG 生产建议：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 严禁直接拿 0.8 相似度作为相关性过滤硬阈值；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 必须结合 BM25 稀疏检索 + 向量密集检索构建混合搜索 (Hybrid Search)；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#ea580c">• 彻底规避纯向量检索的语义漂移与数字盲区！</text>
+      </g>
+    </g>
+  </g>
+</svg>

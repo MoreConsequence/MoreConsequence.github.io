@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">认证体系权衡架构：无状态 JWT vs 有状态 Session</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">JWT (无状态自包含、0 存储查询，但无法即时主动吊销) vs Redis Session (支持秒级踢人下线，但产生中心化缓存依赖与网络 I/O)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: JWT -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">无状态 JWT (Stateless Token)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">Header.Payload.Signature (自包含用户 ID 与权限)</text>
+          
+          <text y="38" fill="#86efac">核心优势：</text>
+          <text y="52" fill="#38bdf8">• 0 数据库/Redis 查询，CPU 纯本地验签 (0ms)</text>
+          <text y="66" fill="#34d399">• 天然支持跨域名、微服务网关与移动端</text>
+          
+          <text y="90" fill="#f87171">致命短板：</text>
+          <text y="104" fill="#ef4444">• 用户修改密码或封禁账号后，已发出的 JWT 在过期前依然合法有效！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 适合超大规模公网 API 鉴权；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 必须设置超短过期时间 (如 15 分钟)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 配合 Refresh Token 轮换。</text>
+      </g>
+    </g>
+
+    <!-- Right: Session -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">有状态 Session (Stateful Redis Store)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">Cookie: session_id = random_uuid</text>
+          
+          <text y="38" fill="#86efac">核心优势：</text>
+          <text y="52" fill="#38bdf8">• 绝对实时控制权：管理后台点“强制下线”瞬间 DEL key</text>
+          <text y="66" fill="#34d399">• 用户立即失去会话被踢出，安全性极高！</text>
+          
+          <text y="90" fill="#fb923c">物理代价：</text>
+          <text y="104" fill="#fed7aa">• 每次 API 请求必须进行一次 Redis 网络往返查询 (~1ms)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 银行、电商管理后台与严肃企业内网标配；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 拥有 100% 绝对实时的安全吊销能力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 安全与性能的经典平衡！</text>
+      </g>
+    </g>
+  </g>
+</svg>

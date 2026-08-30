@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript LLM 工具循环：类型守卫与 Promise.allSettled 并发编排</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">LLM Tool Call JSON ──► Zod Schema 强类型收窄 ──► 并行执行与 AbortSignal 超时 ──► 组装结果回填对话上下文</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Horizontal Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">步骤 1: LLM 函数调用输出解析与类型守卫 (Type Guards)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">if (msg.tool_calls &amp;&amp; msg.tool_calls.length &gt; 0) { ... }</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">使用 TypeScript 判别联合 (Discriminated Union)，自动收窄分支，安全提取 tool_call_id 与 arguments 参数对象！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">步骤 2: 注册表入参反序列化与 Zod Schema 校验</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">const tool = registry.get(call.function.name); const args = tool.schema.parse(JSON.parse(call.function.arguments));</text>
+        <text x="15" y="62" font-size="8" fill="#047857">若 LLM 幻觉产生无效字段，立即生成结构化纠错信息反馈给 LLM，防止进程被脏数据击穿崩溃！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">步骤 3: Promise.allSettled 并行执行与超时熔断</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">const results = await Promise.allSettled(calls.map(c =&gt; executeWithTimeout(c, 5000)));</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">单批多个 Tool 并发执行，单个工具超时或失败不阻塞其他正常工具，全面收集全部 fulfilled / rejected 结果！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">步骤 4: 结果组装回填与触发下一轮推理 (ReAct Loop)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">messages.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify(result) });</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">将执行结果按 OpenAI/Anthropic 标准格式追加到上下文，递归调用 LLM 进行下一轮思考，直到模型输出最终文本！</text>
+      </g>
+    </g>
+  </g>
+</svg>

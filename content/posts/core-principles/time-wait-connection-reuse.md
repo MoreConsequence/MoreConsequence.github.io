@@ -35,6 +35,10 @@ TCP:   1882 established, 184203 time-wait, 0 close-wait, 0 fin-wait-1
 
 两条线索指向同一个词：**TIME_WAIT**。理解它，得从 TCP 关闭那一刻的状态机开始。
 
+
+
+![TIME_WAIT 状态与 2MSL (最大报文生存时间) 定时器消解迷途报文](../../../public/images/time-wait-state-2msl-timer-drain.svg)
+
 ## 二、TIME_WAIT 从哪来：主动关闭方的宿命
 
 一次正常的四次挥手长这样：
@@ -94,6 +98,10 @@ TIME_WAIT 是主动关闭方为"对方可能没收到我的最后一句"预留�
 **险情三：双向的承诺，不能单方面作废。**
 
 把上面两个险情放在一起看：TIME_WAIT 保护的其实是**两个方向**。旧连接的残留报文，要等足够久才能保证已经消失在网络里（险情一）；对方的重传请求，要等足够久才能保证对方已经收到我的确认（险情二）。2MSL 取的是两者的较大值，并且留了一倍余量。任何"关掉 TIME_WAIT 提高性能"的方案，都是在同时放弃这两层保护。
+
+
+
+![tcp_tw_reuse 安全复用机制：Timestamps (时间戳) 与 PAWS (防回绕)](../../../public/images/tw-reuse-timestamps-paws-matrix.svg)
 
 ## 四、为什么不能缩短：三个常见的错误直觉
 

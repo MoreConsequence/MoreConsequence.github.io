@@ -86,6 +86,10 @@ Ketama 的工程解法是引入 **虚拟节点（Virtual Slots）**：
 
 ---
 
+
+
+![回源风暴拦截：Singleflight 请求合并与 RFC 5861 SWR 异步重校验](../../../public/images/cdn-singleflight-thundering-herd-request-collapse.svg)
+
 ## 三、 回源风暴（Thundering Herd）与 Singleflight 请求合并熔断
 
 在 CDN 生产运营中，最危险的场景从来不是持续的平稳流量，而是 **突发热点资源在缓存失效瞬间的“回源雪崩”（Cache Stampede / Thundering Herd）**。

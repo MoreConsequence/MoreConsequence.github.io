@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** "interface 有性能问题"是过时知识，但“完全没有成本”同样不准确。统一 benchmark（Go 1.25.1/arm64）测得：接口方法调用 **2.07ns**，直接调用 **2.09ns**；`int` 装箱 **8.30ns/8B/0 allocs**；32B struct 装箱 **12.10ns/32B/1 alloc**。类型断言的静态已知类型路径是 **0.31ns**，只说明编译器看穿了这个特定值，不能当作所有动态断言的常数。真实成本在大对象分配，以及无法去虚拟化的热调用。
 
+
+---
+
+![Go Interface 底层实现：eface (空接口) vs iface (带方法 itab 动态分派 2ns) 与装箱机制](../../../public/images/go-interface-itab-eface-iface-boxing.svg)
+
 ## 一、接口值的内存形态：iface 与 eface
 
 Go 的接口值只有两种形态（runtime/runtime2.go）：
@@ -39,6 +44,10 @@ type iface struct {
 1. **data 槽位直接存标量**：对 int、指针等 ≤ 指针大小的类型，装箱时值直接放进 `data`（无需堆分配）；只有大对象才需要 data 指向堆。
 2. **itab 按 (类型, 接口) 对缓存**：第一次把 `Square` 装进 `Shape` 时构造 itab，之后全局复用；方法调用是 `tab.Fun[i]` 的一次间接跳转。
 
+
+
+![Go 接口底层结构体：eface (空接口) vs iface (带方法接口与 itab 虚表)](../../../public/images/iface-eface-type-descriptor-boxing-layout.svg)
+
 ## 二、实测：本次短方法对照接近直接调用
 
 | 场景 | ns/op | B/op | allocs |
@@ -57,6 +66,10 @@ type iface struct {
 | 32B struct | **12.10** | 32 | **1** |
 
 int 装箱的 0 allocs 不是巧合：**标量直接写进 eface.data 位**，没有任何指针需要指向堆。8B/op 是接口值本身的写入。直到对象超过指针大小、data 放不下，才产生 1 次堆分配（32B struct：12.10ns/1 alloc）。字符串转换、切片或 map 等额外对象构造不属于“装箱本身”的成本，应另做对照，不要混在一个数字里。
+
+
+
+![接口装箱堆逃逸 vs Go 1.18+ 泛型单态化 (Monomorphization) 0 分配对比](../../../public/images/interface-boxing-escape-generics-monomorphization.svg)
 
 ## 四、常见成本从两个入口出现
 

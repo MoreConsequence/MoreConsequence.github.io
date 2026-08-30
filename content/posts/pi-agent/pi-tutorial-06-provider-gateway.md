@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 许多开发者在写 Agent 时，直接在业务逻辑里调用 `@openai/openai` 或 `@anthropic-ai/sdk`。这种“直连官方 SDK”的做法在单次问答中看似简单，但在 Agent 连续自旋（Agent Loop）中会引发严重的工程灾难：**官方 SDK 的内部自动重试会死锁住事件循环，用户按下 Ctrl+C 无法取消正在后台沉睡的重试定时器；各家厂商对 RateLimit（429）、ContextOverflow（上下文超限）与 AuthenticationError（鉴权失败）的报错格式完全不同，导致 Harness 无法采取正确的自愈策略**。本文作为《Pi Agent 实战通才教程》第六课，带你构建一个工业级的多供应商统一网关（LLM Gateway），手写**支持 AbortSignal 可中断的带抖动指数退避引擎（Full Jitter Backoff）**与**跨厂商统一错误分类器**。
 
+
+---
+
+![多供应商网关与弹性重试：统一 API、指数退避与可中断睡眠机制](../../../public/images/pi-provider-gateway-exponential-backoff.svg)
+
 ## 一、为什么 Agent 必须有独立的网关层（pi-ai）？
 
 回顾 Pi 的架构图，`pi-ai` 占据了 23.5k 行代码——比核心 Loop 还要庞大。这层抽象的必要性体现在三个方面：
@@ -33,6 +38,10 @@ flowchart TD
 1. **统一生命周期与信号取消（Cancellable Sleep）**：当网络抖动触发 429 退避（例如需等待 10 秒后重试），用户如果在第 2 秒按下了中断，网关必须**毫秒级释放定时器并终止网络套接字**，而不是让后台进程继续死等；
 2. **多模型热切换（Dynamic Hot Swapping）**：在同一个会话中，用户可能在第 1 轮用 Claude 3.7 Sonnet 进行深度规划，第 2 轮用 GLM 4 / Qwen 执行低成本工具调用。上层业务代码无需关心底层 SDK 的初始化细节；
 3. **精准的错误分类与自愈**：当遇到“上下文超限”时，Harness 需要自动触发第 04 课的 Compaction；当遇到“余额不足”时，应提示用户充值而非盲目重试。
+
+
+
+![Pi 模型网关统一适配器：Anthropic, OpenAI 与 DeepSeek 多厂商负载均衡与故障转移](../../../public/images/pi-tutorial-provider-gateway-round-robin-failover.svg)
 
 ## 二、弹性重试：Full Jitter 指数退避与可中断睡眠
 
@@ -89,6 +98,10 @@ export enum ErrorCategory {
   Fatal = "FATAL",                     // 语法错误/未知异常 -> 终止并提示用户
 }
 ```
+
+
+
+![Pi 流式 SSE Chunk 分片重组与 Tool Call JSON 动态拼接机理](../../../public/images/pi-tutorial-sse-stream-chunk-reassembly.svg)
 
 ## 四、动手实战：手写 RobustModelGateway
 

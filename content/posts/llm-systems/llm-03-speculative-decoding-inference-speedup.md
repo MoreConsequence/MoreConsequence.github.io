@@ -99,6 +99,10 @@ $$\mathbf{Q.E.D.\quad 证毕！}$$
 
 ---
 
+
+
+![投机采样接受率 (Acceptance Rate) 与端到端加速比理论曲线](../../../public/images/speculative-decoding-acceptance-rate-speedup-curve.svg)
+
 ## 四、 理论加速比与工程场景收益上限
 
 设草稿模型的平均命中接受率为 $\alpha \in [0, 1]$，单次推测步数为 $K$。

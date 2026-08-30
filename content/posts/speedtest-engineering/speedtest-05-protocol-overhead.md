@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 在设计测速服务时，一个最常被争论的架构决策是：**到底该用 Raw TCP Socket、WebSocket、HTTP/2 还是基于 UDP 的 HTTP/3 (QUIC)？** 很多人直觉认为“HTTP/3 基于 UDP 一定最快”，但在千万并发或万兆吞吐的真实测速场景下，QUIC 在 Linux 用户态的 UDP 系统调用开销与加密消耗可能直接把 CPU 打爆，实际吞吐反而不如成熟的 TCP。另一方面，WebSocket 协议虽然具备全双工优势，但其客户端必须强制对数据进行 4 字节掩码（Masking）异或运算，在上行千兆推流时会成为客户端 CPU 的严重瓶颈。本文作为《网络测速与极限吞吐工程》系列第五篇，从**帧头开销数学推导**、**有效载荷纯净度（Payload Purity）**、**非对称 ACK 饥饿效应** 以及 **用户态与内核态损耗** 四个维度对四大协议进行深度物理裁决。
 
+
+---
+
+![测速协议开销战争：Raw TCP vs WebSocket vs HTTP/2 vs HTTP/3 (QUIC) 对比矩阵](../../../public/images/speedtest-protocol-overhead-tcp-ws-h2-quic-matrix.svg)
+
 ## 一、四大传输协议全景对比矩阵
 
 ```mermaid
@@ -29,6 +34,10 @@ flowchart TD
 | **客户端 CPU 消耗** | 极低（直接 Socket 写入） | 中等（需进行 Mask 异或计算） | 较高（TLS + 多路复用分帧） | **极高**（用户态 AES/ChaCha 加密与 UDP 发包） |
 | **服务端单核极限吞吐**| **40Gbps+** | **35Gbps+** | ~12Gbps | ~8Gbps |
 | **NAT / 防火墙穿透性**| 差（常被 80/443 策略拦截） | **极佳**（走标准 443 WSS） | **极佳**（标准 HTTPS） | 良好（部分企业路由器封禁 UDP 443） |
+
+
+
+![协议分层开销解剖：以太网 1518B 帧 -> IP 20B -> TCP 32B -> TLS 29B -> HTTP/2](../../../public/images/mtu-mss-encapsulation-layers.svg)
 
 ## 二、WebSocket 协议开销与有效载荷纯净度数学推导
 
@@ -89,6 +98,10 @@ flowchart TD
 
 1. **TCP 层的队头阻塞（Head-of-Line Blocking）**：HTTP/2 的多条 Stream 物理上共享同一个底层 TCP 连接。一旦公网发生单个数据包丢包，整个 TCP 连接被内核挂起等待重传，**所有逻辑流同时被卡死**，无法体现真实并发多连接的容错能力；
 2. **HTTP/2 流控窗口（Flow Control Window）上限**：HTTP/2 规范在应用层定义了 Connection-level 与 Stream-level 窗口大小（默认通常为 64KB）。如果服务端或客户端未主动发送 `WINDOW_UPDATE` 帧将流控窗口放大到兆字节级，吞吐会被应用层流控死死锁住。
+
+
+
+![线速 (Wire Rate) 与有效吞吐 (Goodput) 转换矩阵与巨型帧 (Jumbo Frames)](../../../public/images/wire-rate-vs-goodput-conversion-chart.svg)
 
 ## 四、非对称宽带下的 ACK 饥饿（ACK Starvation）效应
 

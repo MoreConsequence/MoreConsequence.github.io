@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript 错误处理双范式：throw 长臂跳转 vs Result 强类型管道</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">throw (隐式打断控制流，catch(e: unknown) 丢失类型) vs Result (显式值传递，编译期强制排查)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: throw Paradigm -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. throw / try-catch (异常长臂控制)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">async function fetchUser(id: string): Promise&lt;User&gt; {</text>
+          <text y="30" fill="#f87171">  if (!id) throw new ValidationError("invalid id");</text>
+          <text y="46" fill="#f87171">  if (down) throw new NetworkError("timeout");</text>
+          <text y="62" fill="#93c5fd">  return db.get(id);</text>
+          <text y="76" fill="#38bdf8">}</text>
+          
+          <text y="98" fill="#fbbf24">⚠️ 函数签名中完全看不出抛出哪些错误类型！</text>
+          <text y="114" fill="#cbd5e1">catch (e: unknown) {</text>
+          <text y="128" fill="#fca5a5">  // 必须手动写大量的 if (e instanceof X) 运行时判断</text>
+          <text y="142" fill="#cbd5e1">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 真正无法恢复的灾难性崩溃（如内存耗尽、配置彻底丢失）；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 框架最外层全局未捕获异常兜底中间件 (500 Handler)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 避免在日常高频业务判断中滥用 throw。</text>
+      </g>
+    </g>
+
+    <!-- Right: Result Pattern -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Result 管道 (类似 Go 的 err != nil)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">type Result&lt;T, E&gt; = { ok: true; data: T } | { ok: false; error: E };</text>
+          
+          <text y="36" fill="#86efac">function fetchUser(id: string): Result&lt;User, UserErr&gt; {</text>
+          <text y="52" fill="#86efac">  if (!id) return { ok: false, error: new InvalidIdErr() };</text>
+          <text y="68" fill="#86efac">  return { ok: true, data: user };</text>
+          <text y="82" fill="#86efac">}</text>
+          
+          <text y="104" fill="#34d399">const res = fetchUser("123");</text>
+          <text y="120" fill="#34d399">if (!res.ok) { handle(res.error); return; } // 类型自动收窄为 Error</text>
+          <text y="136" fill="#38bdf8">console.log(res.data.name); // 编译器保证 100% 存在且安全！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">工业级收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 业务错误显式体现在函数签名中，契约自解释；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 未检查 res.ok 试图读 res.data 会直接触发 TS 编译报错；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 完美契合 Go 开发者直观的线性错误处理心智！</text>
+      </g>
+    </g>
+  </g>
+</svg>

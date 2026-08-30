@@ -10,6 +10,15 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 测速服务的 `/getIP` 端点要回答三个问题：你是谁（IP）、你在哪个网（ISP）、你离服务器多远（距离）。LibreSpeed Go 的实现（`web/getip_util.go` + `web/helpers.go`）给出了三个值得抄的工程答案：还原客户端 IP 用**五级优先链**且每一级都做合法性校验；判断私网/特殊地址用一张覆盖 localhost/私网/link-local/CGNAT/ULA 的分类表，其中 ULA 判定是一条位运算 `ip[0]&0xFE == 0xFC`；ISP 归属走 **ipinfo.io 在线 API 优先、MaxMind 离线 mmdb 兜底**的双源回退，距离计算用 haversine 并把"四舍五入到十位"写成了与 PHP 版 `round($d,-1)` 逐位一致的合同。
 
+
+---
+
+![LibreSpeed Go 客户端 IP 探测：五级代理头解析、CGNAT 私网过滤与真实源站回退](../../../public/images/librespeed-go-client-ip-proxy-cgnat-lookup.svg)
+
+
+
+![五级代理头穿透解析链：CF-Connecting-IP -> X-Real-IP -> X-Forwarded-For -> RemoteAddr](../../../public/images/client-ip-five-level-proxy-chain.svg)
+
 ## 一、你是谁：五级代理头链
 
 反代与 CDN 普遍存在的今天，`r.RemoteAddr` 经常只是最后一跳代理的地址。`getClientIP`（`getip_util.go:44-72`）按固定优先级逐级尝试：
@@ -27,6 +36,10 @@ series: "LibreSpeed Go 源码行纪"
 **第一，每一级候选都要过校验函数** `normalizeCandidateIP`：去空白、XFF 取首段、`net.ParseIP` 验证；对 CF 头还额外要求"必须真的是 IPv6"（`To16() != nil && To4() == nil`）。校验失败不是报错而是**降级到下一级**——伪造或格式错误的头部不会毒化结果。同时所有返回值统一 `TrimPrefix("::ffff:")`，把 IPv4-mapped IPv6 归一成点分 IPv4，避免同一个客户端在分类逻辑里被当成两种形态。
 
 **第二，注释明确写着"mirroring the PHP getIP_util.php behavior"**。这条优先级链不是 Go 版的发明，而是 PHP 版多年沉淀的行为合同。它也直接告诉你这套链的安全边界：这些头全部可以被客户端伪造，所以它只适合"提升展示友好度"，绝不能当访问控制依据（08 篇安全话题会回到这一点）。
+
+
+
+![特殊 IP 地址段分类决策表：RFC 1918 私网、CGNAT (100.64.0.0/10) 与运营商判定](../../../public/images/special-ip-subnet-classification-matrix.svg)
 
 ## 二、它在哪个网：一张特殊地址分类表
 

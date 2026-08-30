@@ -92,6 +92,10 @@ $$V_i[i] = V_i[i] + 1$$
 
 ---
 
+
+
+![Google Spanner TrueTime 物理不确定性与 Commit Wait 提交等待时序](../../../public/images/google-spanner-truetime-commit-wait-uncertainty.svg)
+
 ## 四、 物理不确定性的终极工程破局：Google Spanner TrueTime
 
 无论是 Lamport 还是向量时钟，都只能捕捉“通过消息显式传递的因果”。如果在系统外部，用户先在纽约机房写入了数据，然后打电话通知东京的同事去读取，这种**“外部因果（External Causality）”**无法被网络消息捕获。

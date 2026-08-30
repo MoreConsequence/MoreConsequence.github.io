@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 监控不是把数字放进 `/metrics` 就结束了。当前订单服务的 middleware 会在成功、404、400 和 500 的退出路径统一记录延迟，并按 `operation + outcome` 分桶；真实端口压测（120 并发，404/409 各占独立样本桶）让“404 不进分布”的修复可以直接重跑，但 SLI 分母口径会把同一份样本变成 100% 或 25%，月度可用性仍需要生产窗口与真实依赖证据。
 
+
+---
+
+![服务可观测性与可靠性工程：SLI 指标度量、SLO 目标设定与错误预算 (Error Budget) 消耗模型](../../../public/images/service-observability-slo-sli-sla-budget.svg)
+
 ## 一、先写 good event：可用性不是“有 HTTP 响应”
 
 SLO 需要先定义 SLI 的分子、分母和时间窗口。对订单查询，至少要拆成两个问题：服务是否处理了请求，以及业务对象是否存在。
@@ -22,6 +27,10 @@ SLO 需要先定义 SLI 的分子、分母和时间窗口。对订单查询，�
 | 下单延迟 | 满足延迟阈值的下单请求 | 所有合法下单请求 | 不适用 | 例如滚动 28 天 |
 
 “200/200 有响应”不能同时证明这三件事。200 个样本的失败率步长是 `1/200 = 0.5%`，它既不能验证 `99.9%`，也没有月度时间窗口。error budget 也必须从同一个 SLI 计算，例如 30 天的 99.9% 目标允许的预算是总请求数的 0.1%，不是从某次 handler 测试的结果倒推。
+
+
+
+![SRE 可观测性指标度量体系：SLI (服务指标) -> SLO (目标承诺) -> 错误预算 (Error Budget) 消耗率](../../../public/images/sli-slo-sla-error-budget-burn-rate.svg)
 
 ## 二、用 middleware 覆盖每条退出路径
 
@@ -70,6 +79,10 @@ store throw   -> 500 -> orders_get.error
 测试还确认 500 的响应不会把内部错误消息返回给调用方。`/healthz` 只回答进程是否能处理请求；`/readyz` 才是依赖准备状态的预留出口。当前内存 store 的 `ready()` 永远返回 true，这是原型的事实，不是数据库 ready check。
 
 这组测试解决了一个实现缺陷：审计时对 10 个不存在订单的旧实现得到 `not_found=10`、延迟 `n=0`。修复后，404 进入自己的样本桶。它仍然没有解决网络层延迟，因为 Hono 的 `app.request()` 不经过真实监听端口、TLS、反向代理或远程数据库。
+
+
+
+![可观测性三支柱深度融合：Metrics (指标发现) -> Traces (链路定位) -> Logs (现场取证)](../../../public/images/metrics-logs-traces-three-pillars-correlation.svg)
 
 ## 四、什么时候才能把数字叫 API p99
 

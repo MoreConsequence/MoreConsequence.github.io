@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <!-- Title Block -->
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Model Context Protocol (MCP) 架构拓扑与双传输通道</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Host (IDE/App) ──► Client (连接管理与路由) ──► Stdio (本地进程管道) / HTTP+SSE (远程网关) ──► MCP Server</text>
+  </g>
+
+  <!-- Main Pipeline Card (900px wide) -->
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left Box: MCP Host & Client (250px) -->
+    <g transform="translate(20, 20)">
+      <rect width="250" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="250" height="30" rx="6" fill="#dbeafe"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
+        MCP Host (宿主环境)
+      </text>
+
+      <g transform="translate(12, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="226" height="44" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="9" font-weight="700" fill="#1d4ed8">IDE / Claude Desktop / CLI</text>
+        <text x="10" y="32" font-size="7.5" fill="#64748b">持有 LLM 循环、UI 与用户审批权</text>
+
+        <!-- MCP Client Manager -->
+        <g transform="translate(0, 56)">
+          <rect width="226" height="215" rx="4" fill="#1e293b"/>
+          <text x="10" y="20" font-size="9.5" font-weight="700" fill="#38bdf8">MCP Client 核心模块</text>
+
+          <g transform="translate(8, 30)">
+            <rect width="210" height="34" rx="3" fill="#334155"/>
+            <text x="8" y="14" font-size="8" font-weight="700" fill="#f8fafc">1. 连接生命周期管理</text>
+            <text x="8" y="26" font-size="7" fill="#94a3b8">Capabilities 协商、Ping 心跳</text>
+          </g>
+
+          <g transform="translate(8, 72)">
+            <rect width="210" height="34" rx="3" fill="#334155"/>
+            <text x="8" y="14" font-size="8" font-weight="700" fill="#f8fafc">2. 协议原语聚合器</text>
+            <text x="8" y="26" font-size="7" fill="#94a3b8">聚合多 Server 的 Tools/Prompts</text>
+          </g>
+
+          <g transform="translate(8, 114)">
+            <rect width="210" height="34" rx="3" fill="#334155"/>
+            <text x="8" y="14" font-size="8" font-weight="700" fill="#f8fafc">3. 安全沙箱与权限拦截</text>
+            <text x="8" y="26" font-size="7" fill="#f87171">敏感工具弹窗要求用户授权</text>
+          </g>
+
+          <g transform="translate(8, 156)">
+            <rect width="210" height="42" rx="3" fill="#334155"/>
+            <text x="8" y="14" font-size="8" font-weight="700" fill="#f8fafc">4. 上下文 Roots 边界通知</text>
+            <text x="8" y="26" font-size="7" fill="#34d399">发送 roots/list_changed 事件</text>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- Center: 2 Transport Lanes (320px) -->
+    <g transform="translate(290, 20)">
+      <rect width="320" height="345" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <rect width="320" height="30" rx="6" fill="#f1f5f9"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#334155">
+        双传输层通信协议（JSON-RPC 2.0）
+      </text>
+
+      <!-- Lane 1: Stdio -->
+      <g transform="translate(12, 42)">
+        <rect width="296" height="135" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+        <text x="10" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#0f172a">
+          通道 1: Stdio 进程管道 (Local IPC)
+        </text>
+        <text x="10" y="32" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#64748b">
+          Host 直接 spawn 子进程，经由 stdin / stdout 通信
+        </text>
+
+        <!-- Pipes -->
+        <g transform="translate(10, 42)" font-family="ui-monospace, monospace" font-size="7.5">
+          <rect width="276" height="24" rx="3" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="8" y="16" fill="#1e40af">Client ──► Stdin: { "method": "tools/call" }</text>
+
+          <rect y="32" width="276" height="24" rx="3" fill="#f0fdf4" stroke="#a7f3d0"/>
+          <text x="8" y="16" fill="#166534">Server ◄── Stdout: { "result": { ... } }</text>
+        </g>
+        <text x="10" y="122" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#2563eb">
+          ✓ 极低时延（微秒级），零网络端口占用，天然单租户
+        </text>
+      </g>
+
+      <!-- Lane 2: HTTP + SSE -->
+      <g transform="translate(12, 190)">
+        <rect width="296" height="135" rx="4" fill="#ffffff" stroke="#fdba74"/>
+        <text x="10" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#c2410c">
+          通道 2: HTTP + SSE (Remote Services)
+        </text>
+        <text x="10" y="32" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#64748b">
+          适用于企业级远程服务、微服务与跨网络网关
+        </text>
+
+        <!-- HTTP Flow -->
+        <g transform="translate(10, 42)" font-family="ui-monospace, monospace" font-size="7.5">
+          <rect width="276" height="24" rx="3" fill="#fff7ed" stroke="#fed7aa"/>
+          <text x="8" y="16" fill="#c2410c">Client ──► POST /messages (JSON-RPC 请求)</text>
+
+          <rect y="32" width="276" height="24" rx="3" fill="#fdf4ff" stroke="#f5d0fe"/>
+          <text x="8" y="16" fill="#7e22ce">Server ◄── GET /sse (Server-Sent Events 响应)</text>
+        </g>
+        <text x="10" y="122" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#ea580c">
+          ✓ 支持集中部署、分布式鉴权与多租户负载均衡
+        </text>
+      </g>
+    </g>
+
+    <!-- Right Box: MCP Server (250px) -->
+    <g transform="translate(630, 20)">
+      <rect width="250" height="345" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="250" height="30" rx="6" fill="#dcfce7"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">
+        MCP Server (能力提供端)
+      </text>
+
+      <g transform="translate(12, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="226" height="44" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="9" font-weight="700" fill="#15803d">PostgreSQL / Git / GitHub / Files</text>
+        <text x="10" y="32" font-size="7.5" fill="#64748b">暴露标准化三大协议原语</text>
+
+        <!-- 3 Primitives Cards -->
+        <g transform="translate(0, 56)">
+          <!-- Primitive 1: Resources -->
+          <rect width="226" height="60" rx="4" fill="#ffffff" stroke="#86efac"/>
+          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#166534">1. Resources (只读上下文)</text>
+          <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#047857">uri: "postgres://db/schema"</text>
+          <text x="10" y="44" font-size="7" fill="#64748b">用于 RAG 检索、日志、数据库表结构</text>
+
+          <!-- Primitive 2: Prompts -->
+          <g transform="translate(0, 68)">
+            <rect width="226" height="60" rx="4" fill="#ffffff" stroke="#86efac"/>
+            <text x="10" y="16" font-size="8.5" font-weight="700" fill="#166534">2. Prompts (动态模板工作流)</text>
+            <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#047857">name: "git-commit-review"</text>
+            <text x="10" y="44" font-size="7" fill="#64748b">由 Server 定义的参数化提示词模板</text>
+          </g>
+
+          <!-- Primitive 3: Tools -->
+          <g transform="translate(0, 136)">
+            <rect width="226" height="60" rx="4" fill="#ffffff" stroke="#10b981"/>
+            <text x="10" y="16" font-size="8.5" font-weight="700" fill="#065f46">3. Tools (可执行动作与副作用)</text>
+            <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#047857">name: "execute_sql_query"</text>
+            <text x="10" y="44" font-size="7" fill="#64748b">强类型 JSON Schema 输入，触发物理写操作</text>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">测速架构带宽成本控制与动态截断算法 (Bandwidth Cost Engine)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">固定 15s 盲目跑满 (单次消耗 1.5GB 流量，成本爆炸) vs 动态方差收敛探测 (连续 3 秒方差 &lt; 2% 提前截断，节省 65% 流量成本)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Wasteful -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统固定时长测速：带宽与流量成本黑洞</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">千兆光纤用户测速：</text>
+          <text y="28" fill="#ef4444">• 强制持续下载 15 秒</text>
+          <text y="44" fill="#ef4444">• 单次测试消耗: 1000Mbps * 15s = 1.875 GB 流量！</text>
+          <text y="60" fill="#fca5a5">• 实际上在第 4 秒带宽已经达到平稳瓶颈！</text>
+          <text y="76" fill="#ef4444">• 随后 11 秒纯属无意义的带宽资金浪费！</text>
+          
+          <text y="102" fill="#f87171">🔴 百万次测速每月产生数万美元云厂商 95 计费账单！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 带宽成本直接吃垮商业模式；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 用户移动端流量被迅速耗尽遭投诉；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 粗暴测速工程反模式！</text>
+      </g>
+    </g>
+
+    <!-- Right: Adaptive -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 自适应收敛截断：精准降本 65%</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">动态收敛算法 (Moving Window Variance):</text>
+          
+          <text y="36" fill="#86efac">1. 每 200ms 计算一次瞬时吞吐率</text>
+          <text y="50" fill="#38bdf8">2. 维护最近 10 个采样点的滑动标准差 σ</text>
+          <text y="64" fill="#34d399">3. 当 σ / μ &lt; 0.02 (波动低于 2% 持续 2 秒)</text>
+          <text y="78" fill="#4ade80">4. 判定达到物理带宽上限，立即提前平滑截断！</text>
+          
+          <text y="104" fill="#4ade80">✓ 单次测试缩短至 5 秒，数据准确率 99.8%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• CDN 出口流量成本暴降 65%；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 测量体验极速出结果，用户满意度大幅提升；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 出色的网络测量与商业成本平衡！</text>
+      </g>
+    </g>
+  </g>
+</svg>

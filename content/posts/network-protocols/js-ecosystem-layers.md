@@ -11,6 +11,11 @@ series: "前端全景手记"
 
 **TL;DR：** JS 生态的“乱”可以先用一张容器模型拆开：许多产品都是 JS 引擎与渲染、系统接口、原生 UI 或 WebView 的组合，但并不是所有产品都共享同一台引擎，也不是每个层次都能互换。加渲染能力是浏览器，加系统接口是运行时，两者都加是 Electron，把原生 UI 接到引擎上是 React Native，依赖系统 WebView 的桌面壳是 Tauri。本文按引擎、浏览器、运行时、桌面、移动五层拆开，每层回答“题目是什么、答案是什么、代价是什么”。
 
+
+---
+
+![JavaScript 生态五层架构：标准规范、JS 引擎、宿主运行时、框架与打包工具链](../../../public/images/javascript-five-layers-runtime-engine-stack.svg)
+
 ## 一、一个引擎，五种包装
 
 JavaScript 的特别之处在于：1995 年它诞生时只是浏览器的脚本语言，三十年后的今天，同一个语言跑在服务端、桌面、移动、边端。这么多形态不是凭空长出来的，它们通常把少数主流 JS 引擎与不同宿主能力组合起来。常见引擎家族包括 V8、JavaScriptCore 和 SpiderMonkey，另有 Hermes、QuickJS 等面向不同约束的实现；剩下的产品多数是在“翻译官”外面做加法：
@@ -28,6 +33,10 @@ flowchart LR
 *图注：星号表示 Tauri 是特例——它不加浏览器，而是依赖操作系统自带的 WebView。这个例外正是理解整张图的关键，第五节展开。*
 
 看懂这张图，浏览器大战、运行时之争、Electron 的吐槽、RN 与 Flutter 的对比，全部归位为同一个问题的不同答案：**在一个 JS 引擎外，加什么部件去解决什么场景的问题**。本文剩下的篇幅，就是逐层把每道题和每笔账写清楚。
+
+
+
+![JavaScript 生态四层架构：ECMAScript 规范 -> V8 引擎 -> Node/Deno/Bun 运行时 -> 应用框架](../../../public/images/javascript-runtime-engine-spec-layers.svg)
 
 ## 二、引擎层：把 JS 变成机器码的翻译官
 
@@ -69,6 +78,10 @@ Chakra 的退场是一道历史注脚：2018 年微软宣布 Edge 转用 Chromiu
 - **引擎与渲染引擎的绑定是营销之外的技术选择**。Firefox 坚持自家两份引擎是意识形态（开源、防止一家垄断），也是技术负担——它必须独自维护 Gecko 的兼容性。
 
 "换壳游戏"的真相其实是：壳（渲染引擎）和心脏（JS 引擎）都值得各自单独算一笔账，而多数用户感知到的差异（内存、速度、省电）是这两份工程加总的结果。Chrome 吃内存的槽点，一半来自 Blink 的进程模型，一半来自 V8；Safari "省电"的卖点，同样来自 JSC（更省的 JIT 预热）与 WebKit 的渲染管线共同作用。
+
+
+
+![V8 虚拟机内部执行管线：Ignition 字节码解释器与 TurboFan JIT 优化去优化](../../../public/images/v8-ignition-turbofan-jit-pipeline.svg)
 
 ## 四、运行时层：引擎 + 系统接口
 

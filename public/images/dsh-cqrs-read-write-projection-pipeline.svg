@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DSH 会话 CQRS 架构：写入命令与只读投影解耦</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">写模型 (Command Side: 纯追加不可变事件) ──► 内存 Projection 处理器 ──► 读模型 (Query Side: 为 TUI / Web 提供多维派生视图)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Write Side -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Command Side (写端：原子事件日志)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">不可变业务事件流：</text>
+          
+          <text y="38" fill="#86efac">• append(UserMessageEvent)</text>
+          <text y="54" fill="#38bdf8">• append(ToolCallRequestedEvent)</text>
+          <text y="70" fill="#34d399">• append(ToolExecutionFinishedEvent)</text>
+          
+          <text y="100" fill="#4ade80">✓ 单线程顺序写入，0 读写锁竞争！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 纯粹关注事件发生与持久化；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 保证 100% 极速 I/O 写入性能；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 写入吞吐极高。</text>
+      </g>
+    </g>
+
+    <!-- Right: Read Side -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Query Side (读端：多维内存投影)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">按需派生的只读视图：</text>
+          
+          <text y="38" fill="#86efac">• ActiveMessagesView: 供 LLM Prompt 组装使用</text>
+          <text y="54" fill="#38bdf8">• ToolMetricsView: 统计各工具耗时与成功率</text>
+          <text y="70" fill="#4ade80">• CostBudgetView: 实时计算当前消耗金额</text>
+          
+          <text y="100" fill="#4ade80">✓ 任意查询 0 毫秒即查即用！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 读模型随意按需演进，无需修改底层存储；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消除 UI 渲染与核心引擎的数据竞争；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业级现代状态架构典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

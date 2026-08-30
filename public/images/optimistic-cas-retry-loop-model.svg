@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">乐观锁 CAS (Compare-And-Swap) 状态机与自旋重试</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">读取 (val, version=1) ──► 计算新值 ──► UPDATE WHERE version=1 ──► 影响行数=1 成功 ｜ 影响行数=0 冲突自旋重试</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 无锁快照读取 (Non-Blocking Snapshot Read)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">SELECT stock, version FROM items WHERE id = 100 ──► 获取 stock=10, version=1</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">0 数据库行锁排队，读吞吐量达到物理上限！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 业务逻辑本地运算 (Local Domain Logic)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">newStock = stock - 1 = 9 ｜ newVersion = version + 1 = 2</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">纯 CPU 内存计算，不占用任何数据库连接与事务资源！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 原子条件更新与版本递增 (Atomic CAS Update)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">UPDATE items SET stock = 9, version = 2 WHERE id = 100 AND version = 1;</text>
+        <text x="15" y="62" font-size="8" fill="#047857">利用数据库单行写入的原子排他性进行终审裁决！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 结果裁决与指数退避重试 (Result Adjudication &amp; Retry)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Rows Affected = 1 ──► 成功！ ｜ Rows Affected = 0 ──► 版本已被并发篡改，触发指数退避重试</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">电商商品详情与低冲突写业务的标准范式！</text>
+      </g>
+    </g>
+  </g>
+</svg>

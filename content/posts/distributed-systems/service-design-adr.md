@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 选型不是把“快”“轻”“生态大”投票选出来，而是先定义同语义实验，再把决策、没选的方案和证据路径写进 ADR。原稿中的 plain HTTP/Fastify/Hono 吞吐、冷启动和内存数字没有随当前 checkout 保存 raw 输出与 commit，本次不继续复述它们。当前订单原型保留 Hono + Zod，是因为错误需要结构化 `path/code/message`，但这只是当前本地决策，不是在线性能结论。
 
+
+---
+
+![架构决策记录 (ADR)：从业务上下文、约束条件、方案权衡到不可逆后果的决策矩阵](../../../public/images/service-architecture-decision-records-adr-matrix.svg)
+
 ## 一、先把选型问题写成可证伪的假设
 
 订单服务需要的不是抽象的“最快框架”，而是几条可以测试的约束：
@@ -24,6 +29,10 @@ series: "把原理变成服务"
 | 产物/内存 | 同一 target、同一依赖锁 | 把 browser bundle 与 Node RSS 混为一谈 |
 
 如果不能只改变一个变量，结果就只能作为探索性观察，不能作为 ADR 的数字理由。
+
+
+
+![架构决策记录 (ADR) 生命周期模型：Draft -> Proposed -> Accepted / Rejected -> Superseded](../../../public/images/architecture-decision-record-adr-lifecycle.svg)
 
 ## 二、当前决策：Hono handler + Zod schema
 
@@ -100,6 +109,10 @@ flowchart LR
 ```
 
 如果 `evidence` 只有博客文章或一次未经保存的手工输出，结论应停在“候选决策”；只有命令、环境、原始结果和可接受阈值都落盘，ADR 才值得被后续发布复用。
+
+
+
+![ADR 标准模板五大核心结构：Title, Context, Decision, Consequences 与 Status](../../../public/images/adr-template-structure-tradeoff-quadrant.svg)
 
 ## 四、让 ADR 的每句话都能找到消费方
 

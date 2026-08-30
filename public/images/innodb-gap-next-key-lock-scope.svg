@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB 锁范围三大形态：Record Lock vs Gap Lock vs Next-Key Lock</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">行锁 (精确锁定已存在的记录) ｜ 间隙锁 (锁定记录之间的开区间防幻读) ｜ 临键锁 (前开后闭区间，RR 隔离级别默认加锁原语)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 记录锁 (Record Lock: [id=10])</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">SELECT * FROM t WHERE id = 10 FOR UPDATE;</text>
+          
+          <text x="10" y="42" fill="#86efac">锁定范围：</text>
+          <text x="10" y="58" fill="#cbd5e1">• 仅锁定 id=10 这一条已存在的行记录</text>
+          <text x="10" y="74" fill="#cbd5e1">• 允许其他事务在 id=9 或 id=11 插入数据！</text>
+          <text x="10" y="90" fill="#34d399">• 仅在唯一索引等值查询且记录存在时降级生效</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 并发度最高，锁冲突范围最小！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 保护单行数据不被并发修改；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• RC 隔离级别下的主力锁类型；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 极简纯粹。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 间隙锁 (Gap Lock: (10, 20))</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">SELECT * FROM t WHERE id = 15 FOR UPDATE;</text>
+          <text x="10" y="34" fill="#fed7aa">(表中只有 id=10 和 id=20，15 不存在)</text>
+          
+          <text x="10" y="58" fill="#38bdf8">锁定范围：开区间 (10, 20)</text>
+          <text x="10" y="74" fill="#cbd5e1">• 禁止任何事务在此间隙内 INSERT 新行！</text>
+          <text x="10" y="90" fill="#fed7aa">• 间隙锁之间互不排斥，允许多个读事务共享</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ 专门用于阻止幻读 (Phantom Read) 插入！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">死锁温床：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 两个事务同时持有相同 Gap 锁并尝试插入；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 互相等待对方释放间隙，必爆死锁！</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 生产排查重灾区！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 临键锁 (Next-Key Lock: (10, 20])</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">SELECT * FROM t WHERE age = 18 FOR UPDATE;</text>
+          <text x="10" y="34" fill="#86efac">(普通非唯一二级索引)</text>
+          
+          <text x="10" y="58" fill="#38bdf8">锁定范围：前开后闭 (10, 20] + (20, 30)</text>
+          <text x="10" y="74" fill="#cbd5e1">• 同时锁定当前行记录与前方的间隙</text>
+          <text x="10" y="90" fill="#34d399">• 向右遍历到第一条不满足条件的记录加 Gap 锁</text>
+          
+          <text x="10" y="116" fill="#4ade80">✓ RR 隔离级别下的默认加锁基本单元！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构考量：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 兼具数据修改保护与幻读彻底杜绝；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 掌握临键锁加锁规则是分析死锁日志的关键；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库内核大师级技能！</text>
+      </g>
+    </g>
+  </g>
+</svg>

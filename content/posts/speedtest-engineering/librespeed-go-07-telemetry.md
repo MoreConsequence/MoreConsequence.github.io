@@ -10,6 +10,11 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 遥测层（`results/` + `database/`）解决的是"测完之后数据去哪、怎么不惹麻烦"。四个机制各有明确的隐私立场：**ULID** 用时间戳+单调熵生成可排序的结果 ID；`redact_ip_addresses` 开关触发**四步正则脱敏流水线**，把 IPv4/IPv6/hostname 从上报内容里抹成占位符；ID 混淆用持久化盐对 ULID 前 4 字节做 XOR——注释诚实地写着"NOT cryptographically secure"，目标是防猜测而非防攻击；存储侧一个 `DataAccess` 接口挂七种后端，SQLite 默认开 WAL。本机实测：开启混淆后返回 base64url 形态的 ID 且 `/results/json` 能自动解码；内嵌假 IP 的上报在统计页全部变成 `0.0.0.0`。
 
+
+---
+
+![LibreSpeed Go 遥测隐私工程：ULID 字典序唯一标识、三组脱敏正则与 XOR 盐值混淆](../../../public/images/librespeed-go-telemetry-ulid-xor-desensitization.svg)
+
 ## 一、Record：一次上报的完整旅程
 
 第五篇看过它的接口形态；这篇拆内部。`results/telemetry.go:147-213` 的 `Record` 按序做五件事：
@@ -23,6 +28,10 @@ series: "LibreSpeed Go 源码行纪"
 ```
 
 注意第一步的设计：关闭遥测不是"存了但不给看"，而是**连写入都不发生**——PNG 结果卡与 JSON API 也随之失效（它们依赖数据库）。这是把隐私开关做成了数据流开关。
+
+
+
+![IP 物理脱敏四步流水线：IPv4 末段抹零与 IPv6 64-bit 前缀截断](../../../public/images/librespeed-go-ip-redaction-four-step.svg)
 
 ## 二、RedactIP：四步正则流水线
 
@@ -61,6 +70,10 @@ salt = idObfuscation_salt.bin 里的 4 字节（不存在则 crypto/rand 生成�
 设计取舍非常清醒：只搅动前 4 字节就能让顺序遍历失效（时间前缀被盐打乱），成本近乎为零；代价是抗不住已知明文攻击——但威胁模型只是"别让扫描器枚举别人的测速结果"，不是对抗解密者。**安全措施与威胁模型对齐，比措施本身强大更重要**。
 
 读取入口 `ResolveID` 先按裸 ULID 解析、失败再尝试解码混淆形态——两种 ID 在所有读端点（JSON/PNG/stats）通用。本机实测：开启混淆后上报返回 `id 9q5boPTnBPEwoCptYvww2Q`（base64url 形态，非 26 位 Crockford ULID）；把它原样喂给 `/results/json?id=…`，服务端自动解码命中记录。
+
+
+
+![七大存储后端适配矩阵：MySQL, PG, SQLite, Redis, BoltDB, Memory, CSV](../../../public/images/librespeed-go-database-driver-matrix.svg)
 
 ## 四、存储：一个接口，七个后端
 

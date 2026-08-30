@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">KV Cache 量化压缩演进：FP16 vs INT8 vs FP8 (E4M3/E5M2)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">FP16 (2 字节/元素，显存吞噬大户) ──► INT8 (1 字节/元素，需动态缩放因子) ──► FP8 (硬件级原生支持，显存直降 50% 且精度 0 损失)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 标准 FP16 (2 Bytes/Elem)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// Llama-3-70B 单 Token 显存公式</text>
+          <text x="10" y="34" fill="#93c5fd">Size = 2 * n_layers * n_kv_heads * d_head * 2</text>
+          <text x="10" y="50" fill="#f87171">Size = 2 * 80 * 8 * 128 * 2 = 327.68 KB</text>
+          
+          <text x="10" y="74" fill="#ef4444">100 个 4k 上下文请求:</text>
+          <text x="10" y="90" fill="#ef4444">消耗 131 GB 显存！直接撑爆 80GB A100！</text>
+          
+          <text x="10" y="112" fill="#cbd5e1">• 精度完美无损，但显存开销沉重。</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 传统默认基准精度；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 内存带宽受限（Memory-Bound）；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 亟需轻量化压缩。</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. INT8 量化 (1 Byte/Elem)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 线性缩放映射: x_q = round(x / scale)</text>
+          <text x="10" y="34" fill="#86efac">• 显存占用直接砍半: 163.84 KB / Token</text>
+          
+          <text x="10" y="58" fill="#fb923c">⚠️ 精度挑战:</text>
+          <text x="10" y="74" fill="#fed7aa">• 存在 Outlier 离群极大值点时，</text>
+          <text x="10" y="90" fill="#f87171">  线性量化导致正常小数值精度严重失真！</text>
+          <text x="10" y="108" fill="#34d399">✓ 需按 Head/Channel 分块独立缩放补偿。</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 广泛兼容旧架构 GPU (T4 / V100 / A100)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 需额外的反量化算子计算开销；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 显存与精度的经典折中方案。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. FP8 原生量化 (Ada/Hopper 架构)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// E4M3 (1位符号+4位指数+3位尾数)</text>
+          <text x="10" y="34" fill="#fed7aa">• 指数位天然提供超大动态范围</text>
+          <text x="10" y="50" fill="#34d399">• 完美容纳 Attention 离群异常值！</text>
+          <text x="10" y="68" fill="#4ade80">• H100 Tensor Core 硬件级原生直算！</text>
+          
+          <text x="10" y="92" fill="#4ade80">✓ 显存节省 50%，吞吐提升 2.1x！</text>
+          <text x="10" y="108" fill="#4ade80">✓ MMLU 评测精度损失 &lt; 0.1% (近乎 0 损)！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 现代大模型推理加速绝对主流标准；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 让单卡承载并发量直接翻倍；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级 AI 基建降本增效核心利刃！</text>
+      </g>
+    </g>
+  </g>
+</svg>

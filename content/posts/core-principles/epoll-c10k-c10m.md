@@ -30,6 +30,10 @@ flowchart LR
 
 所以 select/poll 的单次等待成本是 **O(N)**；总成本取决于等待调用次数，近似为 `wait_calls × N`。不能把 `O(N²)` 当成协议定律，但在大量连接、频繁唤醒和低就绪率的场景里，重复扫描确实会把 CPU 花在“找活干”上。
 
+
+
+![从 C10K 到 C10M 架构演进：select (轮询) -> epoll (红黑树) -> io_uring -> DPDK (内核旁路)](../../../public/images/c10k-to-c10m-io-architecture-evolution.svg)
+
 ## 二、epoll 的账本：注册、就绪、取就绪
 
 ![Linux epoll 内核架构：红黑树、就绪双向链表与中断回调流](../../../public/images/linux-epoll-rbtree-readylist.svg)
@@ -70,6 +74,10 @@ flowchart LR
 ```
 
 **这笔账的折中**：从"事件分发省 CPU"转向"把中断和拷贝都省掉"。它们省的是 CPU，付的是"专用内核线程 + 专用内存 + 不与原系统复用"。绝大多数业务 C10K 就够，C10M 是为极限密度（边缘节点、抗 DDoS）准备的。
+
+
+
+![epoll 边缘触发 (ET) vs 水平触发 (LT) 机制与非阻塞循环读排空](../../../public/images/epoll-edge-vs-level-trigger-drain-loop.svg)
 
 ## 四、用复杂度模型隔离“找活干”的成本
 

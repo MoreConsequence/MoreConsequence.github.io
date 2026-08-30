@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Continuous Batching 排队延迟拐点：静态 Batching vs 动态调度</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统静态批处理在 QPS &gt; 15 时排队延迟发生指数级恶化暴增 ｜ 连续批处理在 QPS 达 60 时仍将 P99 压制在 300ms 以内</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1 -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">1. 静态批处理 (Static Batching)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">// 必须等待整批完全结束</text>
+          <text x="10" y="34" fill="#fca5a5">• 短请求被迫陪跑长请求 (木桶短板)</text>
+          <text x="10" y="50" fill="#fca5a5">• 新请求必须等整批释放才能进场</text>
+          
+          <text x="10" y="74" fill="#ef4444">QPS 临界拐点 = 18 req/s:</text>
+          <text x="10" y="90" fill="#ef4444">• P99 排队延迟从 200ms 飙升至 8000ms！</text>
+          <text x="10" y="108" fill="#f87171">🔴 发生级联超时雪崩！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产死穴：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• GPU 算力严重闲置浪费（大量 Padding）；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 首字时延 TTFT 极度不稳定；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 无法应对突发流量洪峰！</text>
+      </g>
+    </g>
+
+    <!-- Col 2 -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Continuous Batching (动态流水)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 迭代级别随来随走 (In-Flight)</text>
+          <text x="10" y="34" fill="#86efac">• 某请求结束立即插入新就绪请求</text>
+          <text x="10" y="50" fill="#86efac">• GPU 计算核心始终保持 100% 满载</text>
+          
+          <text x="10" y="74" fill="#34d399">QPS 承载能力提升至 65 req/s:</text>
+          <text x="10" y="90" fill="#4ade80">• P99 排队延迟平稳控制在 240ms！</text>
+          <text x="10" y="108" fill="#34d399">✓ 吞吐量提升 360%！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 细粒度 Iteration-Level 抢占与调度；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底解耦不同请求的长度差异；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造超低抖动的服务体验。</text>
+      </g>
+    </g>
+
+    <!-- Col 3 -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 极限容量规划 (Capacity Planning)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// Little 定律容量黄金法则</text>
+          <text x="10" y="34" fill="#fed7aa">Max_Concur = VRAM_Avail / Avg_KV_Size</text>
+          
+          <text x="10" y="58" fill="#38bdf8">1. 结合 SLO 目标 (P99 &lt; 500ms)</text>
+          <text x="10" y="74" fill="#38bdf8">2. 设定过载保护门限 (High Watermark)</text>
+          <text x="10" y="92" fill="#34d399">3. 超限自动触发网关层平滑排队/切流</text>
+          
+          <text x="10" y="112" fill="#4ade80">✓ 保持系统永远运行在最高效区！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 精准预估单机与集群算力采购规模；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 科学量化性能优化产生的商业价值；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 资深 AI 架构师的核心能力标尺！</text>
+      </g>
+    </g>
+  </g>
+</svg>

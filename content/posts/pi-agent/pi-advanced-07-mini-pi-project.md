@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 经过前 24 课对 Agent Harness 各个模块（双层循环、流式分流、模糊编辑、KV Cache 压缩、JSONL 会话树、多模型网关、扩展自修改、沙箱安全与评测体系）的逐一攻克，我们终于来到了本教程的最终实战篇。本文将带你把所有核心模块组装为一个**开箱即用、零冗余依赖、模块清晰的独立开源工程——`mini-pi`**。代码全部存放在仓库的 [`experiments/mini-pi/`](file:///Users/lianghaoyu/codes/github-blog/experiments/mini-pi/) 目录下，只需 3 条命令即可在本地启动你亲手打造的生产级 Coding Agent！
 
+
+---
+
+![从零构建 Mini-Pi：一个自包含、可运行的轻量级 Agent 引擎](../../../public/images/pi-mini-pi-self-contained-engine.svg)
+
 ## 一、Mini-Pi 工程结构全景
 
 `mini-pi` 严格遵循 Pi 的五层极简架构，将数十万行的复杂逻辑提炼为最核心的 6 个模块：
@@ -40,6 +45,10 @@ flowchart TD
     Loop -.-> Telemetry["src/telemetry.ts (全链路遥测)"]
     Gateway -.-> Telemetry
 ```
+
+
+
+![Mini Pi 微型 Agent 全栈架构蓝图：300 行代码实现工业级全闭环](../../../public/images/mini-pi-end-to-end-architecture-blueprint.svg)
 
 ## 二、Mini-Pi 核心源码实现
 
@@ -227,6 +236,10 @@ mini-pi> 帮我读取当前目录下的 package.json，并新建一个 src/hello
 2. 决策调用 `write` 工具创建 `src/hello.ts`；
 3. 调用 `bash` 工具执行 `node src/hello.ts` 验证运行；
 4. 每次操作自动记录到 `.mini-pi/session.jsonl` 会话树中，并在退出时生成 Telemetry 成本报告！
+
+
+
+![Mini Pi 运行全链路追踪轨迹：用户输入 -> 读文件 -> 写补丁 -> 跑测试 -> 交付完成](../../../public/images/mini-pi-execution-loop-trace-example.svg)
 
 ## 四、全套 25 篇通才大百科终盘总结
 

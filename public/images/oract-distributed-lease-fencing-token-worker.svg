@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ORACT 分布式租约与 Fencing 栅栏：防范脑裂与跨语言 Worker 调度</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Lease 租约分发 (心跳维持 15s) ｜ Fencing Token 递增 ｜ 存储层拒绝过期纪元旧请求 ｜ OEP 跨语言协议调度 Python/Rust Worker</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Distributed Lease & Fencing -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 分布式租约与 Fencing 纪元防脑裂</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// Worker 1 发生 GC 停顿 30 秒，租约过期</text>
+          <text y="28" fill="#fb923c">1. 控制面判定 Worker 1 宕机 ──► 派发新租约给 Worker 2</text>
+          <text y="44" fill="#4ade80">   Fencing Token 从 42 递增推进至 43！</text>
+          
+          <text y="68" fill="#f87171">2. Worker 1 苏醒试图写入旧状态 (Token: 42):</text>
+          <text y="84" fill="#fca5a5">   Storage.CheckFencing(token=42) &lt; 43</text>
+          <text y="100" fill="#ef4444">   ► 存储层物理拒绝！直接返回 EpochExpiredError！</text>
+          
+          <text y="120" fill="#34d399">✓ 100% 杜绝僵尸进程破坏集群最新状态！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 经典分布式并发控制 (Martin Kleppmann 权威规范)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 租约到期主动终止本地任务；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚不可摧的多节点调度安全保障。</text>
+      </g>
+    </g>
+
+    <!-- Right: OEP Cross-Language Worker -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. OEP (ORACT Execution Protocol) 跨语言 Worker</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 基于 gRPC / Protobuf 标准通信</text>
+          <text y="28" fill="#86efac">Go Core Scheduler ──► OEP Protocol ──► 多语言执行节点</text>
+          
+          <text y="50" fill="#38bdf8">• Python Worker: 执行 PyTorch / 数据科学模型训练</text>
+          <text y="66" fill="#86efac">• Rust Worker: 执行底层高频 AST 解析与 WASM 编译</text>
+          <text y="82" fill="#34d399">• TypeScript Worker: 驱动 Playwright 无头浏览器渲染</text>
+          
+          <text y="106" fill="#4ade80">✓ 统一调度、统一租约、统一状态机记账！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 充分发挥各语言在特定生态下的极致性能；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 跨集群水平扩展，支持数千 Worker 并行调度；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造工业级企业分布式 Agent 平台！</text>
+      </g>
+    </g>
+  </g>
+</svg>

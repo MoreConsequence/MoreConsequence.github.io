@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">静态博客 0 服务端依赖全文搜索架构 (Zero-Backend Client Search)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">构建期提取正文摘要与标题 ──► 压缩生成 150KB search-index.json ──► 客户端首次聚焦延迟加载 ──► Fuse.js 5ms 实时模糊高亮</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 构建期索引精简萃取</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">buildSearchIndex() 算法：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 提取 title, description, tags, slug</text>
+          <text x="10" y="54" fill="#34d399">• 剥离 Markdown 语法标记提取纯文本</text>
+          <text x="10" y="70" fill="#cbd5e1">• 截取前 200 字正文摘要</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 200 篇文章索引压缩至 &lt; 150KB！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 0 运行时数据库查询；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 配合 Brotli 传输体积仅 ~30KB；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 极轻量静态化分发。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 按需延迟加载 (Lazy Fetch)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">客户端交互策略：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 首页加载时 0 请求该索引</text>
+          <text x="10" y="54" fill="#38bdf8">• 用户按下 ⌘K 或聚焦搜索框时</text>
+          <text x="10" y="70" fill="#34d399">• 触发 fetch('/search-index.json')</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 保证首屏 Lighthouse 性能 100 分！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 杜绝无意义的网络带宽浪费；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 浏览器 HTTP 强缓存一劳永逸；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 体验丝滑无感。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Fuse.js 模糊匹配与高亮</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">端侧毫秒级匹配：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">• Bitap 算法支持拼写容错</text>
+          <text x="10" y="54" fill="#38bdf8">• 权重矩阵: title(0.5) &gt; tags(0.3) &gt; desc(0.2)</text>
+          <text x="10" y="70" fill="#34d399">• 键盘上下键即时定位跳转</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 单次按键响应时延 &lt; 5ms！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 完全离线可用，弱网/断网依然可搜；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 媲美本地原生客户端的极速体验；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 纯静态站点的巅峰工程设计！</text>
+      </g>
+    </g>
+  </g>
+</svg>

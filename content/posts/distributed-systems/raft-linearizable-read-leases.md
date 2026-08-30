@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 直接读 Raft leader 的内存不是线性一致读。leader 的合法性是"当期的"：它可能已被分区、任期已过期，只是自己还没收到消息。线性一致读必须向多数派确认"我仍是当前任期的 leader"，这就是 Raft 论文 §8.3 的 **ReadIndex**——记下 commitIndex → 向多数派发一轮确认 → 等本地应用追平 → 本地读，代价约一次心跳往返。省钱的路有两条，各有代价：把读当日志条目提交（最贵，等同一次写）；**Lease read** 在 election timeout 窗口内免确认（≈0 往返），但依赖"时钟单调且偏移有界"，分区时旧 leader 会在窗口内吐旧值——这是固有风险，不是 bug。etcd 客户端默认走 linearizable（ReadIndex），serializable 是显式 opt-in 的便宜档。一句话：**读的线性一致是拿多数派往返换的；省掉这轮往返，就要拿时钟和 stale 窗口来换。**
 
+
+---
+
+![Raft 线性一致性读演进：Log Read (全量走日志) vs ReadIndex (心跳确认) vs Lease Read (本地时钟租约)](../../../public/images/raft-linearizable-read-index-vs-lease-read.svg)
+
 ## 一、leader 本地读为什么可能是旧值
 
 写必须过多数派：只有被多数节点复制确认，条目才提交。所以"系统里已提交的最新值"只存在于**多数派这个整体**里，任何单节点都只是它的镜像——而镜像会过期。
@@ -35,6 +40,10 @@ sequenceDiagram
 ```
 
 这个 k=1 不是 bug：旧 leader 没收到更高 term 的消息，不知道自己已经失势；它本地保存的还是旧状态。多数派提交了 k=2，但发生在它看不见的地方。**单节点内存不是系统的内存，多数派才是。** 这就是"读也要过多数派"的全部理由——上一篇文章把它埋在"读也要线性一致，leader 需 ReadIndex / lease"那一格，这篇展开成三条路。
+
+
+
+![Raft 线性一致性读：ReadIndex 心跳确认 vs Leader Lease 0 网络往返极速读](../../../public/images/raft-read-index-vs-lease-read-pipeline.svg)
 
 ## 二、两档读语义：etcd 的 linearizable 与 serializable
 
@@ -107,6 +116,10 @@ sequenceDiagram
 **风险二：分区窗口。** 即便时钟完全正常，多数派选新 leader + 提交新值也可能快过旧 leader 的 lease 到期——窗口内旧 leader 的 lease 读照样吐旧值。**这是 Lease read 的固有风险，不是实现 bug。** 我在第五节用迷你 Raft 专门复现了它。
 
 所以 etcd-raft 的读选项默认是 `ReadOnlySafe`（ReadIndex），`ReadOnlyLeaseBased` 只是可选优化；TiKV 等用 lease 读，是把弱一致读（stale read）单独开一条通道，并明确接受这个窗口。普通业务拿 lease 读到的旧值去写，等于把正确性押在时钟上——上一篇文章的 fencing token 就是给这种场景兜底的：**lease 窗口里读到的旧值可以被后续写拒绝，只要目标存储校验 token 的单调性。**
+
+
+
+![网络分区下的幽灵旧 Leader 脏读危机与线性一致性守卫](../../../public/images/raft-network-partition-stale-read-hazard.svg)
 
 ## 四、etcd 实践：默认线性、Follower 读、K8s 为什么大量走串行读
 

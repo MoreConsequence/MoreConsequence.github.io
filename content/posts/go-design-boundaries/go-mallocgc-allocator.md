@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** Go 的分配不是“一次 malloc”，是一条按大小分流的流水线：当前 benchmark 用固定 byte slice 对照 16B/32B/256B/4096B，单线程一次输出为 **11.93ns/14.09ns/84.77ns/479.4ns**；8 P 并发下 256B/4096B 为 **89.15ns/732.5ns**。这些数字只属于 Go 1.25.1、Darwin arm64、Apple M1 Pro、`-cpu=8` 和当前 benchmark；它们用来观察 size class、清零和共享路径的方向，不是跨机器常数。复用的动机还要看 GC 压力、生命周期和峰值内存，不是看到一个 `ns/op` 就上池。
 
+
+---
+
+![Go 内存分配器 TCMalloc 架构：mcache (P 本地无锁) ──► mcentral (跨 P 分级全局) ──► mheap (页堆)](../../../public/images/go-tcmalloc-mcache-mcentral-mheap.svg)
+
 ## 一、三层结构：每 P 一份无锁缓存是并发的地基
 
 Go 的分配器是经典的"多级缓存"设计（Go 1.25.1 源码）：
@@ -37,6 +42,10 @@ type mheap struct {  // 全局唯一，页级管理
 分配路径只有一条主线：**mallocgc(size) → 查 size class → mcache 找 span → 有空闲直接切一块（无锁）→ 没有则向 mcentral 借 span（锁）→ mcentral 没有向 mheap 要页（更重的锁 + 可能 syscall）**。绝大多数分配在第一步就完成了——这就是并发的秘密：每个 P 有自己的 `mcache`，两个 goroutine 在不同 P 上分配时根本不会碰到同一把锁。
 
 size class 共 67 档，从 8B 到 32KB（8, 16, 24, 32, 48, 64, 80, ... 每档 8B 起的碎粒度），对象按向上取整落档。落到 32KB 以上的对象跳过 size class，直接向 mheap 申请整页。
+
+
+
+![Go 内存分配器三级拓扑：mcache (P 无锁) -> mcentral (跨 P 互斥) -> mheap (大堆页)](../../../public/images/go-tcmalloc-mcache-mcentral-mheap-three-tier.svg)
 
 ## 二、五档实测：成本与大小不是线性
 
@@ -66,6 +75,10 @@ if off+size <= maxTinySize && c.tiny != 0 {
 ```
 
 多个小对象（比如两个 `int64` 字段的结构体、各种小 flag）可能被依次塞进同一个 tiny block，**一次底层分配服务多个对象**。好处不只是省分配次数：这些对象在内存里彼此相邻，GC 扫描和 cache 局部性可能更好。代价是它们共享同一块内存的分配周期——tiny 块里任何一个对象活着，整块都活着，所以对象生命周期差异大会放大驻留。本文的 byte-slice benchmark 没有单独证明某个结构体一定走 tiny 合并；要量化驻留放大，必须另写对象生命周期和逃逸受控的实验。
+
+
+
+![Tiny 分配器微小对象合并打包：16 字节块内 offset 位移与 0 碎片](../../../public/images/tiny-allocator-sub-16-byte-packing.svg)
 
 ## 四、并发画像：无锁的小对象 vs 上锁的大对象
 

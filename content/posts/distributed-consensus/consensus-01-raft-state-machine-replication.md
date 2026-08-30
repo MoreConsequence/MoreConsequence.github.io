@@ -90,6 +90,10 @@ Leader 在发送 `AppendEntries` RPC 时，会携带当前新日志条目前一�
 
 ---
 
+
+
+![Pre-Vote 预投票协议：网络分区节点重连防 Term 暴增打崩现任 Leader 机制](../../../public/images/raft-pre-vote-protocol-disrupted-leader-mitigation.svg)
+
 ## 四、 非对称网络分区脑裂与 Pre-Vote 预投票防御
 
 ### 4.1 脑裂与任期盲目膨胀的灾难时序

@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** `select` 是 channel 之上的仲裁器，成本取决于 case 数和是否进入阻塞路径。统一 Go 1.25.1/arm64 基准对带 `default` 的非阻塞扫描测得：1/2/4/8 个 channel case 分别为 **4.187ns、40.82ns、90.47ns、193.2ns**，均为 0 alloc；1 case + default 由编译器走简化路径，多 case 才进入更完整的仲裁。另一个独立的 100 万次双 ready channel smoke 得到 **49.969% / 50.031%**，只能作为当前输入下的随机选择观察，不是 5 亿次的形式化公平证明。阻塞等待、ready case 和高争用路径需要单独实验。
 
+
+---
+
+![Go select 机制与 selectgo 仲裁：pollorder 洗牌乱序、lockorder 地址锁排序与 sudog 注册](../../../public/images/go-select-selectgo-pollorder-lockorder.svg)
+
 ## 一、三种形态：编译器重写、selectgo 与阻塞边界
 
 `select` 在编译期就被分流。Go 编译器的规则来自 `runtime/select.go` 的注释：
@@ -32,6 +37,10 @@ BenchmarkSelect8CaseDefault-8   193.2  ns/op   0 B/op   0 allocs/op
 4.187ns 说明这条路径很短，但不能把它称作跨版本“免费”。上一篇文章《[time.After 的隐藏账单](/writing/go-timeafter-hidden-cost)》里的热循环使用同样形状的停止检查；是否值得放在每轮都执行，仍应结合实际循环频率和目标 Go 版本复测。
 
 而 ≥2 个 case 的 select 才需要更完整的仲裁准备：编译期生成 case 描述，运行时构造 pollorder/lockorder 并扫描 channel 状态。本文基准只覆盖“全部 channel 未 ready + default”这一条路径，因此不把这些数字外推到阻塞等待或 ready case。
+
+
+
+![selectgo 核心算法：pollorder (洗牌随机) 与 lockorder (地址升序防死锁加锁)](../../../public/images/selectgo-pollorder-lockorder-scramble-lock.svg)
 
 ## 二、selectgo 解剖：随机化管公平，排序管不死锁
 
@@ -67,6 +76,10 @@ pollorder[j] = uint16(i)
 1. **case 数是明显的成本变量**：2→4→8 case 从 40.82→90.47→193.2ns；这支持“扫描更多候选需要更多工作”的判断，但不够推出每个 case 固定增加多少 ns。
 2. **单 case + default 是不同编译路径**：4.187ns 与 2 case 的 40.82ns 不在同一档，不能用多 case 线性公式回推单 case。
 3. **阻塞和 ready 路径必须另测**：挂 sudog、park、唤醒、消费 ready value 的成本没有混入本表；把未测路径填成精确数字会破坏证据链。
+
+
+
+![编译器对 select 的单通道快速优化：直接降级为 chansend / chanrecv](../../../public/images/select-single-channel-fast-path-optimization.svg)
 
 ## 四、公平性 smoke：100 万次 ready 选择接近均匀
 

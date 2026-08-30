@@ -11,11 +11,20 @@ series: "把原理变成服务"
 
 **TL;DR：** 原稿把一组找不回原始输出的 RSS、订单数和吞吐数字写成“47 分钟真实事故”，但当前仓库既不能启动那个历史版本，也无法证明那些数字使用了同一分母。本次修订把文章降级为可重跑的构造演练：`UnboundedInMemoryStore` 让 `orders` 与 `byKey` 各增长 500 条，`BoundedInMemoryStore(100)` 让两张表都停在 100 条。事故排查的可迁移判断仍然保留：修复内存上限时，必须沿数据流检查所有索引，而不是只修第一张 Map。
 
+
+---
+
+![构造事故演练与双 Map 验证：内存缓存与持久化存储在故障注入下的状态一致性](../../../public/images/service-incident-drill-double-map-verification.svg)
+
 ## 一、先区分历史事故与当前可复现演练
 
 审计发现旧文至少混用了五组口径：RSS 增量、订单数、请求数、吞吐对照和可能来自另一轮的 heap 数据。比如 `97.8MB → 241.2MB` 的增量是 `143.4MB`，不能同时写成“+180MB”；`5834 → 6274 req/s` 的相对增量约为 `7.54%`，也不能写成 3%。没有 raw 输出、源码 commit、机器环境和分母，直接挑一个数字留下仍然是猜测。
 
 因此本文不再声称“真实事故”“每订单 9.5KB”“10 万订单 1GB”或“压测 RSS 236.8MB”。这些旧说法和原始反例保留在仓库根目录 `review.md` 的 P0-04 条目里，作为待找回证据，而不是继续出现在读者可见的结论中。
+
+
+
+![生产事故指挥体系 (ICS: Incident Command System)：指挥官 (IC)、排查官与沟通官协同](../../../public/images/incident-command-system-ic-roles-flow.svg)
 
 ## 二、构造最小反例：两个索引只进不出
 
@@ -72,6 +81,10 @@ Node 24.19.0 本机输出：
 - `keyByOrderId` 反向索引让驱逐可以同步删除对应幂等键。
 
 它不能证明 RSS 峰值、V8 保留堆、吞吐、线上 OOM 或某次历史事故的时间线。那些问题需要独立进程、固定压测参数、GC/heap profile 和 raw 输出，不能从 Map 的 size 外推。
+
+
+
+![不指责复盘文化 (Blameless Postmortem)：从惩罚个人转向修复系统缺陷](../../../public/images/blameless-postmortem-continuous-improvement-loop.svg)
 
 ## 四、修一半仍然是错误：容量和一致性要成对测试
 

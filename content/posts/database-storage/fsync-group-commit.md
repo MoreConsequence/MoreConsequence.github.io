@@ -51,6 +51,10 @@ flowchart LR
 
 写这篇文章时，我特意把 WAL 那篇[WAL 是数据库的命根子](/writing/wal-crash-recovery)里讲过的内容（torn write、checkpoint、档位表、硬件防线的清单）留在那边，这篇只谈 fsync 本身：它的语义、它的延迟去哪了、group commit 怎样把它的次数压下来。
 
+
+
+![fsync 物理耗时拆解：机械硬盘 10ms 寻道 vs NVMe SSD 100μs 刷盘](../../../public/images/fsync-platter-latency-ssd-nvme.svg)
+
 ## 二、一次 fsync 的时间去哪了
 
 fsync 的延迟不是恒定的。同一块盘上，空闲时和写满时测出来的数字可能差很多；设备类型只能提供方向，不能提供目标 SLO。应在目标机器上用 `pg_test_fsync`、`fio` 或数据库自身的 WAL I/O 计数测量，并保存负载、文件系统、队列深度和重复轮次。
@@ -97,6 +101,10 @@ sequenceDiagram
 三个线程的 fsync 是三个独立请求，每个都完整地走一遍"排队 → 刷盘 → 确认"。吞吐依然是约 1/fsync，只是并发把等待藏进了别的线程里。
 
 这就是 group commit 的全部动机：**如果三个事务的 WAL 记录本来就在同一个缓冲区里挨着，为什么不能让一个人去 fsync，三个人一起等？**
+
+
+
+![MySQL 两阶段组提交流水线：Flush 阶段、Sync 阶段与 Commit 阶段](../../../public/images/mysql-two-phase-group-commit-pipeline.svg)
 
 ## 四、group commit：把 fsync 从"次数"变成"批次"
 

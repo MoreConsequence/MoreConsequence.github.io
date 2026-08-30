@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ORACT 副作用执行器：事务性 Outbox 模式保证 At-Least-Once 投递</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">状态机产出副作用 ──► 本地事务写入 Outbox 表 ──► 独立 Worker 异步分发 ──► 目标系统幂等执行 ──► 确认清理</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Outbox Mechanism -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 本地事务 Outbox 队列写入</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 在同一个 SQLite 事务中完成</text>
+          <text y="28" fill="#86efac">tx.Exec("UPDATE agent_session SET state = ?", nextState)</text>
+          <text y="46" fill="#38bdf8">tx.Exec("INSERT INTO outbox (effect_id, payload, status) VALUES (?, ?, 'PENDING')",</text>
+          <text y="60" fill="#38bdf8">        effectID, jsonPayload)</text>
+          <text y="76" fill="#86efac">tx.Commit() // 绝对原子性！</text>
+          
+          <text y="102" fill="#34d399">✓ 杜绝状态已更新但副作用消息丢失的灾难！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 解耦核心逻辑与外部不可靠通信；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 崩溃断电后 Outbox 任务依然完好保留；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造强鲁棒的分布式副作用通道。</text>
+      </g>
+    </g>
+
+    <!-- Right: Reliable Worker Dispatch -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 异步 Worker 幂等分发与自愈重试</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. Worker 扫描 PENDING 状态的 Outbox 任务</text>
+          <text y="30" fill="#fb923c">2. 携带 Idempotency-Key 执行外部 API 调用</text>
+          
+          <text y="54" fill="#f87171">3. 若网络超时: 指数退避重试 (Exponential Backoff)</text>
+          <text y="70" fill="#34d399">4. 收到成功响应: 标记 Outbox 为 COMPLETED</text>
+          <text y="88" fill="#4ade80">5. 触发 agent_session 推进至下一阶段！</text>
+          
+          <text y="112" fill="#4ade80">✓ 保证副作用至少被成功执行一次 (At-Least-Once)！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底消除由于网络闪断导致的半事务残局；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 目标外部系统只需支持幂等 Key 即可实现 Exactly-Once 语义；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造生产级企业 Agent 必备的高可靠架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

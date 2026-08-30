@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">向量检索三大索引架构原理与物理权衡</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">HNSW 分层图 (极致召回与低延迟) vs IVF 倒排聚类桶 (动态平衡) vs PQ 乘积量化 (8x~16x 显存压缩)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Comparison Columns (285px each) -->
+    <!-- Col 1: HNSW -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. HNSW (分层可导航小世界图)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 多层图 Skip-List 拓扑</text>
+          <text x="10" y="34" fill="#93c5fd">Layer 2 (稀疏顶层): 快速大跨步跳跃</text>
+          <text x="10" y="48" fill="#93c5fd">Layer 1 (中层过渡): 逼近目标局部区域</text>
+          <text x="10" y="62" fill="#93c5fd">Layer 0 (稠密底层): 局部贪心搜索最近邻</text>
+          <text x="10" y="82" fill="#34d399">✓ 召回率 (Recall@10): 98% ~ 99.5%</text>
+          <text x="10" y="98" fill="#34d399">✓ 检索延迟: 亚毫秒级 (0.8ms)</text>
+          <text x="10" y="118" fill="#f87171">❌ 内存开销: 原始向量 + 1.5x~2x 图指针</text>
+          <text x="10" y="134" fill="#fca5a5">1亿 768维向量需要 300GB+ 内存！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 核心低延迟 RAG 在线召回</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 向量规模在千万级以内，内存预算充足</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 要求 98% 以上极高召回率保证</text>
+      </g>
+    </g>
+
+    <!-- Col 2: IVF -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. IVF (倒排文件聚类索引)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// K-Means 聚类与倒排桶</text>
+          <text x="10" y="34" fill="#fed7aa">1. 将向量空间划分为 K 个 Voronoi 质心</text>
+          <text x="10" y="48" fill="#fed7aa">2. 查询时仅扫描最近的 nprobe 个桶</text>
+          <text x="10" y="62" fill="#fed7aa">3. 大幅减少全量暴力比对计算量</text>
+          <text x="10" y="82" fill="#34d399">✓ 内存开销小：仅需存储质心与倒排表</text>
+          <text x="10" y="98" fill="#fbbf24">✓ 召回与延迟受 nprobe 动态调节</text>
+          <text x="10" y="118" fill="#f87171">❌ 边界效应：质心附近的边缘点易漏召</text>
+          <text x="10" y="134" fill="#fca5a5">召回率通常在 85% ~ 95%</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 亿级海量向量搜索与中等内存成本</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 支持在线动态调参（调整 nprobe 换速度）</text>
+        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 适合粗排过滤与两阶段检索候选集</text>
+      </g>
+    </g>
+
+    <!-- Col 3: PQ -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. PQ / IVF-PQ (乘积量化压缩)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 子空间切分与码本编码</text>
+          <text x="10" y="34" fill="#86efac">1. 将 768 维切分为 M=96 个 8 维子向量</text>
+          <text x="10" y="48" fill="#86efac">2. 每个子空间训练 256 个聚类中心 (1 Byte)</text>
+          <text x="10" y="62" fill="#86efac">3. 原始 3072 Byte 压缩为仅 96 Byte！</text>
+          <text x="10" y="82" fill="#34d399">✓ 显存/内存压缩 8x ~ 32x 倍！</text>
+          <text x="10" y="98" fill="#34d399">✓ 亿级向量仅需 16GB 单机全内存装载</text>
+          <text x="10" y="118" fill="#f87171">❌ 有损量化：距离计算为近似非对称距离</text>
+          <text x="10" y="134" fill="#fca5a5">必须配合原始向量精排重打分！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">🎯 最佳适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 10 亿级以上超大规模向量搜索引擎</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 内存预算极度受限（如端侧或廉价云机）</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业界标准：“IVF-PQ 粗召回 + HNSW 精排”</text>
+      </g>
+    </g>
+  </g>
+</svg>

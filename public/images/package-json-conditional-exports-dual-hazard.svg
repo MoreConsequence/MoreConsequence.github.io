@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">package.json 条件导出 (exports) 与双包单例陷阱消解方案</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">双包陷阱 (ESM 与 CJS 同时加载导致单例分裂产生 2 个全局状态) vs 包装器转发架构 (CJS 包裹 ESM 或统一使用 CJS 状态中枢)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Dual Hazard -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 双包陷阱 (Dual Package Hazard)：单例分裂</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">"exports": { "import": "./esm/index.js", "require": "./cjs/index.js" }</text>
+          
+          <text y="36" fill="#ef4444">当依赖树中同时存在 import 和 require 时：</text>
+          <text y="52" fill="#fca5a5">1. Node.js 分别实例化 esm/index.js 与 cjs/index.js</text>
+          <text y="68" fill="#ef4444">2. 内存中存在 2 份独立的全局状态与 Class 定义！</text>
+          <text y="84" fill="#ef4444">3. a instanceof MyClass 判定为 false！</text>
+          
+          <text y="106" fill="#f87171">🔴 导致 Redux/Zustand 全局状态错乱、Symbol 匹配失效！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 极隐蔽的 npm 依赖幽灵 Bug；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 用户端运行时状态互相隔离无法同步；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 开源库维护者第一高频重灾区！</text>
+      </g>
+    </g>
+
+    <!-- Right: Safe Config -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 正确防御：状态单例下沉与严格 types 排序</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// package.json exports 黄金配置准则：</text>
+          <text y="28" fill="#86efac">"exports": {</text>
+          <text y="42" fill="#38bdf8">  ".": {</text>
+          <text y="56" fill="#34d399">    "types": "./dist/index.d.ts", // 必须写在最前！</text>
+          <text y="70" fill="#38bdf8">    "import": "./dist/index.mjs",</text>
+          <text y="84" fill="#38bdf8">    "require": "./dist/index.cjs"</text>
+          <text y="98" fill="#38bdf8">  }</text>
+          <text y="112" fill="#86efac">}</text>
+          <text y="126" fill="#4ade80">// 内部共享单一 CJS 状态实例，保证 100% 单例一致！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底根除 instanceof 失效与单例分裂；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼容 Node.js、Vite、Webpack、Next.js 全生态；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• npm 双包分发金牌标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

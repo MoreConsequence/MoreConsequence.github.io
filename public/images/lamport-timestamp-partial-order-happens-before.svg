@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Lamport 逻辑时钟数学算法与偏序关系模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">本地事件: C = C + 1 ｜ 跨节点发包携带 C ｜ 接收事件: C = max(C_local, C_msg) + 1 ｜ 建立无物理时钟依赖的分布式因果序</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 本地事件递增规则</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">Rule 1: 本地自增</text>
+          
+          <text x="10" y="38" fill="#86efac">内部状态变更：</text>
+          <text x="10" y="54" fill="#cbd5e1">• 进程 P1 内部执行计算/写入</text>
+          <text x="10" y="70" fill="#34d399">• C_1 = C_1 + 1 (如 1 -&gt; 2)</text>
+          <text x="10" y="86" fill="#34d399">• 保证同一节点内部事件严格有序！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 单机时序自洽！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 纯内存计数器操作；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 0 物理硬件晶振依赖；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 逻辑时间起点。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 消息跨节点对齐规则</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">Rule 2: max(local, remote) + 1</text>
+          
+          <text x="10" y="38" fill="#86efac">跨网络对齐机制：</text>
+          <text x="10" y="54" fill="#38bdf8">• P1 发送消息携带 C_1 = 4</text>
+          <text x="10" y="70" fill="#34d399">• P2 当前本地时钟 C_2 = 2</text>
+          <text x="10" y="86" fill="#4ade80">• P2 接收后更新 C_2 = max(2, 4) + 1 = 5！</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 保证因果先后关系永不倒流！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强制接收事件逻辑时间大于发送事件；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 建立全局因果单向偏序链；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Leslie Lamport 图灵奖核心贡献！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 标量时钟局限与向量升级</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">标量单向性困境：</text>
+          
+          <text x="10" y="38" fill="#fed7aa">• a -&gt; b 必定推出 L(a) &lt; L(b)</text>
+          <text x="10" y="54" fill="#f87171">• 但 L(a) &lt; L(b) 无法反推 a 是否因果先于 b！</text>
+          <text x="10" y="70" fill="#fb923c">• 无法识别并发冲突 (Concurrent)</text>
+          <text x="10" y="86" fill="#4ade80">• 倒逼演化出向量时钟 (Vector Clock)！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">演进价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 从一维标量迈向 N 维向量时序；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 支撑无主多写数据库冲突检测；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 分布式时序理论基石！</text>
+      </g>
+    </g>
+  </g>
+</svg>

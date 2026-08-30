@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript Agent 生产化三大核心边界：并发合并、状态幂等与成本核算</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">同一 Session 并发调用排队合并 (Singleflight) ｜ 持久化状态快照与断点恢复 ｜ 精确到每次 Tool 调用的计费单据</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 并发请求合并 (Singleflight)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 同一 sessionId 并发锁</text>
+          <text x="10" y="34" fill="#93c5fd">1. 用户连续快速点击 3 次发送</text>
+          <text x="10" y="48" fill="#93c5fd">2. 使用 SessionMutex 或队列排队</text>
+          <text x="10" y="66" fill="#34d399">3. 第 1 个请求执行 Agent 循环</text>
+          <text x="10" y="82" fill="#34d399">4. 后续请求挂入等待或合并消息</text>
+          <text x="10" y="104" fill="#38bdf8">✓ 彻底避免多轮对话产生幽灵分支！</text>
+          <text x="10" y="120" fill="#38bdf8">✓ 保护 LLM 上下文状态线性一致！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 内存级 Promise 锁 + Redis 分布式锁</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 设置 60s 租约防止死锁卡死</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 支持 SSE 广播到多个客户端订阅者</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 幂等状态机 (Idempotent State)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 每次状态流转持久化</text>
+          <text x="10" y="34" fill="#86efac">1. tool_call 触发前写入 step: 'CALLING'</text>
+          <text x="10" y="48" fill="#86efac">2. 记录 tool_call_id 与入参 hash</text>
+          <text x="10" y="66" fill="#34d399">3. 服务崩溃重启后：</text>
+          <text x="16" y="80" fill="#38bdf8">   从 DB 加载未完成 step 自动重试/回滚</text>
+          <text x="10" y="102" fill="#4ade80">✓ 零重复扣费，零重复发货！</text>
+          <text x="10" y="118" fill="#4ade80">✓ 达到金融级可靠性标准！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 基于 Postgres / SQLite WAL 存储</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 乐观锁版本号 version CAS 控制</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 彻底告别无状态内存 Agent 的脆弱性</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 成本原子账单 (Cost Accounting)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 单步计费审计追踪</text>
+          <text x="10" y="34" fill="#fed7aa">type Bill = {</text>
+          <text x="16" y="48" fill="#fed7aa">  inputTokens: number,</text>
+          <text x="16" y="62" fill="#fed7aa">  outputTokens: number,</text>
+          <text x="16" y="76" fill="#fed7aa">  toolCostUSD: number,</text>
+          <text x="16" y="90" fill="#fed7aa">  durationMs: number</text>
+          <text x="10" y="104" fill="#fed7aa">}</text>
+          <text x="10" y="122" fill="#34d399">✓ 每次用户会话生成精准成本分摊报表！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 区分 Prompt Cache 命中率成本</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 实时上报 Prometheus / OpenTelemetry</text>
+        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 支撑精准的商业化多租户计费</text>
+      </g>
+    </g>
+  </g>
+</svg>

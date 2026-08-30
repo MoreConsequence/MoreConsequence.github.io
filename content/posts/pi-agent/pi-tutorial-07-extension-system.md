@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 很多 Agent 平台试图通过复杂的外部 RPC 协议（如 gRPC、标准 MCP 进程间通信）来实现扩展。这种设计虽然隔离性好，但带来了极高的进程管理成本、序列化时延，并且扩展无法深度干预 Agent 的内部生命周期。Pi 采取了截然相反的**进程内扩展哲学（In-Process Extension Model）**：扩展就是一个普通的 TypeScript 模块，与 Agent Loop 共享同一进程与内存堆，通过订阅 5 组全生命周期事件（Startup / Session / Agent / Message / Tool）实现极致的干预能力。本文作为《Pi Agent 实战通才教程》第七课，手把手带你实现**生命周期事件总线**、编写 **34 行权限拦截门禁** 与 **Plan-Mode 插件**，并跑通 **Agent 自修改（Self-Modifying）与 `/reload` 热加载闭环**。
 
+
+---
+
+![进程内扩展与自修改闭环：生命周期钩子、权限门禁与 /reload 热重载](../../../public/images/pi-extension-system-lifecycle-hot-reload.svg)
+
 ## 一、架构选型：进程内扩展 vs 进程外 RPC
 
 对比两种主流扩展架构：
@@ -41,6 +46,10 @@ flowchart TD
 | **代码自修改** | 依赖复杂的外部部署与守护进程重载 | **Agent 自己修改扩展源码后，一条 `/reload` 毫秒级热加载** |
 
 Pi 的核心定论是：**对于单机个人开发者与团队工作流，进程内原生扩展以极低的开发成本提供了最强大的自省与定制能力。**
+
+
+
+![Pi 插件拦截链与洋葱模型 (Onion Model)：前置校验 -> 执行 -> 后置审计](../../../public/images/pi-tutorial-extension-hook-interceptor-chain.svg)
 
 ## 二、5 组全生命周期事件流设计
 
@@ -122,6 +131,10 @@ export default function (pi: ExtensionAPI) {
   });
 }
 ```
+
+
+
+![Pi 插件热重载 (Hot Reloading) 与模块缓存清理机制](../../../public/images/pi-tutorial-dynamic-plugin-hot-reloading.svg)
 
 ## 四、动手实战 2：实现 Plan-Mode（计划模式扩展）
 

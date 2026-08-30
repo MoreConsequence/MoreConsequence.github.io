@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** 系列第一篇讲的是"TS 能减少写错的范围"，这篇把话接上：**并发编排中，类型系统不负责让代码跑得快，但负责让每一种失败都有一席之地**。以固定 seed 的 LLM Agent 工具循环模拟为例——模型返回的 JSON 工具调用是信任边界（先 `unknown` 再守卫）；并发执行用 `Promise.all` + 超时（注意：超时是竞态不是过滤器）；部分失败必须用可辨识联合占位（`{ok:true}|{ok:false}`），否则"成功一半"无法表达；`never` 穷尽检查把"新增工具忘了处理"变成编译错误。固定 seed 让本文输出可复现，但不证明真实模型成功率或外部服务延迟。
 
+
+---
+
+![TypeScript LLM 工具循环：类型系统收窄 (Type Guards)、并行编排与超时熔断](../../../public/images/typescript-llm-tool-call-loop-type-guards.svg)
+
 ## 一、场景：工具循环里，信任边界不止一处
 
 一个最简 Agent：模型（LLM）返回"要调什么工具"，你的代码执行工具，把结果拼回给模型。循环长这样：
@@ -23,6 +28,10 @@ series: "从 Go 到 TypeScript"
 
 1. **模型输出的 JSON 不是结构体**。Go 里 `json.Unmarshal` 到 struct 至少给你一个确定形状；TS 里 `JSON.parse` 给的是 `any`，模型可能输出 `missing field`、错误类型、甚至完全不是 JSON。这是第一道信任边界。
 2. **工具是外部 I/O**。每次调用都可能慢、超时、爆炸。`Promise.all` 默认行为是"一个失败全部失败"——但 Agent 场景里**部分成功是常见且有用的结果**（3 个工具成功 1 个失败，模型可以选择重试失败的）。把"部分失败"表达进类型，是这篇的核心。
+
+
+
+![TypeScript 自定义类型谓词 (is) 窄化：动态 ToolCall 强类型解析](../../../public/images/typescript-type-predicates-is-narrowing.svg)
 
 ## 二、工具调用协议：可辨识联合 + 运行时守卫
 
@@ -92,6 +101,10 @@ async function executeBatch(calls: ToolCall[], timeoutMs: number): Promise<ToolR
 
 - `ToolResult` 是可辨识联合（`ok` 判别），**"成功一半"成为一等公民**——调用方对每个结果都必须分流 `if (result.ok)`，忘了处理失败分支会怎样？`result` 类型是联合，`result.value` 只在 `ok:true` 分支可见——编译器逼你处理。Go 里两个返回值 `(val, err)` 也是同理，区别是 TS 把它做进类型。
 - `Promise.all(pending)` 不再出现 rejection（每个已降级为 `ok:false`），所以全部结果安全到达。
+
+
+
+![工具调用自愈闭环：Schema 校验报错格式化与大模型自动修正重试](../../../public/images/tool-call-validation-auto-retry-feedback.svg)
 
 ## 四、超时是竞态，不是过滤器
 

@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** Go map 是哈希表：8 槽 bucket + tophash 首字节筛子 + 溢出链 + 负载因子约 6.5 的增量扩容。统一 benchmark（Go 1.25.1/arm64）测得查找从 8 项到 65536 项约 **9.16–9.34ns**；10 万项插入不预分配是 **12.67ms/9.31MB**，预分配是 **9.45ms/5.81MB**。同一字符串 key 形状下，slice 线性查找从 8 项的 **17.55ns** 增长到 1024 项的 **393.6ns**；拐点受 key 类型、编译器和数据布局影响，不应背成固定的“64 项定律”。写代码时：能预估规模就 `make(map, n)`；小集合是否用 slice，用目标 key 和访问模式测量。
 
+
+---
+
+![Go Map 底层架构：hmap 结构体、bmap (8 槽位桶) 与渐进式扩容 (2x / 等量扩容)](../../../public/images/go-map-hmap-bmap-overflow-bucket.svg)
+
 ## 一、hmap 解剖：8 槽 bucket、tophash、溢出链
 
 Go 1.25 默认的 map 实现是经典哈希表（`runtime/map_noswiss.go`，Swiss table 仍在 `GOEXPERIMENT=swissmap` 实验状态）。核心结构：
@@ -36,6 +41,10 @@ type bmap struct {
 1. **每个 bucket 8 个槽**：哈希值的前 8 位（tophash）先当筛子——先比对 tophash，全不同直接跳过，省掉 key 比较；同 tophash 才需要完整比较 key。
 2. **哈希种子 hash0 随机**：每次建 map 种子不同，攻击者无法构造哈希碰撞队列（防 HashDoS）。代价是同一个 key 在不同 map 里哈希不同——所以遍历顺序随机是设计承诺，不是 bug。
 3. **负载因子 13/16 ≈ 6.5**：桶均元素超过 6.5 就翻倍扩容。6.5 是"查找快（桶不深）"和"内存省（桶不满）"的折中点。
+
+
+
+![Go Map 物理布局：hmap 结构体、bmap 桶结构、tophash 快速比对与溢出桶 (overflow)](../../../public/images/hmap-bmap-tophash-overflow-bucket-layout.svg)
 
 ## 二、查找为什么 O(1)：tophash 筛子 + fast key 通道
 
@@ -70,6 +79,10 @@ type bmap struct {
 但扩容的"瞬间卡顿"并不存在，这是 Go 的另一个设计：**增量迁移**。触发扩容时（`hashGrow`）只新建桶数组并记录 `oldbuckets`，之后每次插入/删除顺路迁移两个桶（`growWork`：当前桶 + `nevacuate` 进度桶），全部迁完才释放旧数组。代价是扩容期间查找要同时查新旧两处，换来无毛刺的写路径——大数据量批量插入时尤其明显。
 
 删除是 O(1)（实测 8.0ns）：只清槽位不缩容——**map 删除后内存不回落**（bucket 数组不收缩），长生命周期 map 的删除堆积会让内存膨胀，这是 map 作为缓存的一个真实限制。
+
+
+
+![Map 内存泄漏陷阱：delete 操作不缩容与重建新 Map GC 回收](../../../public/images/map-delete-shrink-memory-leak-pitfall.svg)
 
 ## 四、拐点实验：小数据集合 slice 更便宜
 

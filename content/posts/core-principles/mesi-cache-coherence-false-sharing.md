@@ -43,6 +43,10 @@ flowchart LR
 
 如果目标环境支持 PMU，可以额外用 `perf stat` 或平台等价工具观察事件；PMU 计数器只能帮助定位机制，仍需和同语义的端到端 benchmark 一起解释。
 
+
+
+![MESI 缓存一致性状态机：Modified, Exclusive, Shared, Invalid 四态跃迁](../../../public/images/mesi-four-state-transition-diagram.svg)
+
 ## 二、伪共享：两个变量，躺在同一条缓存行
 
 两个 goroutine，各自写“自己那份”的计数器；逻辑变量不同，不代表物理缓存行不同：
@@ -83,6 +87,10 @@ ratio=4.30x
 这次对照支持一个有限判断：在这个目标布局、原子操作、线程数和运行环境下，把两个写热点从 64B 区域中分开，端到端中位数低了约 4.30 倍。它不支持“伪共享固定慢 2–5 倍”、 “每次失效固定几十 ns”或“padding 对所有 workload 都更快”。实验没有绑定 goroutine 到不同物理核，也没有取得 Darwin PMU raw；后台负载、频率和调度变化都可能改变比值。完整环境和 raw 在 `evidence/mesi-cache-coherence-false-sharing/2026-08-17-local/`。
 
 **关键洞察**：伪共享的风险与写频率和竞争者数量相关，但性能结果还受原子指令、核拓扑、调度和内存布局影响。队列头尾指针、限流器计数、并发统计是值得 profile 的候选，不是看到两个字段相邻就必须加 padding 的命令。
+
+
+
+![伪共享 (False Sharing) 踩踏与 64 字节对齐填充 (Cache Line Padding)](../../../public/images/false-sharing-cache-line-padding-fix.svg)
 
 ## 四、怎么避：对齐、分片、化竞争为局部分量
 

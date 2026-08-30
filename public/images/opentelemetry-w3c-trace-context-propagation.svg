@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">OpenTelemetry 跨进程上下文透传机制 (W3C TraceContext)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">HTTP Header: traceparent = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 ｜ TraceID 全局统一 ｜ SpanID 父子层级链</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 网关根节点生成 TraceID (Root Span Generation)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">用户 HTTP 请求到达 Ingress ──► 生成全局唯一 128 位 TraceID ──► 开启 Root Span (Span A: 200ms)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">全链路追踪故事线的起点！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 协议注入与网络透传 (Context Inject: W3C traceparent)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">OTel SDK 自动将 TraceID + 当前 SpanID 注入 gRPC metadata / HTTP Header ──► 跨网传输至订单服务</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">W3C 国际工业级标准透传格式！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 下游提取与子 Span 绑定 (Context Extract &amp; Child Span)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">订单服务提取 Header ──► 创建子 Span B (ParentSpanID = Span A) ──► 挂载业务 Tag 与 Events</text>
+        <text x="15" y="62" font-size="8" fill="#047857">自动编织成清晰的 DAG 有向无环调用拓扑树！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 异步批处理上报 Jaeger / Tempo (OTLP Export &amp; Visualization)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">后台 Worker 批量上报 OTLP Collector ──► 0 业务主流程阻塞 ──► 监控大盘毫秒级精确定位慢 RPC 瓶颈！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代分布式微服务可观测性的终极支柱！</text>
+      </g>
+    </g>
+  </g>
+</svg>

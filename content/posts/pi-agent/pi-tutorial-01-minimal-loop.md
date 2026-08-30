@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 很多人把 AI Agent 误解为“带有提示词技巧的聊天机器人”，但在工程本质上，**Agent 是一个由外部环境驱动的带副作用状态机（Effectful State Machine）**。LLM 只是状态机内部的“下一个状态转移建议器”，而真正维持整个系统运转、执行工具、保证收敛并处理异常的软件层，就是 **Harness（缰绳）**。本文作为《Pi Agent 实战通才教程》的第一课，不使用任何臃肿的第三方 Agent 框架，直接用约 50 行原生 TypeScript 手写一个最小可运行的 Agent 核心循环，逐行拆解双层循环（Turn 循环与 Tool 循环）的流转逻辑，并深入分析工业级实现中必须解决的无限递归、输出截断与并发竞争三大工程陷阱。
 
+
+---
+
+![从 50 行代码到状态机：手写最小 Agent Harness 调度器](../../../public/images/pi-minimal-agent-harness-50-lines.svg)
+
 ## 一、心智模型：Harness（缰绳）vs Model（马力）
 
 在构建 Agent 之前，必须建立清晰的职责边界模型：
@@ -36,6 +41,10 @@ flowchart LR
 - **Harness（宿主缰绳）**：负责维护真实世界的所有状态。它决定什么时候把哪些文件塞进 Context、何时调用操作系统 API、工具出错时如何格式化错误、以及在模型失控喋喋不休时强行刹车。
 
 Agent 的稳定性、成本和通过率，**80% 取决于 Harness 的工程质量，而非仅仅依赖模型尺寸**。
+
+
+
+![Pi 极简 ReAct 循环状态机：User Prompt -> LLM Reason -> Tool Execute -> Observation](../../../public/images/pi-tutorial-minimal-react-loop-state-machine.svg)
 
 ## 二、从零开始：50 行实现最简 Agent Loop
 
@@ -151,6 +160,10 @@ export async function runAgentLoop(
 - 明确区分**只读工具（Read-only Tools）**与**副作用工具（Mutating Tools）**；
 - 只读工具（如多个 `read_file`）在同批次内走 `Promise.all` 并行加速；
 - 副作用工具（如 `write`、`bash`）严格按模型规划的序列串行执行，并在每次落盘后做文件系统 Flush 确认。
+
+
+
+![Pi 极简循环步数硬防护与异常退出保护](../../../public/images/pi-tutorial-minimal-loop-step-recursion-guard.svg)
 
 ## 四、确定性状态机：Pi 的双层 While 循环设计
 

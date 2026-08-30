@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![DeepSeek Harness (DSH) 生命周期解密：Turn 与 Step 双层状态机与确定性收敛](../../../public/images/dsh-turn-step-lifecycle-state-machine.svg)
+
 ## 一、心智模型：Turn 与 Step 的精确状态拓扑
 
 在 `dsh` 中，调度驱动器 `ReactLoopAgent` 的核心状态机流转如下图所示：
@@ -83,6 +88,10 @@ type Phase =
 
 ---
 
+
+
+![DSH Turn 与 Step 生命周期时序：流式解析、Tool 派发与事件原子落盘](../../../public/images/dsh-turn-step-state-transition-timing.svg)
+
 ## 二、双级收件箱 (Two-Tier Inbox) 与并发唤醒机制
 
 在真实的生产应用中，用户经常在 Agent 正在流式打字或正在执行长时间工具时追加文字，或者后台系统任务（如代码构建完成）需要给 Agent 注入上下文。
@@ -142,6 +151,10 @@ ctx.on('agent/pre-step', async (args, next) => {
 - **`enter`**：放行并允许中间件就地改写即将进入大模型的 `messages` 列表或动态补充 `PromptAssembly` 切片。
 
 ---
+
+
+
+![DSH 步骤递归安全护栏：最大深度、死循环模式识别与主动干预](../../../public/images/dsh-step-recursion-limit-guard.svg)
 
 ## 四、工具并发流水线：Exclusive 屏障与 Rolling Pool
 

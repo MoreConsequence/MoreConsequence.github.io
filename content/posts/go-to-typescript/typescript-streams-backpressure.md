@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** `for await` 让 async generator 以 pull 方式推进，但它不会替整个下游链路自动提供“恒定一条记录”的内存保证。当前实验把数组、直接 generator 和 `Readable.from` 放到独立进程，用相同的 20 万条记录和 128 字节 payload 记录运行期峰值与 producer-consumer lag：数组 lag 为 200000，直接 generator 为 1，`Readable.from` 在 `highWaterMark=16` 时观察到 17。再接上每条 20ms 的慢 Writable 后，三条路径的 Lag 都是 0–1、缓冲上限随 HWM 缩小（16→15B、2→1B），说明背压沿 generator → Readable → Writable 全程生效，但它来自每一层对下游的等待，不是任何单层的语法糖。
 
+
+---
+
+![TypeScript 数据流与背压机制：ReadableStream vs async generator yield 控制反转](../../../public/images/typescript-streams-async-generator-backpressure.svg)
+
 ## 一、pull 只保证“下一项由消费者请求”
 
 async generator 的关键语义是：调用方请求下一项后，generator 才继续执行到下一个 `yield`。`experiments/ts-streams/pull-push.ts` 用两个消费者把这件事打印出来：
@@ -32,6 +37,10 @@ eager 生产 4
 ```
 
 慢消费者在下一次 `next()` 之前等待，所以生产和消费交替；贪婪消费者主动把数据收集到数组，背压已经被调用方自己取消。`for await` 不是“免费缓冲”，而是把拉取时机放在消费循环里。
+
+
+
+![异步生成器 (AsyncGenerator) 拉取模型与流控背压 (Backpressure) 时序](../../../public/images/async-generator-pull-push-buffer-queue.svg)
 
 ## 二、内存实验必须隔离进程，并同时记录峰值与 GC 后快照
 
@@ -83,6 +92,10 @@ flowchart LR
 ```
 
 图中最后一条虚线很重要：本地 `for await` 消费得慢，只能约束它前面的队列；如果 `emitToUI()` 把 chunk 放进另一个无界数组，积压只是换了地址。
+
+
+
+![TransformStream 高低水位线 (highWaterMark) 与管道排队溢出控制](../../../public/images/transform-stream-highwatermark-flow.svg)
 
 ## 四、Go channel 不是无界 push
 

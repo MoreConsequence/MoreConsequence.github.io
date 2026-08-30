@@ -33,6 +33,10 @@ featured: true
 
 > 这套博客只有一个约定：内容永远是主角，系统只负责把它排得更好、送得更远。
 
+
+
+![统一 Markdown AST 编译流水线：Remark (mdast) -> Rehype (hast) -> React 静态导出](../../../public/images/markdown-ast-unified-pipeline.svg)
+
 ## 二、一个常见的误解：Markdown 是标准化的
 
 **一个常见的误解："Markdown 是标准化的"。** 恰恰相反：Markdown 从 2004 年诞生后十多年没有正式标准，各实现的方言互相冲突——同样的语法在不同编辑器里渲染结果不同，表格在这家是竖线文本、在那家是 HTML。2017 年 CommonMark 才成为事实标准，而 GFM（GitHub Flavored Markdown）只是 GitHub 在 CommonMark 之上的扩展。所以"写 Markdown 就能到处迁移"只在严格遵守 CommonMark 子集时成立：表格、任务列表、脚注、删除线都是扩展语法，换引擎不一定会报错，但可能静默渲染成别的样子。内容可迁移的底气不在"Markdown 这个名字"，而在你用的语法子集够不够保守。
@@ -59,6 +63,10 @@ flowchart LR
 这已经是完整的"后台"。它不需要登录，也没有会丢失数据的富文本编辑器；发布按钮就是 `git push`，而"后台地址"是一条 CI 工作流文件。校验不过不会发布，构建失败不会部署——出问题的地方，就是问题被拦下的地方。
 
 作者与构建系统之间最主要的机器约定是 frontmatter：标题、摘要、日期、标签、草稿标记。它是内容的自描述元数据，放在文件头部而不是后台表单里，意味着每篇文章都带着自己的"说明书"迁移。当前 workflow 在 Pull Request 阶段只做校验和构建验证，push 到 `main` 才进入 Pages deploy；是否必须经过人工 review，还取决于仓库的 branch protection，不能仅由 CI 文件推出“线上永远只有审核通过的内容”。
+
+
+
+![静态博客端侧搜索索引生成：构建期分词、轻量 JSON 载荷与 Fuse.js 模糊匹配](../../../public/images/static-site-search-indexing-pipeline.svg)
 
 ## 四、frontmatter 为什么是 YAML
 
@@ -141,7 +149,7 @@ git log --oneline --follow -- content/posts/clock-skew-distributed-systems.md  #
 
 ## 六、图片与静态资源
 
-正文只是内容的一半，配图是另一半。这套工作流里图片同样以文件存在：`public/images/` 目录，正文用标准的 Markdown 图片语法引用——比如 perf 文章的配图就是 `![perf 火焰图判读示例:memcpy 占 44% 的真热点](/images/flamegraph-sample.svg)`，路径指向仓库里真实存在的文件。
+正文只是内容的一半，配图是另一半。这套工作流里图片同样以文件存在：`public/images/` 目录，正文用标准的 Markdown 图片语法引用——比如 perf 文章的配图就是 `![perf 火焰图判读示例:memcpy 占 44% 的真热点](../../../public/images/flamegraph-sample.svg)`，路径指向仓库里真实存在的文件。
 
 图片管理有一个常常被忽视的约束：**每张图都要有 `alt` 文本**。`alt` 不是给"看不见的人"的礼貌项——屏幕阅读器靠它朗读图片，搜索引擎靠它理解图片上下文，图片加载失败时浏览器把它显示成占位文字。一篇"手把手画火焰图"的文章配图没有 `alt`，等于这篇教程对读屏用户是空白。
 

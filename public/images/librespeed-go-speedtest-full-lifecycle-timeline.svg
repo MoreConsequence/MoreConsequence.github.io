@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">一次测速的完整生命周期时序：从第一个字节到屏幕最终数字</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">阶段 1: IP 与 RTT 预热 (0~2s) ──► 阶段 2: 下行压测 (2~17s) ──► 阶段 3: 上行压测 (17~32s) ──► 阶段 4: 遥测与卡片渲染</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Horizontal Timeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">阶段 1: 客户端就绪与网络质量基线探测 (0 ~ 2 秒)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">GET /getIP.php ──► GET /empty.php (连续并发 10 次往返)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">解析公网 IP 与 ISP 运营商，计算平均 Ping RTT 时延与 Jitter 抖动方差，建立测速前网络基线！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">阶段 2: 下行多流高熵灌水与动态慢启动加速 (2 ~ 17 秒)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">4 路并行 GET /garbage.php?ckSize=1024 持续拉取二进制数据流</text>
+        <text x="15" y="62" font-size="8" fill="#047857">前 2 秒进行 TCP 窗口慢启动升温 (Overhead/Warmup)，后 13 秒进行平稳期滑动窗口度量，UI 实时仪表盘渲染！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">阶段 3: 上行多流黑洞吞噬与突发排队缓冲压测 (17 ~ 32 秒)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">4 路并行 POST /empty.php (每个请求发送 1MB ~ 20MB ArrayBuffer)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">客户端 Worker 监听 xhr.upload.onprogress 事件统计已发送字节，服务端 io.Discard 零分配极速吸收！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">阶段 4: 结果数据聚合、遥测加密落库与证书生成 (32 秒+)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">POST /results/telemetry.php ──► 接收 ULID 标识 ──► 生成分享卡片</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">对 Ping、Jitter、Download、Upload 进行加权汇总，写入遥测数据库，前端 Canvas 生成出版级测速结果图！</text>
+      </g>
+    </g>
+  </g>
+</svg>

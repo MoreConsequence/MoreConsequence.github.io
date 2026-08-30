@@ -11,6 +11,11 @@ series: "浏览器原理"
 
 **TL;DR：** HTTP 缓存有两层，且它们的优化方向相反：**强缓存**（`Cache-Control: max-age`）在资源仍新鲜时可以让客户端不发请求——省掉的是一次网络往返；**协商缓存**（`ETag` + `If-None-Match`、`Last-Modified` + `If-Modified-Since`）是在过期后发条件请求，服务器若判断未变就回 `304 Not Modified`，响应体为 0。**强缓存省请求，协商缓存省 body**，但是否组合、是否允许共享，要看资源是否个性化、是否可版本化以及 CDN 的缓存合同。仓库内 probe 只验证 origin 的 200/304 协议，不冒充浏览器缓存或生产网络延迟。
 
+
+---
+
+![HTTP 缓存决策树：强缓存 (Cache-Control) vs 协商缓存 (ETag / 304 Not Modified)](../../../public/images/http-cache-control-etag-validation-flow.svg)
+
 ## 一、两条路，三种状态
 
 浏览器拿一个 URL，先查自己缓存，可能命中三种：
@@ -28,6 +33,10 @@ flowchart LR
 - **强缓存命中**：浏览器不再发请求，直接用本地资源（对应磁盘缓存与有效期）。
 - **协商缓存命中**：发一个只带校验头的请求，服务器回 `304 Not Modified`——**服务器不发 body**，浏览器继续用本地缓存。
 - **协商错失**：服务器回 200 + 新 body。
+
+
+
+![HTTP 缓存决策树：Cache-Control 指令集 (no-store, no-cache, must-revalidate)](../../../public/images/http-cache-control-header-flowchart.svg)
 
 ## 二、两个响应头的账本
 
@@ -60,6 +69,10 @@ curl -sD - -o /dev/null https://example.com/app.js | grep -i "cache-control\|eta
 curl -s -H 'If-None-Match: "abc123"' -o /dev/null -w "%{http_code}\n" https://example.com/app.js
 # 输出 304 = 协商缓存命中
 ```
+
+
+
+![强 ETag 字节精确比对 vs 弱 ETag (W/) 语义等价协商机理](../../../public/images/etag-strong-vs-weak-hash-algorithm.svg)
 
 ## 四、坑：为什么你的"缓存有时候不起作用"
 

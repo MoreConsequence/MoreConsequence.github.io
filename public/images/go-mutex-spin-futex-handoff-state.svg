@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go sync.Mutex 底层四阶梯状态机：从自旋到饥饿模式</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">8 字节结构 (state + sema) ｜ 4 次 CPU 自旋 ｜ runtime_Semacquire 挂起 ｜ 超过 1ms 切换为饥饿模式杜绝尾部延迟</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Horizontal State Conveyors (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Stage 1 -->
+      <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">阶段 1: 极速快速路径 (Fast Path, ~6ns)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">atomic.CompareAndSwapInt32(&amp;m.state, 0, mutexLocked)</text>
+      <text x="15" y="62" font-size="8" fill="#047857">无竞争时单次 CAS 瞬间获锁，零系统调用，零上下文切换，极度轻量！</text>
+
+      <!-- Stage 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">阶段 2: 活跃自旋等待 (Active Spinning, 4 次 PAUSE 指令)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">procyield(30) // 执行 30 次 CPU PAUSE 汇编指令</text>
+        <text x="15" y="62" font-size="8" fill="#1d4ed8">条件：多核 CPU 且当前 P 本地队列为空且自旋 &lt;= 4 次。持锁者释放瞬间立即抢占，规避协程休眠开销！</text>
+      </g>
+
+      <!-- Stage 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">阶段 3: 慢速休眠路径 (Slow Path Futex, ~150ns)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">runtime_SemacquireMutex(&amp;m.sema, queueLifo, 1)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">自旋失败后将 Goroutine 挂入信号量等待树 (semaRoot Treap)，触发 goparkunlock 进入休眠，让出 CPU 执行权！</text>
+      </g>
+
+      <!-- Stage 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">阶段 4: 饥饿模式强行交接 (Starvation Mode, 杜绝尾部延迟)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">m.state |= mutexStarving</text>
+        <text x="15" y="62" font-size="8" fill="#7f1d1d">当等待者排队超过 1ms 时强制开启：新来的 Goroutine 严禁自旋和抢锁，Unlock 强制将所有权直接移交队列头部！</text>
+      </g>
+    </g>
+  </g>
+</svg>

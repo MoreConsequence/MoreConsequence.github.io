@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 插件 0 停机动态热重载 (Hot-Reloading) 机制</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 监控 plugins/*.ts 文件变更 ──► 2. 清空 require.cache ──► 3. 重新编译实例化 ──► 4. 原子替换注册表，0 重启主会话</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 文件系统变更监听 (FS Watcher: chokidar on plugins/)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">开发者修改了 custom_linter.ts ──► 毫秒级捕获 'change' 事件</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">热重载感知源头！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 模块加载缓存精准清理 (Purge require.cache / import cache-busting)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">delete require.cache[resolvedPath] ──► 彻底擦除老旧的类定义与闭包内存残留</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">防止内存泄漏与脏代码幽灵运行！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 重新加载与类型契约校验 (Reload &amp; Contract Verification)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">动态 require 重新执行 ──► 验证插件导出对象是否符合 Extension 契约 ──► 若语法错误则保留旧版本并告警</text>
+        <text x="15" y="62" font-size="8" fill="#047857">具备故障回退保护的热加载！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 注册表原子无缝替换 (Atomic Registry Swap)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">在单次微任务队列中完成指针原子切换 ──► 正在进行的会话 0 丢失、0 报错无缝使用新插件！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代开发者工具极致敏捷迭代的体验巅峰！</text>
+      </g>
+    </g>
+  </g>
+</svg>

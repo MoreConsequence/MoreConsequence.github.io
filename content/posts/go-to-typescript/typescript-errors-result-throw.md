@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** [《Agent 状态机》](/writing/typescript-agent-state-machine)把 `tool_error → retrying` 建成了转移；这篇回答错误怎样到达这条边。**throw 是长臂：错误沿当前调用栈传播，类型系统不知道谁会接；Result 是管道：预期失败成为返回值，调用方必须先收窄 `ok` 才能读取成功值。** 本机实验还展示了一个更容易误判的边界：定时器回调里的 throw 不会被创建定时器的外层 `try/catch` 接住。`uncaughtException` 只能用来记录演示，不能作为生产恢复策略；预期的限流、超时和参数错误应使用结构化 Result，程序 bug 则让进程按边界崩溃并由监督系统重启。
 
+
+---
+
+![TypeScript 错误处理范式：throw 长臂跳转 (隐式难以追踪) vs Result 管道 (显式强类型推导)](../../../public/images/typescript-throw-long-arm-vs-result-pipeline.svg)
+
 ## 一、先区分预期失败与程序错误
 
 工具循环会遇到两类完全不同的“错误”：
@@ -21,6 +26,10 @@ series: "从 Go 到 TypeScript"
 | 程序错误 | 不变量破坏、不可达分支、配置缺失、代码 bug | 记录上下文，让进程或请求边界失败 | `throw` |
 
 把两类错误都塞进 `throw`，调用方就很难从类型上看出哪些失败可以恢复；把所有东西都包成 `Result`，又会把真正的 bug 当成普通业务分支，继续运行在不可信状态上。选择不是“哪个语法更优雅”，而是错误的恢复责任归谁。
+
+
+
+![铁路导向编程 (Railway-Oriented Programming)：Result<T, E> 单子链式流转](../../../public/images/railway-oriented-programming-result-monad.svg)
 
 ## 二、throw 沿调用栈走，catch 是运行时约定
 
@@ -65,6 +74,10 @@ sequenceDiagram
 实验输出是“全局兜底收到异常，外层 try/catch 正常结束”，不是“外层 catch 接住了”。全局监听器改变了默认退出行为，因此只能证明异常逃逸到了进程级边界；它没有证明进程仍然安全。Node 官方文档明确警告，捕获 `uncaughtException` 后继续正常运行是不安全的，因为堆可能处于未知状态。生产做法应是：记录最少但足够的上下文，停止接收新工作，优雅关闭并交给 supervisor 重启；不要在监听器里继续处理新的 Agent 请求。
 
 Promise 也有相同的边界：`await` 只能捕获当前 Promise 链上的 rejection。一个没有被返回或等待的 Promise，即便创建它的函数有 `try/catch`，失败也可能成为未处理 rejection。事件回调、流事件和 worker 消息都应在自己的入口建立错误边界。
+
+
+
+![编译期穷尽检查 (Exhaustiveness Check)：never 类型守卫与漏处理拦截](../../../public/images/typed-error-union-exhaustive-switch.svg)
 
 ## 四、Result 让预期失败变成可分类的数据
 

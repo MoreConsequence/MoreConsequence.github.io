@@ -10,6 +10,11 @@ series: "系统设计手记"
 
 **TL;DR：** 你以为 Service 是个"虚拟 IP 转发"，其实默认实现里根本没有"转发"这回事——kube-proxy 的 **iptables 模式把每个 Service 翻译成一组 DNAT 规则**，流量到达 ClusterIP 的代价是**在 NAT 规则链里从链头逐条匹配到命中**。匹配成本与规则规模线性相关：N 个 Service × E 个 Endpoint ≈ N×(E+1) 条规则，每个新连接平均要扫 N/2 条外层规则再加 E/2 条 Endpoint 规则。规则上万时，**新建连接率高的服务**CPU 与延迟双涨，conntrack 表满还直接丢新连接。**IPVS 把服务表换成内核哈希表，查表 O(1)、与规则规模无关**；**eBPF（Cilium）更进一步把 datapath 压进内核态/网卡**，用 BPF map 做 O(1) 直查并去掉 iptables 与 nf_conntrack 的开销。选型是"规则规模 × 性能预算"的账：几百个 Service 时线性成本在噪声里，上万 Service、新建连接率高的集群才轮到换 datapath。
 
+
+---
+
+![K8s Service 路由转发进化：iptables O(N) 链式线性遍历 vs Cilium eBPF O(1) BPF 映射](../../../public/images/k8s-service-iptables-linear-vs-ebpf-o1-routing.svg)
+
 ## 一、先立反直觉：Service 不是虚拟 IP，是内核里的一串 DNAT 规则
 
 ClusterIP 听起来像虚拟 IP：一个地址，一堆后端。但在 iptables 模式里，**内核里不存在"ClusterIP 转发"这个动作**。kube-proxy 做的事情是：watch 到 Service 和 Endpoint 变化后，用 iptables 规则把"目标为 ClusterIP:port 的新连接"**改写（DNAT）成某个 Endpoint 的 PodIP:port**。
@@ -27,6 +32,10 @@ flowchart TD
 iptables 的匹配语义是**"从链头往下逐条匹配，第一条命中即处理并返回"**。所以"流量到了 Service"这个动作，在默认实现里真实发生的事是：**遍历了 KUBE-SERVICES 链上 N 条规则，直到命中的那一条**，再跳进这个 Service 自己的链，再遍历 Endpoint 规则完成 DNAT。
 
 一个容易被面试官追问的诚实细节：kube-proxy 对 **NodePort / ExternalIP 用 ipset 合并成了常数条规则**（ipset 是内核哈希集合，一次成员判断 O(1)），但 **ClusterIP 仍是每 Service 一条规则，线性匹配还在**；Service 内部的选路也是每 Endpoint 一条 `statistic` 随机规则。也就是说，ipset 只缓解了 NodePort 那一路的规则爆炸，ClusterIP 主路径的线性成本原样保留。
+
+
+
+![K8s 容器网络数据平面演进：iptables (O(N) 链) vs IPVS (哈希表) vs Cilium eBPF (XDP 零拷贝)](../../../public/images/k8s-iptables-vs-ipvs-vs-cilium-ebpf-dataplane.svg)
 
 ## 二、kube-proxy 的三条路：userspace / iptables / IPVS
 
@@ -74,6 +83,10 @@ iptables 的匹配语义是**"从链头往下逐条匹配，第一条命中即�
 iptables 的 DNAT 依赖 conntrack：每个新连接占一条连接表项，回复包靠它把源地址改回 ClusterIP。于是新建连接越密、每连接越频繁，**conntrack 表压力越大**（表项数只随连接数增长；Service 规则多只是集群更大的伴随信号，不直接占表项）。`nf_conntrack_max`（内核 sysctl，默认等于 `nf_conntrack_buckets`，现代 ≥4GB 内存内核常见 262144、老内核/小内存为 65536，见参考资料 #4）被占满后，**新连接会被直接丢弃**，内核日志打 `nf_conntrack: table full, dropping packet`——表象是 Service"间歇性不可用"，根因不是后端挂了，是 conntrack 表满了。规则上万 + 高连接率，是把这个故障提前引爆的两根引线。
 
 **本机关系验证分成两层**（见文末）：仓库里的 `rule-match-sim.go` 跑出的平均匹配步数与上表逐行一致（步数是推导结果）；它同时打印的 ns/包计时只是**用户态 Go 循环的模拟值**（本机已复跑，原始输出见 `evidence/k8s-iptables-ebpf-service/2026-08-19-local/`，不算内核 datapath 证据）。真实 kind 集群（`kind-bench.sh`）的每轮 ms/req-s 属于内核 datapath 的真实基准，需要宿主机内核功能与虚拟机权限才能跑，超出的本文证据链——本文用推导步数确立关系，用官方文档确立机制，模拟值只作量级方向，不断言内核实测。
+
+
+
+![Cilium eBPF sock_ops 零拷贝旁路：从网卡驱动 XDP 到同节点 Socket 快速重定向](../../../public/images/cilium-ebpf-sockops-socket-bypass-flow.svg)
 
 ## 四、IPVS：内核哈希表的 O(1) 直查，大集群为什么换
 

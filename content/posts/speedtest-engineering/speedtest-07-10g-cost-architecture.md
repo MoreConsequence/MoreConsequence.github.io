@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 搭建一套自研的现代测速系统，不仅需要底层网络算法的深度把控，更需要在**操作系统内核调优**与**服务器带宽成本控制**上取得完美平衡。如果不做系统级优化，一台 40Gbps 物理网卡的服务器在 5Gbps 流量下就会因内核软中断与小缓冲区而雪崩；如果不做精细的计费模型设计，测速产生的天量带宽账单会让企业不堪重负。本文作为《网络测速与极限吞吐工程》系列的收官终篇，给出生产环境 **万兆测速服务器的完整 `sysctl.conf` 内核参数清单**、**单机 40Gbps+ 的 Go/C++ 极简工程架构**、**95 峰值计费（95th Percentile Billing）削峰数学模型**，并对全系列 7 篇的第一性原理体系进行通盘复盘。
 
+
+---
+
+![万兆测速服务架构实战：Linux 内核网络栈调优、多队列网卡与十万并发成本模型](../../../public/images/speedtest-10g-cost-architecture-kernel-tuning.svg)
+
 ## 一、万兆/十万兆测速服务器 Linux 内核极限调优清单
 
 生产环境测速节点推荐使用 Linux 6.x+ 内核。以下是支撑单机 40Gbps+ 高吞吐推流与数据吸收的完整 `/etc/sysctl.conf` 配置：
@@ -53,6 +58,10 @@ ethtool -K eth0 tx on rx on tso on gso on gro on
 ethtool -C eth0 adaptive-rx on adaptive-tx on
 ```
 
+
+
+![万兆测速节点成本模型：95 计费带宽优化与 1U 裸金属硬件选型](../../../public/images/ten-gigabit-node-cost-breakdown-model.svg)
+
 ## 二、单机 40Gbps+ 极简测速服务架构
 
 ```mermaid
@@ -95,6 +104,10 @@ flowchart TD
 - **短周期激发**：将单次测试时间严格限制在 **8~10 秒以内**（足以提取 P90 稳态），绝不延长测试时长；
 - **错峰批处理**：在用户发起网络体检时，优先复用近 5 分钟内的边缘探针缓存；
 - **阶梯限速防护**：单 IP 每日免费测速次数设限（如每日 5 次），超限后降级为轻量探针模式，防止恶意脚本刷崩带宽。
+
+
+
+![1U 裸金属万兆测速服务器硬件拓扑：PCIe 4.0 网卡、单路 AMD EPYC 与 64GB ECC](../../../public/images/ten-gigabit-bare-metal-hardware-spec.svg)
 
 ## 四、全系列 7 篇第一性原理工程承诺矩阵
 

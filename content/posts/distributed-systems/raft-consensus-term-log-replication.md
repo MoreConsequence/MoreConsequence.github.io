@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** Raft 的多数派不是“民主表决”，而是**任意两个多数集合必有交集**的集合性质；它为已提交条目的保留提供基础，但不单独完成选举安全。任期让旧 leader 失效，日志匹配规则让候选者不能用更旧的日志拿到多数票，提交规则把多数复制与状态机应用连起来。未提交的日志后缀可以在网络分区中分叉，之后被新 leader 删除/覆盖；真正不可回退的是已提交前缀。ReadIndex、lease read、WAL/fsync 还分别属于读线性化和持久性合同，不能压成“多数派解决一切”。
 
+
+---
+
+![Raft 共识机制全景：Leader 选举任期 (Term)、多数派日志复制与状态机应用 (Commit/Apply)](../../../public/images/raft-consensus-term-log-replication-state-machine.svg)
+
 ## 一、多数派：不是"大多数同意"，是"不可能各拿一半"
 
 所有共识协议（Paxos/Raft/Zab）的根基是同一个集合性质：**任何两个多数集合必有交集**。3 节点里多数=2，任意两组多数 {A,B} 与 {B,C} 交于 B；5 节点里多数=3，任意两组都有交集（且 >1）。
@@ -32,6 +37,10 @@ flowchart LR
 ```
 
 所以多数派买的不是"表态权"，是**可用性的边界**：写要等多数确认而非全部，意味着"最多容忍 (N-1)/2 台挂掉"，也意味着"当分区两边各占一半时，没有一边能达成多数"——这就是"分区时不会出现两个 leader"的决定性机制。**多数派：唯一不变量。**
+
+
+
+![Raft 节点状态机与 Leader 选举流转：Follower -> Candidate -> Leader 投票机制](../../../public/images/raft-leader-election-term-heartbeat-flow.svg)
 
 ## 二、任期：把时间切成段，一段只认一个 leader
 
@@ -77,6 +86,10 @@ flowchart LR
 - **完整性（safety）**：已提交条目会出现在之后每一个 leader 的日志里。选举限制要求候选日志至少不落后于投票者；多数交集和日志匹配定理共同保证已提交前缀不会被冲突后缀覆盖。
 
 这条设计的安全边界不是“每个节点任何时刻都只有一条相同日志”，而是：相同 index/term 的条目内容一致，已提交条目不会被未来 leader 覆盖，未提交的冲突后缀可以被截断。Raft 让这组不变量可检查；它不消除网络分区期间的未提交分叉，也不自动让任意读请求线性化。
+
+
+
+![Raft 日志复制与提交屏障：nextIndex 与 matchIndex 多数派安全收敛](../../../public/images/raft-log-replication-matchindex-commit-barrier.svg)
 
 ## 四、实验：etcd 分区复现
 

@@ -10,11 +10,20 @@ series: "分布式系统的故障模型"
 
 **TL;DR：** 2PC / SAGA / Outbox 的选型争论大多聚焦"性能与复杂度"，真正的分歧是**故障之后谁负责收拾、收拾期间谁被阻塞**。本篇用统一的确定性故障注入矩阵（`experiments/distributed-tx-faults/`，10 个注入点）对照三者：2PC 在每个中途崩溃点都把参与者锁进 in-doubt 状态、靠协调者日志解救；SAGA 无锁但中间态对外可见，补偿失败即降级人工；Outbox 干脆取消分布式事务，让重复投递成为正常路径、由幂等消费吸收。三者的恢复后终态都可以一致——**选型问题因此变成：你的业务能接受哪种"不一致的形状"，以及谁来当那个收拾的人。**
 
+
+---
+
+![分布式事务终极对比：2PC vs SAGA vs Transactional Outbox 崩溃模型与责任边界](../../../public/images/distributed-transactions-2pc-saga-outbox-comparison.svg)
+
 ## 一、先固定考题：订单 ⇔ 扣款
 
 [系列开篇](/writing/lamport-vector-clocks)定义了因果；这一篇把因果用到最实际的裁决上：两个服务的本地事务如何表现得像一个事务。[双写窗口篇](/writing/outbox-cdc-dual-write-atomicity)已经证明"两边各写一份"必然存在丢失或脏事件的窗口；本篇比较的是三种正经解法在崩溃下的行为差异。
 
 统一模型：订单服务 O 与支付服务 P，目标是"订单创建"与"扣款"要么都发生、要么都不发生。对每种模式注入同一组崩溃点，记录两列事实——**崩溃瞬间外部看到了什么**，以及**恢复后终态由谁保证**。
+
+
+
+![分布式事务四大家族全景对比：2PC (刚性强一致) vs TCC (应用层预留) vs Saga (长事务补偿) vs Outbox (异步最终一致)](../../../public/images/distributed-transaction-patterns-2pc-tcc-saga-matrix.svg)
 
 ## 二、注入矩阵：10 个崩溃点的完整答案
 
@@ -56,6 +65,10 @@ sequenceDiagram
 **SAGA：把不一致摆到台面上。** SAGA 不加锁，每步都是独立本地事务，代价是矩阵第 6 行——"订单存在但未扣款"这个中间态**对外真实可见**，别的请求可能查到一个尚未支付的订单。恢复交给补偿事务，而第 7 行是它的软肋：补偿本身也是会失败的事务，一旦失败只能人工对账。选 SAGA 前先回答：业务上"看得见的半成品"可容忍吗？补偿路径有没有设计且演练过？
 
 **Outbox：承认重复比阻止重复容易。** Outbox 根本不发起跨服务事务：订单和事件在同一条本地事务里原子落库（这层原子性由数据库保证），relay 负责至少一次投递。于是故障的表现形式变成了矩阵最后两行的样子——**重复投递**。它不再试图消灭不一致窗口，而是把窗口内的混乱收敛为一种形态：同一条消息可能到达多次，由消费端幂等键裁决。代价转移到了消费端设计上（[幂等键怎么落地](/writing/idempotency-engineering)、并发窗口怎么审见[幂等 PR 评审](/writing/review-idempotent-pr-concurrency)）。
+
+
+
+![分布式事务选型决策树：业务强一致 vs 异步解耦 vs 逆向补偿路径判定](../../../public/images/distributed-transaction-selection-decision-tree.svg)
 
 ## 四、选型的三个判断题
 

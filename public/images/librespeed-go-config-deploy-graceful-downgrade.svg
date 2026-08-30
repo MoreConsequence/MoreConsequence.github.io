@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed Go 配置与部署面：多层覆盖与存储优雅降级</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">CLI 命令行参数 (最高优先级) ──► 环境变量 ENV ──► settings.toml 配置文件 ──► 内存临时模式 (Memory Fallback)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Config Precedence -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 配置加载四层覆盖模型</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. CLI Flags: ./speedtest -c custom.toml -p 8989</text>
+          <text y="30" fill="#93c5fd">   • 拥有最高覆盖权，便于容器调试与紧急覆盖</text>
+          
+          <text y="52" fill="#4ade80">2. ENV Vars: SPEEDTEST_PORT=8989 SPEEDTEST_DB_TYPE=mysql</text>
+          <text y="68" fill="#86efac">   • 完美契合 12-Factor App 与 Kubernetes ConfigMap / Secret</text>
+          
+          <text y="90" fill="#fed7aa">3. TOML File: settings.toml (包含 IP 库路径、速率限制参数)</text>
+          <text y="106" fill="#fed7aa">   • 默认持久化配置模板</text>
+          
+          <text y="128" fill="#34d399">4. 默认内置值: 端口 8989、绑定 0.0.0.0、遥测默认 none</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">云原生友好度：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 容器镜像体积仅 15MB (Scratch / Alpine 多阶段构建)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 支持无状态纯测速节点无脑水平扩容 (K8s HPA)；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 启动耗时 &lt; 5ms，瞬间就绪！</text>
+      </g>
+    </g>
+
+    <!-- Right: Storage Downgrade -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 数据库故障平滑优雅降级</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 存储介质自适应降级状态机</text>
+          <text y="30" fill="#86efac">PostgreSQL / MySQL (生产高可用集群)</text>
+          <text y="46" fill="#38bdf8">  ├── 连不上时 ──► 自动降级为 本地 SQLite 文件</text>
+          <text y="62" fill="#fbbf24">  └── 磁盘只读时 ──► 自动降级为 None (只测速不落库)</text>
+          
+          <text y="88" fill="#34d399">✓ 任何数据库故障绝不阻塞核心测速业务！</text>
+          <text y="104" fill="#34d399">✓ 即使 DB 挂了，用户依然能流畅完成上下行测速！</text>
+          <text y="120" fill="#4ade80">✓ 打造极致健壮的电信级服务可用性标准！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">容灾设计精要：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 核心测速数据流与旁路遥测落库完全解耦；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 避免因为数据库死锁拖垮整个测速服务的 HTTP 网关；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 真正做到 99.999% 极致高可用！</text>
+      </g>
+    </g>
+  </g>
+</svg>

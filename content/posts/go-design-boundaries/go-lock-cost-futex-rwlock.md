@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 锁的开销大头不在 `Lock()` 这一行，而在竞争后如何排队。本机统一基准（Go 1.25.1、Darwin arm64、`-cpu=2,4,8,16`）中，8 个并发 worker 下 `atomic.AddInt64` 为 **39.65ns/op**，`sync.Mutex` 为 **99.26ns/op**，故意持续占 CPU 的自旋锁为 **250.1ns/op**；16 个 worker 下自旋锁升到 **572.8ns/op**。这些数字只证明当前实现、机器和临界区形状下的争用曲线；Go runtime 的 semaphore 路径在 Linux 上可能落到 futex，但本次没有 Linux 运行证据。`RWMutex` 也不能凭“读锁免费”或固定读写比例选型，必须用同语义 workload 重测。
 
+
+---
+
+![Go sync.Mutex 底层四阶段：快速路径 CAS ──► 活跃自旋 ──► 信号量 Futex 休眠 ──► 饥饿模式直接交接](../../../public/images/go-mutex-spin-futex-handoff-state.svg)
+
 ## 一、直觉错在哪里：锁的账单按"有没有人抢"计价
 
 一个常见的直觉：加锁、解锁都是几条固定的指令，贵不到哪去。这个直觉只在"没人抢"时成立。
@@ -25,6 +30,10 @@ series: "Go 的设计边界"
 | 16 | 50.89ns | 127.8ns | **572.8ns** |
 
 在这组输入里，16 个 worker 的 `sync.Mutex` 是 127.8ns，而纯自旋锁是 572.8ns；**一把锁的价格不是它自己的，是“新进来的人”与“已经在等待的人”之间的竞争**。atomic 的 8 worker 点低于 4 worker，也提醒我们不要把一台机器的一次运行画成单调增长定律。要理解差异，应把 `sync.Mutex` 的 `lockSlow`、runtime semaphore 和自旋实现一起看。
+
+
+
+![Go Mutex 三级争锁状态机：Fast Path (CAS) -> Active Spin (自旋) -> Slow Path (sema 挂起)](../../../public/images/go-mutex-fast-spin-slow-sema-flow.svg)
 
 ## 二、三条路径：fast path、自旋与等待者队列
 
@@ -95,6 +104,10 @@ BenchmarkSpinParallel-16      572.8  ns/op   0 B/op  0 allocs/op
 ```
 
 复现命令和原始输出绑定在文末 evidence。**另外很重要的一条：不要只换锁。** 如果临界区中混入 I/O、序列化或长计算，等待和尾延迟会淹没这些微基准差异；锁优化的第一反应仍应是缩短临界区，第二才是换原语。
+
+
+
+![RWMutex 读写互斥锁实现：readerCount 负数标记与写饥饿防御](../../../public/images/rwmutex-reader-writer-starvation-tradeoff.svg)
 
 ## 四、再往前一步：原子不是锁，是隧道的偷渡客
 

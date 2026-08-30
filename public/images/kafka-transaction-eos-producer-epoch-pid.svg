@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kafka 端到端 Exactly-Once (EOS) 事务协调架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Producer PID + Sequence (单分区幂等去重) ──► Transaction Coordinator ──► 跨分区原子两阶段提交 ──► Consumer read_committed</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 生产者 PID 与单调递增 Sequence (Idempotent Producer: PID + Seq)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Broker 为 Producer 分配唯一 PID ──► 每条消息携带 SeqNum ──► Broker 仅接受 Seq == LastSeq + 1</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">重试产生的重复消息在 Broker 内存被直接静默丢弃！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 事务协调者与事务日志 (Transaction Coordinator &amp; __transaction_state)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Producer 发送 InitProducerId 绑定 transactional.id ──► 协调者在内部主题持久化 Ongoing 事务状态</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">实现生产者重启后跨会话状态继承与僵尸实例隔离！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 跨分区数据与位移原子提交 (Consume-Transform-Produce Atomicity)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">向业务 Topic 发送消息，同时向 __consumer_offsets 发送消费位移 ──► 协调者写入 Commit 标志标记</text>
+        <text x="15" y="62" font-size="8" fill="#047857">业务输出与消费进度要么同时生效，要么同时回滚！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 消费端 read_committed 隔离过滤 (Consumer LSO High-Watermark)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Consumer 仅读取到 LastStableOffset (LSO) ──► 自动跳过 Aborted 事务消息 ──► 真正达成流处理 Exactly-Once！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代流计算与事件驱动架构的工业级巅峰！</text>
+      </g>
+    </g>
+  </g>
+</svg>

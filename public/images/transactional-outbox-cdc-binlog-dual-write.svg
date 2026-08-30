@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">数据库与消息队列双写原子性：Transactional Outbox vs Binlog CDC</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">直接业务双写 (DB 成功但 MQ 发送失败导致状态永久撕裂) ｜ 本地事务 Outbox 表 + Debezium CDC 零丢失投递</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Direct Dual Write Bug -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 朴素业务双写：物理上必有一扇不一致窗</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 典型反模式</text>
+          <text y="28" fill="#fca5a5">1. db.SaveOrder(order) ──► 本地事务提交成功</text>
+          <text y="44" fill="#ef4444">2. kafka.Send(orderMsg) ──► 网络断开或进程 OOM 崩溃！</text>
+          
+          <text y="68" fill="#ef4444">🔴 灾难性状态撕裂：</text>
+          <text y="84" fill="#fb7185">• 数据库里订单已扣款，下游库存/积分系统却永远收不到消息！</text>
+          <text y="100" fill="#ef4444">• 若颠倒顺序先发 MQ 再写 DB，DB 报错时同样引发虚假消费！</text>
+          <text y="118" fill="#f87171">► 无法在没有分布式事务的前提下保证跨组件原子性！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">根本矛盾：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 单机数据库事务无法跨越网络覆盖到消息队列；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 网络抖动是分布式系统的常态；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 业务直写双写模式严禁在生产使用！</text>
+      </g>
+    </g>
+
+    <!-- Right: Outbox CDC -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Transactional Outbox + CDC 模式</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 1. 在同一个本地事务内同时写入业务表与 Outbox 表</text>
+          <text y="28" fill="#86efac">BEGIN;</text>
+          <text y="42" fill="#86efac">INSERT INTO orders ...;</text>
+          <text y="56" fill="#38bdf8">INSERT INTO outbox_table (msg_id, payload, status) ...;</text>
+          <text y="70" fill="#86efac">COMMIT; // 本地 ACID 保证 100% 绝对原子性！</text>
+          
+          <text y="92" fill="#34d399">// 2. Debezium / Flink CDC 实时监听 MySQL Binlog</text>
+          <text y="106" fill="#4ade80">捕获 Outbox 变更 ──► 投递至 Kafka ──► 消费端幂等消费！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底解耦业务逻辑与消息队列可用性；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 毫秒级异步投递，吞吐量极高；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 现代微服务领域事件 (Domain Events) 发布的绝对权威标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

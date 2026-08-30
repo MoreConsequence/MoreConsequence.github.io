@@ -11,6 +11,11 @@ series: "浏览器原理"
 
 **TL;DR：** Promise、async、await 让人昏头的根源是**错把"异步"当成了"延迟执行"**——它们真正做的是两件事：**同步执行 + 微任务排队**。三条可复验的边界：① Promise 构造函数的执行体是同步的，回调（`.then`/`.catch`）才是异步排队的；② async 函数体同步执行到**第一个 await**，await 之后的一切都排进微任务队列；③ await 恢复与 `.then` 回调都发生在"当前宏任务结束、下个宏任务开始前"的微任务检查点（机制见[事件循环](/writing/understanding-event-loops)）。当前 Node v24 smoke 还显示：**未处理的 rejected promise 以 exit 1 退出**（不是"打印警告继续跑"）。至于内部到底排了几个 Promise Job，不能只凭一段打印顺序下结论，应以规范/运行时源码和独立 benchmark 为准。
 
+
+---
+
+![JavaScript 事件循环 (Event Loop)、Promise 微任务队列 (Microtask) 与执行时序模型](../../../public/images/js-event-loop-microtask-promise-timing.svg)
+
 ## 一、先纠正直觉：Promise 不是"延迟"，是"状态机 + 排队"
 
 最常见的错误心智模型是"Promise 让代码晚点执行"。先看仓库 smoke 的谜题 1（Node v24.19.0）：
@@ -32,6 +37,10 @@ console.log("E");
 4. **宏任务（setTimeout）永远在微任务清空之后**。
 
 真正的模型：Promise 是一台**状态机**（pending → fulfilled / rejected，且只能变一次），`then` 是"状态定型时把回调投进微任务队列"的订阅器。同步部分（构造、执行体、注册）与异步部分（回调运行）被微任务队列隔开。
+
+
+
+![Promise 微任务时序拆解：then 回调排队、async/await 语法糖与执行上下文](../../../public/images/promise-microtask-queue-execution-order.svg)
 
 ## 二、状态机：三态一次定型，回调在定型时入队
 
@@ -120,6 +129,10 @@ setTimeout(() => console.log("最终顺序:", order.join(" -> ")), 0);
 ```
 
 `after-await` 排在 `sync-end` 之后——**await 一个同步值也不会在当前同步段原地继续**；"await 一个同步值会原地继续"是错误直觉。`after-await` 又排在 `microtask` 之前，是因为这次运行中 await 的恢复回调先进入了队列，FIFO 决定了观察到的顺序。
+
+
+
+![Promise 并发组合原语对照：Promise.all vs allSettled vs race vs any](../../../public/images/promise-all-race-allsettled-state-matrix.svg)
 
 ## 四、错误时序：throw 就是 reject，不接 catch 会崩
 

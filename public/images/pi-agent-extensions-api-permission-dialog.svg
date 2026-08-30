@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 扩展系统 API：用 34 行代码实现动态交互式权限拦截弹窗</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">内核零内置业务功能 ｜ before_tool_call 生命周期拦截 ｜ 动态 TUI 弹窗交互 ｜ 批准 / 拒绝并反馈模型自愈</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Extension Code -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 极简 34 行 Extension 源码实现</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">export default function permissionGuard(api) {</text>
+          <text y="28" fill="#86efac">  api.on('before_tool_call', async (call) =&gt; {</text>
+          <text y="44" fill="#38bdf8">    if (call.name === 'bash' &amp;&amp; call.args.cmd.includes('rm ')) {</text>
+          <text y="60" fill="#fed7aa">      const ok = await api.ui.confirm({</text>
+          <text y="74" fill="#fed7aa">        title: '⚠️ 危险高危操作确认',</text>
+          <text y="88" fill="#fed7aa">        message: 'Agent 即将执行删除命令: ' + call.args.cmd</text>
+          <text y="102" fill="#fed7aa">      });</text>
+          <text y="118" fill="#f87171">      if (!ok) throw new Error('用户已手动拒绝该危险操作！');</text>
+          <text y="132" fill="#86efac">    }</text>
+          <text y="146" fill="#4ade80">  });</text>
+          <text y="160" fill="#4ade80">}</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制设计精要：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 内核保持极致纯粹，仅暴露微内核事件总线；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 任何定制化安全策略均以 Extension 插件形式热插拔；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高度可定制、开箱即用的模块化生态！</text>
+      </g>
+    </g>
+
+    <!-- Right: Runtime Interception Flow -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 运行时拦截与闭环状态流转</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. LLM 产生工具调用: bash(cmd: "rm -rf build/")</text>
+          <text y="30" fill="#fb923c">2. Extension 触发拦截 ──► 挂起当前 Step 协程</text>
+          <text y="48" fill="#fed7aa">3. 终端 TUI 渲染交互确认弹窗 (UI Modal)</text>
+          
+          <text y="72" fill="#f87171">4. 分支 A: 用户点击 [拒绝]:</text>
+          <text y="86" fill="#fca5a5">   • 返回结构化拒绝错误，引导模型改用其他安全命令！</text>
+          
+          <text y="106" fill="#34d399">5. 分支 B: 用户点击 [允许]:</text>
+          <text y="120" fill="#4ade80">   • 协程恢复执行，沙箱执行命令并返回标准输出！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 兼具全自动无人值守与关键危险节点人机协同；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支持热重载 (/reload) 调试扩展插件；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 打造生产级企业安全合规沙箱！</text>
+      </g>
+    </g>
+  </g>
+</svg>

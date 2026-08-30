@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 错误链的成本分配与直觉相反：**查询便宜、构造贵**。统一 benchmark（Go 1.25.1/arm64）测得 `errors.Is` 遍历 10 层链 **38.05ns**（每层约 4ns，线性），而 `fmt.Errorf("%w")` 每包装一次 **141.8ns/71B/3 allocs**，`errors.Join` **147.1ns/56B/2 allocs**。这些是当前命令下的一轮基线，不是语言固定常数。稳定的工程结论是：热路径可以用哨兵值表达分类，日志边界再添加上下文；不要为了每一层“人话”都付格式化和分配税。
 
+
+---
+
+![Go 1.13+ errors 链表账本：fmt.Errorf(%w) 构造分配 (142ns) vs errors.Is 递归遍历 (4ns)](../../../public/images/go-errors-wrap-unwrap-chain.svg)
+
 ## 一、Is 的实现：循环解链，一次类型断言
 
 `errors.Is`（errors/wrap.go:44）的实现是教科书级的简单循环：
@@ -41,6 +46,10 @@ func is(err, target error, targetComparable bool) bool {
 
 每轮循环 = 一次 `==` + 一两次类型断言 + 一次解链——当前入口实测 10 层链为 **38.05ns**，从无链 4.845ns 到 1/3/10 层呈近似线性增长。这就是为什么深链查询通常不是第一热点：遍历成本随比较次数线性增长，但真正要警惕的是另一头的构造。
 
+
+
+![Go 1.13+ 错误包装与 Unwrap 递归树：errors.Is / errors.As 匹配机理](../../../public/images/go-error-wrap-unwrap-tree-traversal.svg)
+
 ## 二、实测：查询线性、构造昂贵
 
 | 操作 | ns/op | B/op | allocs |
@@ -68,6 +77,10 @@ func is(err, target error, targetComparable bool) bool {
 | 组合多个错误来源 | `errors.Join` | 本次基线 147.1ns/56B/2 allocs |
 
 **Join vs %w 的选择也是语义选择，不应只看本次 benchmark**：当前入口里 Join 的分配数和字节数并不低于 `%w`，因为 Go 版本会影响实现路径；Join 做聚合，`%w` 负责把一个原因包进上下文。若热路径只需要分类，哨兵或预构造错误比每次构造二者都更清楚。
+
+
+
+![错误处理性能对比：裸值比对 (0.3ns) vs errors.Is (4ns) vs errors.As 反射 (40ns)](../../../public/images/error-matching-direct-vs-unwrap-overhead.svg)
 
 ## 四、生产判断：错误链的设计规则
 

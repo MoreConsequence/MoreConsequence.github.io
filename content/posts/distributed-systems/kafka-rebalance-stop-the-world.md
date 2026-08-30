@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 经典（eager）再平衡的语义是**先全部撤销、再全部重分配**：从 coordinator 判定有成员加入/离开/超时的那一刻起，到 JoinGroup/SyncGroup 两阶段跑完，消费组不持有任何有效分配，这段 stop-the-world 空窗里全组停止消费，而生产不停，lag 就按“生产速率 × 停摆时长”陡增。窗口 ≈ 检测（经典协议的 session timeout）+ 通知全体重加入（最慢的成员决定）+ 分配计算；成员越多、越慢，窗口越长。止血分三层：Sticky 只少搬、CooperativeSticky（KIP-429）改成只停要搬的分区、KIP-848 在 Kafka 3.7 先以 Early Access 出现、Kafka 4.0 起 GA，把分配协议改成增量路径。关键反直觉点：**经典协议里一个成员出问题或加入，代价可能由全组承担**。
 
+
+---
+
+![Kafka 消费组再平衡演进：Eager 全量 STW 停摆 vs Cooperative 渐进式协作再平衡](../../../public/images/kafka-consumer-group-rebalance-eager-vs-cooperative.svg)
+
 ## 一、场景：一次扩容，消费整组停电
 
 半夜给一个消费订单事件流、峰值 5k msg/s 的 group 扩容：从 2 个消费者加到 6 个，想压掉 lag。加第一个消费者时，监控里看到的不是新成员平滑上线，而是**整组消费速率掉到 0**、lag 开始爬升；等新成员真正拿到分区，组才恢复。接着加第二个，又停一次。加 4 个成员 ≈ 4 次全组停摆，lag 越滚越高——你为了降 lag 扩容，反而把 lag 抬了起来。
@@ -18,6 +23,10 @@ series: "系统设计手记"
 另一种打开方式：组里某个成员一次 Full GC 停了 60 秒，超过默认 session.timeout（45s）——coordinator 判定它死亡、踢出组、触发 rebalance，**连累整个组**停电；这个成员恢复后重新加入，如果它再次超时，就是第二次全组停电。就算它及时恢复，处理也慢到超过 max.poll.interval.ms，结局相同。
 
 先记住这个结论再往下看：扩容、成员挂死、滚动发布，任何一个成员的动静都会把整个组拖进空窗。这是协议语义决定的，不是故障。
+
+
+
+![Kafka 传统 Eager Rebalance 痛点：全量消费者停机 (Stop-the-World) 与分区争抢风暴](../../../public/images/kafka-eager-rebalance-stop-the-world-storm.svg)
 
 ## 二、消费组协议：coordinator、心跳与两个超时各守什么
 
@@ -61,6 +70,10 @@ sequenceDiagram
 **为什么必须全部 revoke 再重分。** 分配是（成员、订阅、分区）三元组的全局函数。eager 的选择是「先停、再算、再发」：任何时刻最多一个成员持有某分区，不会出现两个成员同时消费同一分区引发的重复与 offset 竞争。它不是 bug，是用一段全局空窗换分配正确性的取舍。协作式协议后来改变了这个等式，见第五节。
 
 **窗口由哪几段构成。** 检测（崩溃 = 最长一个 session.timeout；优雅离开 ≈ 即时）→ 通知其余成员（最多一个 heartbeat.interval）→ 全体重加入（最慢的成员决定，因为 coordinator 要等齐）→ leader 计算分配 → SyncGroup 下发。停摆 ≈ 这些之和。另一个要点：**eager 下「全员停摆」这个性质与分区数无关**——不管组里 8 个分区还是 8 万个，停的都是全组；分区越多，只是 leader 的分配计算（尤其 Sticky 这种组合优化）和 SyncGroup 分发的绝对耗时越大。
+
+
+
+![Kafka 2.4+ 协作式粘性重平衡 (Cooperative Sticky Rebalance)：平滑迁移与 0 停顿](../../../public/images/kafka-cooperative-sticky-rebalance-protocol.svg)
 
 ## 四、代价账：停摆怎么随规模涨，风暴怎么把 lag 滚雪球
 

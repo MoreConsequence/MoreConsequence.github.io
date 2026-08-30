@@ -21,6 +21,10 @@ series: "数据库原理手记"
 
 本文把这张表翻译回 InnoDB 的资源账：行版本、undo 链、ReadView、当前读。读完你不再需要背表——因为你能自己推出为什么表格长那样。
 
+
+
+![Undo Log 版本链与行隐式字段：DB_TRX_ID 与 DB_ROLL_PTR 拓扑](../../../public/images/innodb-undo-log-version-chain.svg)
+
 ## 二、行不是一行，是一串版本
 
 `UPDATE users SET balance = 100` 在 InnoDB 里做的事情，不是"覆写"一行，而是"**新建一个版本，并把旧版本链接在它下面**（通过版本链）。聚簇记录包含隐藏的事务元数据，例如 `DB_TRX_ID`（最近改本行的事务 ID）和 `DB_ROLL_PTR`（指向 undo 记录）；没有显式主键时还可能有 `DB_ROW_ID`。这些不是应用可以直接依赖的四个公开字段，版本链的具体物理布局仍受存储格式和版本实现约束。
@@ -58,6 +62,10 @@ sequenceDiagram
 ```
 
 在读到那一刻，**行被谁改、改完没，都与我无关**——因为我从不看"现在"，我只读"过去我定格的那一页"。
+
+
+
+![ReadView 四大可见性规则：m_ids, min_trx_id, max_trx_id 判定矩阵](../../../public/images/readview-visibility-comparison-matrix.svg)
 
 ## 四、快照读 vs 当前读：版本账本必须分开记
 

@@ -9,6 +9,11 @@ featured: false
 
 **TL;DR：** 跨语言写取消逻辑，最容易踩的坑是把一种模型的直觉套到另一种。本机实测（Go 1.25.1 / Node 24）：**Go 的 cancel 是同步信号**——`ctx.Done()` 关闭后所有 select 立即可见，取消原因由 `ctx.Err()` 区分 `context.Canceled`（被取消）与 `context.DeadlineExceeded`（超时）；**JS 的 abort 是事件**——`abort` 需要 dispatch 到监听者，原因写在 `signal.reason` 里（`AbortError` / `TimeoutError` / 任意自定义值），`fetch` 原生接住它并取消网络请求。两条更硬的共同底线：**两者都不默认向子任务级联**（Go 靠显式传 ctx、JS 靠手动 connect/转发），**两者都不清理资源**（不看 `Done`/不监听 `abort` 的 goroutine 与回调会永远活着）。把"取消"和"清理"当成两件事，是两套模型的共同第一课。
 
+
+---
+
+![Go Context 与 JS AbortSignal 取消模型对比：显式通道拉取 vs 事件监听回调](../../../public/images/go-context-vs-js-abortsignal-comparison.svg)
+
 ## 一、同步信号 vs 事件：本质差异
 
 Go 的取消是**同步**的：`context.WithCancel` 之后调用 `cancel()`，所有持有 `ctx.Done()` channel 的 select 立即收到（channel 关闭是不可回退的）。被取消方无需主动去"轮询"——它 select 到 `Done` 就是取消发生了。这是 go 协程模型的天然表达：协程可以挂在任何底层操作上，通过 select 把它和取消信号合并为一个等待。
@@ -39,6 +44,10 @@ worker.addEventListener("abort", () => {
 
 实测证据（本机）：Go 侧 `cancel()` 后 goroutine 立即打印 ctx.Done；JS 侧 `abort()` 后 Promise reject 为 `AbortError`。两者都"能取消"，但 Go 的直觉"调了 cancel 一切都会停"在 JS 里不成立——没监听的 Promise 还是该干嘛干嘛。
 
+
+
+![跨语言取消模型对决：Go Context 树形级联 vs JS AbortSignal 事件派发](../../../public/images/go-context-tree-vs-abortcontroller-tree.svg)
+
 ## 二、原因怎么表达：Err() vs reason
 
 **Go：** 取消原因由 `ctx.Err()` 统一回答，且只有两种内置值：`context.Canceled`（主动取消）与 `context.DeadlineExceeded`（超时）。这是**类型化的两个枚举**，调用处可以 `errors.Is(err, context.Canceled)` 精确分支。想要自定义原因？Go 1.20+ 提供 `WithCancelCause`/`WithTimeoutCause` 给 `Cause()` 传任意 error，但默认（`WithCancel`/`WithTimeout`）只给两种枚举——这是 Go 的刻意简化：默认取消就是取消，不是传参渠道（见 [理解 Go Context 的边界](/writing/go-context-patterns)）。
@@ -64,6 +73,10 @@ worker.addEventListener("abort", () => {
 Go 侧实测：子 ctx 取消后父 `parent.Err() == nil`——用 `context.WithCancel(parent)` 只建立"父→子"的单向传播，子关父不关。JS 侧实测：两个 `AbortController` 除非手动 `a.signal.addEventListener('abort', () => b.abort())`，否则 b.abort() 对 a 毫无影响。**两边都没有隐式的父子树**——你以为"abort 整个请求树"时，实际只是 abort 了那个根。
 
 资源清理同理：Go 的 goroutine 若在 `for { select { case <-ctx.Done() ... } }` 里没写 return，cancel 后它照样活着（实测：只要 goroutine 不看 ctx.Done，cancel 就管不到它）；JS 的轮询定时器若没监听 abort，abort 后照常 tick。结论：**取消是信号，清理是契约**——每次创建可取消的工作，都必须同步决定"它怎么感知信号、怎么把手头的资源还回去"。两边的官方库（Go 的 `net/http`、JS 的 `fetch`）都把"取消接入"做成了约定：`http.Request.WithContext` / `fetch(url, {signal})` 原生支持，业务代码里的 goroutine/回调需要你自己实现同样的两件事。
+
+
+
+![复合取消模式：AbortSignal.any() 多源合并 vs context.WithCancelCause 错误溯源](../../../public/images/abortsignal-any-composite-cancellation-flow.svg)
 
 ## 四、跨语言工程：AbortSignal 当 context 用的边界
 

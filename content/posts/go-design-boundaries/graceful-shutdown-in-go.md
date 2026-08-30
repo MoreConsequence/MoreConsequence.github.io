@@ -18,9 +18,13 @@ series: "Go 的设计边界"
 
 先看信号到达之后的完整时间线：
 
-![优雅停机 30 秒窗口时间线示意图:SIGTERM 到达后关闸、排空、收尾、兜底四步](/images/graceful-shutdown-timeline.svg)
+![优雅停机 30 秒窗口时间线示意图:SIGTERM 到达后关闸、排空、收尾、兜底四步](../../../public/images/graceful-shutdown-timeline.svg)
 
 *图注：SIGTERM 到达即开始倒计时——关闸在前，排空与收尾并行，资源关闭最后；任何一步超预算，进程被 SIGKILL，之前的工作全部作废。*
+
+
+
+![Go 服务优雅关闭四步闭环时序：信号捕获 -> 摘除流量 -> 等待存量 (Server.Shutdown) -> 资源收尾](../../../public/images/graceful-shutdown-four-step-pipeline.svg)
 
 ## 二、信号链：SIGTERM 从内核到你的代码
 
@@ -85,6 +89,10 @@ exec /app/server "$@"
 3. **真要用 shell 包装，就自己做转发**。要么在脚本里 trap 信号并手动 kill 子进程，要么用 preStop hook 代劳（下一节展开）——总之，把"信号必须到达应用"当成显式的代码职责，而不是指望 shell 好心。
 
 为什么 kubelet 只投递给 PID 1？因为信号投递的对象在内核层面就是 PID namespace 的 init 进程，容器运行时没有义务也没办法遍历你进程树里每个进程挨个通知。**信号转发是应用侧的责任，系统不会替你转发。** 这也是为什么优雅停机代码必须自己监听信号——从内核到你的 handler，中间每一层都可能短路。
+
+
+
+![Kubernetes Pod 终止时序与 preStop 钩子：避免滚动更新 502/504 错误](../../../public/images/k8s-pod-termination-lifecycle-drain.svg)
 
 ## 四、就绪探针与流量摘除：把"摘流量"做成确定的顺序
 

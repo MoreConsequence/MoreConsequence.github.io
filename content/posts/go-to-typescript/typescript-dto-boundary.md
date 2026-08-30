@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** 系列第一篇[《给 Go 后端开发者的 TypeScript 语法避坑指南》](/writing/typescript-pitfalls-for-go-backend-developers)说过，类型不会替后端完成数据脱敏。这篇把边界落到可运行实验：`Omit<User, "passwordHash" | "internalNotes">` 只改变编译期视图，`JSON.stringify` 仍会输出运行时对象里的全部字段；显式 DTO 构造才真正把 127B 的泄露对象缩到 47B。**入口 schema 决定“能进什么”，出口 DTO 决定“能走什么”，数据库行、API 响应、日志和 Agent prompt 还必须分别拥有自己的白名单。** `structuredClone` 只复制全部字段，不是脱敏工具。
 
+
+---
+
+![TypeScript DTO 数据出口边界：类型擦除真相 vs 运行时字段过滤与脱敏](../../../public/images/typescript-dto-desensitization-field-masking.svg)
+
 ## 一、Omit 删除的是类型成员，不是对象属性
 
 下面的代码来自 `experiments/ts-dto-boundary/main.ts`，不是伪代码：
@@ -41,6 +46,10 @@ console.log(JSON.stringify(asPublic));
 `asPublic.passwordHash` 在 TypeScript 中不可访问，但 `asPublic` 与 `user` 指向同一个运行时对象。`JSON.stringify` 遍历的是对象实际拥有的可枚举属性，不读取 `.d.ts` 或编译器内部的类型信息。实验输出的两行 JSON 完全相同；敏感字段没有被“类型擦除”。
 
 这也是 `Pick`、接口继承和类型断言经常造成的错觉：它们可以限制调用方如何使用一个值，却不会自动创建一个新对象。只要数据进入了序列化、日志、消息队列或模型上下文，就必须回到运行时构造。
+
+
+
+![DTO 自动化脱敏流水线：TypeScript 装饰器与 AST 元数据字段掩码](../../../public/images/dto-ast-transformer-decorator-pipeline.svg)
 
 ## 二、一个领域对象需要多个出口，而不是一个万能 User
 
@@ -95,6 +104,10 @@ if (body.includes("passwordHash") || body.includes("internalNotes")) {
 ```
 
 生产代码可以用 schema 的 `.pick()` 或专门的序列化层减少手写重复，但仍要保留“允许哪些字段”的显式清单。黑名单 `delete value.passwordHash` 更容易在新增敏感字段时失效：新字段默认会泄露，白名单则默认不外发。
+
+
+
+![高吞吐脱敏性能评测：递归对象遍历 vs 编译期 JIT 正则吞吐对比](../../../public/images/zero-copy-regex-masking-performance-bench.svg)
 
 ## 四、嵌套对象、数组和分页元数据要逐层定义
 

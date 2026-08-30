@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** Kubernetes 的资源管理不是一份天真的预算，而是**两本账**：`requests` 主要用于调度和资源竞争权重，`limits` 由 kubelet/运行时传给 cgroup，约束运行时上限。调度器不会用某个节点此刻的实际空闲量替代 requests；CPU limit 超过后通常表现为 throttle，内存 limit 超过后由内核在压力条件下触发 OOM 处理，可能杀掉申请超限的进程。`memory.high` 是 cgroup v2 的回收压力阈值，不是“内存不会被杀”的保险。是否设置 CPU limit 应由延迟、租户隔离、节点超卖和实测 throttle 决定，不能写成所有服务都适用的禁令。
 
+
+---
+
+![Kubernetes 资源两本账：Requests 调度分配 vs Limits Cgroup 限流与 CPU Throttling 踩坑](../../../public/images/k8s-requests-vs-limits-cgroup-cpu-throttling.svg)
+
 ## 一、事故现场：两张互相矛盾的监控截图
 
 值班屏幕上同时挂着两张图：
@@ -21,6 +26,10 @@ series: "系统设计手记"
 运维凭直觉给图一加了 `limits.cpu`，给图二调大了 `limits.memory`，结果：图一的抖动更频繁了（limits 越小 throttle 越狠），图二照杀不误（limit 调大只是推迟了被杀的时刻，没改变它为什么死）。两种修法的方向全错。
 
 这两张图问的是同一个问题：**requests 与 limits 到底各管哪一段？** 一句话答案：**requests 管调度时的资源声明，limits 管运行时的上限和压力反应**。两者分别在 API、调度器、kubelet、运行时和 Linux cgroup 中生效，不能用一张监控图代替全部口径。
+
+
+
+![Linux cgroups CFS 调度器与 CPU Throttling 机理：cpu.cfs_quota_us 与时间片限流陷阱](../../../public/images/cgroups-v2-cpu-throttling-cfs-quota-model.svg)
 
 ## 二、Requests 与 Limits：调度账 vs 运行时账
 
@@ -74,6 +83,10 @@ throttled_usec 30241      # 累计被限速的总时长
 被 throttle 通常不是被杀，而是在当前配额周期的剩余时间等待后继续。对 CPU 密集批任务，这是速度上限；对延迟敏感服务（网关、API、数据库连接池的代理层），周期性等待可能抬高尾延迟，但幅度要通过 `cpu.stat`、请求延迟和节点竞争实测。limit=1 而工作负载短时需要 2 核时，确实可能反复触发 throttle，但不能仅凭配置推导固定的 p99。
 
 **结论先行：延迟敏感服务要先测 CPU limit 的代价，再决定是否设置。** 不设 limit 时，容器通常在节点空闲时可以使用更多 CPU，在竞争时按权重争用；设了 limit 后，超出配额会受到 throttle。requests 往往参与竞争权重，但具体 cgroup 配置、QoS 和运行时实现仍要核对。稳定延迟、强租户隔离和成本控制可能给出不同答案，不能把“不设 CPU limit”写成普遍最佳实践。
+
+
+
+![Kubernetes 三大 QoS 服务质量等级与 oom_score_adj 驱逐排序模型](../../../public/images/k8s-qos-classes-guaranteed-burstable-oomscore.svg)
 
 ## 四、内存：只有二进制——超限即杀死
 

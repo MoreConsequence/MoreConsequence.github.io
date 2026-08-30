@@ -12,6 +12,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
+
+---
+
+![手把手编写自定义插件与 MCP 协议深度融合：连接 GitHub、Postgres 与企业私有系统](../../../public/images/dsh-mcp-plugin-development-integration.svg)
+
 ## 一、手把手：开发一个生产级 DSH 自定义插件
 
 在 `dsh` 的“一切皆插件”世界中，扩展功能不需要继承任何沉重的抽象基类，只需要导出一个标准的 `apply` 函数。
@@ -111,6 +116,10 @@ export function apply(ctx: Context, config: Config) {
 
 ---
 
+
+
+![DSH 模型上下文协议 (MCP) 架构：MCP Host -> Client -> Server 协议总线](../../../public/images/dsh-mcp-model-context-protocol-architecture.svg)
+
 ## 二、作用域隔离：全局 Context vs Agent 局部 Context
 
 在多智能体系统或多租户场景下，不同会话往往需要差异化的能力集（例如：普通问答 Agent 只能使用只读搜索工具，而运维 Agent 拥有完整终端执行权限）。
@@ -177,6 +186,10 @@ flowchart LR
 3. **安全熔断与异常代理**：在模型调用该工具时，自动施加超时保护与沙箱隔离，若远程 MCP 崩溃，自动构造友好错误回传给大模型。
 
 ---
+
+
+
+![DSH 插件声明清单与沙箱隔离执行生命周期](../../../public/images/dsh-plugin-manifest-sandboxed-execution.svg)
 
 ## 四、多 Agent 协作体系：Subagent 拓扑与递归深度防线
 

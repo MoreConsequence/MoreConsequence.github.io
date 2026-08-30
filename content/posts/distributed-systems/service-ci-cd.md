@@ -11,6 +11,11 @@ series: "把原理变成服务"
 
 **TL;DR：** 原稿引用的嵌套 workflow 看起来像一条管线，但 GitHub Actions 只发现仓库根目录 `.github/workflows/` 下的 workflow，而且它没有 service 工作目录、独立 typecheck 或真实 build。现在生效配置是根目录的 `service-ci.yml`：Node 20/22/24 测试矩阵 → 独立 typecheck → Node 24 build → 非空 artifact 校验。它还没有 deploy、staging、健康检查或回滚，因此这篇讨论的是“如何让 CI 先说真话”，不是“一条 commit 到生产”。
 
+
+---
+
+![现代微服务 CI/CD 全景验证矩阵：代码静态扫描、契约测试、环境对齐与发布证据链](../../../public/images/service-ci-cd-pipeline-verification-matrix.svg)
+
 ## 一、workflow 放在哪里，决定它是否存在
 
 GitHub Actions 的发现边界是仓库根目录 `.github/workflows/`。嵌套在 `experiments/service/.github/workflows/` 的 YAML 不会因为写得完整就自动执行。
@@ -45,6 +50,10 @@ paths:
 ```
 
 这对当前独立 package 是合理的：service 不导入博客根目录的 `lib/`、组件或根 lockfile，所以改文章不会无谓触发 service CI。但它也定义了一个容易被忽略的边界：一旦 service 开始依赖根目录共享代码，必须把共享目录和对应 lockfile 加进触发范围；否则“绿色”可能只是 workflow 根本没有运行。路径过滤不是优化细节，而是 CI 对依赖图的声明。
+
+
+
+![现代化 GitOps CI/CD 全景流水线：主干开发 -> 自动化测试 -> 镜像签名 -> 声明式同步](../../../public/images/gitops-ci-cd-pipeline-trunk-based.svg)
 
 ## 二、先把 CI 的四个可验证阶段接起来
 
@@ -97,6 +106,10 @@ tests: 18 passed
 本机 gate 的环境、命令和原始输出保存在 `evidence/service-ci-cd/2026-08-17-local/`；它是可复跑的本地镜像，不是 GitHub Actions 的替代品。
 
 这证明当前 checkout 在 Node 24 能编译和测试。仓库配置了 Node 20/22/24 矩阵，但没有本机三个版本，也没有当前 GitHub Actions run URL，所以不能把矩阵 YAML 写成“20/22/24 已全部通过”。真正发布前应保存每个 job 的 run URL、Node 精确版本和原始日志。
+
+
+
+![GitOps 状态漂移检测与自愈循环：Git 声明源头 -> 实时 Diff -> 自动收敛](../../../public/images/gitops-declarative-drift-reconciliation-loop.svg)
 
 ## 四、CI 绿灯和部署成功是两份证据
 

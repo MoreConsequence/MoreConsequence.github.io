@@ -27,6 +27,10 @@ series: "数据库原理手记"
 
 这三个指标不是严格的“不可能三角”，因为缓存、压缩、批量大小、compaction 调度和硬件都能改变它们；但它们确实会把成本推向不同方向。选型不能只看一张“写入 QPS”榜单，而要先回答：**这次操作最不能超支的是哪一笔？**
 
+
+
+![LSM 树写入流水线：WAL 顺序追加 -> MemTable 跳表 -> Level-0 SSTable 刷盘](../../../public/images/lsm-tree-write-path-memtable-sst.svg)
+
 ## 二、B+Tree 把成本放在页更新和索引维护上
 
 B+Tree 以有序页组织键空间。一次点查先走根和内部节点，再到叶页；树高给出的是逻辑访问路径，不等于真实磁盘 I/O 次数：热页可能全部在 Buffer Pool，冷页则会受到存储设备、并发和预读影响。这个区别很重要——“树高 3 层”不能直接写成“每次请求 3 次磁盘读”。
@@ -68,6 +72,10 @@ Leveled 与 Size-Tiered 的差别可以先这样记：
 | Size-Tiered | 同层先积攒多个大小相近的 run | 合并批次更大，短期重写压力通常较低 | run 重叠，读放大、空间峰值和旧版本滞留可能更高 |
 
 这不是两个固定产品标签的性能排名，而是 compaction 调度在不同负载下作出的语义取舍。
+
+
+
+![分层压缩 (Leveled Compaction) 机制：空间放大与读写放大权衡矩阵](../../../public/images/leveled-compaction-space-amplification.svg)
 
 ## 四、固定输入的 mini-LSM sweep：数字只证明模型里的方向
 

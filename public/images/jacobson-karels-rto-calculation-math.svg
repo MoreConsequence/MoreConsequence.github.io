@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">RFC 6298 TCP 重传超时 (RTO) 动态数学演算模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">SRTT = (1-α)⋅SRTT + α⋅RTT (α=1/8) ｜ RTTVAR = (1-β)⋅RTTVAR + β⋅|SRTT - RTT| (β=1/4) ｜ RTO = SRTT + max(G, 4⋅RTTVAR)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 单次 RTT 样本采样 (SampleRTT Measurement)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">通过 TCP Timestamps 选项精确度量每一个数据包从发出到收到 ACK 的真实耗时</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">排除重传数据包样本（Karn 算法），消除采样歧义！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 平滑往返时延递推 (Smoothed RTT: SRTT: α = 0.125)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">SRTT = 0.875 × Old_SRTT + 0.125 × SampleRTT ──► 指数平滑滤波跟踪均值</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">既能反应长期网络时延趋势，又不会被单次尖峰剧烈干扰！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 时延抖动方差核算 (RTT Variance: RTTVAR: β = 0.25)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">RTTVAR = 0.75 × Old_RTTVAR + 0.25 × |SRTT - SampleRTT| ──► 追踪网络瞬时波动方差</text>
+        <text x="15" y="62" font-size="8" fill="#047857">衡量信道质量的微观稳定性！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 动态 RTO 收敛与安全边界 (Dynamic RTO Calculation)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">RTO = clamp(SRTT + 4 × RTTVAR, min=200ms, max=120s) ──► 既能毫秒级触发丢包重传，又防止过早超时！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">经典控制理论在传输层工程中的光辉典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

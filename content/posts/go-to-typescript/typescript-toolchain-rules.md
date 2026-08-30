@@ -11,6 +11,11 @@ series: "从 Go 到 TypeScript"
 
 **TL;DR：** 上一篇[《接口边界三合一》](/writing/typescript-interface-schema-zod)结尾丢了钩子：zod 是 `npm install` 装的，`package.json` 里写的 `^1.4.0` 是什么规则？这篇把语法外的规则拆开。核心结论：**Go 的 `go.mod` 记录已选择的模块版本，npm 的 `package.json` 声明允许范围，lockfile 记录一次解析后的具体版本**；新安装、`npm install` 和 `npm ci` 不是同一个动作。当前仓库快照是 Node v24.19.0、npm 11.17.0、TypeScript 5.9.3、esbuild 0.28.0、zod 声明 `^4.4.3` 且锁定 `4.4.3`，运行时依赖 17 个、开发依赖 7 个。npm 的 497 个顶层目录条目只是本次布局观察；没有当前 pnpm 安装或速度 benchmark。最后，**esbuild 转译不等于 tsc 类型检查**，职责必须分开。
 
+
+---
+
+![TypeScript 工程工具链分工：包管理器 (npm/pnpm) ──► 转译器 (tsc/swc) ──► 打包器 (vite/turbopack)](../../../public/images/typescript-toolchain-compiler-bundler-package-manager.svg)
+
 ## 一、npm 的"动态更新"是怎么发生的：semver 范围 + lockfile
 
 Go 开发者的心智是 `go.mod` 里 `require foo v1.2.3`——精确版本，`go get` 才动。npm 完全不是这套：
@@ -52,6 +57,10 @@ semver 范围符号的精确规则（本机用 semver 规则逐条核对）：
 - **CI 默认用 `npm ci`**（不是 install），否则每次构建的依赖都可能重新解析。
 - 升级依赖是**显式动作**（`npm install zod@^4`），不是"它自己悄悄变了"。
 - 代码审查里 `package-lock.json` 的 diff 必须看——它是唯一记录"实际装了什么"的地方。
+
+
+
+![现代 Monorepo 包管理器演进：npm 扁平化幻影依赖 vs pnpm 符号链接硬隔离](../../../public/images/monorepo-pnpm-symlink-hoisting-isolation.svg)
 
 ## 二、包管理器布局：npm 扁平 vs pnpm 严格
 
@@ -97,6 +106,10 @@ node_modules/.bin/esbuild components/post/article-body.tsx \
 1. **tsc 按配置检查文件集合**：哪怕某个文件没有从入口 import，也可能被 `include` 纳入检查。esbuild 主要处理**依赖图可达**的模块，二者的工作集合不是同一个分母。
 2. **esbuild 完全不做类型检查**：`string` 拼成 `number` 它不报错。Vite 默认用 esbuild 转译 = 开发时不查类型，构建时靠 `tsc --noEmit` 补查。
 3. 所以现代项目通常需要**两个都跑**：`esbuild`（转译）+ `tsc --noEmit`（类型检查），或 Vite + `vue-tsc` 这类组合。别以为"esbuild 能产出 JS"就能替代 tsc。
+
+
+
+![现代化构建工具链：tsc 类型检查与 esbuild/SWC 原生并行编译分工](../../../public/images/esbuild-swc-ast-transform-pipeline.svg)
 
 ## 四、@types 从哪来：类型包的分发机制
 

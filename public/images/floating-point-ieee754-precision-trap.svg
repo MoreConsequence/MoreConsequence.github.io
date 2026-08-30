@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 开发者踩坑之二：JS Number 双精度上限与雪花 ID 截断灾难</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Number.MAX_SAFE_INTEGER (2^53 - 1 = 9007199254740991) ｜ 64-bit int 雪花 ID 经 JSON.parse 丢失低位精度 ｜ BigInt / String 序列化解法</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 裸 Number 解析：雪花 ID 精度截断惨案</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// Go 后端返回 64 位 int64 Snowflake ID:</text>
+          <text y="28" fill="#fca5a5">JSON: {"id": 1892837482910382081}</text>
+          <text y="50" fill="#ef4444">1. Node.js JSON.parse() 将其解析为双精度 Number:</text>
+          <text y="66" fill="#ef4444">   obj.id 变成了 1892837482910382000！</text>
+          <text y="90" fill="#ef4444">2. 后续调用: DELETE /user/1892837482910382000</text>
+          <text y="106" fill="#ef4444">🔴 惨案：删除了另一个无辜用户的账户！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 64 位整数在 JS 中超过 53 位部分全部被四舍五入抹为 0；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 金融分厘计算产生微小误差累计成坏账；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 跨语言微服务通信的致命幽灵！</text>
+      </g>
+    </g>
+
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ BigInt 与 String 字符串传输治理</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 规范 1: 跨网络传输 64 位 ID 强制使用 String</text>
+          <text y="28" fill="#86efac">JSON: {"id": "1892837482910382081"}</text>
+          <text y="50" fill="#38bdf8">// 规范 2: 本地高精度数学计算使用 BigInt / Decimal</text>
+          <text y="66" fill="#34d399">const bigId = BigInt("1892837482910382081");</text>
+          <text y="82" fill="#34d399">const nextId = bigId + 1n; // 精确无误！</text>
+          <text y="108" fill="#4ade80">✓ 零截断、零误差，100% 保证分布式 ID 物理精确！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 跨语言异构微服务治理的黄金准则；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消灭雪花算法与订单 ID 错乱隐患；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚固可靠的企业级全栈架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

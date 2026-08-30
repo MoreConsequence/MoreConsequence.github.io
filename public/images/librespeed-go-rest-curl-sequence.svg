@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed 命令行复现序列 (CURL Debugging Sequence)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 获取 IP ──► 2. Ping 延迟测试 ──► 3. 下行拉流 /garbage ──► 4. 上行推流 /empty ──► 5. 遥测提交</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 身份与就近测距 (curl -s http://localhost:8989/getIP.json)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">HTTP 200 OK | {"processedString":"192.168.1.100 - China Telecom","rawIspInfo":{...}}</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">纳秒级返回客户端公网 IP、地理位置与 ISP 运营商名称！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 延迟与抖动探测 (curl -w "%{time_total}
+" -o /dev/null -s http://localhost:8989/empty)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">HTTP 200 OK | 0.0034s ──► 连续执行 10 次手算 RTT 与 Jitter 一阶滤波</text>
+        <text x="15" y="62" font-size="8" fill="#047857">0 Body 极简往返，物理级精确！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 下行极限推流 (curl -o /dev/null -s "http://localhost:8989/garbage?ckSize=100")</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">下载 100MB 随机数据 ──► Speed = 100MB * 8 / time_total = 952.3 Mbps</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">服务端 0 内存分配循环泵流，客户端全速吃满带宽！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 上行推流与黑洞吸收 (curl -X POST --data-binary @huge.bin http://localhost:8989/empty)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">HTTP 200 OK | "921.45" (服务端权威统计回传的上行带宽 Mbps)</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">端到端链路完全闭环，命令级确定性复现！</text>
+      </g>
+    </g>
+  </g>
+</svg>

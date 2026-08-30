@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">HdrHistogram 高动态范围直方图底层存储压缩架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">浮点对数分桶 (Logarithmic Sub-Bucketing) ──► 1μs 到 1 小时跨 9 个数量级 ──► 维持 3 位有效数字恒定 1% 相对精度 ──► 内存占用仅数十 KB</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 高动态范围与微秒级起点 (Dynamic Range: 1μs ~ 3600s)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">支持纳秒/微秒级极速 L1 缓存命中，同时无缝容纳 1 小时超长事务阻塞 ──► 跨越 10^9 巨大动态跨度</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">彻底消灭传统固定分桶在长尾溢出的物理瓶颈！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 对数桶与线性子桶两级寻址 (Two-Level Bucketing Indexing)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">通过前导 0 指令 CLZ (Count Leading Zeros) 瞬间计算指数层级 ──► 在 2048 个子桶内快速寻址累加</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">单次记录 recordValue() 仅需 3~6 个 CPU 周期，纳秒级 0 锁！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 恒定高精度 (Constant 3 Significant Digits: 1% Error)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">无论时延是 10μs 还是 10,000ms ──► 误差恒定在 ±1% 以内 ──► 彻底消除大分位数插值失真</text>
+        <text x="15" y="62" font-size="8" fill="#047857">数学级严密保障 P99 / P99.9 / P99.99 极致精准！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 协调遗漏修正 (Coordinated Omission Correction)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">自动识别系统停顿期间积压的请求 ──► 主动填充遗漏的时延样本 ──► 呈现绝对真实的客户端体验！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">Gil Tene 提出的世界顶级性能工程基石！</text>
+      </g>
+    </g>
+  </g>
+</svg>

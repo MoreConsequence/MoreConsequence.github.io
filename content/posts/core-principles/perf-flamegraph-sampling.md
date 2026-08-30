@@ -73,6 +73,10 @@ sequenceDiagram
 
 **展开失败在火焰图上表现为"断根"。** 链条走到一半断了，表现为火焰图顶端一块 `[unknown]` 或悬空碎块。这一步最容易被误判成"热点就在这个 unknown 里"——先修展开，再谈归因：确认二进制带了帧指针或换成 dwarf 重采。第三节的判读规则全部建立在"栈是完整的"前提上。
 
+
+
+![火焰图三维语义拓扑：X 轴调用总耗时占比与 Y 轴调用栈深度](../../../public/images/flamegraph-cpu-profiling-flame-palette.svg)
+
 ## 四、完整命令序列：从采样到火焰图
 
 以分析一个线上 Go 服务进程为例。线上快速初筛可先用 `perf top -p PID` 观察实时热点，确认目标进程后再做完整采样：
@@ -98,7 +102,7 @@ perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > 
 
 把采样结果画成火焰图（见下图），判读只需要三条规则：
 
-![perf 火焰图判读示例:memcpy 占 44% 的真热点](/images/flamegraph-sample.svg)
+![perf 火焰图判读示例:memcpy 占 44% 的真热点](../../../public/images/flamegraph-sample.svg)
 
 *图注：x 轴是样本占比而非时间顺序；宽度由下而上逐层收窄，最宽的"叶子"（memcpy）就是 CPU 真正的去处。*
 
@@ -182,7 +186,7 @@ perf script | ./FlameGraph/stackcollapse-perf.pl > after.folded
 
 采样回答的是"CPU 在忙什么"。但有一类性能问题在火焰图里是**空白** 的：CPU 利用率只有 20%，p99 延迟却高达几秒。线程不在 CPU 上，采样采不到它——它在等。这就是 off-CPU 时间：阻塞在锁、磁盘 I/O、网络等待、定时器上。
 
-![off-CPU 等待时间线：on-CPU 采样只看得见运行段，等锁、等磁盘、等网络的段落全是空白；offcputime 给每段等待记账，按调用栈聚合](/images/off-cpu-wait.svg)
+![off-CPU 等待时间线：on-CPU 采样只看得见运行段，等锁、等磁盘、等网络的段落全是空白；offcputime 给每段等待记账，按调用栈聚合](../../../public/images/off-cpu-wait.svg)
 
 off-CPU 分析的基本思路与采样对称：不在 CPU 上等时间点，而是**跟踪调度器**——每次线程被换下 CPU 时记下时间与调用栈，被换回时结算这段阻塞时长，按"阻塞调用栈 + 时长"聚合。Linux 上的标准工具是 bcc 的 `offcputime`（内核 4.8+ 的 eBPF 栈支持）：
 

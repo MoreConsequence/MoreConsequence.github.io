@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Goroutine 栈扩容机制：连续栈 (Contiguous Stack) 与 copystack 指针修正</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">2KB 极小初始栈 ──► 函数序言 morestack 检查 ──► 分配 2 倍全新栈 ──► 搬迁旧栈并自动修正所有相对指针</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Stack Check & Double -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 函数入口 2KB 栈溢出检查</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 每个 Go 函数汇编序言 (Prologue)</text>
+          <text y="30" fill="#93c5fd">CMPQ SP, 16(R14) // 比较当前 SP 与 g.stackguard0</text>
+          <text y="46" fill="#93c5fd">JLS  morestack   // 若栈空间不足，跳转触发扩容！</text>
+          
+          <text y="70" fill="#34d399">1. 初始仅分配 2KB 连续内存 (极小开销)</text>
+          <text y="86" fill="#34d399">2. 支撑单机轻松创建 100 万并发协程 (仅占 2GB 内存)</text>
+          <text y="104" fill="#fbbf24">3. 遇到深层递归或大局部变量时触发扩容：</text>
+          <text y="120" fill="#fed7aa">   2KB → 4KB → 8KB → 16KB ... (上限 1GB 64位)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">废弃分段栈 (Split Stack)：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• Go 1.3 之前采用链表分段栈，循环跨界时产生"热分裂"灾难；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• Go 1.4+ 全面拥抱连续栈 (Contiguous Stack)；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 彻底消除分段栈频繁分配/释放的抖动开销！</text>
+      </g>
+    </g>
+
+    <!-- Right: copystack Pointer Fix -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. copystack 内存搬迁与指针修正</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 栈搬迁物理过程 (copystack)</text>
+          <text y="30" fill="#86efac">1. 分配一块 2 倍大的全新连续内存块</text>
+          <text y="46" fill="#86efac">2. memmove 将旧栈内容原样拷贝到新栈</text>
+          <text y="64" fill="#fb923c">3. 核心：gentraceback 遍历栈帧指针</text>
+          <text y="80" fill="#fed7aa">   计算新旧栈地址差值 delta = new_stack - old_stack</text>
+          <text y="96" fill="#fed7aa">   将所有指向旧栈的指针全部加上 delta (重定位)！</text>
+          <text y="116" fill="#34d399">4. 释放旧栈空间，更新 g.stack 边界</text>
+          <text y="132" fill="#34d399">✓ 业务 Goroutine 无感知继续执行，零悬空指针！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">工业级考量：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• Cgo 交互时由于 C 指针无法被 Go 运行时自动修正，Cgo 必须在系统栈 (g0) 执行；</text>
+        <text x="10" y="52" font-size="7.5" fill="#15803d">• 栈缩容在 GC 阶段由 runtime.shrinkstack 自动异步执行；</text>
+        <text x="10" y="68" font-size="7.5" fill="#047857">• 完美兼顾了极致内存密度与无限深层调用安全！</text>
+      </g>
+    </g>
+  </g>
+</svg>

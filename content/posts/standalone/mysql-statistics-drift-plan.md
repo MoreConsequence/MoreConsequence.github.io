@@ -9,6 +9,11 @@ featured: false
 
 **TL;DR：** 我原来以为"统计过期 → 执行计划漂移"是一回事——实验做下来发现不是。MySQL 8.0.46 本机实验：表 `STATS_AUTO_RECALC=0`、50 万行 `a` 均匀分布，`ANALYZE` 后 `UPDATE` 把 100% 行的 `a` 改成 5，不 `ANALYZE` 同会话内实测——**`WHERE a=55` 估算 5000 行（实际 0 行，高估 5000 倍），`WHERE a=5` 估算 25 万行（实际 50 万，低估 2 倍），`a BETWEEN 50 AND 60` 估算 98722（实际 0 行）**。索引没变、计划没变、EXPLAIN 每一列都没变——变的只有真实代价。结论翻转过来了：**统计过期最危险的不是"计划改变"，而是"计划看起来没变，执行成本被统计撒谎"**；且统计是采样近似（`innodb_stats_persistent_sample_pages` 默认只采 20 个叶子页），不是数据快照，靠一次 ANALYZE 到位是幻想。
 
+
+---
+
+![MySQL InnoDB 统计信息漂移：统计过期不改变物理计划 vs 坏统计引发慢查询索引误选](../../../public/images/mysql-innodb-statistics-drift-execution-plan.svg)
+
 ## 一、为什么"统计"不是"快照"
 
 InnoDB 的持久统计（`STATS_PERSISTENT=1`，8.0 默认）把关键基数存进 `mysql.innodb_index_stats` 表——但它是**采样估算**：`innodb_stats_persistent_sample_pages` 默认每索引只采样 20 个叶子页，估算出 `n_diff_pfx01`（前缀基数）、`n_leaf_pages` 等。所以统计天生带噪声；过期与否是"噪声外叠加的误差"。
@@ -26,6 +31,10 @@ UPDATE clean_t SET a = 5;                -- 100% 行改值, 不 ANALYZE
 EXPLAIN SELECT * FROM clean_t WHERE a = 55;       -- rows=5000 ← 冻结
 SELECT COUNT(*) FROM clean_t WHERE a = 55;        -- 实际 0 行
 ```
+
+
+
+![MySQL CBO 成本模型数学解析：I/O 成本 (io_cost) 与 CPU 计算成本 (cpu_cost) 判定](../../../public/images/mysql-cbo-cost-formula-math-breakdown.svg)
 
 ## 二、实验 1：等值查询——估算脱节，方向由分布决定
 
@@ -48,6 +57,10 @@ SELECT COUNT(*) FROM clean_t WHERE a = 55;        -- 实际 0 行
 ```
 
 范围查询的估算同样冻结（98722 纹丝不动），而实际 0 行。注意一个本机观察到的可复现细节：**分布改变后，部分查询的估算会被更新、部分完全冻结，方向不可预测**——实验 B 中 `a=5` 跳到 249828（接近实际量级），`a=55` 与范围查询则纹丝不动。不必纠结哪条路径被触发（优化器 dive 与统计维护时机都可能介入），**两种形态的共同根因一致：优化器相信它读到的统计，而统计已与数据脱节。**生产里见到"计划突然翻转"，很大概率是同一根因的另一张脸。
+
+
+
+![MySQL 统计信息校准：ANALYZE TABLE 采样重算与 MySQL 8.0 直方图 (Histogram) 治理](../../../public/images/mysql-analyze-table-histogram-rebuild.svg)
 
 ## 四、实验 3：join——驱动表选择被系统性带偏
 

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">epoll 触发模式深度对比：水平触发 (LT) vs 边缘触发 (ET)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">水平触发 (只要缓冲区有数据就持续疯狂通知，不易丢事件但系统调用多) vs 边缘触发 (仅在状态发生跳变时通知 1 次，必须非阻塞循环读到 EAGAIN)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Level Trigger -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 水平触发 (Level Triggered - LT: 默认模式)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. 缓冲区到达 2KB 数据 ──► epoll_wait 唤醒</text>
+          <text y="28" fill="#86efac">2. 应用只读了 1KB ──► 缓冲区仍剩余 1KB</text>
+          
+          <text y="50" fill="#34d399">下一次调用 epoll_wait 时：</text>
+          <text y="66" fill="#38bdf8">• 内核发现缓冲区非空，立即再次唤醒应用！</text>
+          <text y="82" fill="#34d399">• 只要缓冲区有数据，就会持续不断地返回该 fd</text>
+          
+          <text y="106" fill="#4ade80">✓ 极度安全健壮，绝对不会遗漏任何数据！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 编程心智负担极低，符合直觉；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 若未一次读完会导致无意义的重复唤醒；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 通用网络库默认首选。</text>
+      </g>
+    </g>
+
+    <!-- Right: Edge Trigger -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 边缘触发 (Edge Triggered - ET: 高性能模式)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#fb923c">1. 仅在状态由“无数据”变为“有数据”时通知 1 次！</text>
+          
+          <text y="38" fill="#f87171">⚠️ 铁律规范：必须配合 O_NONBLOCK 循环排空！</text>
+          <text y="54" fill="#34d399">while (true) {</text>
+          <text y="68" fill="#34d399">  n = read(fd, buf, sizeof(buf));</text>
+          <text y="82" fill="#34d399">  if (n &lt; 0 &amp;&amp; (errno == EAGAIN || errno == EWOULDBLOCK)) break;</text>
+          <text y="96" fill="#34d399">}</text>
+          
+          <text y="118" fill="#4ade80">✓ 杜绝重复唤醒，系统调用次数减少 70%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• Nginx 与高性能 RPC 框架标配模式；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 必须严防遗留数据导致永久挂起饿死；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级高性能服务端必备修养！</text>
+      </g>
+    </g>
+  </g>
+</svg>

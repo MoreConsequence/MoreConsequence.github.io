@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TLS 握手协议演进：TLS 1.2 (2-RTT) vs TLS 1.3 (1-RTT / 0-RTT 极速直达)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">废弃不安全套件 ｜ ClientHello 首包携带 ECDHE 密钥协商份额 (Key Share) ──► 削减 1 个完整 RTT 延迟</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: TLS 1.2 -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f1f5f9"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 传统 TLS 1.2 握手 (2-RTT 延迟)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#94a3b8">// 第 1 个 RTT (协商算法 &amp; 传递证书)</text>
+          <text y="28" fill="#cbd5e1">Client ──► ClientHello (密码套件列表)</text>
+          <text y="42" fill="#cbd5e1">Server ──► ServerHello + Certificate + ServerKeyExchange</text>
+          
+          <text y="64" fill="#f87171">// 第 2 个 RTT (密钥交换 &amp; 验证完备)</text>
+          <text y="78" fill="#fca5a5">Client ──► ClientKeyExchange + ChangeCipherSpec + Finished</text>
+          <text y="92" fill="#fca5a5">Server ──► NewSessionTicket + ChangeCipherSpec + Finished</text>
+          
+          <text y="114" fill="#34d399">► 此时才能发送第一字节应用层 HTTP 数据！</text>
+          <text y="128" fill="#fca5a5">TCP 握手 1-RTT + TLS 1.2 2-RTT = 总计 3-RTT 首包延迟！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#334155">历史包袱：</text>
+        <text x="10" y="34" font-size="7.5" fill="#64748b">• 允许 RSA 静态密钥交换（无前向安全性 PFS）；</text>
+        <text x="10" y="48" font-size="7.5" fill="#64748b">• 协商过程繁琐，明文暴露证书信息；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ef4444">• 跨国高 RTT 场景下首屏渲染极其缓慢。</text>
+      </g>
+    </g>
+
+    <!-- Right: TLS 1.3 -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 现代 TLS 1.3 握手 (1-RTT / 0-RTT 闪连)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#34d399">// 仅需 1 个 RTT！(首包合二为一)</text>
+          <text y="28" fill="#86efac">Client ──► ClientHello + Key Share (预选 ECDHE 公钥)</text>
+          <text y="44" fill="#86efac">Server ──► ServerHello + Key Share + EncryptedExtensions</text>
+          <text y="58" fill="#86efac">          + {Certificate} + {Finished}</text>
+          
+          <text y="78" fill="#38bdf8">► 双方立即根据共享密钥生成对等对称加密密钥！</text>
+          <text y="94" fill="#34d399">► Client 紧接着直接发送加密 HTTP 请求！(仅 1-RTT)</text>
+          
+          <text y="114" fill="#fb923c">// 0-RTT Early Data 恢复:</text>
+          <text y="128" fill="#fed7aa">二次连接借助 PSK，首包直接附带应用数据 (0-RTT 瞬间直达)！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">革命性飞跃：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强制要求 ECDHE 临时密钥交换，100% 具备前向保密；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 证书全程加密传输，杜绝中间人嗅探；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 配合 QUIC (HTTP/3) 达成 0-RTT 极速建联！</text>
+      </g>
+    </g>
+  </g>
+</svg>

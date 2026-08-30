@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LLM-as-a-Judge 三大系统性偏见消除方案：Swap-Pair 对称消偏拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">位置偏见 (偏爱 A 候选) ｜ 长度偏见 (偏爱长篇废话) ｜ 同族偏见 (GPT-4 偏爱自身输出) ──► 双向调换对齐判定消除误差</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: Position Bias -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 位置偏见消除 (Position Bias)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#f87171">偏见本质: 65% 模型倾向选第 1 个候选</text>
+          
+          <text x="10" y="42" fill="#4ade80">Swap-Pair 双向对称打分：</text>
+          <text x="10" y="58" fill="#86efac">1. Pass 1: 评测 [Candidate A, Candidate B]</text>
+          <text x="10" y="74" fill="#86efac">2. Pass 2: 调换 [Candidate B, Candidate A]</text>
+          
+          <text x="10" y="98" fill="#34d399">✓ 仅当两次判定结论一致时记为胜出！</text>
+          <text x="10" y="114" fill="#38bdf8">✓ 结论冲突时自动判定为平局 (Tie)！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 彻底消除首因效应与近因效应；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 评测置信度从 58% 提升至 89%；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• LMSYS Chatbot Arena 核心算法。</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Length Bias -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 长度偏见归一 (Verbosity Bias)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">偏见本质: 容易给啰嗦冗长回答打高分</text>
+          
+          <text x="10" y="42" fill="#4ade80">长度惩罚与简洁度权重：</text>
+          <text x="10" y="58" fill="#86efac">1. 提示词显式注入信息密度考核标准</text>
+          <text x="10" y="74" fill="#38bdf8">2. 引入单位 Token 信息量惩罚因子:</text>
+          <text x="16" y="90" fill="#fed7aa">   Score_adj = Score / (1 + log(Len_ratio))</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 遏制大模型刻意水字数刷分的作弊行为！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 鼓励精炼、直指核心的高质量回答；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合字数软上限控制；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造公平客观的基准。</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Self-Enhancement -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 异构裁决团 (Multi-Judge Ensemble)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">偏见本质: 同门模型倾向给自身风格打高分</text>
+          
+          <text x="10" y="42" fill="#38bdf8">异构评委陪审团投票制：</text>
+          <text x="10" y="58" fill="#86efac">• Judge 1: Claude 3.5 Sonnet</text>
+          <text x="10" y="72" fill="#86efac">• Judge 2: GPT-4o</text>
+          <text x="10" y="86" fill="#86efac">• Judge 3: DeepSeek-V3</text>
+          
+          <text x="10" y="108" fill="#34d399">✓ 3 票多数派胜出，彻底消解单家厂商自嗨！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 构建与人类专家相关性高达 95% 的自动化裁判；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 持续在 CI 中自动化驱动模型微调迭代；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 现代大模型评测体系的最高境界！</text>
+      </g>
+    </g>
+  </g>
+</svg>

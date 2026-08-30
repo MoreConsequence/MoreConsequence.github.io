@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">终端 TUI 渲染深水区：流式 Markdown 高亮与 CJK 宽字符对齐</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">ANSI 转义序列与残缺代码块高亮 ｜ string-width 计算东亚双倍宽度 ｜ 差分光标移动 (Diff Rendering) 杜绝终端闪烁</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Streaming Markdown & ANSI Highlight -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 流式残缺 Markdown 语法高亮</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 当模型流式输出代码块中途时: 代码块开始</text>
+          <text y="28" fill="#f87171">function handleUser(id: string) { // 尚未闭合的半截代码块</text>
+          
+          <text y="52" fill="#4ade80">流式解析状态机：</text>
+          <text y="66" fill="#86efac">1. 自动补齐虚拟结束符传给 Shiki / Highlight.js</text>
+          <text y="82" fill="#38bdf8">2. 输出精确的 ANSI 24-bit TrueColor 转义序列</text>
+          <text y="98" fill="#34d399">3. 下一个 Token 到达时，光标复位执行增量补打！</text>
+          
+          <text y="122" fill="#4ade80">✓ 告别终端全屏重刷与刺眼闪烁，丝滑如泉涌！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 终端差分渲染算法 (Virtual DOM for Terminal)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 严格计算行高与换行边界；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造媲美 GUI 质感的现代 CLI 交互体验。</text>
+      </g>
+    </g>
+
+    <!-- Right: CJK Width Alignment -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. CJK 中文双宽字符与边框精准对齐</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">❌ 朴素 String.length: '中文'.length === 2 (但占用 4 个终端列！)</text>
+          <text y="28" fill="#fca5a5">   导致表格边框严重错位破损: | 状态 | (右边框歪掉！)</text>
+          
+          <text y="54" fill="#4ade80">✓ Unicode 字符宽度算法 (string-width):</text>
+          <text y="70" fill="#86efac">1. 精准识别 CJK、Emoji 表情符号等 2 单元格宽度</text>
+          <text y="86" fill="#38bdf8">2. 动态计算填充 Padding: targetWidth - getEastAsianWidth(str)</text>
+          <text y="102" fill="#34d399">3. 严丝合缝对齐表格与提示框边框！</text>
+          
+          <text y="122" fill="#4ade80">✓ 终结中英文混排时的终端排版畸变！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 国际化支持无懈可击，完美适配全球开发者；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 打造像素级对齐的出版级终端排版品质；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 真正顶级工程师的极致细节追求！</text>
+      </g>
+    </g>
+  </g>
+</svg>

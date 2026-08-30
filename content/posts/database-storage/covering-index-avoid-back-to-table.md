@@ -11,6 +11,11 @@ series: "数据库原理手记"
 
 **TL;DR：** InnoDB 的二级索引叶子通常保存“索引键 + 主键”，不是整行。非覆盖查询先用二级索引得到候选主键，再从聚簇索引取需要的列；覆盖索引让优化器可以只读索引完成所需列，但不自动保证更快。`Using index`、`Using index condition`、`Using where` 和 `Using filesort` 是不同层次的信号，不能混成“用了索引/没用索引”。本文用 `EXPLAIN` 拆开回表、ICP、MVCC 可见性、最左前缀和覆盖列的写放大，并给出不应加覆盖索引的反例。
 
+
+---
+
+![InnoDB 二级索引回表 (Lookup) 链路 vs 覆盖索引 (Covering Index) 零回表](../../../public/images/mysql-secondary-index-lookup-back-to-table.svg)
+
 ## 一、一次查一行：两次 B+Tree 的账
 
 表 `orders(id, user_id, amount, created_at)` 上有普通索引 `idx_user(user_id)`，查询：
@@ -31,6 +36,10 @@ flowchart LR
 ```
 
 **回表为什么可能贵**：第二次定位可能访问与二级索引叶子页不相邻的聚簇索引页。若页在 buffer pool 中，它主要是内存访问；若是冷页，成本由存储设备、并发、预读和 buffer pool 状态共同决定，不能用固定的 1–5ms 代替所有环境。数据库真正怕的是“一个查询产生 N 个候选，再触发 N 次分散的 row lookup”——列表页、低选择性条件和深分页都会放大这个形状。
+
+
+
+![覆盖索引与回表路径对照：二级索引直接返回 vs 主键索引二次随机 I/O](../../../public/images/covering-index-btree-lookup-path.svg)
 
 ## 二、EXPLAIN 翻译成人话
 
@@ -61,6 +70,10 @@ EXPLAIN SELECT user_id, amount FROM orders WHERE user_id=123;  # 索引 (user_id
 一句判断口诀：**`Using index` 出现 = 这一次查询不用回表，索引自己给了全部要的列。**
 
 这句口诀要加两个限定：第一，`Using index` 是执行计划/存储引擎路径的信号，不是“整条 SQL 只访问一个物理页”；索引仍可能扫描很多叶子页。第二，InnoDB 二级索引记录的事务可见性信息不等同于聚簇记录的全部版本信息，更新冲突、删除标记和一致性读可能引入额外的存储引擎工作。因此文章把它称为“减少 planned row lookup”，而不是承诺绝对零 IO。
+
+
+
+![索引下推 (ICP) 机制：存储引擎层过滤减少 90% 回表次数](../../../public/images/index-condition-pushdown-icp-filter.svg)
 
 ## 四、最左前缀：联合索引的顺序为什么如此关键
 

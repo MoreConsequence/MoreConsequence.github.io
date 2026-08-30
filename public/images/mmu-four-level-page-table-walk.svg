@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">x86-64 硬件 MMU 四级页表转换拓扑 (Four-Level Page Walk)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">48 位虚拟地址 (9+9+9+9+12) ──► CR3 寄存器 ──► PGD ──► PUD ──► PMD ──► PTE ──► 4KB 物理物理内存页</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. TLB 硬件快表极速命中探查 (TLB L1/L2 Lookup: 0.5ns)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">CPU 发起内存读取 ──► 优先检索硬件 Translation Lookaside Buffer ──► 命中直接输出物理地址</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">99% 以上内存访问 0 级联转换，纳秒级直接直达！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. MMU 逐级硬件遍历 (Hardware Page Walk: 40ns)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">TLB Miss ──► MMU 顺着 CR3 硬件指针: PGD(9位) ──► PUD(9位) ──► PMD(9位) ──► PTE(9位)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">按需分配稀疏页表，极大节约进程虚拟内存元数据开销！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 物理页框基址寻址 (Physical Frame Mapping: 4KB)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">PTE 提取物理页框编号 (PFN) ──► 拼接 12 位页内偏移 (Offset: 0~4095) ──► 产生最终物理内存地址</text>
+        <text x="15" y="62" font-size="8" fill="#047857">将连续的虚拟地址空间完美映射到离散的物理内存碎块！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 权限与合法性硬件拦截 (Protection Fault &amp; COW)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">检查 Present 位 / R/W 权限位 ──► 若未分配或写只读页 ──► 瞬间触发 #PF 缺页异常交由内核处理！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代操作系统多任务虚拟化与内存安全隔离的核心支柱！</text>
+      </g>
+    </g>
+  </g>
+</svg>

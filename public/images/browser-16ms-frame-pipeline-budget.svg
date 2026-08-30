@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">浏览器 60FPS 渲染管线与 16.6ms 单帧预算拆解</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">JS 执行 ──► Style 样式计算 ──► Layout 重排 ──► Paint 重绘 ──► Composite 复合图层上屏 (丢帧卡顿物理机理)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Pipeline Ribbon (860px) -->
+    <g transform="translate(20, 20)">
+      <rect width="860" height="150" rx="6" fill="#0f172a"/>
+      <text x="15" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#38bdf8">
+        单帧 16.6ms (1000ms ÷ 60帧) 核心渲染流水线阶段：
+      </text>
+
+      <g transform="translate(15, 45)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- 5 Steps -->
+        <rect width="155" height="85" rx="4" fill="#1e293b" stroke="#3b82f6"/>
+        <text x="8" y="20" font-size="9" font-weight="700" fill="#60a5fa">1. JS / rAF (约 4~6ms)</text>
+        <text x="8" y="38" font-size="7.5" fill="#cbd5e1">• 事件处理 / 定时器</text>
+        <text x="8" y="52" font-size="7.5" fill="#cbd5e1">• requestAnimationFrame</text>
+        <text x="8" y="68" font-size="7.5" fill="#93c5fd">• 修改 DOM / 响应式状态</text>
+
+        <g transform="translate(168, 0)">
+          <rect width="155" height="85" rx="4" fill="#1e293b" stroke="#0ea5e9"/>
+          <text x="8" y="20" font-size="9" font-weight="700" fill="#38bdf8">2. Style (约 1~2ms)</text>
+          <text x="8" y="38" font-size="7.5" fill="#cbd5e1">• CSS 选择器匹配</text>
+          <text x="8" y="52" font-size="7.5" fill="#cbd5e1">• 计算 computedStyle</text>
+          <text x="8" y="68" font-size="7.5" fill="#38bdf8">• 规则级联与继承计算</text>
+        </g>
+
+        <g transform="translate(336, 0)">
+          <rect width="165" height="85" rx="4" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="8" y="20" font-size="9" font-weight="700" fill="#fbbf24">3. Layout 重排 (约 3~5ms)</text>
+          <text x="8" y="38" font-size="7.5" fill="#cbd5e1">• 计算盒模型几何位置</text>
+          <text x="8" y="52" font-size="7.5" fill="#fca5a5">• 极度昂贵！牵一发全树动</text>
+          <text x="8" y="68" font-size="7.5" fill="#ef4444">• 严禁读取 offsetTop 强制同步</text>
+        </g>
+
+        <g transform="translate(514, 0)">
+          <rect width="155" height="85" rx="4" fill="#1e293b" stroke="#ec4899"/>
+          <text x="8" y="20" font-size="9" font-weight="700" fill="#f472b6">4. Paint 重绘 (约 2~3ms)</text>
+          <text x="8" y="38" font-size="7.5" fill="#cbd5e1">• 填充像素/文字/背景</text>
+          <text x="8" y="52" font-size="7.5" fill="#cbd5e1">• 生成绘制调用列表</text>
+          <text x="8" y="68" font-size="7.5" fill="#f472b6">• 颜色/阴影属性变化</text>
+        </g>
+
+        <g transform="translate(682, 0)">
+          <rect width="148" height="85" rx="4" fill="#1e293b" stroke="#10b981"/>
+          <text x="8" y="20" font-size="9" font-weight="700" fill="#34d399">5. Composite (GPU 0.5ms)</text>
+          <text x="8" y="38" font-size="7.5" fill="#cbd5e1">• 独立图层分块光栅化</text>
+          <text x="8" y="52" font-size="7.5" fill="#86efac">• GPU transform/opacity</text>
+          <text x="8" y="68" font-size="7.5" fill="#34d399">✓ 纯 GPU 加速最高效！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom Guidance Cards (860px) -->
+    <g transform="translate(20, 185)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="420" height="180" rx="6" fill="#fee2e2" stroke="#fca5a5"/>
+      <text x="12" y="20" font-size="10" font-weight="700" fill="#991b1b">🔴 导致 16ms 爆表卡顿的头号元凶：</text>
+      <text x="12" y="40" font-size="8" fill="#7f1d1d">1. <tspan font-weight="700">强制同步布局 (Forced Synchronous Layout)</tspan>：在写 DOM 后紧接着读 offsetWidth，导致浏览器被迫立即停止并同步执行完整 Layout；</text>
+      <text x="12" y="70" font-size="8" fill="#7f1d1d">2. <tspan font-weight="700">主线程长任务 (Long Tasks)</tspan>：单个 JS 函数执行超过 50ms，阻塞帧调度；</text>
+      <text x="12" y="95" font-size="8" fill="#dc2626">3. <tspan font-weight="700">布局抖动 (Layout Thrashing)</tspan>：循环中交替读写 DOM 几何属性。</text>
+
+      <g transform="translate(440, 0)">
+        <rect width="420" height="180" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="20" font-size="10" font-weight="700" fill="#166534">✓ 生产级 60FPS 流畅动画法则：</text>
+        <text x="12" y="40" font-size="8" fill="#15803d">1. <tspan font-weight="700">只使用 transform 和 opacity 属性</tspan>：完全跳过 Layout 和 Paint，直接由合成器线程在 GPU 完成硬件渲染；</text>
+        <text x="12" y="70" font-size="8" fill="#15803d">2. <tspan font-weight="700">利用 CSS will-change</tspan>：提前将高频动画元素提升为独立复合图层；</text>
+        <text x="12" y="95" font-size="8" fill="#047857">3. <tspan font-weight="700">耗时密集计算移至 Web Worker</tspan>：彻底释放 UI 主线程。</text>
+      </g>
+    </g>
+  </g>
+</svg>

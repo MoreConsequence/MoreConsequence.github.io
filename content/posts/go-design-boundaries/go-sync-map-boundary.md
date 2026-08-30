@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** `sync.Map` 的价值不在“并发”三个字，而在特定的读路径。本机统一基准（Go 1.25.1、Darwin arm64、`-cpu=8`）中，8 个稳定 key 并发读取：`sync.Map` **1.485ns/op、0 allocs**，带 `RWMutex` 的普通 map **95.62ns/op、0 allocs**；但对同一组已存在 key 并发写入时，`sync.Map` 是 **168.0ns/op、48B/1 alloc**，普通 map 是 **108.9ns/op、0 allocs**。`Load` 命中 read 表只做原子指针读取；miss、新 key 和部分写入会进入锁保护的 dirty 路径。结论不是“永远用 sync.Map”，而是先证明 key 集合、读写比例和一致性要求符合它的设计。
 
+
+---
+
+![Go sync.Map 底层双表架构：read 只读无锁表 vs dirty 加锁脏表与 misses 计数提升](../../../public/images/go-sync-map-read-dirty-amended-misses.svg)
+
 ## 一、直觉错在哪里：以为 sync.Map 是「并发版的 map」
 
 最常见的直觉：`sync.Map` 是高并发场景下的 map 升级版，比 Mutex+map 快。这个直觉在写密集场景直接失效——上表已经证明。真正成立的条件藏在它名字里：它是为 **read-mostly**（读多写少）工作负载设计的。
@@ -33,6 +38,10 @@ func (m *Map) Load(key any) (value any, ok bool) {
 ```
 
 **命中 read 表 = 一次原子指针读取**，不需要取得 `m.mu`。这是本次稳定 key 基准拉开差距的主要原因；它不是“一发 CAS”，也不是所有 `Load` 都无锁。miss（key 不在 read 表里）且 `amended` 为真时，会拿 `m.mu` 查 dirty 并累计 miss；新 key、删除后重新插入和 dirty 提升都会改变这条路径。
+
+
+
+![sync.Map 内部双表架构：read (只读无锁 atomic.Value) 与 dirty (加锁全量)](../../../public/images/sync-map-read-dirty-entry-state-machine.svg)
 
 ## 二、两组实测：把稳定命中与已有 key 写入分开
 
@@ -73,6 +82,10 @@ func (m *Map) missLocked() {
 ```
 
 这就是 `amended` 标志存在的意义：read 表和 dirty 表不一致时，**每次慢路径 miss 都会累计**，达到 dirty 表规模后再把 dirty 提升为新的 read。搬家费可以被均摊，但它不是免费的；key 集合持续膨胀、反复 miss 或频繁增删时，dirty 表和锁竞争都会进入真实成本。本文没有用一个未单独采集的数字替代这段机制，而是把它作为必须补测的 workload 分支。
+
+
+
+![并发 Map 选型四象限：sync.Map vs RWMutex+Map vs 分段锁分界线](../../../public/images/sync-map-vs-rwmutex-map-benchmark-quadrant.svg)
 
 ## 四、四个坑：源码注释里写好的代价
 

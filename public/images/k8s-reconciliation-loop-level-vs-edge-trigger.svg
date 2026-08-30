@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">声明式控制系统哲学：边缘触发 (Edge) vs 水平触发 (Level)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">命令式边缘触发 (丢一个事件导致系统永久不一致) vs K8s 声明式水平触发 (Reconcile 永远依据当前最新状态对齐期望，具备天然自愈能力)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Edge Triggered -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 命令式边缘触发 (Edge-Triggered)：脆弱易脱轨</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">依赖每次动作指令: "ScaleUp +1", "DeletePod"</text>
+          
+          <text y="38" fill="#ef4444">致命缺陷场景：</text>
+          <text y="52" fill="#fca5a5">• 网络闪断导致某一个 "Delete" 事件丢失</text>
+          <text y="68" fill="#ef4444">• 控制器从此再也不会收到补发通知</text>
+          <text y="84" fill="#ef4444">• 孤儿 Pod 永久存活在集群中，状态彻底脱轨！</text>
+          
+          <text y="106" fill="#f87171">🔴 运维必须频繁人工介入执行状态修复！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 极难应对分布式环境下的网络分区与重启；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 状态累积漂移不可逆；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 传统自动化运维脚本的致命通病！</text>
+      </g>
+    </g>
+
+    <!-- Right: Level Triggered -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 声明式水平触发 (Level-Triggered)：终极自愈</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">K8s Reconcile(Request) 调谐模型：</text>
+          
+          <text y="36" fill="#86efac">1. 观察当前实际状态 (Actual: 当前存活 2 个 Pod)</text>
+          <text y="50" fill="#38bdf8">2. 比对期望声明状态 (Desired: replicas = 3)</text>
+          <text y="64" fill="#34d399">3. 自动计算 Diff 差值 ──► 主动创建 1 个缺失 Pod</text>
+          <text y="78" fill="#4ade80">4. 即使漏掉 100 个中间事件，下一次触发必然 100% 自愈！</text>
+          
+          <text y="104" fill="#4ade80">✓ 任何故障、断电、重启后秒级自动收敛！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 赋予 Kubernetes 无与伦比的混沌工程鲁棒性；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 重新定义现代云计算基础设施控制论；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 软件工程理论的伟大飞跃！</text>
+      </g>
+    </g>
+  </g>
+</svg>

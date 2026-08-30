@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">基准测试控制变量法四大物理防线 (Single-Variable Benchmark)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 固定 CPU 频率 (禁用动态睿频) ｜ 2. 充足预热 (JIT 编译/分支预测) ｜ 3. 重复执行多次 (统计置信度) ｜ 4. benchstat 统计假设检验</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Columns (210px each) -->
+    <g>
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. CPU 频率与核心绑定</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#38bdf8">消除硬件环境抖动：</text>
+          
+          <text x="8" y="38" fill="#86efac">• 禁用 Intel Turbo Boost 睿频</text>
+          <text x="8" y="54" fill="#38bdf8">• taskset -c 2 绑定独立核心</text>
+          <text x="8" y="70" fill="#cbd5e1">• 设置 governor=performance</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 保证基准始终在恒定算力下运行！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 消除 CPU 发热降频带来的伪劣结果；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 杜绝跨核迁移上下文开销；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 硬件级基线锁死。</text>
+      </g>
+    </g>
+
+    <g transform="translate(225, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 充分系统预热</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#4ade80">热身与状态稳态：</text>
+          
+          <text x="8" y="38" fill="#86efac">• 提前执行 100,000 次预热循环</text>
+          <text x="8" y="54" fill="#38bdf8">• 填充 CPU L1/L2/L3 缓存</text>
+          <text x="8" y="70" fill="#34d399">• 训练 CPU 分支预测器 (BPU)</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 剥离冷启动第一拍噪音！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免冷启动分页故障 (Page Fault)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 让 JIT/编译器彻底进入优化态；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 捕捉真实稳态性能。</text>
+      </g>
+    </g>
+
+    <g transform="translate(450, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 内存与 GC 隔离</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#fb923c">垃圾回收干扰剔除：</text>
+          
+          <text x="8" y="38" fill="#fed7aa">• b.ResetTimer() 排除准备阶段</text>
+          <text x="8" y="54" fill="#38bdf8">• b.ReportAllocs() 监视 allocs/op</text>
+          <text x="8" y="70" fill="#34d399">• runtime.GC() 统一在轮次间执行</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 纯净度量算法本身开销！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 明确区分 CPU 计算耗时与 GC 停顿；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 杜绝前置对象残留引发连锁清扫；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 保证每次样本同一起跑线。</text>
+      </g>
+    </g>
+
+    <g transform="translate(675, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#c084fc" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#7e22ce" text-anchor="middle">4. benchstat 统计检验</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#c084fc">双样本统计假设检验：</text>
+          
+          <text x="8" y="38" fill="#e9d5ff">• go test -count=10 重复采样</text>
+          <text x="8" y="54" fill="#38bdf8">• 运行 benchstat old.txt new.txt</text>
+          <text x="8" y="70" fill="#4ade80">• 验证 p-value &lt; 0.05 统计显著性</text>
+          
+          <text x="8" y="100" fill="#4ade80">✓ 杜绝“碰巧变快”的虚假优化！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#7e22ce">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#6b21a8">• 科学量化性能提升百分比；</text>
+        <text x="10" y="48" font-size="7.5" fill="#6b21a8">• 建立不可辩驳的工程证据链；</text>
+        <text x="10" y="62" font-size="7.5" fill="#6b21a8">• 严谨工程科学的最高典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

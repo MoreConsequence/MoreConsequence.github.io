@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">补偿日志记录 (CLR) 机制：避免恢复期间二次崩溃陷入死循环</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">每撤销一个操作立即写入 CLR 日志 (携带 UndoNextLSN 指针) ──► 恢复期间再次断电 ──► 下次重启直接跳过已回滚项，保证单调收敛</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Crash during Undo without CLR -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 无 CLR 机制：恢复期崩溃陷入无限死循环</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">1. 系统崩溃重启，开始回滚事务 Tx1 (Update A, Update B)</text>
+          <text y="28" fill="#86efac">2. 成功回滚了 Update B ──► 正在回滚 Update A 时...</text>
+          
+          <text y="50" fill="#ef4444">💥 突然再次发生断电崩溃！</text>
+          
+          <text y="72" fill="#ef4444">致命死循环陷阱：</text>
+          <text y="86" fill="#ef4444">• 第二次重启又从头开始回滚 Tx1！</text>
+          <text y="100" fill="#ef4444">• 再次对 Update B 进行反向操作，导致数据状态彻底错乱！</text>
+          <text y="114" fill="#f87171">🔴 数据库永远卡死在崩溃恢复阶段无法自愈！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">灾难后果：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 数据库处于不可自愈的坏死状态；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 必须人工介入通过冷备还原；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 无法满足 99.999% 高可用要求！</text>
+      </g>
+    </g>
+
+    <!-- Right: CLR Solution -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ ARIES CLR (Compensation Log Record) 幂等保障</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">1. 回滚 Update B ──► 立即写入一条 CLR 日志！</text>
+          <text y="28" fill="#86efac">   记录: UndoNextLSN 指向 Update A 的日志位置</text>
+          
+          <text y="50" fill="#38bdf8">2. 此时断电，第二次重启：</text>
+          <text y="66" fill="#34d399">   Analysis 阶段识别出 CLR ──► Redo 阶段重放 CLR</text>
+          <text y="82" fill="#34d399">   Undo 阶段顺着 UndoNextLSN 直接跳过 Update B！</text>
+          
+          <text y="106" fill="#4ade80">✓ 仅继续回滚 Update A，系统单调递进必然成功！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 保证崩溃恢复过程本身的绝对幂等性与有限步收敛；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 任意时刻无论断电多少次均能 100% 自动自愈；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库系统可靠性理论的终极杰作！</text>
+      </g>
+    </g>
+  </g>
+</svg>

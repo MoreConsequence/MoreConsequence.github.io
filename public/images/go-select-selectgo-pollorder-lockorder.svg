@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go select 仲裁底层 selectgo 算法与纳秒级性能成本</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">pollorder (伪随机洗牌保证公平) ｜ lockorder (按 channel 内存地址递增加锁杜绝死锁) ｜ 挂入多通道等待队列</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: selectgo 4 Stages -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. selectgo 四大核心执行阶段</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. pollorder 随机洗牌：</text>
+          <text y="28" fill="#cbd5e1">   使用 cheaprand() 打乱 case 检查顺序，保证公平！</text>
+          
+          <text y="48" fill="#34d399">2. lockorder 地址升序排序：</text>
+          <text y="62" fill="#86efac">   按 hchan 物理内存地址递增加锁，数学级杜绝哲学家就餐死锁！</text>
+          
+          <text y="82" fill="#fbbf24">3. 快速扫描与命中退出：</text>
+          <text y="96" fill="#fed7aa">   按 pollorder 遍历，若有通道已就绪，立即释放锁并执行返回！</text>
+          
+          <text y="116" fill="#f87171">4. 全未就绪则挂起：</text>
+          <text y="130" fill="#fca5a5">   为每个 case 申请 sudog 挂入各 hchan 等待队列，调用 gopark 休眠。</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">死锁预防黄金法则：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 无论用户写的 case 顺序如何，Go 必须按 hchan 地址加锁；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 同一通道在多个 case 出现时去重，避免重复 Lock 自死锁；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 严谨精妙的工程实现！</text>
+      </g>
+    </g>
+
+    <!-- Right: Cost Benchmark -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. Case 数量与仲裁纳秒成本曲线</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">• 单 Case (已优化为直接 chan 操作): ~4.18 ns</text>
+          <text y="30" fill="#86efac">• 2 Case (带 default 非阻塞尝试): ~18.5 ns</text>
+          <text y="48" fill="#fbbf24">• 4 Case (中度洗牌与多锁): ~65.2 ns</text>
+          <text y="66" fill="#f87171">• 8 Case (重度洗牌与 8 次 Lock): ~193.2 ns！</text>
+          
+          <text y="92" fill="#38bdf8">► 编译器单 Case 优化：</text>
+          <text y="108" fill="#cbd5e1">遇到单个 case 的 select，编译器直接将其退化为常规的</text>
+          <text y="124" fill="#34d399">chansend / chanrecv，完全不走 selectgo 流程！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">生产优化建议：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 保持 select 分支精简，通常不超过 3~4 个；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 超高频循环中避免动态 reflect.Select；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#ea580c">• 优先使用 ctx.Done() + 数据通道的标准双分支组合！</text>
+      </g>
+    </g>
+  </g>
+</svg>

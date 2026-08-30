@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TCP TIME_WAIT 状态存在的两大物理必要性 (2MSL Timer)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 可靠终止 TCP 全双工连接 (重传最后丢失的 ACK) ｜ 2. 彻底消灭网络中迷途迟到的旧分节 (防止串话污染新连接)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Reason 1 -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 必要性 A：可靠实现 TCP 全双工关闭</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">1. 主动关闭方发送最后的 ACK 报文</text>
+          <text y="28" fill="#f87171">2. 假设该 ACK 在网络中丢包！</text>
+          
+          <text y="50" fill="#fb923c">被动关闭方行为：</text>
+          <text y="64" fill="#fed7aa">• 因超时未收到 ACK，被动方会重传 FIN 报文！</text>
+          <text y="78" fill="#34d399">• 若主动方保持在 TIME_WAIT 状态，即可补发 ACK</text>
+          <text y="92" fill="#ef4444">• 若主动方直接关闭，会回送 RST 导致对端报错！</text>
+          
+          <text y="116" fill="#4ade80">✓ 保证连接双向优雅优雅终止！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 协议栈必须能够重传最后阶段的确认包；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 维持 2MSL (通常 60 秒) 确保对方正常退出；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造严谨可靠的连接生命周期。</text>
+      </g>
+    </g>
+
+    <!-- Right: Reason 2 -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 必要性 B：让迷途旧报文在网络中自然消亡</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">1. 旧连接曾有一个数据包在路由器中发生严重路由环路迷途</text>
+          <text y="28" fill="#38bdf8">2. 双方关闭连接后，若瞬间用相同四元组建立新连接！</text>
+          
+          <text y="50" fill="#f87171">迷途报文突发到达：</text>
+          <text y="64" fill="#ef4444">• 旧包突然解除迷途到达新连接接收端！</text>
+          <text y="78" fill="#ef4444">• 若其 Seq 恰好在新窗口内，将造成严重的数据污染！</text>
+          
+          <text y="104" fill="#4ade80">✓ 强制 2MSL 等待，保证旧包在网络中彻底消亡！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 绝对杜绝数据流跨连接串话污染；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 物理层面保障数据流时空隔离；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 计算机网络通信安全基石！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型推理物理双阶段：Prefill (计算受限) vs Decode (显存带宽受限)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Prefill 阶段 (并行处理输入 50k Tokens，吞吐极高，Prompt Caching 直接跳过) vs Decode 阶段 (自回归逐字生成，受限于 HBM 显存带宽)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Prefill Phase -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Prefill 阶段 (首字计算：Compute-Bound)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">处理输入全部 N 个 Prompt Tokens：</text>
+          
+          <text y="38" fill="#86efac">• GPU Tensor Core 并行矩阵乘法 (GEMM)</text>
+          <text y="54" fill="#38bdf8">• 算力利用率高达 90% (Compute-Bound)</text>
+          <text y="70" fill="#34d399">• 计算生成所有前缀 Tokens 的 Key-Value 向量</text>
+          <text y="86" fill="#4ade80">• 存入显存 KV Cache 供后续解码使用！</text>
+          
+          <text y="114" fill="#4ade80">✓ Prompt Caching 可 100% 跳过此重算！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">物理瓶颈：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 算力 TFLOPS 决定首字延迟 TTFT；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 缓存命中可将 TTFT 从 3s 压缩至 100ms；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Agent 降本最核心杠杆。</text>
+      </g>
+    </g>
+
+    <!-- Right: Decode Phase -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Decode 阶段 (自回归生成：Memory-Bound)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">逐个生成新 Token (Autoregressive Loop):</text>
+          
+          <text y="36" fill="#86efac">• 每生成 1 个 Token，需将 100GB 模型权重</text>
+          <text y="50" fill="#38bdf8">  以及历史 KV Cache 全量从 HBM 读取进 SRAM！</text>
+          <text y="64" fill="#fb923c">• 算力利用率 &lt; 5% (严重受限于显存带宽)</text>
+          <text y="78" fill="#4ade80">• 吞吐量取决于 HBM3/HBM3e 传输带宽 (TB/s)</text>
+          
+          <text y="104" fill="#4ade80">✓ 现代大模型生成速度的核心物理天花板！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">物理特性：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强依赖大显存带宽 (如 H100 3.35TB/s)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 限制了单请求的最大并发吞吐；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 硬件底层运行本质。</text>
+      </g>
+    </g>
+  </g>
+</svg>

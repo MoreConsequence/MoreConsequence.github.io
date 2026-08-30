@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 闭包捕获与逃逸分析物理机理 (Closure Variable Escape)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">只读值捕获 (若闭包未跨作用域逃逸则分配在栈，0 GC 开销) vs 引用修改或逃出函数体 (编译器强制将变量提升至堆，生成匿名结构体指针)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Heap Escape -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 闭包逃出函数生命周期：强制堆逃逸</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">func NewCounter() func() int {</text>
+          <text y="28" fill="#f87171">  count := 0 // 局部变量</text>
+          <text y="42" fill="#ef4444">  return func() int { count++; return count } // 闭包返回！</text>
+          <text y="56" fill="#38bdf8">}</text>
+          
+          <text y="78" fill="#ef4444">逃逸分析诊断 (-gcflags="-m"):</text>
+          <text y="92" fill="#fca5a5">• "moved to heap: count"</text>
+          <text y="106" fill="#ef4444">• "func literal escapes to heap"</text>
+          <text y="120" fill="#f87171">🔴 每次调用都在堆上分配内存，加剧 GC 标记压力！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产影响：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 高频调用的内部闭包会导致海量内存碎片；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 触发频繁的 GC STW 抖动；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 必须审慎评估闭包生命周期！</text>
+      </g>
+    </g>
+
+    <!-- Right: Stack Local -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 局部内联执行：0 逃逸纯栈分配</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">func ProcessItems(items []int) {</text>
+          <text y="28" fill="#86efac">  sum := 0</text>
+          <text y="42" fill="#38bdf8">  for _, v := range items {</text>
+          <text y="56" fill="#34d399">    func(x int) { sum += x }(v) // 立即执行的局部闭包</text>
+          <text y="70" fill="#38bdf8">  }</text>
+          <text y="84" fill="#4ade80">}</text>
+          
+          <text y="106" fill="#4ade80">✓ 编译器深度内联，0 逃逸，耗时 0ns 堆分配！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯栈内存自动随栈帧销毁，0 GC 负担；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 兼具函数式编程表达力与极致性能；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 高性能代码核心心法！</text>
+      </g>
+    </g>
+  </g>
+</svg>

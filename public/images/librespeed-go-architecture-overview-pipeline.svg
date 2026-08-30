@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed Go 架构全景：三端点极简设计与高吞吐网络管线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">/garbage.php (下行高熵流 1GiB 钳制) ｜ /empty.php (上行黑洞丢弃) ｜ /getIP.php (五级代理穿透) ｜ /results/ (遥测加密落库)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Columns (210px each) -->
+    <!-- Col 1: Ping / IP -->
+    <g>
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">1. Ping &amp; IP 探测层</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
+          <text x="8" y="16" fill="#38bdf8">// /empty.php (RTT 时延)</text>
+          <text x="8" y="30" fill="#93c5fd">• 极小 0 字节响应</text>
+          <text x="8" y="44" fill="#93c5fd">• 纯净测量网络往返 RTT</text>
+          <text x="8" y="58" fill="#34d399">• 计算 Jitter 抖动方差</text>
+          
+          <text x="8" y="80" fill="#38bdf8">// /getIP.php (身份路由)</text>
+          <text x="8" y="94" fill="#cbd5e1">• 解析 X-Forwarded-For</text>
+          <text x="8" y="108" fill="#cbd5e1">• 过滤 CGNAT 私网网段</text>
+          <text x="8" y="122" fill="#34d399">• 返回客户端公网 IP/ISP</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="8" y="18" font-size="8" font-weight="700" fill="#1e40af">机制设计：</text>
+        <text x="8" y="34" font-size="7" fill="#1d4ed8">• 禁用一切中间缓存；</text>
+        <text x="8" y="48" font-size="7" fill="#1d4ed8">• 保障首包时延最真实；</text>
+        <text x="8" y="62" font-size="7" fill="#047857">• 极低开销，秒级并发 50w。</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Download -->
+    <g transform="translate(230, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">2. 下行高熵流 (Download)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
+          <text x="8" y="16" fill="#4ade80">// /garbage.php (下行灌水)</text>
+          <text x="8" y="30" fill="#86efac">• 预生成 1MB 伪随机块</text>
+          <text x="8" y="44" fill="#86efac">• 杜绝 gzip/网卡硬件压缩</text>
+          <text x="8" y="58" fill="#38bdf8">• 严格 1 GiB 上限钳制</text>
+          <text x="8" y="74" fill="#4ade80">• 零内存拷贝直接流式写出</text>
+          
+          <text x="8" y="98" fill="#34d399">✓ 客户端主动统计 bytes</text>
+          <text x="8" y="112" fill="#34d399">✓ 吞吐量 = totalBytes / time</text>
+          <text x="8" y="126" fill="#4ade80">✓ 万兆满载打满物理链路</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="8" y="18" font-size="8" font-weight="700" fill="#166534">机制设计：</text>
+        <text x="8" y="34" font-size="7" fill="#15803d">• 共享全局内存 Buffer；</text>
+        <text x="8" y="48" font-size="7" fill="#15803d">• 0 堆分配避免 GC 停顿；</text>
+        <text x="8" y="62" font-size="7" fill="#047857">• 完美压榨 TCP 拥塞窗口。</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Upload -->
+    <g transform="translate(460, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">3. 上行黑洞极速 Sink (Upload)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
+          <text x="8" y="16" fill="#fb923c">// /empty.php POST (上行黑洞)</text>
+          <text x="8" y="30" fill="#fed7aa">• io.Copy(io.Discard, r.Body)</text>
+          <text x="8" y="44" fill="#fed7aa">• 接收上行巨量二进制流</text>
+          <text x="8" y="58" fill="#38bdf8">• 32KB 复用缓冲直接丢弃</text>
+          <text x="8" y="74" fill="#4ade80">• 0 磁盘 I/O，0 内存膨胀</text>
+          
+          <text x="8" y="98" fill="#34d399">✓ 纯净测量上行真实带宽</text>
+          <text x="8" y="112" fill="#34d399">✓ 彻底防范 Slowloris 攻击</text>
+          <text x="8" y="126" fill="#4ade80">✓ 服务端单核轻松抗 10Gbps</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="8" y="18" font-size="8" font-weight="700" fill="#c2410c">机制设计：</text>
+        <text x="8" y="34" font-size="7" fill="#9a3412">• 黑洞吞吐无锁化设计；</text>
+        <text x="8" y="48" font-size="7" fill="#9a3412">• HTTP 连接保活复用；</text>
+        <text x="8" y="62" font-size="7" fill="#ea580c">• 消除网络 I/O 内存泄漏。</text>
+      </g>
+    </g>
+
+    <!-- Col 4: Telemetry -->
+    <g transform="translate(690, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#7e22ce" text-anchor="middle">4. 遥测隐私脱敏落库 (Telemetry)</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
+          <text x="8" y="16" fill="#d8b4fe">// /results/ (数据上报)</text>
+          <text x="8" y="30" fill="#e9d5ff">• 生成全局唯一 ULID</text>
+          <text x="8" y="44" fill="#e9d5ff">• IP 末段掩码脱敏 (GDPR)</text>
+          <text x="8" y="58" fill="#38bdf8">• 混淆 XOR 盐值安全签名</text>
+          <text x="8" y="74" fill="#4ade80">• 异步写入 SQLite / MySQL</text>
+          
+          <text x="8" y="98" fill="#34d399">✓ 测速结果卡片静态渲染</text>
+          <text x="8" y="112" fill="#34d399">✓ 隐私保护与历史溯源平衡</text>
+          <text x="8" y="126" fill="#4ade80">✓ 极速响应，零业务阻塞</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="8" y="18" font-size="8" font-weight="700" fill="#7e22ce">机制设计：</text>
+        <text x="8" y="34" font-size="7" fill="#6b21a8">• 异步后台批量刷新写入；</text>
+        <text x="8" y="48" font-size="7" fill="#6b21a8">• 严格防篡改验签防刷；</text>
+        <text x="8" y="62" font-size="7" fill="#6b21a8">• 打造合规且可信的度量闭环。</text>
+      </g>
+    </g>
+  </g>
+</svg>

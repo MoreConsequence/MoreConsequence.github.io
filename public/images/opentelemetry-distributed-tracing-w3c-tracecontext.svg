@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">OpenTelemetry 分布式追踪链路：W3C TraceContext 与 Span 树透传</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">W3C traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 跨进程 HTTP/gRPC 透传形成全局调用树</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Cascading Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 网关入口 (API Gateway / Ingress) ── Root Span 创建 (耗时 5ms)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">GET /api/v1/orders ──► 生成全局 TraceID: 4bf92f3577b34da6a3ce929d0e0e4736, SpanID: 00f067aa0ba902b7</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">记录客户端 IP、UserAgent 与 HTTP 路由匹配，注入 W3C traceparent 请求头！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 订单业务服务 (Order Service) ── Child Span (耗时 45ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">gRPC OrderService.CreateOrder ──► 继承 TraceID, ParentSpanID: 00f067aa0ba902b7</text>
+        <text x="15" y="62" font-size="8" fill="#047857">执行订单业务参数校验、风控过滤，并并行向用户服务与库存服务发起 RPC 子调用！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 数据库与缓存层 (MySQL &amp; Redis) ── Leaf Span (耗时 12ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">SELECT * FROM users WHERE uid = ? ──► 记录 db.system: mysql, db.statement: SELECT...</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">自动采集 SQL 耗时、慢查询日志与连接池等待排队时延，精准定位性能瓶颈！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 异步遥测导出 (OTLP Exporter) ── 后台批量上报与拓扑大盘渲染</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Span 完成 ──► 无锁 RingBuffer 缓冲 ──► 异步批处理 OTLP/gRPC ──► Jaeger / Tempo 追踪大盘</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">主业务流程 0 阻塞，全链路火焰图精准呈现各节点耗时占比，告别盲人摸象！</text>
+      </g>
+    </g>
+  </g>
+</svg>

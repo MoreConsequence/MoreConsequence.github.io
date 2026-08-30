@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript 类型体操的工程价值：接口路由注册与编译期硬守卫</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">模板字面量解析路由参数 (/api/users/:id ──► { id: string }) ｜ 模块接口合并拓展 (Declaration Merging) ｜ 消除运行时字符串打错</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Template Literal Router -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 路由参数自动提取 (Template Literal Types)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 递归提取 URL 动态参数</text>
+          <text y="30" fill="#93c5fd">type ExtractParams&lt;T&gt; =</text>
+          <text y="46" fill="#93c5fd">  T extends '/:param/:rest' ? { [K in param]: string } : {};</text>
+          <text y="62" fill="#93c5fd">  // 智能递归解析模板字符串中的全部路径参数</text>
+          <text y="78" fill="#93c5fd">  // 自动生成强类型推导对象！</text>
+          
+          <text y="104" fill="#34d399">app.get('/users/:userId/posts/:postId', (req) =&gt; {</text>
+          <text y="120" fill="#86efac">  // IDE 自动补全 req.params.userId 与 req.params.postId！</text>
+          <text y="136" fill="#34d399">});</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">工程收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 路由改名后，所有 handler 引用处自动飘红报错；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 彻底消灭将 userId 误写为 userid 的人为笔误；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造如 tRPC / Hono 般的顶级类型安全框架！</text>
+      </g>
+    </g>
+
+    <!-- Right: Module Augmentation -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 插件注册表声明合并 (Declaration Merging)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 核心库声明空注册表</text>
+          <text y="28" fill="#86efac">interface ToolRegistry {}</text>
+          <text y="44" fill="#38bdf8">// 各插件模块独立扩展注册表</text>
+          <text y="58" fill="#86efac">declare module './registry' {</text>
+          <text y="72" fill="#86efac">  interface ToolRegistry {</text>
+          <text y="86" fill="#86efac">    searchWeb: (query: string) =&gt; Promise&lt;string[]&gt;;</text>
+          <text y="100" fill="#86efac">  }</text>
+          <text y="114" fill="#86efac">}</text>
+          <text y="132" fill="#34d399">callTool('searchWeb', 'Go'); // 编译期精准类型推导与校验！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">工程收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 插件式架构无需修改核心库即可扩展类型系统；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 保证大型 Monorepo 多团队协同解耦开发；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 这才是类型体操服务于生产工程的真正魅力！</text>
+      </g>
+    </g>
+  </g>
+</svg>

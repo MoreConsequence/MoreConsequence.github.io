@@ -11,6 +11,11 @@ series: "前端全景手记"
 
 **TL;DR：** Tree Shaking（摇树）的前提是**模块边界和副作用都足够静态**：打包器需要知道哪个 export 被引用，也要知道删掉模块是否会改变执行结果。CJS、`sideEffects` 元数据和动态 `import()` 都可能破坏这个前提，但破坏方式不同，不能统称为“摇不动”。固定 esbuild 0.28.0、ESM/browser/ES2022/minify 的合成实验，把同一份 `used + five unused exports` 压成 **ESM 56B、CJS 964B**；这是边界示例，不是 lodash 在所有版本中的固定体积倍数。真正的优化顺序是先证明模块形状和副作用，再谈换库或拆包。
 
+
+---
+
+![ESM 静态分析、Dead Code Elimination 与 package.json sideEffects 摇树优化](../../../public/images/tree-shaking-esm-side-effects-dce.svg)
+
 ## 一、原理：摇树器到底在看什么
 
 构建工具（webpack / rollup / esbuild）在编译期对每个模块做三件事：解析 ES 模块的导出表、收集"被引用的 export 名"、把没用到的函数按 DCE 剪掉。
@@ -24,6 +29,10 @@ flowchart LR
 ```
 
 问题在于 CJS 的 `module.exports = {}` 通常把导出关系藏在运行时对象里。打包器可以对部分 CJS 做启发式分析，但不能像 ESM 那样拥有稳定的逐 export 静态合同；因此常见结果是保留更多模块初始化和未使用代码。**“CJS 一定全量进包”过于绝对，正确说法是：CJS 让细粒度 Tree Shaking 失去静态保证，最终体积必须由目标 bundler 和版本实测。**
+
+
+
+![ESM 静态语法分析与死代码消除 (DCE)：构建期 AST 摇树算法](../../../public/images/es-module-static-analysis-tree-shaking.svg)
 
 ## 二、四个账
 
@@ -52,6 +61,10 @@ esm    56
 ```
 
 这是合成库在 esbuild 0.28.0 下的 **17.2 倍**差异；它只证明 CJS 边界让未使用导出更难被删除，不证明真实 lodash、webpack 或 Rollup 都会得到同一个倍数。若文章要给真实库的体积结论，必须把库版本、entry、target、minify、压缩算法和 metafile 一起保存。
+
+
+
+![package.json sideEffects 声明对 Webpack/Rollup 模块剔除的影响](../../../public/images/side-effects-flag-package-json-dce.svg)
 
 ## 四、正确的调优顺序
 

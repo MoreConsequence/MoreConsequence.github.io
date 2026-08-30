@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">基于 Canal Binlog CDC 的异步缓存最终一致性拓扑 (CDC Pipeline)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">应用仅写 MySQL ──► Canal 伪装从库监听 Binlog ──► 投递 Kafka/RocketMQ ──► 消费端重试删除 Redis ──► 解耦业务与 100% 可靠失效</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 业务单点写入 MySQL (Application Only Writes DB)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">业务代码仅需执行普通 SQL UPDATE ──► 0 同步调用 Redis 删除逻辑 ──► 业务事务极速提交</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">彻底消除主业务流程与缓存系统的强耦合与分布式事务负担！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Canal / Debezium 增量日志捕获 (Binlog Real-Time CDC)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Canal 伪装为 MySQL Slave 监听 row 模式 Binlog ──► 毫秒级提取变更行主键 ID 与最新字段</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">数据库底层不可逆物理提交作为事实的唯一源头 (Single Source of Truth)！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 消息队列缓冲与幂等分发 (Kafka / RocketMQ Buffering)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">按数据主键 Hash 写入对应分区 ──► 保证单 Key 变更绝对严格保序 ──► 支持海量突发削峰</text>
+        <text x="15" y="62" font-size="8" fill="#047857">高吞吐高可靠消息中枢！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 专用消费端异步删缓存 (Consumer Delete &amp; Infinite Retry)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">消费者提取 Key 调用 redis.Del(key) ──► 若 Redis 故障则进入死信队列自动无限指数退避重试！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">大型互联网超高并发架构终极一致性解决方案！</text>
+      </g>
+    </g>
+  </g>
+</svg>

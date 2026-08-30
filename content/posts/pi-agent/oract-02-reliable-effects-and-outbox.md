@@ -12,6 +12,11 @@ series: "ORACT 架构全解"
 
 ---
 
+
+---
+
+![ORACT 架构解密：可靠副作用执行与事务性 Outbox 模式](../../../public/images/oract-reliable-effects-transactional-outbox.svg)
+
 ## 一、副作用风暴：传统 Agent 工具调用的致命痛点
 
 假设 Agent 正在执行一项自动化基础设施扩容任务：“为当前业务集群扩容 10 台云服务器并扣除账户余额”。
@@ -40,6 +45,10 @@ sequenceDiagram
 3. **缺乏不可抵赖的执行证据（Receipt）**：系统在重启后无法区分“请求从未发出”、“请求发出但中途丢包”与“请求已成功但响应丢失”三种不同物理状态。
 
 ---
+
+
+
+![Oract 事务性副作用发件箱 (Effect Outbox)：状态跃迁与外部调用的原子提交](../../../public/images/oract-transactional-effect-outbox-pipeline.svg)
 
 ## 二、ORACT 的解答：事务性 Outbox 与三阶段执行协议
 
@@ -168,6 +177,10 @@ func (r *RecoverySupervisor) ReconcilePendingOutbox(ctx context.Context, runID s
 ```
 
 ---
+
+
+
+![Oract At-Least-Once 副作用派发与幂等键去重机制](../../../public/images/oract-at-least-once-idempotent-effect-deduplication.svg)
 
 ## 四、Receipt 证据链与审计防篡改
 

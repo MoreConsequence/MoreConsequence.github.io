@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 很多人以为大模型拥有 128k 甚至 1M 的上下文窗口，Agent 就可以无所顾忌地堆砌历史对话。然而在现实工程中，**上下文越长，单轮推理费用呈平方级上升、首字延迟（TTFT）急剧恶化、模型的注意力在中间区域（Lost in the Middle）迅速衰减**。更严重的是，粗暴的“直接砍掉前 $N$ 条历史”会破坏系统提示词、丢失关键环境假设，并且**彻底摧毁模型的 KV Cache（Prompt Cache）**，导致每轮请求都要以全额价格重新计算前缀。本文作为《Pi Agent 实战通才教程》第四课，深入拆解 Pi 的 **`16384 reserve / 20000 keep` 双阈值压缩算法**、**Cache-Aware 断点保护策略**，以及 **AGENTS.md / Skills 渐进披露装配机制**。
 
+
+---
+
+![上下文预算与记忆压缩：KV Cache 友好的 Compaction 算法](../../../public/images/pi-compaction-context-budget-kv-cache.svg)
+
 ## 一、上下文膨胀的代价：不仅是钱的问题
 
 当一个编码任务持续 15 轮以上时，上下文会迅速从 5k Token 膨胀到 80k Token。这意味着：
@@ -19,6 +24,10 @@ series: "Pi Agent 通才教程"
 3. **指令遵循能力退化**：长上下文中充斥着大量旧的报错日志（如 10 轮前的 `TypeError`），模型会被过时的错误信息持续误导，无法聚焦当前代码状态。
 
 因此，**主动管理上下文生命周期（Context Compaction & Budgeting）是高级 Harness 的硬性门槛**。
+
+
+
+![Pi 上下文压缩水位线状态机：高水位报警 -> 后台摘要 -> 低水位恢复](../../../public/images/pi-tutorial-compaction-budget-watermark-fsm.svg)
 
 ## 二、为什么传统滑动窗口（Sliding Window）会惨败？
 
@@ -71,6 +80,10 @@ flowchart TD
 ```
 
 通过结构化摘要，后续模型能够清晰知晓“之前做过什么、改过哪些文件”，而不需要在上下文中保留几万行的冗余构建日志。
+
+
+
+![Pi 128k Token 窗口黄金配比模型：System, History Summary, Active Window 与 Output](../../../public/images/pi-tutorial-token-budget-allocation-pie-breakdown.svg)
 
 ## 四、动手实战：实现 Cache-Aware 上下文管理器
 

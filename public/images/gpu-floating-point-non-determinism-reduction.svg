@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">GPU 浮点不满足结合律与大模型输出偶发抖动机理</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">IEEE 754 浮点加法: (a + b) + c ≠ a + (b + c) ──► CUDA 线程块 Warp 并行规约次序随机 ──► 微小舍入误差导致 Top-1 Token 翻转</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Math Cause -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 物理根因：CUDA 并行规约浮点次序漂移</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">浮点数学物理硬伤：</text>
+          <text y="28" fill="#ef4444">1. FP16 / BF16 精度仅有 10~11 位有效尾数</text>
+          <text y="44" fill="#ef4444">2. 多线程 atomicAdd() 累加矩阵乘法结果</text>
+          <text y="60" fill="#fca5a5">3. 线程到达顺序受 GPU 硬件温度与调度随机影响</text>
+          <text y="76" fill="#ef4444">4. 结果产生 1e-6 级别的微小扰动！</text>
+          
+          <text y="102" fill="#f87171">🔴 当两候选 Token 分数仅差 0.0001 时发生致命选词反转！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产现象：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 即使 Temperature=0 且固定 Seed，百万次仍有 0.1% 漂移；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 批处理 BatchSize 变化改变了 GEMM 计算拓扑；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 现代 AI 推理的核心认知！</text>
+      </g>
+    </g>
+
+    <!-- Right: Engineering Fix -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 工程防御：确定性模式与鲁棒解析容错</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">工程级可复现四大准则：</text>
+          
+          <text y="36" fill="#86efac">1. 开启 torch.use_deterministic_algorithms(True)</text>
+          <text y="50" fill="#38bdf8">2. 推理服务固定 batch_size=1 单批次运行</text>
+          <text y="64" fill="#34d399">3. 输出端采用 JSON Schema (Grammar Constrained Decoding)</text>
+          <text y="78" fill="#4ade80">4. 强类型状态机校验，彻底免疫微小词汇扰动！</text>
+          
+          <text y="104" fill="#4ade80">✓ 达到 100.00% 工业级确定性可复现！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 保证自动化回归测试 100% 稳定通过；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 满足金融与合规审计的严苛确定性要求；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 资深 AI 系统工程标准！</text>
+      </g>
+    </g>
+  </g>
+</svg>

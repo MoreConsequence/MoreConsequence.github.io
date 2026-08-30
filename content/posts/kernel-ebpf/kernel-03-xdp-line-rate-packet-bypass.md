@@ -124,6 +124,10 @@ char _license[] SEC("license") = "GPL";
 
 ---
 
+
+
+![AF_XDP 用户态直通：UMEM 内存池、Fill/Rx/Tx/Completion 四环零拷贝流转](../../../public/images/af-xdp-umem-chunk-descriptor-ring-zero-copy.svg)
+
 ## 四、 AF_XDP (XSK)：用户态与网卡直通的零拷贝革命
 
 在 XDP 出现之前，追求极限性能的用户态网络开发几乎被 **DPDK（Data Plane Development Kit）** 垄断。但 DPDK 存在致命代价：

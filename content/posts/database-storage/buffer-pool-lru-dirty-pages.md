@@ -22,6 +22,10 @@ series: "数据库与存储"
 1. 读路径吃**命中率**（LRU 账），写路径吃**刷盘节奏**（LSN 账）——两本账独立演进；
 2. 脏页比例不是"缓冲层用得多深"的指标，而是"写账积压多少"的指标，决定的是写 I/O 节奏，不决定读延迟。
 
+
+
+![InnoDB Buffer Pool 变种 LRU：Young (5/8) 与 Old (3/8) 子链表抗预读污染](../../../public/images/innodb-buffer-pool-lru-young-old-sublist.svg)
+
 ## 二、两本账的语法：LRU 链（读）与 Flush list（写）
 
 ![MySQL InnoDB Buffer Pool 变种 LRU 链表与防扫描污染架构](../../../public/images/mysql-buffer-pool-lru-midpoint.svg)
@@ -57,6 +61,10 @@ flowchart LR
 - **常规水位刷**：脏页占比达到 `innodb_max_dirty_pages_pct_lwm` 时启动预刷；MySQL 8.4 默认低水位是 10%，达到 `innodb_max_dirty_pages_pct=90` 时会更激进地刷。`90` 是刷盘目标，不是“允许任何情况下安全堆到 90%”的性能承诺。
 - **I/O 预算**：MySQL 8.4 的 `innodb_io_capacity` 默认值是 `10000`，`innodb_io_capacity_max` 默认是它的两倍；这些是版本相关的后台 I/O 能力参数，不是 SSD 的通用推荐值。应按目标实例的设备 IOPS、并发、脏页增长速率和其他后台任务校准。
 - **redo 75% 边界**：官方文档把 redo 利用率达到 75%描述为触发异步刷盘的硬编码边界。若 InnoDB 需要复用仍被脏页占用的 redo 区间，可能出现 sharp checkpoint，导致前台事务等待刷盘；“75%”不是“事务立刻失败”的单一阈值，也不是只由 Buffer Pool 大小决定的结果。
+
+
+
+![脏页刷盘与 Flush 链表：LSN 序号推进与 Sharp vs Fuzzy Checkpoint](../../../public/images/dirty-page-flush-flush-list-checkpoint.svg)
 
 ## 四、候选实验：各动一本账，另一本不动
 

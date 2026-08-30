@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">编译器对 select 的四大特化降级优化 (Compiler Specialization)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 空 select {} (降级为 block()) ｜ 2. 单 case select (直接降级为裸通道操作) ｜ 3. 单 case + default (降级为 selectnbsend/recv) ｜ 4. 多 case 才走完整 selectgo</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Columns (210px each) -->
+    <g>
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 空 select {}</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#38bdf8">select {} // 永久挂起</text>
+          
+          <text x="8" y="42" fill="#86efac">编译优化：</text>
+          <text x="8" y="58" fill="#34d399">• 直接替换为: runtime.block()</text>
+          <text x="8" y="74" fill="#34d399">• 0 分配、0 排序、0 锁</text>
+          <text x="8" y="90" fill="#cbd5e1">• 协程进入永久沉睡状态</text>
+          
+          <text x="8" y="116" fill="#4ade80">✓ 极简主协程常驻原语！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
+        <text x="8" y="34" font-size="7.5" fill="#1d4ed8">• 守护进程最常用的保活语法；</text>
+        <text x="8" y="48" font-size="7.5" fill="#1d4ed8">• 0 CPU 算力浪费；</text>
+        <text x="8" y="62" font-size="7.5" fill="#047857">• 编译器直接特化。</text>
+      </g>
+    </g>
+
+    <g transform="translate(225, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 单一 case</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#4ade80">select { case &lt;-ch: ... }</text>
+          
+          <text x="8" y="42" fill="#86efac">编译优化：</text>
+          <text x="8" y="58" fill="#38bdf8">• 编译器直接降级为: &lt;-ch</text>
+          <text x="8" y="74" fill="#34d399">• 彻底抹去 select 包装！</text>
+          <text x="8" y="90" fill="#34d399">• 转化为普通 chanrecv 调用</text>
+          
+          <text x="8" y="116" fill="#4ade80">✓ 耗时降至 ~10ns！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#166534">机制特性：</text>
+        <text x="8" y="34" font-size="7.5" fill="#15803d">• 消除无意义的多路复用开销；</text>
+        <text x="8" y="48" font-size="7.5" fill="#15803d">• 0 排序、0 数组分配；</text>
+        <text x="8" y="62" font-size="7.5" fill="#047857">• 纯原生通道速度。</text>
+      </g>
+    </g>
+
+    <g transform="translate(450, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 单 case + default</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#fb923c">select { case &lt;-ch: default: }</text>
+          
+          <text x="8" y="42" fill="#fed7aa">非阻塞优化：</text>
+          <text x="8" y="58" fill="#38bdf8">• 降级为: selectnbrecv()</text>
+          <text x="8" y="74" fill="#34d399">• 仅执行一次快速非阻塞检查</text>
+          <text x="8" y="90" fill="#34d399">• 成功取值，失败立即进 default</text>
+          
+          <text x="8" y="116" fill="#4ade80">✓ 极速非阻塞探测！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 限流尝试获取令牌 (TryLock)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 队列满时丢弃日志；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造 0 阻塞通道探测。</text>
+      </g>
+    </g>
+
+    <g transform="translate(675, 0)">
+      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#c084fc" stroke-width="1.5"/>
+      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
+      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#7e22ce" text-anchor="middle">4. 多 case 完整路径</text>
+
+      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="186" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="8" y="18" fill="#c084fc">select { case &lt;-c1: case c2&lt;-x: }</text>
+          
+          <text x="8" y="42" fill="#e9d5ff">完整通用执行：</text>
+          <text x="8" y="58" fill="#38bdf8">• 栈上分配 scases, poll, lock</text>
+          <text x="8" y="74" fill="#34d399">• 调用完整 runtime.selectgo</text>
+          <text x="8" y="90" fill="#4ade80">• 经历双排序与加锁扫描</text>
+          
+          <text x="8" y="116" fill="#4ade80">✓ 耗时约 40 ~ 60ns！</text>
+        </g>
+
+        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#7e22ce">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#6b21a8">• 复杂事件多路复用的坚实保障；</text>
+        <text x="10" y="48" font-size="7.5" fill="#6b21a8">• 兼顾极简场景特化与通用多路调度；</text>
+        <text x="10" y="62" font-size="7.5" fill="#6b21a8">• Go 编译器与运行时协同典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

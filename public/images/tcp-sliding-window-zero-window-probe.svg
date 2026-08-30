@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">网络传输物理反压机制：TCP 零窗口 (Zero Window) 传导链条</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">慢消费者未读 ──► 接收缓冲区占满 (win=0) ──► 发送端停止发包并启动 Persist 定时器 ──► 填满发送缓冲区 ──► 阻断发送端应用层 write()</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 慢消费者消费滞后 (Slow Consumer Read Lag)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">接收端应用层发生 GC 卡顿或复杂处理 ──► 停止调用 socket.read() ──► 64KB 接收缓冲区被填满</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">反压源头的物理起点！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">2. 通告零窗口宣告反压 (TCP Zero Window Advertisement: win=0)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">接收端 TCP 协议栈向对端回送 ACK 报文: Window Size = 0 ──► 明确告知“我已经吃不下了”！</text>
+        <text x="15" y="62" font-size="8" fill="#7f1d1d">纯传输层硬件协议级刹车机制！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 发送端缓冲区被动填满 (Sender Buffer Full &amp; Persist Timer)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">发送端停止发送数据 ──► 发送端本地内核 TX Buffer 迅速被应用层积压填满 ──► 定时发探针包 (ZWP)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">反压跨越整个公网物理链路传导回发送端！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">4. 发送端应用层系统调用阻塞 (Application Level Backpressure)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">发送端 write() 阻塞挂起或返回 EAGAIN ──► 迫使生产端自动降速 ──► 全链路达到物理平衡！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">流控与背压机制在计算机网络中的最完美体现！</text>
+      </g>
+    </g>
+  </g>
+</svg>

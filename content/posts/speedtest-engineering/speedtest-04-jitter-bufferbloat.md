@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 许多用户常有这样的困惑：“我的宽带明明测出了 1000Mbps，但为什么只要有人在下载电影，打游戏时延迟就会从 20ms 瞬间飙升到 300ms 疯狂卡顿？” 答案在于：**带宽（Bandwidth）只代表水管的粗细，而决定实时交互体验的是时延（Latency）、抖动（Jitter）以及满载时的缓冲区膨胀（Bufferbloat）**。传统的测速只测空闲时的 Ping 值，完全掩盖了真实网络在重载下的劣化程度。本文作为《网络测速与极限吞吐工程》系列第四篇，推导 IETF **RFC 3550 网络抖动一阶低通滤波递推公式**，并详细讲解如何在推流稳态期注入轻量探针，度量 **Bufferbloat 排队膨胀量** 与家庭路由器的队列调度能力。
 
+
+---
+
+![抖动、时延与缓冲膨胀：RFC 3550 一阶低通滤波算法与满载排队时延度量](../../../public/images/speedtest-jitter-rfc3550-bufferbloat-measurement.svg)
+
 ## 一、网络度量的三维坐标系
 
 一个完整的网络质量画像必须由三个独立正交的维度共同定义：
@@ -28,6 +33,10 @@ mindmap
       上行满载时延 Uplink Loaded Latency (ms)
       缓冲区膨胀增量 Bufferbloat Delta (ms)
 ```
+
+
+
+![缓冲区膨胀 (Bufferbloat) 物理机理：路由器超大 FIFO 队列导致延迟飙升 500ms](../../../public/images/bufferbloat-queue-delay-bottleneck.svg)
 
 ## 二、空闲时延（Idle Latency）中位数抽取
 
@@ -91,6 +100,10 @@ export class RFC3550JitterCalculator {
   }
 }
 ```
+
+
+
+![主动队列管理 (AQM)：FQ-CoDel 稀疏流优先与动态时延控制](../../../public/images/cake-fq-codel-active-queue-management.svg)
 
 ## 四、满载时延与 Bufferbloat（缓冲区膨胀）排队度量
 

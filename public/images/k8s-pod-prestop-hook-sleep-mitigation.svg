@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">K8s 发布 502 Bad Gateway 产生根因与 preStop 解决模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">无 preStop (进程收到 SIGTERM 立即关闭端口，Ingress 路由未及刷新依然派发流量，产生 502) vs 加 preStop 15s (流量平滑过渡，0 报错发布)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Without preStop -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 缺 preStop 钩子：滚动发布频繁 502 报警</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">滚动更新触发时序：</text>
+          <text y="28" fill="#ef4444">1. Pod 收到 SIGTERM 瞬间关闭监听 Socket</text>
+          <text y="44" fill="#fca5a5">2. 但 Ingress / Envoy 网关由于分布式同步延迟</text>
+          <text y="60" fill="#fca5a5">   • 在接下来的 3 秒内依然将用户请求路由发往该 Pod！</text>
+          <text y="76" fill="#ef4444">3. 操作系统内核返回 TCP RST ──► 客户端收到 502 错误！</text>
+          
+          <text y="102" fill="#f87171">🔴 每次线上发布必触发大面积报警与客诉！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 业务代码写了优雅停机依然报错；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 忽视了控制平面与数据平面的物理传播时延；</text>
+        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 生产环境必须修复！</text>
+      </g>
+    </g>
+
+    <!-- Right: With preStop -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 配置 preStop sleep 15s：真正 0 报错平滑发布</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">lifecycle.preStop: exec: command: ["/bin/sleep", "15"]</text>
+          
+          <text y="36" fill="#86efac">完美平滑流转：</text>
+          <text y="50" fill="#38bdf8">1. preStop 强制 Pod 继续保持存活并正常服务 15 秒</text>
+          <text y="64" fill="#34d399">2. 期间 Ingress 与 kube-proxy 充分完成 Endpoints 剔除</text>
+          <text y="78" fill="#34d399">3. 15 秒后新流量已为 0 ──► 发送 SIGTERM 排空老连接退出！</text>
+          
+          <text y="104" fill="#4ade80">✓ 线上发布成功率 100%，错误率恒为 0.00%！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 终结云原生微服务发布抖动；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 赋予 CI/CD 流水线随时白天发布的强大底气；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 资深 SRE 架构必备黄金配置！</text>
+      </g>
+    </g>
+  </g>
+</svg>

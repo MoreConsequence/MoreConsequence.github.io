@@ -10,6 +10,11 @@ series: "网络测速与极限吞吐工程"
 
 **TL;DR：** 即使你的单台测速服务器通过零拷贝做到了 40Gbps 吞吐，如果调度系统把一个北京联通的用户分配到了广州电信的测速节点上，测出的结果将完全沦为跨运营商骨干网拥堵的噪声。**分布式测速系统的核心灵魂是边缘调度（Edge Scheduling）与容量防御（Capacity Admission）**。本文作为《网络测速与极限吞吐工程》系列第六篇，剖析 **BGP Anycast** 在全网边缘加速中的物理机制与路由漂移陷阱；手把手设计**客户端三级级联选路算法（GeoIP + 实时 RTT 竞速 + 节点负载加权）**；实现基于原子令牌桶的服务端**并发容量接纳控制（Admission Control）**；并给出移动端在 Wi-Fi 与 5G 异构网络切换时的毫秒级异常熔断机制。
 
+
+---
+
+![全局测速节点调度系统：GeoDNS 地理位置就近选路 vs BGP Anycast 任播路由与容量接纳](../../../public/images/speedtest-edge-scheduling-bgp-anycast-geo-dns.svg)
+
 ## 一、全局测速网络的三层拓扑架构
 
 一个覆盖全国或全球的测速网络通常分为三层架构：
@@ -30,6 +35,10 @@ flowchart TD
     
     Edge1 -.->|"上报实时带宽水位与健康度"| Master["全局调度中心 (Global Scheduler)"]
 ```
+
+
+
+![Haversine 大圆距离公式与三维球体经纬度三角测距模型](../../../public/images/haversine-great-circle-distance-formula.svg)
 
 ## 二、BGP Anycast 边缘路由与路由漂移陷阱
 
@@ -128,6 +137,10 @@ export class SmartNodeSelector {
   }
 }
 ```
+
+
+
+![边缘选路双引擎横评：BGP Anycast (毫秒级收敛) vs GeoDNS (成本极优)](../../../public/images/bgp-anycast-vs-geodns-scheduling-matrix.svg)
 
 ## 四、服务端原子容量接纳（Admission Control）
 

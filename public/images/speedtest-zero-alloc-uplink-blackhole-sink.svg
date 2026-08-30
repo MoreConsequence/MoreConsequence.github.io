@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">上行吞吐的内存黑洞：端侧零分配复用与服务端无底洞 Sink</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">端侧 ArrayBuffer 循环复用 (0 GC 掉帧) ──► 服务端 epoll 极速拉取 ──► io.CopyBuffer 32KB 丢弃入 /dev/null 零内存泄漏</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Client Zero Alloc -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 移动端/浏览器端：零堆分配推流</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// 传统错误写法: 每次循环 new ArrayBuffer(20MB)</text>
+          <text y="28" fill="#f87171">► 产生海量垃圾对象，V8 / 手机内存暴涨触发 GC 卡死！</text>
+          
+          <text y="52" fill="#4ade80">// 生产标准: 初始化单例常驻 Payload</text>
+          <text y="66" fill="#86efac">const payload = new Uint8Array(2 * 1024 * 1024); // 仅 2MB</text>
+          <text y="80" fill="#34d399">crypto.getRandomValues(payload); // 高熵填充</text>
+          
+          <text y="102" fill="#38bdf8">function push() {</text>
+          <text y="116" fill="#34d399">    xhr.send(payload); // 1000 次请求重复复用同一个 buffer！</text>
+          <text y="130" fill="#38bdf8">}</text>
+          <text y="146" fill="#4ade80">✓ 内存占用恒定在 2MB，零 GC 停顿，帧率满 60/120 FPS！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">端侧机制设计：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 彻底杜绝推流过程中任何动态内存分配；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 充分保证低端手机与弱网设备平稳度量；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极具确定性的客户端基准环境！</text>
+      </g>
+    </g>
+
+    <!-- Right: Server Blackhole -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 服务端：极速黑洞 Sink (Zero Leak)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">// 服务端 Go 极速黑洞 Handler</text>
+          <text y="28" fill="#86efac">var discardPool = sync.Pool{</text>
+          <text y="42" fill="#86efac">    New: func() any { b := make([]byte, 32*1024); return &amp;b },</text>
+          <text y="56" fill="#86efac">}</text>
+          
+          <text y="78" fill="#38bdf8">buf := discardPool.Get().(*[]byte)</text>
+          <text y="92" fill="#38bdf8">defer discardPool.Put(buf)</text>
+          
+          <text y="112" fill="#34d399">io.CopyBuffer(io.Discard, r.Body, *buf)</text>
+          <text y="128" fill="#4ade80">✓ 单一协程仅占用 32KB 内存，瞬间吸收 100Gbps 流量！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">服务端吞吐收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免了内存分配与垃圾回收带来的延迟尖刺；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 TCP 接收窗口通告 (Window Scaling)，全速接收；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造固若金汤的抗上行洪峰吸收架构！</text>
+      </g>
+    </g>
+  </g>
+</svg>

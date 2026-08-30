@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">V8 引擎 JIT 编译执行模型：Ignition 字节码 vs TurboFan 机器码去优化 (Deopt)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">JS 源码 ──► Parser/AST ──► Ignition 解释执行 (生成类型反馈向量) ──► TurboFan 优化为汇编机器码 ──► 类型改变触发 Deopt</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Monomorphic Fast Path -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 单态内联优化 (Monomorphic JIT Inline)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">function add(a, b) { return a.x + b.x; }</text>
+          
+          <text y="36" fill="#86efac">连续 10,000 次传入相同结构对象: { x: 1 }</text>
+          
+          <text y="58" fill="#38bdf8">TurboFan JIT 优化机制：</text>
+          <text y="72" fill="#34d399">1. 判定对象的隐藏类 (HiddenClass / Map) 恒定</text>
+          <text y="86" fill="#34d399">2. 直接将属性访问内联为固定内存偏移量: [rax + 16]</text>
+          <text y="100" fill="#4ade80">3. 性能媲美 C++ 原生结构体访问！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">极致性能：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 消除任何哈希表查找与动态类型判断；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 充分发挥 CPU L1 缓存与流水线指令并行；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速高性能算法！</text>
+      </g>
+    </g>
+
+    <!-- Right: Megamorphic Deopt -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 多态污染与去优化 (Deoptimization)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#f87171">// 突然传入不同类型或动态增删属性</text>
+          <text y="28" fill="#fca5a5">add({ x: "hello" }, { y: 2, x: 3 });</text>
+          
+          <text y="50" fill="#ef4444">💥 V8 触发 Bailout 去优化：</text>
+          <text y="66" fill="#ef4444">1. 编译好的机器指令失效，强制退化回 Ignition 解释器！</text>
+          <text y="82" fill="#ef4444">2. 隐藏类进入多态/超多态 (Megamorphic) 状态</text>
+          <text y="96" fill="#f87171">3. 每次属性访问必须进行慢速字典哈希查询！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">性能惩罚：</text>
+        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 执行耗时瞬间暴涨 20~50 倍；</text>
+        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 严禁在热点代码中动态 delete 属性或混合类型；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 保持对象形状（Shape）稳定是第一铁律！</text>
+      </g>
+    </g>
+  </g>
+</svg>

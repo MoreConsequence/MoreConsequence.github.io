@@ -31,6 +31,10 @@ elapsed := t2.Sub(t1)     // 同一进程内优先使用 monotonic reading
 
 `t2.Sub(t1)` 在两个 `time.Time` 都保留 monotonic reading 时使用单调读数；NTP 把墙上时钟拨回一小时，进程内的测量仍不依赖该跳变。它也不是跨睡眠、跨进程或跨机器的绝对保证。一旦**持久化**（写数据库、序列化传远程），单调读数会被丢弃，只剩墙上时钟——**回拨风险随之而来**。这就是为什么“比较本机经过时间”要留在进程内，而“记录时间点”必须明确接受墙上钟的误差。
 
+
+
+![Google TrueClock [earliest, latest] 不确定性区间与 Commit Wait 时钟等待](../../../public/images/trueclock-time-uncertainty-interval-commit-wait.svg)
+
 ## 二、回拨从哪来：NTP 的 step 与 slew
 
 NTP 客户端发现本机与服务器偏差时，有两种校准方式：
@@ -40,7 +44,7 @@ NTP 客户端发现本机与服务器偏差时，有两种校准方式：
 
 step 的瞬间画出来就是回拨本身——墙上时钟往回跳了一截，而单调时钟从头到尾没受影响：
 
-![NTP 步进校准瞬间：墙上时钟被直接拨回，单调时钟始终前进，依赖绝对时间的组件需要按各自语义处理](/images/clock-skew-npt.svg)
+![NTP 步进校准瞬间：墙上时钟被直接拨回，单调时钟始终前进，依赖绝对时间的组件需要按各自语义处理](../../../public/images/clock-skew-npt.svg)
 
 用 `timedatectl` 可以查看本机当前策略与最近校准：
 
@@ -98,6 +102,10 @@ chrony 把"默认不 step"贯彻到了用户配置层，官方文档对 `makeste
 > chrony 官方文档（makestep）："Normally chronyd will cause the system to gradually correct any time offset, by slowing down or speeding up the clock as required... This directive forces chronyd to step the system clock if the adjustment is larger than a threshold value, but only if there were no more clock updates since chronyd was started than a specified limit... makestep 0.1 3: This would step the system clock if the adjustment is larger than 0.1 seconds, but only in the first three clock updates."
 
 chronyd 默认会逐步校正时钟；`makestep 阈值 次数` 可以把 step 限制在启动后的前 N 次更新。是否允许后续 step 由配置决定，不能把一个发行版的默认值写成所有机器的合同。可运行演示：`cd experiments && go run ./snowflake`，它只模拟雪花 ID 的回拨策略，不改变本机系统时钟；2026-08-17 本机输出见 `evidence/clock-skew-distributed-systems/2026-08-17-local/`。
+
+
+
+![混合逻辑时钟 (HLC) 算法状态机：物理时间 l 与逻辑计数器 c 协同推进](../../../public/images/hlc-hybrid-logical-clock-state-machine.svg)
 
 ## 四、破坏面：回拨瞬间，四个假设同时失效
 

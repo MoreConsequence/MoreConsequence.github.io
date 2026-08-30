@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux tcp_tw_reuse 安全复用机制 (Timestamps + PAWS)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">作为客户端发起 connect() 遇到 TIME_WAIT 套接字 ──► 检查新 SYN 时间戳 TSval &gt; 上次连接最后时间戳 ──► 允许安全直接复用！</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 开启 TCP 时间戳选项 (tcp_timestamps = 1 &amp; tcp_tw_reuse = 1)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">每个 TCP 报文头携带 TSval (本地单调递增时间戳) 与 TSecr (对端时间戳回显)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">赋予每个数据包纳秒级单调递增的物理时间坐标！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 客户端发新 SYN 申请复用端口 (connect() with Fresh TSval)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">客户端向相同服务端发起连接 ──► 端口处于 TIME_WAIT ──► 新 SYN 携带当前最新 TSval</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">请求内核裁决是否能够安全接管现有四元组！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. PAWS 算法时间戳比对 (PAWS: Protection Against Wrapped Sequence)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">内核验证: new_TSval &gt; last_TSval 成立 ──► 迷途旧报文的时间戳必小于 new_TSval ──► 自动被 PAWS 丢弃！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">数学级保证新旧数据流绝不发生串话混淆！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 极速安全复用成功 (Instant Socket Reuse: Zero Exhaustion)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">TIME_WAIT 套接字瞬间升级为 SYN_SENT ──► 彻底打破 65535 临时端口耗尽魔咒！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">现代高并发微服务调用与代理网关核心内核配置！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LLM 工具调用强类型分发：类型谓词 (Type Predicate) 运行时窄化</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">大模型输出 raw JSON ──► isToolCall(call): call is BashToolCall 判定 ──► 自动窄化为强类型入参 0 any 隐患</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 大模型原始 JSON 响应接收 (Untrusted Payload)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">{ name: "bash", arguments: "{\"command\":\"npm test\"}" } ──► 外部不可信数据</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">严禁在 TypeScript 中使用 as any 强转，必须在运行时进行物理验证！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 类型谓词函数校验 (Type Predicate Function: val is T)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">function isBashCall(c: ToolCall): c is BashToolCall { return c.name === 'bash' &amp;&amp; typeof c.arguments.command === 'string'; }</text>
+        <text x="15" y="62" font-size="8" fill="#047857">结合 Zod Schema 校验参数合法性，保证运行时与编译期类型 100% 吻合！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 控制流分支精准窄化 (Control Flow Narrowing)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">if (isBashCall(call)) { call.arguments.command } ──► IDE 自动提供精确类型提示与自动补全</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">消除所有潜在的 undefined 访问与类型混淆崩溃！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 沙箱安全执行与结果回传 (Safe Execution &amp; Feedback)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">分发至 BashSandbox.execute(call.arguments) ──► 捕获输出并返回给下一轮思考</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">打造工业级高健壮性 Agent 工具调用核心引擎！</text>
+      </g>
+    </g>
+  </g>
+</svg>

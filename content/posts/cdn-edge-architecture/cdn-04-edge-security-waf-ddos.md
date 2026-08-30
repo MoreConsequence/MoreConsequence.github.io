@@ -55,6 +55,10 @@ featured: true
 
 ---
 
+
+
+![边缘安全防御：JA4 TLS 客户端指纹识别与分布式令牌桶频控模型](../../../public/images/cdn-waf-ja4-fingerprint-token-bucket-rate-limiting.svg)
+
 ## 三、 七层边缘 WAF：JA4 协议指纹与分布式令牌桶频控
 
 当流量进入七层应用层后，面临的是更隐蔽的攻击 —— **CC 攻击（Challenge Collapsar，七层 HTTP 洪泛）、爬虫刮取、撞库与 SQL 注入/XSS 等漏洞利用**。

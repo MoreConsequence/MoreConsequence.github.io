@@ -11,6 +11,11 @@ series: "系统设计手记"
 
 **TL;DR：** 分布式追踪把一次请求的父子调用组织成一棵 span 树，并用 trace context 跨进程传播。它补上了日志和指标之间的缺口：指标告诉你哪类请求变慢，trace 才能把某一次请求的等待拆到具体服务和操作。落地最大的坑不是“接入了 SDK”，而是采样和证据闭环：head sampling 可能在入口就丢掉慢请求，tail sampling 需要先承受整条 trace 的接收和聚合成本。理解 trace/span、`traceparent`、采样决策和日志关联，才算掌握追踪的骨架。
 
+
+---
+
+![分布式链路追踪：从 OpenTelemetry 看一次请求跨越网关、RPC 与数据库的一生](../../../public/images/opentelemetry-distributed-tracing-w3c-tracecontext.svg)
+
 ## 一、 单机监控的三个盲区
 
 假设一个下单请求慢了三秒，日志和指标分别告诉你什么：
@@ -19,6 +24,10 @@ series: "系统设计手记"
 - **指标**：`inventory.check` 的 P99 从 20ms 涨到 800ms。你知道"变慢了"，但不知道**是哪一次请求**、**是哪一个调用链**。指标是聚合，聚合天然丢掉了"单个请求的完整故事"。
 
 两个盲区指向同一个需求：**把一次请求的完整旅程还原出来**。这就是 trace。日志回答"发生了什么"，指标回答"总体多慢"，trace 回答"这一次请求，时间都花在哪了"。
+
+
+
+![OpenTelemetry 跨服务链路传播：W3C traceparent (TraceID + SpanID) 与 Baggage 协议](../../../public/images/opentelemetry-w3c-trace-context-propagation.svg)
 
 ## 二、 trace 与 span：请求的因果树
 
@@ -56,6 +65,10 @@ traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
 下游服务收到请求时：解析 `traceparent` 中的父 span context，在这个 context 下创建自己的 server span，再把新 span 的 context 注入下一个出站请求。它不是“把同一个 span id 传到底”，而是每一跳创建自己的 span，并共享同一个 trace id。gRPC 通常把它放在 metadata，消息队列则需要把 context 放进消息头；异步消息还要决定生产 span、消费 span 和跨消息的 span link 如何表达。
 
 传播链上最脆弱的环节是**异步和队列**：请求经过 Kafka 中转时，消费端需要从消息头取 context，并处理消息重试、批量消费和 fan-out 的关系。自动 instrumentation 可以减少 HTTP 或 gRPC 的遗漏，但不能替业务代码决定消息边界；新建 goroutine、线程或回调时，应把 context 显式传进去，不要靠全局变量。
+
+
+
+![链路采样策略：Head-based 盲目丢弃 vs Tail-based 错误与慢调用 100% 保留](../../../public/images/tail-based-sampling-head-vs-tail-storage.svg)
 
 ## 四、 采样：追踪真正的成本账
 

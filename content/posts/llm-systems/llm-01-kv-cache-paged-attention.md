@@ -88,6 +88,10 @@ $$\text{Memory}_{\text{per-token}} = 2 \times 2 \times L \times H_{KV} \times d_
 
 ---
 
+
+
+![显存碎片对比：静态预分配内外部碎片 vs PagedAttention 零外部碎片](../../../public/images/llm-kv-cache-memory-fragmentation-comparison.svg)
+
 ## 四、 PagedAttention 架构：GPU 显存的分页虚拟化
 
 2023 年，UC Berkeley 团队发表论文 *《Efficient Memory Management for Large Language Model Serving with PagedAttention》*，直接将操作系统**分页虚拟内存（Paging Virtual Memory）**的经典理论复刻至 GPU 显存管理。

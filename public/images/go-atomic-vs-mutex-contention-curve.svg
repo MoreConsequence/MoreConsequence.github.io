@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">atomic (CAS) vs sync.Mutex 在不同争用程度下的物理延迟曲线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">零争用 (atomic 7ns 完胜) vs 极高争用 (atomic 缓存一致性风暴暴跌至 128ns+，Mutex 排队反超)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left Chart Area (520px) -->
+    <g transform="translate(30, 30)">
+      <line x1="40" y1="280" x2="480" y2="280" stroke="#94a3b8" stroke-width="1.5"/>
+      <line x1="40" y1="280" x2="40" y2="30" stroke="#94a3b8" stroke-width="1.5"/>
+      
+      <text x="480" y="295" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="end">并发 Goroutine 争用数 (1 → 64 核心)</text>
+      <text x="35" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#64748b">单次操作耗时 (纳秒 ns)</text>
+
+      <text x="30" y="284" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">0ns</text>
+      <text x="30" y="200" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">40ns</text>
+      <text x="30" y="120" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">80ns</text>
+      <text x="30" y="40" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">140ns</text>
+
+      <line x1="40" y1="200" x2="480" y2="200" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="40" y1="120" x2="480" y2="120" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="40" y1="40" x2="480" y2="40" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
+
+      <!-- atomic curve (starts very low 7ns, skyrockets on heavy contention) -->
+      <path d="M 40 270 Q 200 240 320 140 T 460 50" fill="none" stroke="#ef4444" stroke-width="3"/>
+      <circle cx="40" cy="270" r="4" fill="#ef4444"/>
+      <circle cx="160" cy="250" r="4" fill="#ef4444"/>
+      <circle cx="320" cy="140" r="4" fill="#ef4444"/>
+      <circle cx="460" cy="50" r="5" fill="#ef4444"/>
+      <text x="465" y="54" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#dc2626">atomic.Add (高并发总线风暴 128ns+)</text>
+
+      <!-- Mutex curve (starts ~15ns, plateaus ~60-70ns due to queuing) -->
+      <path d="M 40 245 Q 160 210 320 180 T 460 160" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+      <circle cx="40" cy="245" r="4" fill="#2563eb"/>
+      <circle cx="160" cy="210" r="4" fill="#2563eb"/>
+      <circle cx="320" cy="180" r="4" fill="#2563eb"/>
+      <circle cx="460" cy="160" r="4" fill="#2563eb"/>
+      <text x="465" y="164" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#1d4ed8">sync.Mutex (排队平稳 65ns)</text>
+    </g>
+
+    <!-- Right Summary Cards (300px) -->
+    <g transform="translate(560, 30)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="310" height="135" rx="6" fill="#fee2e2" stroke="#fca5a5"/>
+      <text x="12" y="20" font-size="10.5" font-weight="700" fill="#991b1b">🔴 atomic 并非银弹的原因</text>
+      <text x="12" y="38" font-size="8" fill="#7f1d1d">• 单个变量被 64 核同时 CAS 写入时：</text>
+      <text x="12" y="54" font-size="8" fill="#7f1d1d">• 触发 CPU MESI 缓存一致性协议狂发 Invalidate 广播</text>
+      <text x="12" y="70" font-size="8" fill="#7f1d1d">• 各核 L1/L2 Cache Line 频繁失效，总线拥堵</text>
+      <text x="12" y="88" font-size="8" font-weight="700" fill="#dc2626">• 导致 99% 的 CAS 持续失败自旋，耗时暴增！</text>
+
+      <g transform="translate(0, 150)">
+        <rect width="310" height="145" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="12" y="20" font-size="10.5" font-weight="700" fill="#166534">✓ 生产选型决策树</text>
+        <text x="12" y="38" font-size="8" fill="#15803d">1. <tspan font-weight="700">低争用 / 只读多写少</tspan>：首选 atomic.Value / LoadInt64 (7ns)；</text>
+        <text x="12" y="56" font-size="8" fill="#15803d">2. <tspan font-weight="700">高并发热点计数器</tspan>：采用分段计数器 (Striped Counter) 将热点分散到各 CPU P；</text>
+        <text x="12" y="80" font-size="8" fill="#047857">3. <tspan font-weight="700">复杂复合多变量操作</tspan>：坚决使用 sync.Mutex 保护临界区！</text>
+      </g>
+    </g>
+  </g>
+</svg>

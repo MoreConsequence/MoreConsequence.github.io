@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型 KV Cache 显存占用物理公式与 40GB/80GB 并发账本</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">FP16 精度单 Token 显存开销 = 2 (K+V) × 2 (Bytes) × 层数 (L) × 隐藏维度 (d) ──► 显存才是吞吐与并发的物理硬墙</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Left Box: Formula & Anatomy (420px) -->
+    <g transform="translate(20, 20)">
+      <rect width="420" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="420" height="30" rx="6" fill="#dbeafe"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
+        1. KV Cache 物理字节精算公式
+      </text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="390" height="70" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="9" fill="#38bdf8">
+          <text x="12" y="22">Bytes per Token = 2 × 2 × n_layers × d_model</text>
+          <text x="12" y="42" fill="#f8fafc">• 2 (Key + Value 两个张量)</text>
+          <text x="12" y="58" fill="#f8fafc">• 2 Bytes (FP16 / BF16 半精度浮点)</text>
+        </g>
+
+        <!-- LLaMA-3-70B Example -->
+        <g transform="translate(0, 80)">
+          <rect width="390" height="110" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
+          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#1e40af">以 LLaMA-3-70B (GQA 8 Heads) 为例：</text>
+          <text x="10" y="36" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">• 层数 L = 80, 键值维度 d_kv = 1024</text>
+          <text x="10" y="52" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">• 单 Token 显存 = 4 × 80 × 1024 = 327.68 KB !</text>
+          <text x="10" y="70" font-size="8" font-weight="700" fill="#dc2626">• 1 个请求并发跑 8K 上下文 = 2.62 GB 显存！</text>
+          <text x="10" y="88" font-size="8" fill="#7f1d1d">• 32 并发 8K 满载 = 83.8 GB 纯 KV Cache 显存！</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right Box: 80GB VRAM Allocation Breakdown (420px) -->
+    <g transform="translate(460, 20)">
+      <rect width="420" height="345" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="420" height="30" rx="6" fill="#dcfce7"/>
+      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">
+        2. A100/H100 80GB GPU 显存物理切分
+      </text>
+
+      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <!-- Segment 1: Model Weights -->
+        <rect width="390" height="48" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="10" y="18" font-size="9" font-weight="700" fill="#1e40af">模型静态权重 (Model Weights, FP16/INT4):</text>
+        <text x="10" y="34" font-size="8" fill="#2563eb">LLaMA-3-8B (FP16): 16GB ｜ LLaMA-3-70B (4-bit): 38GB</text>
+
+        <!-- Segment 2: Activation Memory -->
+        <g transform="translate(0, 56)">
+          <rect width="390" height="48" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+          <text x="10" y="18" font-size="9" font-weight="700" fill="#c2410c">激活值与算子工作区 (Activation &amp; Workspace):</text>
+          <text x="10" y="34" font-size="8" fill="#9a3412">Prefill 阶段瞬时占用约 4GB ~ 8GB</text>
+        </g>
+
+        <!-- Segment 3: KV Cache Pool -->
+        <g transform="translate(0, 112)">
+          <rect width="390" height="105" rx="4" fill="#ecfdf5" stroke="#34d399"/>
+          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#065f46">剩余动态 KV Cache 内存池 (PagedAttention 管理):</text>
+          <text x="10" y="36" font-size="8" fill="#047857">• 剩余可用空间: 约 35GB ~ 55GB</text>
+          <text x="10" y="52" font-size="8" fill="#047857">• 决定了当前节点最大能承载的并发 Token 总上限</text>
+          <text x="10" y="68" font-size="8" font-weight="700" fill="#15803d">• 内存耗尽触发：Request Preemption 抢占换出或挂起</text>
+          <text x="10" y="86" font-size="7.5" fill="#64748b">Chunked Prefill 削峰填谷降低瞬时显存尖刺</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

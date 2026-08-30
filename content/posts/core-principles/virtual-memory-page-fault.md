@@ -45,11 +45,15 @@ flowchart LR
 
 在“4 KiB 普通页、按字节写满、没有 THP 或预触碰”的简化模型里，1 GiB ÷ 4 KiB = 262,144 个页，因此第一次写满可能产生同量级的匿名页建立工作。真实数量和耗时应通过 `perf stat`、`/proc/<pid>/stat` 或运行时指标验证；惰性分配只是把成本推迟到了访问时，并不保证成本为零。
 
+
+
+![x86_64 四级页表转换拓扑：CR3 -> PGD -> P4D -> PUD -> PMD -> PTE -> 物理页](../../../public/images/mmu-four-level-page-table-walk.svg)
+
 ## 二、 页表：一张按需构建的稀疏树
 
 虚拟内存要把“虚拟地址 → 物理地址”的映射关系记下来。最简单的线性页表会为每个虚拟页准备一个表项，地址空间一大，页表本身就可能占用不可接受的内存。因此常见架构使用**多级页表**，只为实际需要的范围分配下级表。以 4 KiB 页、x86-64 四级分页和 48-bit 虚拟地址的教学模型为例，每级索引通常是 9 bit；启用 LA57 时是五级，ARM 等架构的层级和命名也可能不同。
 
-![虚拟内存映射：地址空间、多级页表与物理页框的关系，malloc 的大洞没有页表项](/images/virtual-memory-mapping.svg)
+![虚拟内存映射：地址空间、多级页表与物理页框的关系，malloc 的大洞没有页表项](../../../public/images/virtual-memory-mapping.svg)
 
 *图注：malloc 的大块内存只在 VMA 里有记录，页表树里没有对应分支；首次 touch 才分配物理页并补齐页表项。*
 
@@ -77,6 +81,10 @@ $ /usr/bin/time -v ./my-server 2>&1 | grep -E "Minor|Major|Context"
 ```
 
 长期运行的服务如果在请求路径持续产生 major fault，确实值得排查文件映射、内存压力、swap 和工作集，但“应该趋近于零”仍是工作负载相关的目标，不是平台保证。建议把 `perf stat -e page-faults,minor-faults,major-faults`、`vmstat` 的 `si/so`、应用请求延迟和 off-CPU/系统 I/O 迹象放在同一时间窗口；CPU profile 看不到阻塞等待本身，不能据此把每个延迟尖峰都归因于缺页。
+
+
+
+![缺页异常三大生命周期：次要缺页 (Minor)、重大缺页 (Major/I/O) 与写时复制 (COW)](../../../public/images/page-fault-minor-major-cow-lifecycle.svg)
 
 ## 四、文件页与页缓存：mmap 只省掉特定复制路径
 

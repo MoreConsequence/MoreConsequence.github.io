@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">ORACT 耐用 Agent 内核：Go 原生确定性状态机与崩溃自愈</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">不确定的 LLM 输出 ──► ORACT 确定性事务调度器 ──► WAL 原子日志 ──► 进程任意时刻崩溃 100% 幂等恢复重放</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Step 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 状态流转先行写日志 (Write-Ahead Logging State Transition)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">kernel.AppendEvent(&amp;StepStarted{ID: "step_42", Input: req}) ──► fsync() 落盘保障</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">任何状态跃迁前必须先落盘 WAL，确保即使单机断电也绝不会丢失任何状态因果链！</text>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 纯函数状态机与副作用隔离 (Pure FSM &amp; Effect Seams)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">nextState, effect := fsm.Transition(currentState, event) ──► 业务状态机绝不直接调用网络/文件</text>
+        <text x="15" y="62" font-size="8" fill="#047857">状态计算与外部副作用严格分离，让核心状态机的测试覆盖率达到不可思议的 100%！</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 事务性副作用执行器 (Transactional Effect Dispatcher)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">dispatcher.Execute(effect) ──► 带幂等 Key 发送 LLM / 执行 Shell ──► 收到响应记录 EffectCompleted</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将不稳定的外部网络调用与本地不可变日志严格绑定，杜绝幽灵副作用产生！</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 确定性重放与崩溃自愈 (Deterministic Playback &amp; Recovery)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">进程崩溃重启 ──► 读取 WAL 从第 0 步极速重放状态机 ──► 遇到已记录 Effect 直接取缓存 0 重复调用！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">真正实现电信级 7x24 小时无人值守自动化任务的坚固基座！</text>
+      </g>
+    </g>
+  </g>
+</svg>

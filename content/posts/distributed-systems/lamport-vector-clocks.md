@@ -10,6 +10,11 @@ series: "分布式系统的故障模型"
 
 **TL;DR：** 分布式系统里"时间戳早"和"先发生"是两回事。本文用一个固定种子、逐字节可复现的三进程模拟（`experiments/lamport-vector-clocks/`）量化这个差距：60 个事件组成的 1770 个事件对里，只有 601 对（34%）有真因果关系，1169 对（66%）是并发——而 Lamport 全序对其中 **1120 对（约占全部事件对的 63%）强行排出了"先后"**。Lamport 时钟的合同是"因果 ⇒ 时钟序"，绝不承诺反向；需要判定"这两个操作到底谁影响谁"（冲突检测、CRDT 合并）时，必须换向量时钟，多花 O(N) 空间买回"并发"这个词。
 
+
+---
+
+![分布式因果时钟：Lamport 逻辑时钟全序关系 vs 向量时钟 (Vector Clock) 偏序与并发冲突检测](../../../public/images/logical-clocks-lamport-vs-vector-clock-causality.svg)
+
 ## 一、墙钟不可靠之后，"先后"由谁定义
 
 分布式系统不能信任物理时钟：两台机器的 NTP 偏移、闰秒、时钟回拨都能让"按时间戳排序"得出荒谬结论。[时钟偏移篇](/writing/clock-skew-distributed-systems)讲的是墙钟为什么错；本篇讲纠偏之后的下一步——逻辑时钟给出的"先后"到底承诺了什么。
@@ -20,6 +25,10 @@ series: "分布式系统的故障模型"
 2. a 是某条消息的发送、b 是同一条消息的接收。
 
 除此之外的一切都是**并发**（记作 `a ∥ b`）：哪怕你直觉上觉得"b 肯定晚点"，只要没有消息链把它们连起来，因果上就无从判断。
+
+
+
+![Lamport 标量时钟偏序模型：L(e) = max(local, remote) + 1 与 因果关系判定](../../../public/images/lamport-timestamp-partial-order-happens-before.svg)
 
 ## 二、Lamport 时钟：给全序，但合同单向
 
@@ -47,6 +56,10 @@ P0 send  L=1  VC=[1,0,0]     vs     P1 send  L=2  VC=[0,2,0]
 ```
 
 P1 的第二个事件时间戳更大，但它与 P0 的第一个事件之间没有任何消息链——两个独立进程各自计数，P1 只是"数得快"。如果某个合并算法拿 `L(a) < L(b)` 当作"a 的写入更旧、可以被 b 覆盖"，它就在用巧合裁决数据。
+
+
+
+![向量时钟 (Vector Clock) 并发冲突检测：Dynamo 分支分叉与因果判定矩阵](../../../public/images/vector-clock-concurrency-conflict-detection.svg)
 
 ## 四、向量时钟：多花 O(N)，买回"并发"
 

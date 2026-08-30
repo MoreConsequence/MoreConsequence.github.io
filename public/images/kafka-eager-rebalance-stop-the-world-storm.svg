@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kafka 传统 Eager 重平衡全量停顿风暴 (Eager Rebalance STW)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">某一个 Consumer 闪退 ──► Group Coordinator 强制全员丢弃分区 (Revoke All) ──► 全集群消费暂停 30s ──► 消息积压与反复重平衡风暴</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 触发事件发生 (Trigger: Single Consumer Restart / GC Timeout)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">仅 1 台消费者发布重启或心跳超时 ──► GroupCoordinator 判定消费组成员发生变动 ──► 宣告开启全局重平衡</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">一只蝴蝶煽动翅膀引发全组海啸！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fef2f2" stroke="#f87171"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">2. 全员强制释放所有分区 (Stop-the-World: Revoke ALL Partitions)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#ef4444">所有健康消费者被强制调用 onPartitionsRevoked() ──► 必须交出自己原本正常处理的全部 100 个分区！</text>
+        <text x="15" y="62" font-size="8" fill="#dc2626">整个消费组瞬间彻底瘫痪，消费吞吐断崖暴跌至 0！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 全量重新加入与分配计算 (JoinGroup &amp; SyncGroup Roundtrip)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">所有消费者向 Coordinator 重新发起 JoinGroup ──► Leader 计算全新分配表 ──► 耗时数十秒甚至数分钟</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">产生海量消息积压 (Lag 暴涨上亿)！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 级联重平衡恶性循环 (Rebalance Storm Cascading Failure)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">恢复后由于积压巨大，拉取大批消息导致单次 poll() 超过 max.poll.interval.ms ──► 再次触发重平衡死循环！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">早期 Kafka 最令运维闻风丧胆的噩梦问题！</text>
+      </g>
+    </g>
+  </g>
+</svg>

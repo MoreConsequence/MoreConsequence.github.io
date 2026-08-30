@@ -11,6 +11,11 @@ series: "AI 工程"
 
 **TL;DR：** 长上下文 + 高并发的推理成本大头不是算力，是 KV cache 显存。每 token 每层要缓存 2（K 与 V）× kv_heads × head_dim × 字节数（fp16 为 2）字节：Llama-3-8B 是 128 KiB/token，4K 上下文一个请求要 0.5 GiB、32K 要 4 GiB。以十进制 40 GB 显存、约 16 GB fp16 权重和 4 GB 固定开销的教学假设计算，当前修正版计算器给出 4K/8K/32K 约 37/18/4 个并发；MHA 的 Llama-2-7B 约为 10/5/1。参数量相近但 KV 可差四倍，原因是 kv_heads 不同。PagedAttention 能减少分配碎片和预留浪费，但不会改变 KV 字节公式；KV 量化可把模型内存项减半，质量损失仍需独立评估。一张卡能撑几个并发 = 可用字节 ÷（每 token KV 字节 × 上下文长度），单位必须先统一。
 
+
+---
+
+![大模型 KV Cache 显存物理账本与并发容量模型](../../../public/images/llm-kv-cache-layer-byte-budget.svg)
+
 ## 一、 KV cache 从哪来：Q 是一次性的，K/V 才要逐 token 攒
 
 Attention 的解码是逐 token 推进的：模型每生成一个新 token，都要让它和之前所有 token 做一次注意力。这里有个常被跳过的机制细节，它决定了缓存的对象——**Q 是一次性的，K 和 V 不是**。
@@ -36,6 +41,10 @@ flowchart LR
 KV cache 因此是逐 token 增长的：每解码一步，全部层的 K/V 数组各多一行，而且这是持续占用的量——生成多少 token 就存多少行，对话不结束、显存不释放。
 
 算力和显存要分开记。decode 每步只推一个新 token 的前向，投影与 FFN 的计算量不随上下文涨；attention 那一步每步确实要扫一遍已缓存的 K/V，计算量随上下文线性涨，但那部分中间结果用完可以释放。真正按上下文长度线性增长、并长期占住显存的是 KV cache——vLLM 论文（Kwon et al., SOSP 2023）正是把它的显存管理当成 serving 的核心问题提出的：权重是一次性装载的静态量，KV cache 则随活跃请求动态增长。这也解释了那个反直觉现象：模型没换、GPU 没换，为什么长对话跑着跑着，同一张卡能并发服务的请求数越来越少——KV cache 一直在把显存吃进去。
+
+
+
+![KV Cache 量化压缩演进：FP16、INT8 到 FP8 显存节省与精度保持](../../../public/images/kv-cache-fp16-int8-fp8-quantization-compression.svg)
 
 ## 二、字节账公式：代入四个公开配置，40 GB 卡各撑几个并发
 
@@ -98,6 +107,10 @@ per_token    = per_token_per_layer × num_layers
 - **MQA**（Multi-Query Attention，Shazeer 2019）：所有 Q head 共享一份 K/V（kv_heads=1），KV 成本除以 q_heads，最省。
 
 为什么许多模型落点是 GQA 而不是更省内存的 MQA：MQA 把 KV 压到极限，但质量有可见损失——一份 K/V 被所有 Q head 共享，注意力表达的多样性下降；GQA 论文报告 MQA 相比 MHA 存在质量代价，而中等分组数的 GQA 可以在质量和 KV 字节之间折中。本文引用的 Llama-2-70B 与 Llama-3-8B 配置使用 GQA，但不能把它外推为所有开源模型或固定的 `kv_heads=8` 共识。代价也写清楚：KV heads 是共享的，模型效果与长上下文质量仍需按具体 checkpoint 和评估集验证。选模型时，`kv_heads` 是 config 里能直接查的维度，比只看参数总量更能预判部署成本。
+
+
+
+![KV Cache 多级分层卸载 (Offloading)：GPU HBM、Host RAM 与 NVMe SSD 带宽断崖](../../../public/images/kv-cache-offloading-pcie-nvme-bandwidth-cliff.svg)
 
 ## 四、 PagedAttention：动态增长的内存，连续分配为什么放不下
 

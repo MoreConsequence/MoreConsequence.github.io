@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 会话是 Agent 的持久层，Pi 把它实现成"JSONL 文件 + 树结构"：每条消息带 `id`/`parentId`，分支存在同一个文件里，`/tree` 可以回到任意历史节点重新出发；文件格式已有 v1→v4 四代版本，加载时自动迁移；最不为人知的是崩溃自愈——写会话写到一半进程被杀，留下的"半行 JSON"会在下次加载时被识别为 torn tail，用 `.tmp` 文件 + 原子 rename 把有效前缀发布回去。本文从文件格式讲到崩溃修复，回答"Agent 的状态到底存在哪里、怎么保证不丢"。
 
+
+---
+
+![会话是树不是日志：Pi Agent JSONL 树状持久化、分支回退与崩溃自愈机制](../../../public/images/pi-agent-session-tree-jsonl-branching-recovery.svg)
+
 ## 一、会话是 Agent 的持久层：三个要求
 
 02 篇说过，loop 靠"检查点之后可重跑"维持优雅：失败时上下文整体在 context 里，直接退场即可。但 context 在内存里，进程一死就没了。会话层的职责是让它跨进程存活，Pi 为此提出三个要求：
@@ -20,6 +25,10 @@ series: "Agent 的方方面面"
 3. **不损坏**：写一半崩溃（断电、kill -9）不该毁掉整个会话。
 
 Pi 的答案就在 `packages/coding-agent/docs/sessions.md` 和 `docs/session-format.md`（438 行）里：会话存为 `~/.pi/agent/sessions/` 下的 JSONL 文件，一个文件就是一棵树。
+
+
+
+![Agent 会话持久化与事件溯源：Append-Only JSONL 日志与内存状态投影 (Projection)](../../../public/images/agent-session-append-only-jsonl-journal-projection.svg)
 
 ## 二、JSONL + 树：文件格式的两次关键决策
 
@@ -48,6 +57,10 @@ Pi 的答案就在 `packages/coding-agent/docs/sessions.md` 和 `docs/session-fo
 - **v4**：lane-based Session（0.84.0 的 v4 Session API，session-backends 包，含 SQLite 后端 *）——注意 v4 是 harness API 层面的换代，会话文件的 JSONL 结构仍保持 v3 兼容线。
 
 **加载时自动迁移**（"Existing sessions are automatically migrated to the current version when loaded"）。你两年前的会话文件现在打开它，仍然是那棵树。对 harness 而言，用户的会话愿意随手保存的前提就是"这文件永远不会因为升级读不了"——版本迁移是承诺，不是选项。
+
+
+
+![Agent 会话树分支分叉与时光机回溯 (Time Travel) 架构](../../../public/images/agent-session-tree-branching-time-travel.svg)
 
 ## 四、Branch summary：离开的分支，留下一张便签
 

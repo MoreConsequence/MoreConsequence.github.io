@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** 闭包没有一个脱离代码形状的固定价格。当前 Go 1.25.1/arm64 的统一快照里，无捕获的立即执行函数字面量是 **0.6669ns/0 allocs**；保存一个捕获 `value` 的函数值并跨迭代调用是 **12.47ns/16B/1 alloc**；循环收集 4 个回调是 **52.39ns/64B/4 allocs**。第一条不是“所有立即执行闭包”的证明，而是无捕获、可内联路径的下界；后两条同时改变了存活边界、捕获环境和调用方式。判断闭包成本要看捕获什么、活多久、是否内联以及调用方是否把它装进集合。
 
+
+---
+
+![Go 闭包逃逸分析：无捕获调用 0 alloc vs 捕获指针/变量逃逸到堆 (1 alloc)](../../../public/images/go-closure-stack-vs-heap-escape.svg)
+
 ## 一、逃逸分析怎么对待闭包：捕获变量提升
 
 闭包的本质是“函数 + 环境”，但**没有自由变量的函数字面量并不构成需要保存环境的闭包**。先看两个形状：
@@ -31,6 +36,10 @@ callback := func() int { return value + 1 }
 3. **闭包对象构造**：`funcval` 结构体（指向闭包体代码的指针 + 捕获变量槽），同样按逃逸决定分配位置。
 
 如果把一个无捕获函数创建后立即调用且不存储，编译器可能把它折叠成与直接调用相同的指令；要把“没有闭包税”写成结论，必须在目标版本用 `go tool compile -S` 或 `go build -gcflags=-S` 检查，而不能从一次 ns/op 反推汇编。当前入口的 `BenchmarkClosureImmediate` 测量的是无捕获函数字面量；`BenchmarkClosureEscaping` 才通过返回值和全局存储保留捕获函数值。
+
+
+
+![闭包变量捕获与逃逸分析：值捕获 (栈) vs 引用捕获 (堆逃逸与 GC 压力)](../../../public/images/closure-variable-capture-stack-to-heap-escape.svg)
 
 ## 二、实测：三个场景的账
 
@@ -58,6 +67,10 @@ callback := func() int { return value + 1 }
 ```
 
 `escapes to heap` 是编译器的逃逸分类，不是一条“每出现一次就分配一次”的计数器；实际分配次数仍要用 `-benchmem` 或 profile 验证。闭包场景的排查三步：`-gcflags=-m` 找 `func literal` 行 → 看逃逸源（`from X captured by a closure`）→ 决定能否缩短生命周期（立即执行、显式传参、减少捕获），再用 benchmark 验证。
+
+
+
+![循环变量 Goroutine 闭包陷阱与 Go 1.22 语义修复：v := v 阴影变量解套](../../../public/images/loop-variable-goroutine-closure-shadowing.svg)
 
 ## 四、生产判断：三个场景三种策略
 

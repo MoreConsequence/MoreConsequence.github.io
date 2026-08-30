@@ -11,6 +11,11 @@ series: "硬核底层原理"
 
 **TL;DR：** DNS 变更没有一个全网统一的“立即生效”按钮。权威服务器在响应中给出 TTL，递归解析器通常按响应中的剩余 TTL 复用缓存；客户端、企业 DNS、CDN 和 serve-stale/prefetch 策略还可能改变实际观察。`dig` 默认只查询本机配置的 resolver，不能仅凭一次低延迟或递减 TTL 证明“全网已经/尚未收敛”。另一套账是 RFC 2308 的负缓存：NXDOMAIN 与 NODATA 也会按 SOA 相关规则缓存。TTL 应按变更风险、解析负载、故障切换路径和负缓存历史共同设计，不能把 30–60 秒或 3600 秒写成通用答案。
 
+
+---
+
+![DNS 递归解析链路与 SOA 负向缓存 (Negative Cache TTL) 模型](../../../public/images/dns-recursive-ttl-negative-cache.svg)
+
 ## 一、事故现场：改了记录，十分钟没生效，后台全在催
 
 一个常见事故：凌晨做故障切换，把域名的 `A` 记录指向新机房的 IP，发布完盯监控。几十分钟过去，某些健康检查仍连旧 IP。值班群立刻出现两种声音——“DNS 有缓存，要等”“缓存是不是挂了？要不要 flush”。这不是某个已保存的线上事故 raw，而是用来说明排查顺序的场景。
@@ -23,6 +28,10 @@ example.com.  300  IN  A  203.0.113.10
 ```
 
 `300` 是这次响应允许缓存的时间上限；递归 resolver、客户端或中间服务可能有额外策略，不能从这个数字单独推出全网最后一个旧答案的时间。TTL 越大通常意味着已缓存答案的最长新鲜窗口越长，但 serve-stale、预取、负缓存和不同查询路径都要单独核对。
+
+
+
+![DNS 解析树状拓扑：Local DNS 递归 -> 根域名 -> TLD -> 权威 DNS](../../../public/images/dns-resolution-iterative-recursion-hierarchy.svg)
 
 ## 二、TTL 归谁管：权威画押，解析器倒计时
 
@@ -82,6 +91,10 @@ sequenceDiagram
 ```
 
 **反直觉的工程结论**：从 `CNAME` 切到 `A`、或新增记录时，如果目标位置原来一直返回 `NODATA`，负缓存会把这个"无记录"的状态锁住几分钟到几十分钟。上了新资源后四处 QPS 探不到，第一嫌疑是负缓存，不是"没生效"。
+
+
+
+![DNS 负向缓存 (Negative Cache) 机制：SOA MINIMUM TTL 与 NXDOMAIN 陷阱](../../../public/images/dns-negative-cache-soa-minttl.svg)
 
 ## 四、两本账对照：正、负、权威三张时
 

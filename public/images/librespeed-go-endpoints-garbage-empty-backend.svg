@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed Go 测速端点真相：garbage 内存灌水与 empty 黑洞吸收</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">/garbage.php (1048576 字节伪随机共享块 ──► 1024 轮循环上限 1GiB 钳制) ｜ /empty.php (io.Discard 零分配极速释放)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: garbage -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. /garbage.php 下行高熵灌水机理</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#34d399">// 初始化预生成 1MB 不可压缩高熵块</text>
+          <text y="28" fill="#86efac">var randomBuffer = make([]byte, 1024*1024)</text>
+          <text y="42" fill="#86efac">rand.Read(randomBuffer)</text>
+          
+          <text y="64" fill="#38bdf8">// 处理下行请求 (ckSize 最大 1024)</text>
+          <text y="78" fill="#cbd5e1">chunks := clamp(queryParam("ckSize"), 1, 1024)</text>
+          <text y="92" fill="#34d399">for i := 0; i &lt; chunks; i++ {</text>
+          <text y="106" fill="#34d399">    w.Write(randomBuffer) // 零内存分配，直接写入 Socket！</text>
+          <text y="120" fill="#34d399">}</text>
+          <text y="136" fill="#4ade80">✓ 钳制 1 GiB 上限，彻底杜绝恶劣攻击者耗尽带宽！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">高熵数据防压缩：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 必须使用伪随机字节，防止被 中间网关/浏览器 gzip 压缩成几十 KB；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 全局共享同一个只读 Buffer，支撑上万并发连接并行读取；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 压榨出极具真实的物理链路传输速率！</text>
+      </g>
+    </g>
+
+    <!-- Right: empty -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. /empty.php 上行黑洞吞噬与 RTT 极速响应</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">// GET 请求: 0 字节时延探测</text>
+          <text y="28" fill="#93c5fd">w.Header().Set("Cache-Control", "no-store, no-cache")</text>
+          <text y="42" fill="#93c5fd">w.WriteHeader(http.StatusOK) // 0 字节 Body 立即回包！</text>
+          
+          <text y="64" fill="#fb923c">// POST 请求: 上行黑洞 Sink (Upload)</text>
+          <text y="78" fill="#fed7aa">io.CopyBuffer(io.Discard, r.Body, syncPoolBuf)</text>
+          <text y="92" fill="#34d399">w.WriteHeader(http.StatusOK)</text>
+          
+          <text y="114" fill="#34d399">✓ 32KB sync.Pool 缓冲复用，零堆内存持续分配！</text>
+          <text y="130" fill="#4ade80">✓ 吞噬客户端持续发送的数十 GB 上行数据！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">上行黑洞精要：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 严禁将 r.Body 读入内存切片（会直接引发 OOM 崩溃）；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 配合 TCP Receive Window，让客户端 TCP 栈全力以赴全速推送；</text>
+        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 达到单核 10Gbps 的极速上行吸收能力！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -11,6 +11,11 @@ series: "Go 的设计边界"
 
 **TL;DR：** HTTP/1.1 的 Keep-Alive 语义是「连接默认复用」，但 Go `http.Transport` 的默认值把这个承诺打了一个大折扣：`MaxIdleConnsPerHost=2`——每条宿主最多留 2 条空闲连接。并发一高，空闲槽位立刻不够，取不到现成连接的请求只能新建，付一笔 TCP 握手 + TLS 握手的「复用税」。本机实测（macOS / Go 1.25.1 / 回环 127.0.0.1 / handler 固定 5ms）：50 并发 × 15000 请求，默认池新建约 3580 次连接（约 24% 的请求付了税），调大到 `MaxIdleConnsPerHost=100` 后只新建 49 次。回环上这笔税被 ~0.1ms 的 RTT 掩盖，吞吐几乎不变；把并发推到 200，默认池进入震荡区（四次重复吞吐 1.1k~16.2k req/s、p99 到秒级），调大池稳定在 ~29.3k req/s。四个旋钮各管一摊：**前三个管复用**（`MaxIdleConnsPerHost` 每宿主空闲上限、`MaxIdleConns` 全局空闲上限、`IdleConnTimeout` 空闲寿命），**第四个管并发配额**（`MaxConnsPerHost` 是每宿主连接硬上限，语义与其余三个完全不同）。
 
+
+---
+
+![Go http.Transport 连接池机制：MaxIdleConnsPerHost (默认仅 2 条) 导致高并发频繁建连](../../../public/images/go-http-transport-idle-connection-pool.svg)
+
 ## 一、反直觉：Keep-Alive 说「默认复用」，Go 的默认值却在劝你「每条宿主只养 2 条」
 
 HTTP/1.1 的持久连接语义是：一次 TCP 连接服务多个请求，省掉重复握手（RFC 7230 §6.3）。到 Go 这里，`DefaultTransport` 的实现是：
@@ -25,6 +30,10 @@ HTTP/1.1 的持久连接语义是：一次 TCP 连接服务多个请求，省掉
 第一眼的反直觉就在第二行：**池子默认只给每条宿主留 2 条空闲连接**。它对付的是「连接泄漏」焦虑——防止把太多连接挂在一堆 host 上睡大觉——但对高并发打单点上游的应用，这就是把 Keep-Alive 的复用承诺从「默认复用」削成了「只在 2 条槽位内复用」。
 
 这 2 条意味着什么：任何时刻，这条宿主最多 2 条连接可以被「还回来等复用」。第 3 条完成请求的连接回来时，池子放不下，**直接关闭**。下一波并发请求里，只能靠这 2 条存量去接，多出来的全部新建。复用税就是这么收起来的。
+
+
+
+![net/http.Transport 连接池拓扑：idleLRU、idleConn 与 MaxIdleConnsPerHost](../../../public/images/http-transport-connection-pool-idle-slots.svg)
 
 ## 二、Transport 的池长什么样：按 scheme+host+proxy 分桶，取连接有两条路
 
@@ -57,6 +66,10 @@ flowchart TD
 合起来，一条 HTTPS 新连接从 0 到首字节约 **2.5~3.5 RTT**。这笔税是串行加在「没命中池子」的那个请求的首字节之前的。以跨区 RTT 30ms 为例（公网常见量级，非本机测得，见实验入口）：一次新建就吃掉约 90ms 的串行延迟——而这 90ms 里 TCP/TLS 握手在服务端毫无产出，只是占着 CPU。
 
 更隐蔽的一半在服务端：每个新建连接都要过 SYN 队列与 accept 队列（机制见 [TCP 握手也要排队](/writing/tcp-syn-queue-backlog)）。客户端池子 miss 越频繁，服务端被灌进的新连接越多；当 dial 突发超过 listen backlog，内核静默丢包，客户端看到的是握手超时，而不是拒绝——这正是上一篇文章讲的「connection timed out」的另一个源头。**复用税不只是客户端的事，它在服务端的队列和 accept() 里有一份账单。**
+
+
+
+![HTTP 响应体排空与连接归还生命周期：io.Copy(io.Discard) 与 persistConn 状态流转](../../../public/images/http-response-body-drain-close-pipeline.svg)
 
 ## 四、四个旋钮怎么调：语义、典型值，以及为什么「调大空闲数」不总是对的
 

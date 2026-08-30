@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">企业级支付与下单接口幂等性两阶段防御流水线</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 客户端生成 Idempotency-Key ──► 2. Redis SETNX 毫秒级防重抢占 ──► 3. 业务执行 ──► 4. 数据库 UNIQUE 唯一约束防线兜底</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 客户端发起请求携带唯一键 (Header: Idempotency-Key: UUID)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">用户点击支付按钮 ──► 客户端生成唯一 Idempotency-Key (如商户号+订单号+随机串) ──► 注入 HTTP Header</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">从发端确立全生命周期唯一标识符！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 前置 Redis 毫秒级快速去重 (Redis SETNX lock_key 30s)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">若 Key 存在: 判定为高频重复连击 ──► 直接返回 HTTP 409 Conflict 或直接返回上次缓存的处理结果</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">将 99.9% 的用户狂点与重试流量在最外层极速挡掉！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 数据库原子唯一索引物理兜底 (DB UNIQUE KEY Constraint)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">插入幂等流水表: INSERT INTO idempotency_records (key, status) ──► 触发 Duplicate Key 错误则安全回滚</text>
+        <text x="15" y="62" font-size="8" fill="#047857">即使 Redis 挂掉，关系型数据库 ACID 也能提供钢铁般防御！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 结果缓存与幂等终态持久化 (Response Caching &amp; Return)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">将业务成功处理结果写入 Redis 缓存 24 小时 ──► 无论后续网络重试多少次，永远返回完全一致的成功回执！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">金融级交易系统核心防线！</text>
+      </g>
+    </g>
+  </g>
+</svg>

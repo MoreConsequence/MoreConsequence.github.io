@@ -11,6 +11,11 @@ series: "数据库原理手记"
 
 **TL;DR：** 死锁不是“偶尔撞上的运气”，是**锁等待关系成环**的确定性后果——只要两个事务各持有一把对方要的锁，当前调度下就无法推进。MySQL 用 wait-for graph 主动检测，发现环就回滚一个受害事务并返回 `ER_LOCK_DEADLOCK`；`innodb_lock_wait_timeout` 处理的是单笔锁等待超时，不是死锁检测器。RR 下的 next-key/gap lock 会让范围写入和插入意图锁进入等待图，但普通一致性读、锁定读和写语句的锁语义不能混为一谈。本文拆开锁模型与两个双会话复现。
 
+
+---
+
+![InnoDB 间隙锁互锁与 Wait-for Graph 死锁检测有向图](../../../public/images/mysql-deadlock-wait-for-graph.svg)
+
 ## 一、死锁的物理真相：等待图里出现环
 
 一个事务要么拿到锁继续，要么拿到锁等别人；"别人"也可能在等你。这一张"持有/等待"关系图就是 **wait-for graph**。死锁的定义极其机械：**图里出现环**。
@@ -21,6 +26,10 @@ series: "数据库原理手记"
 ```
 
 因为环上没有出路的节点，任何调度都无法推进——它不是概率，是两个事务按固定顺序抢锁的**必然结局**。这也是为什么死锁复现几乎必现：只要让 A 先锁行 1 再锁行 2、B 先锁行 2 再锁行 1，第一次执行就成环；反过来（两者同序）却永远不死——"环"才是死锁的充分条件。
+
+
+
+![死锁等待图 (Wait-For Graph) 环路检测与 DFS 深度优先拓扑判定](../../../public/images/deadlock-wait-for-graph-cycle-detection.svg)
 
 ## 二、检测器 vs 超时：谁先动手
 
@@ -67,6 +76,10 @@ INSERT INTO t VALUES(6);                         -- 等 S1 的 gap lock → 环�
 ```
 
 结果：`ERROR 1213 (40001): Deadlock found`。这里的重点是 **S1/S2 的范围修改先持有了不同区间的 next-key/gap lock，后续 INSERT 再通过插入意图锁互相等待**。如果把语句换成普通一致性 `SELECT`，它通常读取快照而不按这个路径持有 gap lock；如果是 `SELECT ... FOR UPDATE`，则又回到锁定读语义，必须按索引和隔离级别重新分析。
+
+
+
+![InnoDB 锁范围拓扑：Record Lock、Gap Lock 与 Next-Key Lock 判定](../../../public/images/innodb-gap-next-key-lock-scope.svg)
 
 ## 四、复现与救援站：把死锁训练出来
 

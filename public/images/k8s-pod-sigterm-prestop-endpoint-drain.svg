@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Kubernetes Pod 优雅停机四阶段异步竞态与消解 (Pod Graceful Termination)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 状态置为 Terminating ──► 2. 控制平面异步摘除 Endpoints ｜ 节点并行执行 preStop sleep 15s ──► 3. SIGTERM 内部连接排空 ──► 4. 0 报错平滑销毁</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 触发删除与状态流转 (Pod Status -&gt; Terminating)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">kubectl delete / 滚动升级触发 ──► API Server 将 Pod 标记为 Terminating ──► 开启 terminationGracePeriodSeconds (30s)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">启动全局停机倒计时！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 核心异步竞态消解 (The Endpoints vs SIGTERM Race Condition)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">kube-proxy 摘除 iptables 需耗时 3~5 秒 ──► 若容器瞬间退出必产生 502/504 ──► 必须配置 preStop: sleep 15 等待流量完全切走！</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">消除云原生滚动发布 502 报错的唯一真理！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 发送 SIGTERM 与业务连接排空 (SIGTERM &amp; Server.Shutdown)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Kubelet 向主进程发送 SIGTERM ──► 框架拒绝新请求 ──► 优雅等待处理中的长请求与事务安全完成</text>
+        <text x="15" y="62" font-size="8" fill="#047857">保障 0 业务事务中断与数据半写！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 资源清理与终极保底 (Graceful Exit or SIGKILL Guard)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">进程正常退出 0 ──► 若 30 秒超时未退出则发送 SIGKILL 强杀 ──► 容器运行时销毁 cgroup</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">企业级生产发布 0 故障金牌规范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

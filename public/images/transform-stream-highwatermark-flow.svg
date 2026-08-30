@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TransformStream 水位线流控：highWaterMark 与 drain 信号唤醒</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">缓冲区达到 highWaterMark ──► write() 返回 false 触发上游暂停 ──► 下游消费排空触发 drain 事件重新放行</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 缓冲区安全水位 (Watermark)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">highWaterMark: 16 (16KB 或 16 块)</text>
+          <text x="10" y="42" fill="#86efac">1. 上游快速 push 写入数据块</text>
+          <text x="10" y="58" fill="#86efac">2. 缓冲区排队队列逐渐上升</text>
+          <text x="10" y="74" fill="#34d399">3. 水位 &lt; 16 时: write() 返回 true</text>
+          <text x="10" y="100" fill="#4ade80">✓ 充当弹性的速度差异缓冲垫！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 平滑生产者与消费者的速度微小波动；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 预留合理的内存缓冲区上限；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造弹性的管道。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 水位超标强力反压 (Backpressure)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 下游变慢导致队列积压 &gt;= 16</text>
+          <text x="10" y="34" fill="#f87171">write() 立即返回 false！</text>
+          <text x="10" y="58" fill="#fed7aa">上游生产者的法定动作：</text>
+          <text x="10" y="74" fill="#fed7aa">1. 必须立即停止调用 write()！</text>
+          <text x="10" y="90" fill="#38bdf8">2. 挂起等待目标流的 'drain' 事件！</text>
+          <text x="10" y="114" fill="#4ade80">✓ 从根源切断数据堆积，防止 OOM！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">治理原则：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 严禁无视 false 继续硬写；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 通过 pipeline() / pipeTo() 自动治理；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级流处理核心准则！</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 消费排空与自愈放行 (Drain Event)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 下游终于处理完一批数据</text>
+          <text x="10" y="34" fill="#86efac">1. 缓冲区排空至低水位线 (0)</text>
+          <text x="10" y="50" fill="#38bdf8">2. 目标流发出 'drain' 事件通知</text>
+          <text x="10" y="74" fill="#34d399">3. 上游生产者被唤醒，继续泵入新数据！</text>
+          <text x="10" y="104" fill="#4ade80">✓ 动态自适应速度调节，吞吐量达到物理极限！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 相当于 Go channel 缓冲区满时阻塞发送端；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支撑 TB 级实时日志流与 AI 流式网关；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚如磐石的数据管道！</text>
+      </g>
+    </g>
+  </g>
+</svg>

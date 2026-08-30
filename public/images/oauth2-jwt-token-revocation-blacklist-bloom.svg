@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">JWT 混合吊销架构：内存布隆过滤器 + Redis 黑名单</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 本地 JWT 签名合法性校验 ──► 2. 本地内存布隆过滤器 0ms 判定 "绝未被吊销" (99.9% 请求直接放行) ──► 3. 疑似黑名单才查 Redis 确证</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 本地 CPU 极速验签 (Local Cryptographic Verification)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">通过 EdDSA / RSA-256 公钥校验签名与 exp 过期时间 ──► 纯内存纳秒级完成</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">排除伪造与过期请求！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. 本地内存布隆过滤器初筛 (In-Memory Bloom Filter: 0ms)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">检查 jti (JWT ID) 是否在吊销布隆过滤器中 ──► 若判定 "不存在" ──► 100% 绝对未被吊销，直接放行通过！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">99.9% 的正常请求在此 0 网络 I/O 瞬间直通！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. 命中疑似黑名单精细确证 (Redis Blacklist Lookup: SETEX ttl)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">仅当布隆过滤器命中 (存在假阳性可能) ──► 查 Redis: GET blacklist:jti ──► 确证已被吊销立即返回 HTTP 401</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">精准消灭假阳性，确保持久安全！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 黑名单自动过期收缩 (Automatic TTL Self-Pruning)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Redis 黑名单 key 的 TTL 仅需设为该 JWT 的剩余生命周期 ──► 到期自动销毁，黑名单容量永不膨胀！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">兼具无状态极速性能与即时安全吊销的终极融合！</text>
+      </g>
+    </g>
+  </g>
+</svg>

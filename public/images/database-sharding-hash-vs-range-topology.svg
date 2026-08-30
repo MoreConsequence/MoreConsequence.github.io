@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">数据库分片策略对比：哈希取模 (Hash) vs 范围分片 (Range)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Hash 取模分片 (数据均匀离散分布，但扩容需要数据重平衡且无法做范围查询) vs Range 范围分片 (天然支持按月范围扫描与归档，但最新分片容易打爆热点)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 2 Panes (435px each) -->
+    <!-- Left: Hash Sharding -->
+    <g>
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Hash 取模分片 (如 CRC32(user_id) % 64)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#4ade80">数据离散分布模型：</text>
+          
+          <text y="38" fill="#86efac">• 64 个库表均匀分摊 1000 万用户数据</text>
+          <text y="52" fill="#38bdf8">• 写入 I/O 与存储容量绝对平局分配</text>
+          <text y="66" fill="#34d399">• 0 单个数据库节点被大促热点打爆！</text>
+          
+          <text y="90" fill="#fb923c">局限与代价：</text>
+          <text y="104" fill="#fed7aa">• 按时间范围查最近 7 天订单需要广播 64 个分片聚合 (Scatter-Gather)</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 用户账户、电商订单主键点查；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 写入吞吐量极高的核心在线交易表；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 绝大多数分库分表首选。</text>
+      </g>
+    </g>
+
+    <!-- Right: Range Sharding -->
+    <g transform="translate(465, 0)">
+      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
+      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">Range 范围分片 (如按月份或自增 ID 区间)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="405" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text y="14" fill="#38bdf8">按时间或连续范围划分：</text>
+          
+          <text y="38" fill="#86efac">• 2026_01, 2026_02 ... 独立物理表</text>
+          <text y="52" fill="#38bdf8">• 范围查询极度高效，仅需路由至单表</text>
+          <text y="66" fill="#34d399">• 历史旧数据冷热归档极其方便 (直接 DROP)</text>
+          
+          <text y="90" fill="#f87171">致命短板：</text>
+          <text y="104" fill="#ef4444">• 当月最新分片承载 100% 写流量，产生严重写入热点！</text>
+        </g>
+
+        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">适用场景：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 财务流水、审计日志、时序监控数据；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 具有强烈生命周期与归档诉求的系统；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 冷热分离利器。</text>
+      </g>
+    </g>
+  </g>
+</svg>

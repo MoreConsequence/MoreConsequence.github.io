@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript 接口边界三合一：单一 Schema 统一运行时与编译期</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Zod Schema ──► 1. 运行时非法输入强校验 ｜ 2. z.infer 静态强类型自动推导 ｜ 3. 精准字段级错误路径 (issue.path)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: Runtime Validation -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. 运行时物理强校验 (Validation)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#34d399">const UserSchema = z.object({</text>
+          <text x="16" y="34" fill="#86efac">  id: z.string().uuid(),</text>
+          <text x="16" y="48" fill="#86efac">  age: z.number().min(18),</text>
+          <text x="16" y="62" fill="#86efac">  email: z.string().email(),</text>
+          <text x="10" y="76" fill="#34d399">});</text>
+          
+          <text x="10" y="98" fill="#38bdf8">const res = UserSchema.safeParse(req.body);</text>
+          <text x="10" y="114" fill="#34d399">✓ 杜绝 SQL/NoSQL 注入与野属性畸变</text>
+          <text x="10" y="130" fill="#34d399">✓ 零依赖反射，极致轻量快速！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强制 strip 未知注入字段；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支持 preprocess 自动转换字符串数字；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造坚不可摧的 HTTP / RPC 入口防线。</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Type Inference -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. 静态类型自动推导 (z.infer)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 唯一事实来源 (Single Source of Truth)</text>
+          <text x="10" y="36" fill="#93c5fd">type User = z.infer&lt;typeof UserSchema&gt;;</text>
+          
+          <text x="10" y="60" fill="#cbd5e1">/* 自动等价生成 TS 接口：</text>
+          <text x="10" y="74" fill="#93c5fd">type User = {</text>
+          <text x="16" y="88" fill="#93c5fd">  id: string;</text>
+          <text x="16" y="102" fill="#93c5fd">  age: number;</text>
+          <text x="16" y="116" fill="#93c5fd">  email: string;</text>
+          <text x="10" y="130" fill="#93c5fd">}; */</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 告别 interface 与校验逻辑手动写两遍的低级重复；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 修改 Schema 字段，全工程下游自动报 TS 编译错误；</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 消除 100% 的前后端契约漂移！</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Error Paths -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 树状精准错误路径 (issue.path)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 嵌套深层错误自解释定位</text>
+          <text x="10" y="34" fill="#fed7aa">if (!res.success) {</text>
+          <text x="16" y="48" fill="#fed7aa">  res.error.issues.map(e =&gt; ({</text>
+          <text x="22" y="62" fill="#f87171">    path: e.path.join('.'), // 如 "users.0.email"</text>
+          <text x="22" y="76" fill="#fca5a5">    message: e.message,</text>
+          <text x="22" y="90" fill="#fca5a5">    code: e.code</text>
+          <text x="16" y="104" fill="#fed7aa">  }));</text>
+          <text x="10" y="118" fill="#fed7aa">}</text>
+          <text x="10" y="136" fill="#34d399">✓ 直接将字段级精准报错返回给前端表单！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 前端表单可直接高亮红框锁定具体控件；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 统一全公司 API 400 Bad Request 错误协议；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造现代化全栈工程体验典范！</text>
+      </g>
+    </g>
+  </g>
+</svg>

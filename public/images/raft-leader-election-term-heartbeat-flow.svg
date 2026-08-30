@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Raft 共识算法状态机与任期 (Term) 选举拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Follower (接收心跳) ──(心跳超时 150~300ms)──► Candidate (自增任期 Term+1，广播 RequestVote) ──(赢得多数派 N/2+1 票)──► Leader (广播 AppendEntries 心跳)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Follower (追随者状态)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">初始默认状态：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 保持沉默，响应来自 Leader 的心跳</text>
+          <text x="10" y="54" fill="#cbd5e1">• 重置随机选举定时器 (150ms ~ 300ms)</text>
+          <text x="10" y="70" fill="#f87171">• 若心跳超时未收到 ──► 变身为 Candidate！</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 集群常规稳定基态！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 随机超时时间有效打散并发竞选冲突；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 严格服从合法 Leader 的指令；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 共识系统的基石。</text>
+      </g>
+    </g>
+
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. Candidate (候选人状态)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">自增任期: currentTerm += 1</text>
+          
+          <text x="10" y="38" fill="#fed7aa">竞选投票流程：</text>
+          <text x="10" y="54" fill="#38bdf8">• 投自己一票，向所有节点广播 RequestVote</text>
+          <text x="10" y="70" fill="#4ade80">• 收到多数派同意票 (Quorum &gt; N/2) ──► 晋升 Leader！</text>
+          <text x="10" y="86" fill="#f87171">• 收到新合法 Leader 心跳 ──► 自动退回 Follower</text>
+          
+          <text x="10" y="114" fill="#4ade80">✓ 民主多数派决议机制！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 每个节点单任期内最多投一票 (先到先得)；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 候选人日志必须至少与选民一样新；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 确保数据不丢。</text>
+      </g>
+    </g>
+
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Leader (领袖主节点)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">集群唯一写入口：</text>
+          
+          <text x="10" y="38" fill="#86efac">• 周期性广播 AppendEntries 空心跳维持统治</text>
+          <text x="10" y="54" fill="#38bdf8">• 接收客户端写请求，分发日志条目</text>
+          <text x="10" y="70" fill="#4ade80">• 多数派落盘后推进 commitIndex 并应用状态机！</text>
+          
+          <text x="10" y="100" fill="#4ade80">✓ 强一致性中央指令中枢！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 易理解性与严谨数学证明的完美结合；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• etcd, TiKV, CockroachDB 核心动力；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代分布式系统的黄金皇冠！</text>
+      </g>
+    </g>
+  </g>
+</svg>

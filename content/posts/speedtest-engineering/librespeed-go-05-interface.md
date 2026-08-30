@@ -10,6 +10,11 @@ series: "LibreSpeed Go 源码行纪"
 
 **TL;DR：** 这篇是系列的**接口规格书**：`web.go:66-96` 挂载的全部路由，逐条给出方法、路径变体、参数、请求体、响应与错误码——每条都有本机实测输出背书（完整会话存档 `evidence/librespeed-go-series/2026-08-26-local/evidence_session.log`）。三个此前没写透的点：`/results/json` 的数字格式化是**三档精度**（<10 保留两位、<100 一位、≥100 取整，注释明言 matching PHP）；`/stats` 的登录态用 gorilla session cookie 承载且**密钥每次重启随机生成**（重启即全员下线）；默认密码哨兵值 `"PASSWORD"` 的含义是"未配置"而非弱密码。
 
+
+---
+
+![LibreSpeed Go 12 条路由接口规范：静态资源、测速端点与遥测管理 API 全景矩阵](../../../public/images/librespeed-go-interface-routes-specification.svg)
+
 ## 一、总表：一套逻辑 × 三种路径形态
 
 所有功能端点都挂三份：现代路径、`/backend/*` 前缀、`.php` 后缀。下表只列现代路径，其余两条等价（`web.go:67-96`）：
@@ -93,6 +98,10 @@ ULID 由时间戳 + 单调熵生成；开启 ID 混淆时返回混淆后的形�
 
 500×286 画布、内嵌 Noto Sans 字体、freetype 绘制，含 LibreSpeed 水印与时间戳。实测返回 `200, 19,659 B, image/png`。这是"结果分享"功能的全部实现——没有前端截图，服务端就是渲染器。
 
+
+
+![管理面安全鉴权：/stats 会话状态管理与防暴力破解设计](../../../public/images/librespeed-go-admin-session-security.svg)
+
 ## 四、管理面：/stats 的会话合同
 
 `stats.go` 的认证流程比表面复杂，逐条列出（全部实测）：
@@ -108,6 +117,10 @@ ULID 由时间戳 + 单调熵生成；开启 ID 混淆时返回混淆后的形�
 | 登出 | `?op=logout` | 清 cookie + 307 |
 
 两个安全相关的观察：会话密钥由 `securecookie.GenerateRandomKey(32)` 在**进程 init 时生成**——重启服务即全员下线，也意味着多实例部署必须换成共享密钥；密码比较是普通 `==` 而非常数时间比较（自托管场景可接受，但值得知道）。
+
+
+
+![端点调用时序：curl 一键复现完整测速生命周期](../../../public/images/librespeed-go-rest-curl-sequence.svg)
 
 ## 五、一次完整会话的 curl 序列
 

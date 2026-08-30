@@ -10,6 +10,11 @@ featured: false
 
 **TL;DR：** 设计 APP 测速服务端，先确定它要提供哪一种测试证据：边缘到客户端的峰值 goodput、真实业务路径的体验，还是带服务端遥测的网络诊断。推荐的国内服务端形态是三层：**控制面**签发测试 profile、短期 token、端点和配额；**数据面**用中国内地 CDN 或边缘节点提供不可压缩下载，用区域 sink 接收并丢弃上传；**观测与账单面**异步记录应用字节、边缘计费流量、源站回源、并发、过载和异常流量。容量先按「并发测试数 × 单测试吞吐」算出口，再算连接缓冲、TLS/CPU、请求数和国内 CDN 计费。客户端在这里不是主角，它只是执行服务端下发的测试合同并回传结果。
 
+
+---
+
+![APP 测速服务端架构：中国大陆三大运营商三网 BGP 边缘拓扑与带宽成本模型](../../../public/images/app-speed-test-architecture-cost-china-topology.svg)
+
 ## 一、服务端先定义被测对象：同一个 /speed 不能回答五种问题
 
 测速服务端真正要解决的第一个问题不是“返回多少 Mbps”，而是“这次测试的字节经过了哪些组件”。用户界面可以只有一个“开始测速”按钮，服务端却必须把测试对象写进 profile，否则 CDN、源站、业务 API 和自建节点的结果会被混在一起。
@@ -31,6 +36,10 @@ featured: false
 > 本次测试的字节从哪里产生，经过哪一层边缘或源站，允许跑多长时间和多少字节，什么条件下算完成、无容量或无效？
 
 这行合同决定端点、缓存策略、客户端请求方式、服务端配额和最终账单。一个 CDN 边缘 300 Mbps 的结果不能冒充源站或业务 API 的吞吐；一个小 JSON 请求也不能拿来填满用户的接入链路。
+
+
+
+![测速服务带宽成本模型：95 计费峰值、多通道分段采样与动态提前截断](../../../public/images/speedtest-traffic-cost-breakdown-model.svg)
 
 ## 二、指标合同：测速结果不应该只有一个 Mbps
 
@@ -182,6 +191,10 @@ RFC 6349 也指出，有些流量管理现象需要多个 TCP session 才能观�
 - 服务端进入过载、预算阈值或 POP 摘除状态。
 
 服务端摘要应保存 `abort_reason`、`last_byte_at`、`server_write_blocked_ms`、`bytes_sent`、`bytes_received` 和 `quota_exhausted`。客户端展示流量和电量是产品问题，服务端要做的是让这些消耗有界、可回收、可计费和可解释。
+
+
+
+![多并发 TCP 测速流与内核 Socket Buffer 调优：BDP 乘积与 BBR 拥塞控制](../../../public/images/speedtest-multi-stream-socket-buffer-tuning.svg)
 
 ## 四、服务端架构：把控制面和大流量数据面彻底分开
 

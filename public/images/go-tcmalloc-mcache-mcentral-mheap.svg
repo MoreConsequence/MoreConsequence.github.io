@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 内存分配器三级架构：mcache ──► mcentral ──► mheap</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">微对象 tiny (1~16B 无锁拼装 12ns) ｜ 小对象 (&lt;32KB 67 档 size class 85ns) ｜ 大对象 (&gt;32KB mheap 直接分配 733ns)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: mcache -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">1. P 本地缓存 (mcache, 0 锁开销)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#34d399">// 每个逻辑处理器 P 独占一份</text>
+          <text x="10" y="34" fill="#86efac">• 包含 67 × 2 (scan/noscan) = 134 个 mspan</text>
+          <text x="10" y="50" fill="#38bdf8">• tiny 块 (16B): 汇聚多个微小对象拼装</text>
+          <text x="10" y="68" fill="#34d399">✓ 90% 的小对象分配直接在 mcache 完成！</text>
+          <text x="10" y="86" fill="#34d399">✓ 完全零锁竞争！耗时仅需 ~12ns！</text>
+          <text x="10" y="106" fill="#fbbf24">► 当 mcache 中某个规格跨度用尽：</text>
+          <text x="10" y="122" fill="#fed7aa">   向对应的全局 mcentral 申请补充新 span</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">核心优势：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 借鉴 Google TCMalloc 线程本地缓存设计</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 彻底消除了多核 CPU 并发 malloc 锁竞争</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造了 Go 极高分配吞吐量的基石！</text>
+      </g>
+    </g>
+
+    <!-- Col 2: mcentral -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. 全局中心跨度表 (mcentral)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// 67 种规格对应 67 个独立 mcentral</text>
+          <text x="10" y="34" fill="#93c5fd">1. partial: 包含未分配空闲对象的 span 链表</text>
+          <text x="10" y="48" fill="#93c5fd">2. full: 已全部满载分配的 span 链表</text>
+          <text x="10" y="66" fill="#fbbf24">3. 细粒度互斥锁：各规格之间互不干扰</text>
+          <text x="10" y="84" fill="#34d399">4. GC 清扫时将回收的 span 归还到 partial</text>
+          <text x="10" y="104" fill="#38bdf8">► 耗时约 85ns (含轻度锁争用)</text>
+          <text x="10" y="122" fill="#93c5fd">若 partial 链表为空，向底层 mheap 申请</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">负载均衡枢纽：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 协调多个 P 之间的内存分配平衡</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 避免单个 P 闲置而其他 P 饥饿</text>
+        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 规格化切割消除外部内存碎片</text>
+      </g>
+    </g>
+
+    <!-- Col 3: mheap -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 堆级页管理器 (mheap, 8KB 页)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 全局单一页堆与虚拟内存基石</text>
+          <text x="10" y="34" fill="#fed7aa">1. 基数树 (pageAlloc Radix Tree) 极速寻址</text>
+          <text x="10" y="48" fill="#fed7aa">2. 以 8KB Page 为最小单位管理</text>
+          <text x="10" y="66" fill="#f87171">3. 大对象 (&gt;32KB): 直接调用 mheap.alloc</text>
+          <text x="10" y="82" fill="#fca5a5">   分配连续页，耗时 ~733ns (含大锁开销)</text>
+          <text x="10" y="102" fill="#34d399">4. 堆空间不足时调用 sysAlloc 向 OS 申请 mmap</text>
+          <text x="10" y="120" fill="#38bdf8">5. 后台 scavenger 定期 madvise 归还物理内存</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">调优关键结论：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 小对象分配极其便宜，大对象分配非常沉重；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 超过 32KB 的高频大 Buffer 务必引入 sync.Pool 复用；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 规避 mheap 全局大锁成为多核瓶颈！</text>
+      </g>
+    </g>
+  </g>
+</svg>

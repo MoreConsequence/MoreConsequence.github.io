@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">分布式事务技术选型决策树 (Decision Tree)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">是否需要刚性强一致？ ──► 是否跨第三方外部系统？ ──► 业务能否支持资源预冻结？ ──► 毫秒级命中最佳落地架构</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">分支 1: 异步通知 / 跨服务数据分发 (Asynchronous Decoupling)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">下单后发送积分、通知发货、刷新缓存 ──► 坚决选择: Transactional Outbox + CDC Binlog + MQ 消费幂等</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">覆盖 80% 的常规业务解耦场景！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">分支 2: 核心资金划拨 / 高频强原子资源扣减 (High-Concurrency Real-Time Assets)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">支付扣款、余额划转、极速秒杀库存 ──► 坚决选择: TCC 模式 (Try 预冻结金额 + Confirm 真实入账 + 逆向 Cancel)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">保障资金 0 差错与极致吞吐！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">分支 3: 超长业务链 / 包含外部第三方不可控 API (Complex Long-Running Workflows)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">旅游套餐预订 (机票 + 酒店 + 租车 + 信用卡预授权) ──► 坚决选择: Saga 编排器 (Temporal / Seata)</text>
+        <text x="15" y="62" font-size="8" fill="#047857">状态机清晰可视化，失败自动触发精确逆向补偿！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">分支 4: 单机多库极低频强一致 ACID (Low-Frequency Rigid ACID)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">严苛传统单体系统跨两个物理库 ──► 选用: 2PC / XA (或直接重构成分布式 NewSQL 数据库)</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">分布式架构设计的科学决策终局！</text>
+      </g>
+    </g>
+  </g>
+</svg>

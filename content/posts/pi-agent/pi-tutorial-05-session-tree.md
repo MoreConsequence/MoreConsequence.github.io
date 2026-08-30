@@ -10,6 +10,11 @@ series: "Pi Agent 通才教程"
 
 **TL;DR：** 绝大多数简易 Agent 仅把聊天记录保存在一个内存数组或一个单体 `messages.json` 里。一旦进程被杀、网络断开或者 Agent 在探索中走入了死胡同，用户只能被迫把整个会话清空重新开始。**一个生产级 Agent 的会话存储必须具备两项核心能力：支持树状分支探索（Undo / Branching）与崩溃自愈（Crash Resilience）**。Pi 在会话层开创性地采用了“**单 JSONL 文件承载整棵状态树**”的设计，并实现了毫秒级的残缺行检测与原子修复。本文作为《Pi Agent 实战通才教程》第五课，带你从零手写一个基于 JSONL 的树状会话存储引擎。
 
+
+---
+
+![树状持久化与崩溃自愈：JSONL 存储引擎、分支回退与残行修复算法](../../../public/images/pi-session-tree-jsonl-branch-healing.svg)
+
 ## 一、为什么会话必须是树，而不是线性数组？
 
 在实际软件开发中，Agent 经常需要**试错探索**：
@@ -34,6 +39,10 @@ graph TD
 在树状模型下：
 - **分支是廉价的**：同一个会话文件可以同时包含方案 A 与方案 B 的完整探索轨迹；
 - **回滚是无损的**：通过切换当前“叶子节点指针（Leaf Pointer）”，可以在历史任意时刻分叉出新的探索路径。
+
+
+
+![Pi 会话树 JSONL 数据结构与父子节点指针关联模型](../../../public/images/pi-tutorial-session-tree-jsonl-schema.svg)
 
 ## 二、为什么选择 JSONL（追加式日志）？
 
@@ -68,6 +77,10 @@ graph TD
 $$\text{Active Path}(\text{node\_6}) = [\text{node\_1} \to \text{node\_2} \to \text{node\_3} \to \text{node\_4} \to \text{node\_6}]$$
 
 `node_5` 自然被排除在当前活跃上下文之外，但其记录依然完好保存在文件中。
+
+
+
+![Pi 会话树 Checkout 分支切换与时光机回溯状态机](../../../public/images/pi-tutorial-session-dag-checkout-branch-flow.svg)
 
 ## 四、崩溃自愈：处理 Torn Line 与原子重命名
 

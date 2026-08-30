@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">PagedAttention 核心机制：虚拟逻辑块到离散物理 GPU 显存页映射</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">借鉴 OS 分页思想 ｜ 消除内部显存碎片 ｜ 支持跨 Request 共享 Prompt 前缀 (Copy-on-Write)</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 3 Columns (285px each) -->
+    <!-- Col 1: Logical Tokens -->
+    <g>
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 请求逻辑 Token 序列 (Logical)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#38bdf8">// Request A: 连续逻辑块</text>
+          <text x="10" y="34" fill="#93c5fd">Logical Block 0: Token 0~15</text>
+          <text x="10" y="50" fill="#93c5fd">Logical Block 1: Token 16~31</text>
+          <text x="10" y="66" fill="#fed7aa">Logical Block 2: Token 32~37 (未填满)</text>
+          
+          <text x="10" y="92" fill="#4ade80">✓ 逻辑上看似连续申请空间</text>
+          <text x="10" y="108" fill="#cbd5e1">• 无需预先分配最大 2048 长度！</text>
+          <text x="10" y="124" fill="#4ade80">• 按需分配单个 16-Token 块。</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
+        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 块大小通常设为 16 或 32 Tokens；</text>
+        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 杜绝传统静态显存预占用的巨额浪费；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• 显存利用率从 20% 飙升至 96%！</text>
+      </g>
+    </g>
+
+    <!-- Col 2: Block Table -->
+    <g transform="translate(300, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 块表映射 (Block Table)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#4ade80">// 块表记录动态映射关系</text>
+          <text x="10" y="34" fill="#86efac">Block 0 ──► Physical Frame #7</text>
+          <text x="10" y="50" fill="#86efac">Block 1 ──► Physical Frame #3</text>
+          <text x="10" y="66" fill="#38bdf8">Block 2 ──► Physical Frame #12</text>
+          
+          <text x="10" y="92" fill="#fb923c">// Copy-on-Write 分支:</text>
+          <text x="10" y="108" fill="#fed7aa">Request B 共享 Frame #7 (Ref=2)</text>
+          <text x="10" y="124" fill="#34d399">✓ 0 冗余内存复制多分支采样！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构价值：</text>
+        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯软件级页表转换，硬件加速计算；</text>
+        <text x="10" y="48" font-size="7.5" fill="#15803d">• 并行采样多个候选输出时极度节省显存；</text>
+        <text x="10" y="62" font-size="7.5" fill="#047857">• vLLM 核心竞争力的数学基石。</text>
+      </g>
+    </g>
+
+    <!-- Col 3: Physical GPU VRAM -->
+    <g transform="translate(600, 0)">
+      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
+      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 离散物理显存池 (Physical VRAM)</text>
+
+      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
+        <rect width="255" height="150" rx="4" fill="#0f172a"/>
+        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
+          <text x="10" y="18" fill="#fb923c">// 离散 HBM/SRAM 显存页</text>
+          <text x="10" y="34" fill="#fed7aa">Frame #3 : [ K-Cache | V-Cache ]</text>
+          <text x="10" y="48" fill="#fed7aa">Frame #7 : [ System Prompt 前缀 ]</text>
+          <text x="10" y="62" fill="#fed7aa">Frame #12: [ 动态增量 Token 缓存 ]</text>
+          
+          <text x="10" y="88" fill="#38bdf8">1. 物理位置无需连续</text>
+          <text x="10" y="104" fill="#34d399">2. 彻底消灭外部显存碎片</text>
+          <text x="10" y="120" fill="#4ade80">✓ 单机吞吐量提升 4 倍！</text>
+        </g>
+
+        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">物理收益：</text>
+        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 让单张 A100/H100 容纳 4x 并发请求；</text>
+        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 彻底解决 LLM 推理吞吐瓶颈；</text>
+        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 现代 AI 推理系统工业标准。</text>
+      </g>
+    </g>
+  </g>
+</svg>

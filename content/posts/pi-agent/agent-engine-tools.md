@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 工具的取舍是 Agent 架构里最容易被"功能竞赛"带偏的一环。Pi 只有 4 个内建工具——`read`、`bash`、`edit`、`write`——但足够完成整个编码工作流，因为 `bash` 是万能的、其他三个是低风险的。四个工具实现加起来约 1600 行，其中 bash 就占 510 行，藏着全部工程含量：50KB 输出进入滚动丢弃 + 溢出写临时文件、超时和 AbortSignal 走杀进程树、输出清理（去 ANSI、二进制检测）、以及一个可插拔的 `BashOperations` 接口——**沙箱不是内置的锁，是一个可以把 bash 换成远程/容器执行的后门**。本文逐行拆这个"手"。
 
+
+---
+
+![Agent 的手：为什么 4 个工具足够解决一切工程问题，以及 Bash 沙箱的实质](../../../public/images/pi-agent-four-tools-bash-sandbox-essence.svg)
+
 ## 一、工具多不等于 Agent 强
 
 01 篇引用的 Databricks 基准有一句关键结论被多数转述略过："token 单价不是任务成本的好预测因子"。理由之一就是参考实现靠工具嗅探目录——工具漫天飞，上下文就膨胀。Pi 的选择是反着来：**能由 bash 表达的，不建专用工具。**
@@ -25,6 +30,10 @@ series: "Agent 的方方面面"
 | `write` | 写/覆盖文件 | 文件落盘，唯一的重置口 |
 
 官方文档的说法是"~4 tools"——README 甚至写死了 `selectedTools` 默认就是这组。这套取舍的逻辑是：**其余所有工具都可以是 `bash` 的语法糖**。`ls`、`grep`、`find`、MCP 里的各种能力，没有一个是 bash 做不了的。多一个专用工具，多的不是能力，是"模型要学会调用它 + 工具定义占上下文"两份成本。
+
+
+
+![Agent 工具系统底层执行契约：JSON Schema 序列化 -> 强类型参数校验 -> 沙箱执行 -> 观测回填](../../../public/images/agent-tool-definition-json-schema-execution.svg)
 
 ## 二、bash 是万能工具，代价是它必须被管住
 
@@ -74,6 +83,10 @@ export interface BashOperations {
 ```
 
 本地默认实现是 `createLocalBashOperations` 的 spawn 后端；而下载 SSH、容器、（08 篇要讲的）Gondolin 微 VM 沙箱，全部是**换一个 `exec` 实现**：接口像 USB，谁的进程树归谁管、谁的工作目录谁校验（`fsAccess(cwd, F_OK)` 查 cwd 存在——模型指挥的路径可能压根不在磁盘上），都在这一个点上做替换。这解释了 pi.dev 官网"权限用什么做都可以"的底气：它不是没有权限系统，而是把权限边界设计成了**执行后端的可替换性**。
+
+
+
+![Tool 超长输出智能截断与压缩：避免爆 Token 与关键证据保留](../../../public/images/agent-tool-output-truncation-and-compaction.svg)
 
 ## 四、edit/write：低风险部分反而讲究
 

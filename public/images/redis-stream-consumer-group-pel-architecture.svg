@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis Stream 消费组与 PEL (Pending Entries List) 可靠确认架构</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">XADD 生产 ──► XREADGROUP 分发 ──► 消息进入消费者私有 PEL ──► XACK 确认移除 ｜ 节点崩溃则通过 XCLAIM / XAUTOCLAIM 转移抢救</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 消息入队与持久化日志 (XADD stream * sensor 100)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">生成毫秒级单调递增 ID (如 1718900000000-0) ──► 采用紧凑 Rax (Radix Tree) 树结构持久化存储在内存与 AOF 中</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">打破传统 Pub/Sub 无法持久化与丢历史消息的缺陷！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 消费组并发竞争拉取 (XREADGROUP GROUP mygroup c1 COUNT 1 STREAMS stream &gt;)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">消费组内多个 Consumer 竞争分发消息 ──► 每条消息仅分配给组内某一个消费者 ──► 自动推进 Group Last Delivered ID</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">实现天然的水平负载均衡与并发消费！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. PEL 待确认列表与可靠保底 (In-Flight Tracking in PEL)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">读取后消息立即挂载到当前 Consumer 的 PEL 中 ──► 记录投递时间与投递次数 ──► 必须显式收到 XACK 才从 PEL 抹除！</text>
+        <text x="15" y="62" font-size="8" fill="#047857">100% 杜绝消费端处理中途断电导致消息静默丢失！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 崩溃孤儿消息抢救接管 (XAUTOCLAIM stream mygroup c2 60000 0-0)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Consumer 1 宕机超过 60s ──► Consumer 2 扫描发现滞留 PEL ──► 强行变更所有权至自己名下重新执行！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">兼具轻量极速与企业级可靠性的自愈消息流中枢！</text>
+      </g>
+    </g>
+  </g>
+</svg>

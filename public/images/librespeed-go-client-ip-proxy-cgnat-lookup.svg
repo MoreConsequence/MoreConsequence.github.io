@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed Go 真实 IP 提取算法与 CGNAT 边界穿透</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">CF-Connecting-IP ──► X-Real-IP ──► X-Forwarded-For 链式解析 ──► 过滤 100.64.0.0/10 与 RFC1918 ──► RemoteAddr 兜底</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Cascading Priority Steps (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <!-- Stage 1 -->
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">优先级 1: CDN 独占可信头 (CF-Connecting-IP / True-Client-IP)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">if ip := r.Header.Get("CF-Connecting-IP"); ip != "" &amp;&amp; isValidPublic(ip) { return ip }</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">Cloudflare / Akamai 等边缘 CDN 边缘网关注入的最高可信公网真实客户端 IP，防范客户端伪造！</text>
+
+      <!-- Stage 2 -->
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">优先级 2: 反向代理真实 IP 头 (X-Real-IP)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">if ip := r.Header.Get("X-Real-IP"); ip != "" &amp;&amp; isValidPublic(ip) { return ip }</text>
+        <text x="15" y="62" font-size="8" fill="#047857">Nginx / Traefik 单层前置代理标准注入头，提取直连反向代理的对端 IP！</text>
+      </g>
+
+      <!-- Stage 3 -->
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">优先级 3: 多级代理链解析与 CGNAT 穿透 (X-Forwarded-For)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">ips := strings.Split(r.Header.Get("X-Forwarded-For"), ","); for _, ip := range ips { if !isPrivate(ip) { return ip } }</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">按从左到右解析客户端链条，通过 CIDR 位运算严格剔除 10.0.0.0/8、192.168.0.0/16 以及运营商 CGNAT (100.64.0.0/10)！</text>
+      </g>
+
+      <!-- Stage 4 -->
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">优先级 4: TCP 底层套接字源地址兜底 (RemoteAddr)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">host, _, _ := net.SplitHostPort(r.RemoteAddr); return host</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">当所有上游代理头均缺失或处于直连场景时，直接提取操作系统内核 Socket TCP 连接的真实 Remote IP！</text>
+      </g>
+    </g>
+  </g>
+</svg>

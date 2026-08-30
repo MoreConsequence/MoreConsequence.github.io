@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">五级代理客户端 IP 穿透判定链 (Client IP Extraction Pipeline)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">CF-Connecting-IP ──► X-Real-IP ──► X-Forwarded-For (最左合法公共 IP) ──► Fastly-Client-IP ──► RemoteAddr 套接字兜底</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. CDN 权威头优先抽取 (CF-Connecting-IP / Fastly-Client-IP)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">若处于 Cloudflare / Fastly 等受信边缘节点之后 ──► 边缘注入的单 IP 头不可伪造，优先级最高！</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">从源头杜绝客户端自建 X-Forwarded-For 头进行 IP 伪造欺骗！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Nginx 反向代理层级验证 (X-Real-IP Header)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">获取 proxy_set_header X-Real-IP $remote_addr ──► 校验是否为合法 IPv4 / IPv6 地址</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">适配主流企业级 Nginx / Traefik 网关架构！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. X-Forwarded-For 代理链清洗 (XFF Header Sanitization)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">按逗号切分多级 IP 链 ──► 过滤掉私有回环地址 (10.0.0.0/8, 192.168.0.0/16) ──► 提取最左公网 IP</text>
+        <text x="15" y="62" font-size="8" fill="#047857">精准还原跨越多层正向代理的真实客户端身份！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 内核 TCP Socket 直连兜底 (net.SplitHostPort(r.RemoteAddr))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">无任何代理头时 ──► 读取底层 TCP 套接字对端物理 IP ──► 100% 绝对有值，永不落空！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">打造零死角高可靠身份定位体系！</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型解码采样参数机理：Temperature 与 Top-P 协同拓扑</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Raw Logits ──► Temperature 缩放 Softmax 概率分布 ──► Top-P 累积概率核截断 ──► 伪随机数发生器 (PRNG Seed) 采样输出下一个 Token</text>
+  </g>
+
+  <g transform="translate(30, 70)" filter="url(#card-shadow)">
+    <!-- 4 Pipeline Stages (860px) -->
+    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
+      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
+      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 原始对数几率计算 (Raw Logits Output: z_i)</text>
+      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Transformer 最后一层线性投影输出词表中每个 Token 的无界实数得分 z_i (例如 vocab_size = 128,000)</text>
+      <text x="15" y="62" font-size="8" fill="#1d4ed8">反映模型对下一个词的原始置信倾向！</text>
+
+      <g transform="translate(0, 83)">
+        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 温度缩放 Softmax 概率塑形 (Temperature Scaling: P_i = softmax(z_i / T))</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">T=0 极度陡峭 (贪婪解码 Greedy) ｜ T=0.7 适度平滑平衡创意 ｜ T=2.0 趋近均匀分布 (胡言乱语)</text>
+        <text x="15" y="62" font-size="8" fill="#ea580c">代码生成与 JSON 结构化提取强烈推荐固定 T=0！</text>
+      </g>
+
+      <g transform="translate(0, 166)">
+        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Top-P 核采样动态长尾截断 (Nucleus Filtering: Σ P_i &lt;= P)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">按概率降序累加至 Top-P (如 0.9) ──► 动态丢弃累计概率超过 90% 之外的长尾荒谬词 ──► 重归一化</text>
+        <text x="15" y="62" font-size="8" fill="#047857">彻底斩断低置信度垃圾 Token 的误选可能！</text>
+      </g>
+
+      <g transform="translate(0, 249)">
+        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
+        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 确定性随机数种子与硬件非确定性 (Seed &amp; GPU Non-Determinism)</text>
+        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">固定 seed: 42 ──► 但多 GPU 并行 FlashAttention 浮点加法不满足结合律 ──► 仍有微小偶发偏差！</text>
+        <text x="15" y="62" font-size="8" fill="#6b21a8">深入理解现代大模型推理解码的底层物理本质！</text>
+      </g>
+    </g>
+  </g>
+</svg>

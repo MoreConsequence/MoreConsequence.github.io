@@ -11,11 +11,20 @@ series: "Go 的设计边界"
 
 **TL;DR：** goroutine 泄漏和内存泄漏是两种病，但不能把 heap 当成唯一裁判：内存泄漏看 `heap` 视图（Alloc 差值），goroutine 泄漏看 `goroutine` 视图（总数 + 分组 + 栈）。仓库内 Go 1.25.1 probe 固定启动 3×300 个阻塞 goroutine，`goroutine` profile 按 `leakOnSend`、`leakOnReceive`、`leakOnSelect` 各计 300；同时记录 `heap_alloc` 与 `stack_inuse`，不把某一轮内存数字外推成“完全隐形”。定位命令是：`go tool pprof -top` 看聚合热点，`-traces`/`debug=1` 看卡死在哪一行。生产模式包括 chan 发送阻塞、chan 接收阻塞、select 无取消分支，以及未释放的 ticker/后台任务。
 
+
+---
+
+![Goroutine 泄漏排查：pprof 堆栈分析、阻塞点定位与 context 级联取消](../../../public/images/go-goroutine-leak-pprof-stack.svg)
+
 ## 一、先纠正直觉：内存没涨 ≠ 没泄漏
 
 上一篇文章（[Go 内存泄漏与 pprof 的账本](/writing/go-memory-leak-pprof)）里，goroutine 只是"三张账"里的一张。这次把它单独拎出来，因为它在实践里被误诊得最狠：**服务内存曲线平稳、GC 正常，但 goroutine 数稳步上涨**，直到某个凌晨 OOM 或文件描述符耗尽。
 
 原因在于 goroutine 的成本结构：阻塞在 channel 上的 goroutine 可能主要体现为 runtime 栈、调度元数据和它持有的引用，不一定像业务 `make([]byte, ...)` 那样在 heap profile 里归因到泄漏函数。数字还受 Go 版本、栈增长、profile 采样和 goroutine 所持对象影响。每个卡死的 goroutine 背后却都是一个**永远不完成的逻辑**：连接没释放、任务没结束、资源没人收。OOM 可能是晚期症状，也可能先表现为调度、文件描述符或下游资源耗尽。
+
+
+
+![Goroutine 泄漏三大经典死因：无缓冲 Channel 阻塞、锁未释放与外部 IO 挂起](../../../public/images/goroutine-leak-three-classic-patterns.svg)
 
 ## 二、实验：同一批泄漏，两把尺子量出两种结果
 
@@ -54,6 +63,10 @@ curl -s localhost:6060/debug/pprof/goroutine > /tmp/g1.prof && sleep 10
 curl -s localhost:6060/debug/pprof/goroutine > /tmp/g2.prof
 go tool pprof -base /tmp/g1.prof -top /tmp/g2.prof   # 增量：这 10 秒新长的都归谁
 ```
+
+
+
+![pprof 协程泄漏排查工作流：debug/pprof/goroutine?debug=2 堆栈特征分析](../../../public/images/pprof-goroutine-stack-dump-analysis.svg)
 
 ## 四、四种真实生产模式：怎么读栈，怎么修
 

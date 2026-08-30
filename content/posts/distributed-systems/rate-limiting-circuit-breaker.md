@@ -28,6 +28,10 @@ flowchart LR
 
 三者最常见的混用错误：把"限流阈值调高"当"高可用"，或者"熔断触发后靠重试恢复"——前者是在错误的位置防错流量，后者是把故障放大器的开关打开了。定位是第一步：先分清你要防的是哪一段。
 
+
+
+![限流算法深度对比：令牌桶 (Token Bucket 允许突发) vs 漏桶 (Leaky Bucket 恒定速率)](../../../public/images/rate-limiter-token-bucket-vs-leaky-bucket.svg)
+
 ## 二、 限流：算法家族与阈值来源
 
 ### 2.1 四种算法的取舍
@@ -47,7 +51,7 @@ flowchart LR
             实现遍地都是。
 ```
 
-![令牌桶与漏桶对比：令牌桶允许突发，漏桶恒定输出](/images/token-bucket-vs-leaky-bucket.svg)
+![令牌桶与漏桶对比：令牌桶允许突发，漏桶恒定输出](../../../public/images/token-bucket-vs-leaky-bucket.svg)
 
 *图注：令牌桶的"容量"决定突发上限，漏桶的输出速率恒定；前者适合服务入口，后者适合保护数据库等对毛刺敏感的下游。*
 
@@ -115,6 +119,10 @@ stateDiagram-v2
 - **熔断超时**：与下游恢复特征、探测成本和用户 deadline 一起定；半开阶段还要限制并发探测数，避免恢复中的下游再次被冲垮。
 
 这三组参数在 Hystrix、resilience4j、Sentinel 里都有默认值，默认值只适合"没压测过"的起步阶段——同限流阈值一样，熔断参数最终要靠故障注入实验来校准：定期杀掉一个下游节点，观察熔断器是否在预期时间内打开并恢复。
+
+
+
+![微服务熔断器三态有限状态机：Closed (关闭) -> Open (打开) -> Half-Open (半开探测)](../../../public/images/circuit-breaker-closed-open-half-open-fsm.svg)
 
 ## 四、 降级：预案不是故障时才做的决定
 

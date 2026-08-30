@@ -11,6 +11,11 @@ series: "Agent 的方方面面"
 
 **TL;DR：** 把 Agent 想成"会思考的对话"会漏掉最关键的工程面：它其实是一个循环，且**这个循环没有天然的终点**——模型每轮都能要求再调用一次工具，谁是闸门？Pi 的答案在 [`packages/agent/src/agent-loop.ts`](https://github.com/earendil-works/pi/blob/main/packages/agent/src/agent-loop.ts)（805 行，@b23741269 复测；08-20 首测为 796 行）里：外层 turn 循环 + 内层工具执行循环，三个终止闸门把它收敛——**错误/中止立即终止**、**输出被截断则整批工具调用作废重发**、**只有一批工具结果全部声明 `terminate: true` 才提前停**。本文把三个闸门和一个关键细节（并行工具批如何保持结果顺序）逐行讲透。
 
+
+---
+
+![Agent 不会自己停：805 行 Harness 循环里的三个终止闸门与防死循环机制](../../../public/images/pi-agent-loop-three-termination-gates.svg)
+
 ## 一、为什么 Agent 的核心是循环，不是对话
 
 Claude Code、Codex、Pi 这类工具的共同结构是一条消息流水线之外套一层循环：用户消息 → 模型回复 → 如果回复里要求调用工具，执行工具、把结果喂回 → 模型再回复 →……直到模型"决定"不再调用工具。
@@ -18,6 +23,10 @@ Claude Code、Codex、Pi 这类工具的共同结构是一条消息流水线之�
 这一层循环就是 harness 与"聊天机器人"的分界线。聊天机器人只有一个 turn；Agent 的 turn 数由模型自己决定，**模型在收尾前没有任何机制保证它一定会停**。所以每个 Agent harness 的第一工程问题不是"提示词怎么写"，而是：**这个循环靠什么条件收敛？**
 
 Pi 把答案收进一个文件：`agent-loop.ts` 共 805 行（2026-08-23 复测 @b23741269；首篇基线 796 行 @5cd93f6），注释第一行就标明了设计定位——"循环内部统一用 AgentMessage，只在 LLM 调用边界转换为 Message"。
+
+
+
+![Agent Turn 与 Step 双层循环状态机：Idle -> Thinking -> ToolCalling -> Executing -> Responding](../../../public/images/agent-turn-step-fsm-state-machine.svg)
 
 ## 二、双层循环：外层管 turn，内层管工具
 
@@ -65,6 +74,10 @@ function shouldTerminateToolBatch(finalizedCalls: FinalizedToolCallOutcome[]): b
 单个工具可以在结果里声明 `terminate: true`，但它只对"本批全部结果都声明 terminate"才生效。为什么不是"任一工具想停就停"？因为工具并行执行（见第四节），某两个工具成功、第三个工具返回 `terminate`——如果任一即停，前两个的结果就白跑了；而"全部都要停"意味着模型这轮要求的所有事都办完了，停得干净。这条规则也和闸门一形成对照：**错误会立即终止（状态可能没办完），成功则要全体确认才收工。**
 
 再加上 `config.shouldStopAfterTurn` 钩子（行 247-257）允许 harness 在某个完整 turn 结束后优雅停止，终止语义其实有四层。但核心判断记住一个就够：**让模型决定"还要不要再做"，让 harness 决定"能不能信任这次尝试"。**
+
+
+
+![Agent 级联取消与 AbortSignal 传播机制：用户主动打断与子任务秒级清理](../../../public/images/agent-loop-cancellation-abort-signal-flow.svg)
 
 ## 四、工具批处理：默认并行，顺序保真
 

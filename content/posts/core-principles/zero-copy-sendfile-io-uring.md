@@ -46,11 +46,15 @@ sequenceDiagram
 
 三条路径的搬运次数放在一起看，差距一目了然——在支持的理想路径上，`sendfile` 可以省掉用户态 CPU copy，`MSG_ZEROCOPY` 把一部分 copy 成本换成 pin 与异步完成通知；两者都可能因端点或设备能力回退到 copy：
 
-![三种数据搬运路径对比：read+write 4 次拷贝（2 次 CPU + 2 次 DMA）、sendfile 2 次全 DMA、MSG_ZEROCOPY 用 pin 住缓冲直达网卡](/images/zero-copy-paths.svg)
+![三种数据搬运路径对比：read+write 4 次拷贝（2 次 CPU + 2 次 DMA）、sendfile 2 次全 DMA、MSG_ZEROCOPY 用 pin 住缓冲直达网卡](../../../public/images/zero-copy-paths.svg)
 
 `read` 的两次内核陷阱各是一次用户态/内核态边界：保存必要的寄存器状态 → 进入内核 → 拷贝 → 返回用户态。64KB 缓冲区循环发 1GB 文件，在不考虑 EOF、短写和错误重试的教学算术下，约有 16384 轮 × 2 次系统调用；**syscall 数量本身就是可测的开销**。CPU copy 还会消耗带宽并可能污染 cache，但污染程度取决于工作集和微架构，不能把每个字节直接等同于一次 cache line eviction。
 
 账单结论：**该路径在“大文件、高带宽”场景下可能把 CPU copy 变成瓶颈**。nginx 从早期版本就提供 `sendfile` 指令；静态文件是否受益，要结合文件是否命中页缓存、TLS 是否在用户态终止、网卡能力和真实 profile 验证，不能从指令名推出固定收益。
+
+
+
+![Linux splice() 管道页表重映射：pipe_buffer 与零拷贝数据流转](../../../public/images/zero-copy-splice-pipe-buffer-scatter.svg)
 
 ## 二、sendfile：一次 syscall，CPU 拷贝归零
 
@@ -104,6 +108,10 @@ Linux 的缓冲 I/O 全部经由页缓存：`read` 命中时从页缓存拷进�
 
 - **冷文件首击不"零拷贝"**：页缓存未命中时，`sendfile` 也得先等磁盘 DMA 把页读上来——省掉的只是 CPU 拷贝，磁盘等待一分不少。内核源码注释还直说：交错进行的并发读"会互相破坏对方的预读状态"（`mm/readahead.c`）——多个连接同时打一个冷文件，预读窗口互相干扰，效果打折。预热（`WILLNEED`）或接受首击惩罚，必须选一个；
 - **O_DIRECT 是平行路线**：绕过页缓存与预读，DMA 直达用户缓冲，省掉页缓存这一层双缓冲；代价是丢掉缓存复用。数据库自己管理缓冲池才用，静态文件服务器几乎不用。
+
+
+
+![io_uring 双环形队列 (SQ / CQ) 共享内存机制：零系统调用异步 I/O](../../../public/images/io-uring-submission-completion-queue-ring.svg)
 
 ## 四、源码解剖：sendfile 的真相——它是进程私有管道上的 splice
 
