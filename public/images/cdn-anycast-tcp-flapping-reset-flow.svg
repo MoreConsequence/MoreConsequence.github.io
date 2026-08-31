@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="flap-title flap-desc">
+<title id="flap-title">Anycast 路由漂移导致 TCP TCB 丢失与 RST 断连</title>
+<desc id="flap-desc">序列图：客户端在 PEK 建立 TCB 后，BGP 抖动将后续报文误送 SHA，后者无状态直接 RST，长连接瞬间崩溃。</desc>
+<defs>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+<text x="40" y="28" fill="#2d3142" font-size="16" font-weight="400" font-family="'Instrument Serif', serif">Anycast 致命缺陷：BGP 漂移导致 TCP 状态瞬间丢失</text>
+<text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif" letter-spacing="0.02em">有状态 TCB 绑定单机内核 · 无状态路由误送新 PoP → 查表失配 → RST · 长连接崩溃</text>
+<!-- Lifelines -->
+<line x1="128" y1="128" x2="128" y2="460" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="352" y1="128" x2="352" y2="460" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="584" y1="128" x2="584" y2="460" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="800" y1="128" x2="800" y2="460" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<!-- Activation: PEK holds TCB -->
+<rect x="580" y="180" width="8" height="68" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8"/>
+<!-- Arrows -->
+<line x1="128" y1="180" x2="584" y2="180" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<line x1="584" y1="224" x2="128" y2="224" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<!-- BGP control: withdraw/announce -->
+<line x1="352" y1="272" x2="800" y2="272" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+<!-- Post-flap data -->
+<line x1="128" y1="324" x2="800" y2="324" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="800" y1="368" x2="128" y2="368" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+<!-- Flap band -->
+<rect x="48" y="252" width="864" height="20" rx="4" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.30)" stroke-width="0.8" stroke-dasharray="4,3"/>
+<text x="480" y="266" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">海缆抖动 · 公网 BGP 收敛 · PEK WITHDRAW → SHA 成为新最短 AS-Path</text>
+<!-- Labels -->
+<rect x="288" y="160" width="132" height="12" rx="2" fill="#f5f5f5"/><text x="354" y="169" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SYN · 4 元组建立</text>
+<rect x="292" y="204" width="124" height="12" rx="2" fill="#f5f5f5"/><text x="354" y="213" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SYN-ACK · PEK 建 TCB</text>
+<rect x="520" y="252" width="124" height="12" rx="2" fill="#f5f5f5"/><text x="582" y="261" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BGP UPDATE 新优选</text>
+<rect x="396" y="304" width="136" height="12" rx="2" fill="#f5f5f5"/><text x="464" y="313" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DATA · seq=1024</text>
+<rect x="396" y="348" width="132" height="12" rx="2" fill="#f5f5f5"/><text x="462" y="357" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RST · 无 TCB → 断连！</text>
+<!-- Side note: TCB -->
+<rect x="608" y="180" width="120" height="18" rx="4" fill="#ffffff" stroke="rgba(235,108,54,0.35)" stroke-width="0.8"/><text x="668" y="192" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TCB 保存在 PEK 内存</text>
+<rect x="632" y="340" width="108" height="18" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/><text x="686" y="352" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">查表 0 命中</text>
+<!-- Outcome -->
+<rect x="200" y="400" width="560" height="28" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+<text x="480" y="418" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif" text-anchor="middle">结果：<tspan fill="#eb6c36" font-weight="600">Connection reset by peer</tspan> · 上传中断 · 长连接重建成本 3 RTT</text>
+<!-- Actors -->
+<g>
+  <rect x="56" y="72" width="144" height="56" rx="6" fill="#f5f5f5"/><rect x="56" y="72" width="144" height="56" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+  <rect x="64" y="80" width="24" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/><text x="76" y="89" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">CLI</text>
+  <text x="128" y="104" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">客户端</text>
+  <text x="128" y="119" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">长连接 · 有状态</text>
+</g>
+<g>
+  <rect x="280" y="72" width="144" height="56" rx="6" fill="#f5f5f5"/><rect x="280" y="72" width="144" height="56" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <rect x="288" y="80" width="24" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="300" y="89" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">BGP</text>
+  <text x="352" y="104" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">公网路由</text>
+  <text x="352" y="119" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Lumen · Telia</text>
+</g>
+<g>
+  <rect x="504" y="72" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="504" y="72" width="160" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="512" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/><text x="526" y="89" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">PEK</text>
+  <text x="584" y="104" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京 PEK-PoP</text>
+  <text x="584" y="119" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">TCB 宿主 · 原选路</text>
+</g>
+<g>
+  <rect x="728" y="72" width="144" height="56" rx="6" fill="#f5f5f5"/><rect x="728" y="72" width="144" height="56" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.18)" stroke-width="1"/>
+  <rect x="736" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.20)" stroke-width="0.8"/><text x="750" y="89" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SHA</text>
+  <text x="800" y="104" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">上海 SHA-PoP</text>
+  <text x="800" y="119" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">漂移后 · 无状态</text>
+</g>
+<!-- Legend -->
+<line x1="40" y1="484" x2="920" y2="484" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="40" y="500" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+<rect x="40" y="512" width="8" height="12" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8"/><text x="56" y="522" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">TCB 激活</text>
+<line x1="140" y1="518" x2="168" y2="518" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/><text x="176" y="522" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">建连</text>
+<line x1="236" y1="518" x2="264" y2="518" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/><text x="272" y="522" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">BGP 更新</text>
+<line x1="360" y1="518" x2="388" y2="518" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/><text x="396" y="522" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">RST 断连</text>
+<rect x="480" y="512" width="14" height="10" rx="2" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.30)" stroke-width="0.8" stroke-dasharray="4,3"/><text x="502" y="521" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">路由抖动窗口</text>
+</svg>

@@ -46,10 +46,6 @@ flowchart LR
 
 这里的关键不在慢查询：一条在 autocommit 下 2 毫秒就跑完的 `SELECT`，一旦被包进“开着不提交”的事务里，它那枚共享元数据锁就变成烫手山芋。慢，不是它造成的；它只是把门从里面别住了。
 
-
-
-![元数据锁 (MDL) 阻塞风暴：慢查询持有 MDL_SHARED 导致全局写阻塞](../../../public/images/metadata-lock-mdl-queue-starvation.svg)
-
 ## 二、MDL 的两种锁：DML 要 SHARED，DDL 要 EXCLUSIVE
 
 MDL 锁的是“这张表的元数据”，和 InnoDB 的行锁、表锁是两层东西——`UPDATE t SET ...` 先拿 MDL 共享锁（确认表结构没变），再在引擎层拿行锁改数据。对应用层而言 MDL 对外可以归纳成两类：

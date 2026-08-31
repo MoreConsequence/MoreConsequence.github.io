@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bgp-anycast-vs-geodns-scheduling-matrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sm-title sm-desc">
+  <title id="sm-title">三级智能选路算法与原子容量接纳控制</title>
+  <desc id="sm-desc">调度与容灾架构图展示客户端 GeoIP 粗筛、并发 RTT 探针竞速、负载加权综合打分模型，以及服务端原子容量接纳控制防过载流水线。</desc>
+  <defs>
+    <marker id="sm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="sm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SPEEDTEST SMART SELECTION &amp; ADMISSION · 3-STAGE SELECTION &amp; TOKEN ADMISSION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">三级智能选路与原子容量接纳控制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">同网同域粗筛 ➔ 并发 RTT 竞速 ➔ 负载加权打分 ➔ 服务端原子容量接纳防打爆</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: GeoIP Filter (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GEOIP FILTER</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">同网地域粗筛</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Same ISP &amp; Province</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优先匹配电信/联通/移动同省节点</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝跨网跨省骨干网拥堵噪声</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Fast Candidate Narrowing</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">粗筛优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 毫秒级收敛至 3~5 个优质候选；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免向全国全量节点盲目发包；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 奠定高效选路坚实基础。</text>
+  </g>
+
+  <!-- Col 2: Probe Race (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PROBE RACE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">并发 RTT 竞速</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Concurrent Ping Probing</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 客户端并发微型探针实测物理时延</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 自动剔除超时与不可达故障节点</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Real-time Physical Latency</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">竞速收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 真实反映当下的实时网络状态；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝静态 IP 库数据滞后缺陷；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 选出响应速度最快的临近节点。</text>
+  </g>
+
+  <!-- Col 3: Score Model (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SCORE MODEL</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">负载加权打分</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">RTT*0.7 + (Load*50)*0.3</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 兼顾最低时延与避免扎堆拥挤节点</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 综合锁定全网最佳测速数据节点</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Optimal Selection Decision</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">模型优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 动态平抑局部突发测速高峰；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 达成全局流量负载自适应均衡；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保测试结果达到物理真实值。</text>
+  </g>
+
+  <!-- Col 4: Admission Control (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ADMISSION</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">原子容量接纳控制</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Alloc + 1G &lt;= 40Gbps</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 原子指令锁定带宽预算配额</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 503 过载重定向，杜绝网卡被打爆</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Atomic Quota Guard</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">接纳保证：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保在测用户获得 100% 满额带宽；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免超卖挤占导致全员测速失真；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构筑稳健的工业级容量护栏。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">GeoIP 同网地域粗筛与原子容量接纳控制</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">并发 RTT 探针竞速与负载加权综合打分模型核心</text>
+</svg>
+</main>
+</body>
+</html>

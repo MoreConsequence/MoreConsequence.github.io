@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kernel-thp-hugepages-latency-jitter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="thp-title thp-desc">
+  <title id="thp-title">大页方案对比：标准 4KB vs 静态 HugePages vs 透明大页 (THP) 延迟陷阱</title>
+  <desc id="thp-desc">对比图展示标准 4KB 分页、静态预分配 HugePages 与透明大页 THP 在页表内存开销、TLB 覆盖率以及直接内存规整停顿和 Redis COW 512 倍膨胀陷阱上的物理差异。</desc>
+  <defs>
+    <marker id="th-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="th-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">PAGING STRATEGY COMPARISON · HUGEPAGES VS THP PITFALL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">大页方案对比：标准 4KB vs 静态大页 vs THP 陷阱</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">标准 4KB (TLB覆盖低) vs 静态 HugePages (PMD截断/零规整) vs 透明大页 THP (直接规整阻塞与 Redis COW 512倍膨胀)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Standard 4KB (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">OPTION 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">标准 4KB 传统分页</text>
+
+    <!-- Architecture -->
+    <rect x="14" y="42" width="242" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">四级页表完整遍历</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">PGD ➔ PUD ➔ PMD ➔ PTE</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">每次寻址经历 4 次物理内存读</text>
+
+    <!-- Specs -->
+    <rect x="14" y="126" width="242" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">128GB 大内存下的瓶颈</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 页表自身内存: 256MB</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• PTE 条目数: 3300 万项</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• L1 dTLB 覆盖率: 仅 256KB！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">大内存随机跳跃时 TLB 严重击穿</text>
+
+    <!-- Verdict -->
+    <rect x="14" y="256" width="242" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用场景</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">通用小型进程、桌面应用、内存占用低于 1GB 的非性能瓶颈服务。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Standard Default Paging</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">TLB Hit Ratio: 85% ~ 92%</text>
+  </g>
+
+  <!-- Col 2: Static HugePages (x=340..620, w=280) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="280" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OPTION 2 (RECOMMENDED)</text>
+    <text x="130" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">静态大页 HugePages (2MB/1GB)</text>
+
+    <!-- Architecture -->
+    <rect x="14" y="42" width="252" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">PMD 截断寻址优化</text>
+    <text x="24" y="84" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">PGD ➔ PUD ➔ PMD (直接命中!)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">省去 PTE 遍历，减少 1 次内存读！</text>
+
+    <!-- Specs -->
+    <rect x="14" y="126" width="252" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">压倒性性能优势</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 页表自身内存: 512KB (降 99.8%)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 条目数: 仅 6.5 万项 (少 512 倍)</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• L1 dTLB 覆盖率: 暴增至 128MB！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">TLB Hit Ratio: 99.9% 稳定命中！</text>
+
+    <!-- Verdict -->
+    <rect x="14" y="256" width="252" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产推荐场景</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">DPDK 网关、向量数据库 (Milvus)、大模型推理 KV Cache、高性能缓存。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">nr_hugepages 静态预分配 0 停顿</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">mmap(MAP_HUGETLB)</text>
+  </g>
+
+  <!-- Col 3: Transparent Huge Pages THP (x=650..920, w=270) -->
+  <g transform="translate(650, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OPTION 3 (DANGER)</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">透明大页 (THP 生产灾难)</text>
+
+    <!-- Mechanism -->
+    <rect x="14" y="42" width="242" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">khugepaged 后台拼凑</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">试图动态合并 4KB ➔ 2MB</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">在高并发碎片化下全面崩溃！</text>
+
+    <!-- Pitfalls -->
+    <rect x="14" y="126" width="242" height="120" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">生产级两大致命陷阱</text>
+    
+    <text x="24" y="168" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 直接规整 (Direct Compaction):</text>
+    <text x="24" y="184" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">   主线程挂起数百毫秒整理碎片！</text>
+
+    <text x="24" y="204" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">2. Redis BGSAVE COW 512x 膨胀:</text>
+    <text x="24" y="220" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">   改 1 字节复制整整 2MB ➔ OOM 击杀！</text>
+
+    <!-- Action -->
+    <rect x="14" y="256" width="242" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产环境必须禁用！</text>
+    <text x="24" y="298" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">echo never &gt; .../transparent_hugepage/enabled</text>
+    <text x="24" y="316" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">echo never &gt; .../transparent_hugepage/defrag</text>
+    <text x="24" y="336" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">Redis / MySQL / ES 官方强制规范</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">标准分页与危险 THP</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">静态 HugePages 推荐生产选型</text>
+</svg>
+</main>
+</body>
+</html>

@@ -42,10 +42,6 @@ flowchart LR
 
 **我没做什么、为什么。** 没做 tombstone 删除（LSM 里删除是写一条删除标记、靠合并清账，那是另一篇的题）、没做多列族、没做 block cache。取舍理由很直接：这三者都改的是"账的进出"，不改"账怎么算"，而这篇要验证的是两张账本身。
 
-
-
-![Mini-LSM 读路径四级加速：MemTable -> BlockCache -> BloomFilter -> SSTable](../../../public/images/mini-lsm-block-cache-bloom-filter-pipeline.svg)
-
 ## 二、点查为什么只要 O(levels) 次探测：稀疏索引与 bloom 的假阳性账
 
 现在回答"读放大从哪来"。点查一个键，要从最新层往旧层找，找到第一个含它的文件为止。

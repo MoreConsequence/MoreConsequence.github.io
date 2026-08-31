@@ -47,9 +47,7 @@ flowchart LR
 2. **双向人机回路（Bidirectional Human-in-the-loop）**：当 Agent 触发权限门禁（如 `ctx.ui.select` 弹窗询问“是否允许删除数据库”）时，无头进程如何通过标准输入（stdin）安全挂起并等待外部 UI 系统的用户点击回调？
 3. **进程生命周期与异常隔离**：宿主应用（如 VSCode）崩溃时，Agent 子进程必须安全退出并持久化当前会话树。
 
-
-
-![Pi Agent RPC SDK 通信拓扑：JSON-RPC over stdio / WebSocket 双通道](../../../public/images/pi-rpc-sdk-client-server-transport-flow.svg)
+---
 
 ## 二、Pi 的 `--mode json` 行级 RPC 协议规范
 

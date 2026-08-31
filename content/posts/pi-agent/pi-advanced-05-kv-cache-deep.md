@@ -50,9 +50,7 @@ flowchart TD
 | **缓存生命周期** | 默认 5 分钟滑动窗口（每次命中自动续期 5 分钟） | 动态 TTL（通常 5~10 分钟） |
 | **价格折扣** | **读取 0.1x（节省 90%）**，首次写入 1.25x | **读取 0.5x（节省 50%）**，写入无加价 |
 
-
-
-![大模型 KV Cache 深度剖析：Prefill (计算密集) 与 Decode (访存密集) 双阶段](../../../public/images/pi-kv-cache-prefill-decode-phase-breakdown.svg)
+---
 
 ## 二、导致 KV Cache 瞬间击穿的五大“自杀式”写法
 

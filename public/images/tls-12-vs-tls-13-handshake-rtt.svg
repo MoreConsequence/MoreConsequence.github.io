@@ -1,85 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="th-title th-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="th-title">TLS 1.2 vs TLS 1.3 握手时序与 0-RTT 恢复对比</title>
+  <desc id="th-desc">网络安全架构图展示 TLS 1.2 2-RTT 协商、TLS 1.3 KeyShare 1-RTT 极速握手、0-RTT 会话恢复早发数据，以及防范重放风险与连接池优化体系。</desc>
+  <defs>
+    <marker id="th-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="th-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TLS 握手协议演进：TLS 1.2 (2-RTT) vs TLS 1.3 (1-RTT / 0-RTT 极速直达)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">废弃不安全套件 ｜ ClientHello 首包携带 ECDHE 密钥协商份额 (Key Share) ──► 削减 1 个完整 RTT 延迟</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TLS HANDSHAKE TIMELINE · 2-RTT NEGOTIATION VS 1-RTT / 0-RTT PSK RESUMPTION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">TLS 1.2 vs TLS 1.3 握手时序与 0-RTT 恢复对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">TLS 1.2 (2-RTT 协商) ➔ TLS 1.3 (KeyShare 1-RTT 极速建连) ➔ 0-RTT 早发数据与防重放</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: TLS 1.2 (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TLS 1.2</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2-RTT 协商</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Double Round-Trip</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 1st RTT: Hello + 证书 + 密钥交换</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 2nd RTT: 客户端公钥 + Finished 确认</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Legacy Handshake Overhead</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">时延瓶颈：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 2 个 RTT 使得长距离建连时延暴涨；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 历史包袱沉重（支持不安全套件）；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 促成 TLS 1.3 革命性重构。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: TLS 1.2 -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f1f5f9"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 传统 TLS 1.2 握手 (2-RTT 延迟)</text>
+  <!-- Col 2: TLS 1.3 (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TLS 1.3</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">1-RTT 极速握手</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#94a3b8">// 第 1 个 RTT (协商算法 &amp; 传递证书)</text>
-          <text y="28" fill="#cbd5e1">Client ──► ClientHello (密码套件列表)</text>
-          <text y="42" fill="#cbd5e1">Server ──► ServerHello + Certificate + ServerKeyExchange</text>
-          
-          <text y="64" fill="#f87171">// 第 2 个 RTT (密钥交换 &amp; 验证完备)</text>
-          <text y="78" fill="#fca5a5">Client ──► ClientKeyExchange + ChangeCipherSpec + Finished</text>
-          <text y="92" fill="#fca5a5">Server ──► NewSessionTicket + ChangeCipherSpec + Finished</text>
-          
-          <text y="114" fill="#34d399">► 此时才能发送第一字节应用层 HTTP 数据！</text>
-          <text y="128" fill="#fca5a5">TCP 握手 1-RTT + TLS 1.2 2-RTT = 总计 3-RTT 首包延迟！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">ClientKeyShare Pre-Send</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• ClientHello 直接携带临时公钥份额</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• ServerHello 单轮即可算出会话密钥</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Half-Roundtrip Cut Standard</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#f8fafc" stroke="#e2e8f0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#334155">历史包袱：</text>
-        <text x="10" y="34" font-size="7.5" fill="#64748b">• 允许 RSA 静态密钥交换（无前向安全性 PFS）；</text>
-        <text x="10" y="48" font-size="7.5" fill="#64748b">• 协商过程繁琐，明文暴露证书信息；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ef4444">• 跨国高 RTT 场景下首屏渲染极其缓慢。</text>
-      </g>
-    </g>
-
-    <!-- Right: TLS 1.3 -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 现代 TLS 1.3 握手 (1-RTT / 0-RTT 闪连)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#34d399">// 仅需 1 个 RTT！(首包合二为一)</text>
-          <text y="28" fill="#86efac">Client ──► ClientHello + Key Share (预选 ECDHE 公钥)</text>
-          <text y="44" fill="#86efac">Server ──► ServerHello + Key Share + EncryptedExtensions</text>
-          <text y="58" fill="#86efac">          + {Certificate} + {Finished}</text>
-          
-          <text y="78" fill="#38bdf8">► 双方立即根据共享密钥生成对等对称加密密钥！</text>
-          <text y="94" fill="#34d399">► Client 紧接着直接发送加密 HTTP 请求！(仅 1-RTT)</text>
-          
-          <text y="114" fill="#fb923c">// 0-RTT Early Data 恢复:</text>
-          <text y="128" fill="#fed7aa">二次连接借助 PSK，首包直接附带应用数据 (0-RTT 瞬间直达)！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">革命性飞跃：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 强制要求 ECDHE 临时密钥交换，100% 具备前向保密；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 证书全程加密传输，杜绝中间人嗅探；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 配合 QUIC (HTTP/3) 达成 0-RTT 极速建联！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构突破：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 握手延迟直接砍半；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 强制默认开启完美前向安全 PFS；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 废除 RSA 交换与 CBC 不安全模式。</text>
   </g>
+
+  <!-- Col 3: 0-RTT PSK (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">0-RTT PSK</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">0-RTT 会话恢复</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Early Data Resumption</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 复用之前签发的 Session Ticket</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 重连首包直接发射加密应用数据</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Instant Reconnection Mode</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">早发收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 移动网络重连零延迟感知；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 极致压榨物理传输效率；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 赋予现代网络极速通信体验。</text>
+  </g>
+
+  <!-- Col 4: Tradeoff (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SAFETY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">重放防范与连接池</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Replay Safe &amp; Pooling</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 0-RTT 严禁非幂等写操作进入</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 连接池 Keep-Alive 根治频繁握手</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Pragmatic Engineering Guard</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程法则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 服务端配置防重放滑动窗口；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 优先通过连接复用规避握手；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构筑安全与性能兼备的传输基石。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">TLS 1.2 2-RTT 协商与重放安全防护体系</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">TLS 1.3 KeyShare 1-RTT 握手与 0-RTT PSK 恢复核心</text>
 </svg>

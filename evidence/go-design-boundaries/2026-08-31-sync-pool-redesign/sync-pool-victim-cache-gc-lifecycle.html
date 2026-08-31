@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sync-pool-victim-cache-gc-lifecycle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="vc-title vc-desc">
+  <title id="vc-title">sync.Pool GC 受害者缓存与契约</title>
+  <desc id="vc-desc">Go sync.Pool GC 生命周期架构图展示 poolCleanup 钩子、victim 两代受害者缓存平滑降级、对象 Reset 与所有权契约以及生产反模式避坑全景。</desc>
+  <defs>
+    <marker id="vc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="vc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GC LIFECYCLE &amp; VICTIM CACHE · POOLCLEANUP, 2-GENERATION BUFFER &amp; RESET CONTRACT</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">sync.Pool GC 受害者缓存与契约</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">poolCleanup 钩子 ➔ local 降级 victim ➔ victim 彻底清空 ➔ 状态 Reset 与所有权隔离</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: poolCleanup (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLEANUP</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">STW 钩子函数</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">runtime.poolCleanup()</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 在 GC 开始时的 STW 阶段执行</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 统一调度所有注册池的代际轮转</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">GC Stop-The-World Hook</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">调度职责：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保在标记前完成代际交替；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 防止清空操作与用户并发产生冲突；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护全局内存平衡。</text>
+  </g>
+
+  <!-- Col 2: Victim Cache (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">VICTIM</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">受害者两代缓冲</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">victim = local, local = nil</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 第 1 轮 GC：旧 local 降级为 victim</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 第 2 轮 GC：清空旧 victim 彻底释放</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Two-Generation Buffer</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">降级平滑：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 彻底消灭 Go 1.13 前单轮 GC 清空抖动；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 为 GC 后的 Get 请求提供平滑缓冲；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 压降重建突发毛刺。</text>
+  </g>
+
+  <!-- Col 3: Reset Contract (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CONTRACT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">状态重置与所有权</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">b.Reset() + Ownership</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 取出或放回时必须显式 Reset() 状态</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 严禁将内部 buffer 指针跨生命周期暴露</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Strict Ownership Discipline</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">契约约束：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝将上一个请求的脏数据串入下游；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝并发复用引发内存篡改 Data Race；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保数据安全隔离。</text>
+  </g>
+
+  <!-- Col 4: Anti-Patterns (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PATTERNS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产反模式避坑</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Not a Persistent Cache</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严禁用 sync.Pool 当作业务长缓存</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 严禁用 sync.Pool 做并发资源限流池</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Design Boundary Enforcement</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅用于丢了随时可重建的短命大对象；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 限流采用 Channel/Semaphore；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保持 Go 架构纯粹精炼。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">poolCleanup 钩子与生产反模式避坑准则</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">victim 两代受害者平滑降级与状态 Reset 契约核心</text>
+</svg>
+</main>
+</body>
+</html>

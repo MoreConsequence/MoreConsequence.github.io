@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asynchronous-preemption-signal-sigurg</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ap-title ap-desc">
+  <title id="ap-title">Go 1.14+ 异步抢占机制与延迟诊断</title>
+  <desc id="ap-desc">Go 异步抢占架构图展示 sysmon 监控检测 10ms 超时、SIGURG 操作系统信号中断、安全点寄存器保存与让出以及生产尾延迟治理策略。</desc>
+  <defs>
+    <marker id="ap-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ap-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ASYNCHRONOUS PREEMPTION · SYSMON, SIGURG SIGNALS &amp; SAFE-POINT INJECTION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Go 1.14+ 异步抢占与延迟诊断</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">sysmon 监控 ➔ 10ms 阈值 ➔ SIGURG 信号中断 ➔ 安全点寄存器保存与让出</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: sysmon (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SYSMON</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">监控线程检测</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">forcePreemptNS = 10ms</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• sysmon 独立线程无需绑定 P</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 扫描发现 G 运行超 10ms 标记抢占</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Periodic Runtime Health Scan</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">监控特性：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 周期性检查长时间运行任务；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 负责 retake 剥离卡在系统调用的 P；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维持调度系统全局健康。</text>
+  </g>
+
+  <!-- Col 2: Signal (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SIGURG</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">操作系统信号中断</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">pthread_kill(M, SIGURG)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 发送 SIGURG 信号强制打断目标 M</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 彻底解决死循环无函数调用无法协作抢占</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Non-Cooperative Signal Interrupt</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">机制突破：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别 Go 1.14 前依赖函数调用的旧方案；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 任何密集的纯计算循环均可被强行剥离；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝单个计算协程饿死整个进程。</text>
+  </g>
+
+  <!-- Col 3: Safe-Point (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SAFE-POINT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">安全点保存与让出</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">sighandler ➔ asyncPreempt</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 信号处理程序安全注入 PC 寄存器</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 完整保存所有寄存器并推入队列让出</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Context Save &amp; Voluntary Yield</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">让出保障：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严密保护当前协程的执行现场；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 确保 GC 栈扫描与变量指针安全；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 实现无缝透明的协程切换。</text>
+  </g>
+
+  <!-- Col 4: Triage (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TRIAGE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产延迟治理</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">10ms is Heuristic Threshold</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 10ms 仅是启发式阈值非延迟承诺</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 生产需主动拆分大任务、缩短锁持有</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">P99 Latency Governance</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 结合 pprof 与 trace 排查锁与计算；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 严禁依赖信号抢占掩盖长任务设计缺陷；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保微服务达到极致低尾延迟。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">sysmon 监控检测与生产延迟治理策略</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">SIGURG 信号中断与安全点寄存器让出核心</text>
+</svg>
+</main>
+</body>
+</html>

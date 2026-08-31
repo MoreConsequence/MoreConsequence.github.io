@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="xdp-mod-title xdp-mod-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="xdp-mod-title">XDP 三大运行模式与四大动作原语决策全景</title>
+  <desc id="xdp-mod-desc">对比图展示 XDP Offloaded、Native 与 Generic 三大运行模式的挂载层级与硬件依赖，以及 XDP_DROP、TX、REDIRECT、PASS 四大动作原语的物理执行机理。</desc>
+  <defs>
+    <marker id="xm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="xm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">XDP MODES &amp; ACTIONS · INGRESS HOOK SPECIFICATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">XDP 三大运行模式与四大动作原语决策全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">三大运行模式 (Offloaded ➔ Native ➔ Generic) 物理挂载层级与四大动作码 (XDP_DROP / TX / REDIRECT / PASS) 决策全景</text>
+
+  <!-- Top: 3 Modes Grid (y=136..296, h=160) -->
+  <g transform="translate(40, 136)">
+    <!-- Mode 1: Offloaded -->
+    <g transform="translate(0, 0)">
+      <rect width="280" height="160" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="52" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE 1</text>
+      <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Offloaded 模式</text>
+
+      <text x="12" y="46" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">硬件 SmartNIC / NFP 固件执行</text>
+      <text x="12" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂载点：智能网卡 ASIC 芯片内部</text>
+      <text x="12" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 占用 0 主机 CPU 周期</text>
+      <text x="12" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 物理线速极限处理 (40Gbps+)</text>
+      <line x1="12" y1="112" x2="268" y2="112" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="12" y="130" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">Hardware: Netronome / SmartNIC</text>
+      <text x="12" y="146" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">依赖昂贵专用网卡硬件支持</text>
+    </g>
+
+    <!-- Mode 2: Native (Focal) -->
+    <g transform="translate(294, 0)">
+      <rect width="300" height="160" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="12" y="10" width="110" height="16" rx="2" fill="#e85d3f"/>
+      <text x="67" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">MODE 2 (DEFAULT)</text>
+      <text x="130" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Native 驱动模式</text>
+
+      <text x="12" y="46" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">网卡驱动源码原生挂载 (最推荐)</text>
+      <text x="12" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂载点：驱动刚读出 DMA 内存页时</text>
+      <text x="12" y="82" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 在 napi_gro_receive 之前拦截</text>
+      <text x="12" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 吞吐: 24M ~ 26M PPS / core</text>
+      <line x1="12" y1="112" x2="288" y2="112" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="12" y="130" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">Drivers: ixgbe, i40e, mlx5, virtio</text>
+      <text x="12" y="146" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">标准企业级万兆网卡全量支持</text>
+    </g>
+
+    <!-- Mode 3: Generic -->
+    <g transform="translate(608, 0)">
+      <rect width="272" height="160" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="52" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE 3</text>
+      <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Generic 通用模式</text>
+
+      <text x="12" y="46" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">内核通用软件模拟回退</text>
+      <text x="12" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂载点：内核分配 sk_buff 之后</text>
+      <text x="12" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无需任何网卡驱动适配</text>
+      <text x="12" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 吞吐与传统协议栈相当 (~1.5M PPS)</text>
+      <line x1="12" y1="112" x2="260" y2="112" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="12" y="130" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Flag: XDP_FLAGS_SKB_MODE</text>
+      <text x="12" y="146" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">仅用于功能验证与本地开发测试</text>
+    </g>
+  </g>
+
+  <!-- Bottom: 4 Action Codes Matrix (y=316..506, h=190) -->
+  <g transform="translate(40, 316)">
+    <!-- Action 1: XDP_DROP -->
+    <g transform="translate(0, 0)">
+      <rect width="210" height="190" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#e85d3f"/>
+      <text x="50" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">XDP_DROP</text>
+      <text x="96" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">就地丢弃</text>
+
+      <text x="10" y="46" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Reset Ring Buffer</text>
+      <text x="10" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">网卡驱动立即重置描述符</text>
+      <text x="10" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">直接复用当前主存物理页</text>
+      <text x="10" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">0 内存分配 · 0 软中断</text>
+      <line x1="10" y1="112" x2="200" y2="112" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="132" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">典型应用：</text>
+      <text x="10" y="150" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Tbps 级抗 DDoS 清洗</text>
+      <text x="10" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Line-rate drop (24M+ PPS)</text>
+    </g>
+
+    <!-- Action 2: XDP_TX -->
+    <g transform="translate(224, 0)">
+      <rect width="210" height="190" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="70" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="45" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">XDP_TX</text>
+      <text x="88" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">原路弹回</text>
+
+      <text x="10" y="46" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Bounce on Same NIC</text>
+      <text x="10" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">就地修改 MAC / IP 报头</text>
+      <text x="10" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">从接收同一网卡直接发回</text>
+      <text x="10" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">无需内核协议栈介入</text>
+      <line x1="10" y1="112" x2="200" y2="112" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="132" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">典型应用：</text>
+      <text x="10" y="150" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">四层负载均衡 (L4 LB)</text>
+      <text x="10" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Katran / Cloudflare L4</text>
+    </g>
+
+    <!-- Action 3: XDP_REDIRECT -->
+    <g transform="translate(448, 0)">
+      <rect width="210" height="190" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="96" height="16" rx="2" fill="#e85d3f"/>
+      <text x="58" y="21" fill="#ffffff" font-size="7" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">XDP_REDIRECT</text>
+      <text x="110" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">极速重定向</text>
+
+      <text x="10" y="46" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Cross-NIC or AF_XDP</text>
+      <text x="10" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 跨网卡直转发射 (软路由)</text>
+      <text x="10" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 直通 AF_XDP 零拷贝 UMEM</text>
+      <text x="10" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用户态程序纳秒级接管</text>
+      <line x1="10" y1="112" x2="200" y2="112" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="132" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">典型应用：</text>
+      <text x="10" y="150" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">AF_XDP 用户态极速网关</text>
+      <text x="10" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Envoy / Cilium CNI 加速</text>
+    </g>
+
+    <!-- Action 4: XDP_PASS -->
+    <g transform="translate(670, 0)">
+      <rect width="210" height="190" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">XDP_PASS</text>
+      <text x="96" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">放行入栈</text>
+
+      <text x="10" y="46" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Deliver to Linux Stack</text>
+      <text x="10" y="64" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分配 struct sk_buff 控制头</text>
+      <text x="10" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">送入正常内核协议栈解析</text>
+      <text x="10" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">经历 Netfilter 与 TCP 栈</text>
+      <line x1="10" y1="112" x2="200" y2="112" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="132" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">典型应用：</text>
+      <text x="10" y="150" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">合规业务流量无感透传</text>
+      <text x="10" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">SSH / HTTP / DB 服务</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">通用模式与透传放行</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Native 极速模式与 DROP/REDIRECT 核心动作</text>
+</svg>

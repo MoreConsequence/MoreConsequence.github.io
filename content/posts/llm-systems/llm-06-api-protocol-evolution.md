@@ -17,10 +17,6 @@ series: "大模型后端架构与推理加速"
 
 ---
 
-![主流大模型厂商 API 协议格式与载荷抽象拓扑](../../../public/images/llm-api-vendor-formats-landscape.svg)
-
----
-
 ## 一、 主流厂商 API 格式全景矩阵
 
 在进入细节剖析之前，我们先将当前工业界主流厂商与开源推理后端的原生 API 协议进行一次全景横向拉通：
@@ -531,29 +527,7 @@ OpenAI 与 DeepSeek 则采用了**协议完全透明的隐式前缀缓存（Impl
 
 ### 7.2 OpenAI Realtime API（`/v1/realtime` 基于 WebSockets）架构
 
-OpenAI Realtime API 采用基于 **WebSocket（或 WebRTC 数据通道）的全双工事件帧协议**：
-
-```
-客户端 (Browser / App)                             服务端 (Realtime Engine)
-       │                                                      │
-       │──────── wss://api.openai.com/v1/realtime ───────────►│ (握手建立全双工长连接)
-       │                                                      │
-       │──── session.update (配置 VAD、声音类型、工具定义) ──►│
-       │                                                      │
-       │──── input_audio_buffer.append (Base64 PCM16 音频流) ─►│
-       │──── input_audio_buffer.append (持续流式输送麦克风音频) ─►│
-       │                                                      │
-       │                                                      │ (服务端 VAD 判定用户说话结束)
-       │◄─── input_audio_buffer.speech_started ───────────────│
-       │◄─── response.audio.delta (PCM16 音频片段实时回传) ────│ (客户端播放扬声器)
-       │◄─── response.audio_transcript.delta (同步文字字幕) ──│
-       │                                                      │
-       │ 🔴 [用户突然开口打断！]                              │
-       │──── conversation.item.truncate (audio_end_ms: 1240) ►│ (截断服务端历史)
-       │──── response.cancel ────────────────────────────────►│ (服务端瞬间刹车！)
-       │                                                      │
-       │◄─── response.cancelled (确认停止输出) ────────────────│
-```
+OpenAI Realtime API 采用基于 **WebSocket（或 WebRTC 数据通道）的全双工事件帧协议**。
 
 ### 7.3 协议级打断协调（Truncation & Cancellation）
 

@@ -1,69 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="jp-title jp-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="jp-title">异步并发陷阱与数值精度安全边界</title>
+  <desc id="jp-desc">TypeScript 异步与数值避坑图展示 Array.map/forEach 遇 async 陷阱、Promise.all 正确批处理、IEEE-754 浮点数精度风险以及整数微单位记账防御全景。</desc>
+  <defs>
+    <marker id="jp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="jp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 开发者踩坑之一：原型链隐式继承与 Object.create(null) 纯字典</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">普通对象自带 toString/hasOwnProperty 原型 ──► 恶意请求注入 __proto__ 造成污染 ──► 使用 Map / Object.create(null) 破局</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ASYNC &amp; NUMERIC PITFALLS · ARRAY.MAP ASYNC, PROMISE.ALL &amp; IEEE-754 FINANCIAL PRECISION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">异步并发陷阱与数值精度安全边界</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">forEach/map 遇 async 不会自动等待 ➔ Promise.all 批处理 ➔ IEEE-754 精度丢失 ➔ 整数记账</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Async Trap (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ASYNC TRAP</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">循环中 async 陷阱</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">arr.forEach(async fn)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• forEach 返回 undefined，不等待 Promise</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 主函数提前返回，后台异步任务脱控逃逸</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Unhandled Async Execution</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">严重后果：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 数据库连接在事务结束前提前释放；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 错误抛出引发 unhandledRejection；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极难排查的幽灵时序 Bug。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 裸对象作 Map：原型污染与键名冲突</text>
+  <!-- Col 2: Promise.all (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PROMISE.ALL</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">正确异步编排</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#f87171">const dict: Record&lt;string, any&gt; = {};</text>
-          <text y="36" fill="#fca5a5">1. dict['toString'] 竟然不是 undefined！</text>
-          <text y="50" fill="#ef4444">   它沿着原型链查到了 Object.prototype.toString！</text>
-          <text y="74" fill="#ef4444">2. 原型污染 (Prototype Pollution):</text>
-          <text y="90" fill="#ef4444">   攻击者传入 key = '__proto__.isAdmin'</text>
-          <text y="106" fill="#ef4444">   导致全系统所有对象的 isAdmin 属性全部变为 true！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">await Promise.all(arr.map)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 串行用 for (const x of arr) await</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 并行必须用 Promise.all 显式等待汇聚</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Deterministic Async Gathering</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">Go 开发者常犯错误：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 以为 JS 的 {} 等同于 Go 的 map[string]T；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 裸对象带有复杂的继承原型链与内部方法；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 极易引入严重越权安全漏洞！</text>
-      </g>
-    </g>
-
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 正解：Map / Object.create(null)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// 方案 A: 原生 Map (真正具备 Go 语义的哈希表)</text>
-          <text y="28" fill="#86efac">const map = new Map&lt;string, User&gt;();</text>
-          <text y="42" fill="#86efac">map.get('toString'); // 正确返回 undefined！</text>
-          <text y="66" fill="#38bdf8">// 方案 B: 纯净无原型对象 (0 原型链)</text>
-          <text y="80" fill="#34d399">const pureDict = Object.create(null);</text>
-          <text y="94" fill="#34d399">pureDict.__proto__ 没有任何特殊魔法！</text>
-          <text y="118" fill="#4ade80">✓ 100% 物理免疫任何原型链投毒与键名污染！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 纯粹的键值映射语义；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• Map 支持任意类型作为 Key（包括对象和函数）；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高安全标准的现代服务端工程！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">编排准则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保证所有异步操作生命周期闭环；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝任务在主流程之外悬挂运行；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护执行时序的一致性。</text>
   </g>
+
+  <!-- Col 3: Float Trap (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">IEEE-754</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">浮点精度陷阱</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">0.1 + 0.2 === 0.3000...4</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• JS number 均为 64 位双精度浮点数</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 金融金额与 Token 计费严禁裸浮点运算</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Binary Floating Precision Drift</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">财务风险：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 累加计费产生微小误差并逐步放大；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 对账不平引发严重财务风控报警；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须使用定点数规约。</text>
+  </g>
+
+  <!-- Col 4: Integer Guard (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">INTEGER</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">整数微单位记账</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Micro-Cents &amp; BigInt</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 存储与计算全部转换为整数最小分</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 仅在最终对外展示时做除法格式化</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Exact Integer Financial Ledger</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 消除浮点累积漂移达成零误差记账；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 彻底掌握 TypeScript 运行时的边界；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构建高可靠企业级后端系统。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">循环中 async 陷阱与整数微单位记账防线</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Promise.all 正确编排与 IEEE-754 浮点陷阱核心</text>
 </svg>

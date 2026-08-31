@@ -105,10 +105,6 @@ if (body.includes("passwordHash") || body.includes("internalNotes")) {
 
 生产代码可以用 schema 的 `.pick()` 或专门的序列化层减少手写重复，但仍要保留“允许哪些字段”的显式清单。黑名单 `delete value.passwordHash` 更容易在新增敏感字段时失效：新字段默认会泄露，白名单则默认不外发。
 
-
-
-![高吞吐脱敏性能评测：递归对象遍历 vs 编译期 JIT 正则吞吐对比](../../../public/images/zero-copy-regex-masking-performance-bench.svg)
-
 ## 四、嵌套对象、数组和分页元数据要逐层定义
 
 浅拷贝不是出口：

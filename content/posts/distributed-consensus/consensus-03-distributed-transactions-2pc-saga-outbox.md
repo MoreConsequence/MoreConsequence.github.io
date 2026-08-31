@@ -44,20 +44,7 @@ series: "分布式共识与高可用容错"
 
 ### 2.2 协调者宕机引发的“悬挂事务死锁”（The Indoubt State）
 
-2PC 的致命弱点在于**强依赖中心化协调者，且参与者缺乏自主决议权**：
-
-```
-[ 协调者 ] ───► 发送 Prepare ───► [ 参与者 A ] 写入 Undo/Redo，持有行锁，回复 VOTE_COMMIT
-    │
-    ├─ 协调者收集满投票，写入 Commit 日志
-    │
-    ⚡ [ 协调者突然硬件掉电崩溃！] (无法向外发出 Global_Commit)
-    │
-[ 参与者 A ] 停留在 PREPARED 状态：
-  • A 不能自己提交（因为 A 不知道参与者 B 是否准备失败了）；
-  • A 不能自己回滚（因为协调者可能在宕机前已经通知了 B 提交）；
-  ==> 结果：参与者 A 只能无休止持有行级排他锁，阻塞外部所有并发读写！
-```
+2PC 的致命弱点在于**强依赖中心化协调者，且参与者缺乏自主决议权**：当协调者在 Commit 阶段前夕崩溃时，参与者将陷入无法单方面提交也无法回滚的**悬挂死锁（Indoubt State）**，长周期霸占数据库行级排他锁导致连接池耗尽。
 
 ### 2.3 3PC 为什么没有成为工业救星？
 
@@ -189,29 +176,6 @@ async function handlePaymentSuccess(orderId: string) {
 ![本地事务消息表（Transactional Outbox）+ CDC 异步可靠投递全景架构](../../../public/images/consensus-transactional-outbox-cdc-pipeline.svg)
 
 利用**单机数据库本身的本地 ACID 事务**，将业务变更与待发消息打包在同一个本地事务内提交：
-
-```
-+------------------------------------------------------------------------+
-|                          本地单库事务 (Atomic Local Tx)                |
-|                                                                        |
-|  BEGIN;                                                                |
-|    UPDATE orders SET status = 'PAID' WHERE id = 1001;                  |
-|    INSERT INTO outbox_table (id, topic, payload, status)               |
-|      VALUES (uuid(), 'order_events', '{"orderId":1001}', 'PENDING');   |
-|  COMMIT;                                                               |
-+------------------------------------------------------------------------+
-                                    │
-                       写入本地物理 WAL / Binlog
-                                    │
-                                    ▼
-       [ CDC 引擎: Debezium / Canal (监听 Binlog 增量位点) ]
-                                    │
-                                    ▼
-                          [ Apache Kafka 消息队列 ]
-                                    │
-                                    ▼
-                     [ 下游服务消费：执行幂等扣积分/通知 ]
-```
 
 ### 4.3 为什么 CDC 优于轮询（Polling）？
 

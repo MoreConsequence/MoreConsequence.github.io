@@ -1,180 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cd-title cd-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cd-title">结构化输出（Structured Outputs）与受限解码 Logit Masking 机理</title>
+  <desc id="cd-desc">状态机推导图展示将 JSON Schema 编译为有限状态机 FSM、在 GPU 采样时将非法 Token Logit 强制置为负无穷以及实现 100% 格式正确零语法幻觉的受限解码原理。</desc>
+  <defs>
+    <marker id="cd-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="cd-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">结构化输出（Structured Outputs）与受限解码 Logit Masking 机理</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">JSON Schema 编译为上下文无关文法（CFG/FSM） ──► 采样时刻 Logit Masking 强制置为 -∞ ──► 100% 格式数学保证</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CONSTRAINED DECODING ENGINE · CFG / FSM &amp; LOGIT MASKING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">结构化输出 (Structured Outputs) 与受限解码机理</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">JSON Schema ➔ 状态机 FSM ➔ GPU 自回归采样时非法 Token Logit 置为 -inf ➔ 数学级 100% 格式合法保证</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: FSM Compilation (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1 · COMPILE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Schema 编译文法</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">JSON Schema ➔ CFG / FSM</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 定义结构: { name: str, age: int }</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 编译为确定性有限状态机 (FSM)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 精确维护每个状态合法字符集</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Grammar State Machine Precompilation</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">编译期准备：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 一次编译，后续推理全量复用；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 构建词表 Token 到状态转移映射；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为 GPU 毫秒级掩码运算做好准备。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Deterministic Transition Graph</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zero Ambiguity Grammars</text>
   </g>
 
-  <!-- Main Pipeline (900px wide) -->
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Mask</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cd-arr-accent)"/>
 
-    <!-- 3 Core Horizontal Pipeline Columns (270px + 290px + 270px) -->
-    <g transform="translate(20, 20)">
-      <!-- Col 1: Schema Compilation -->
-      <g>
-        <rect width="265" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-        <rect width="265" height="30" rx="6" fill="#dbeafe"/>
-        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">
-          1. JSON Schema 编译阶段
-        </text>
+  <!-- Col 2: Logit Masking (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 2 · MASKING</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">采样时刻 Logit 掩码</text>
 
-        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
-          <rect width="241" height="50" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="10" y="16" font-size="9" font-weight="700" fill="#1d4ed8">客户端 Strict Schema：</text>
-          <text x="10" y="30" font-family="ui-monospace, monospace" font-size="7.5" fill="#2563eb">"properties": { "age": { "type": "number" } }</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">z'[i] = -inf (for invalid tokens)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 状态机动态计算合法词集 V_valid</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 将所有非法 Token 的 Logits 强制置为 -inf</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. Softmax 后非法词概率 P(w) 恒等于 0！</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Hardware-Level Probability Zeroing</text>
 
-          <!-- Arrow Down -->
-          <path d="M 120 52 L 120 72" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
-
-          <!-- FSM State Graph -->
-          <g transform="translate(0, 74)">
-            <rect width="241" height="135" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-            <text x="10" y="16" font-size="9" font-weight="700" fill="#1e40af">编译为有限状态机 (FSM / CFG)：</text>
-
-            <!-- State 0 -->
-            <circle cx="35" cy="50" r="16" fill="#2563eb"/>
-            <text x="35" y="54" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">S0</text>
-            <text x="35" y="76" font-size="7" fill="#64748b" text-anchor="middle">期望 '{'</text>
-
-            <!-- Line S0 -> S1 -->
-            <line x1="51" y1="50" x2="85" y2="50" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
-            <text x="68" y="44" font-size="7" fill="#2563eb" text-anchor="middle">'{'</text>
-
-            <!-- State 1 -->
-            <circle cx="105" cy="50" r="16" fill="#2563eb"/>
-            <text x="105" y="54" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">S1</text>
-            <text x="105" y="76" font-size="7" fill="#64748b" text-anchor="middle">期望 '"age"'</text>
-
-            <!-- Line S1 -> S2 -->
-            <line x1="121" y1="50" x2="155" y2="50" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
-            <text x="138" y="44" font-size="7" fill="#2563eb" text-anchor="middle">': '</text>
-
-            <!-- State 2 -->
-            <circle cx="175" cy="50" r="16" fill="#10b981"/>
-            <text x="175" y="54" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle">S2</text>
-            <text x="175" y="76" font-size="7" fill="#166534" text-anchor="middle">期望数字</text>
-
-            <text x="10" y="110" font-size="8" fill="#1e40af">• 将每个合法转移绑定到词表 Token 集合</text>
-            <text x="10" y="124" font-size="8" fill="#1e40af">• 构建前缀树（Trie / Aho-Corasick）加速检索</text>
-          </g>
-
-          <text x="0" y="278" font-size="8.5" fill="#1d4ed8">
-            • 离线预编译仅需数毫秒，后续 Token 生成零额外开销
-          </text>
-        </g>
-      </g>
-
-      <!-- Conveyor Arrow 1 -->
-      <path d="M 270 190 L 290 190" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-blue)"/>
-
-      <!-- Col 2: Logit Masking in Action -->
-      <g transform="translate(295, 0)">
-        <rect width="280" height="345" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
-        <rect width="280" height="30" rx="6" fill="#ffedd5"/>
-        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">
-          2. 采样时刻 Logit Masking 物理过滤
-        </text>
-
-        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
-          <!-- Step: Generating at State S2 -->
-          <rect width="256" height="36" rx="4" fill="#ffffff" stroke="#fed7aa"/>
-          <text x="10" y="16" font-size="8.5" font-weight="700" fill="#9a3412">当前处于 State S2 (必须生成数字):</text>
-          <text x="10" y="28" font-size="7.5" fill="#c2410c">已生成: `{"age": `</text>
-
-          <!-- Vocabulary Filtering Table -->
-          <g transform="translate(0, 44)">
-            <rect width="256" height="150" rx="4" fill="#0f172a"/>
-            <text x="10" y="18" font-size="8.5" font-weight="700" fill="#38bdf8">128,000 词表 Logits 过滤表：</text>
-
-            <!-- Row 1: Valid -->
-            <g transform="translate(10, 26)">
-              <rect width="236" height="24" rx="3" fill="#1e293b"/>
-              <text x="8" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#34d399">Token "2" (数字):</text>
-              <text x="120" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">Logit = 8.42 (保留原值)</text>
-            </g>
-
-            <!-- Row 2: Valid -->
-            <g transform="translate(10, 54)">
-              <rect width="236" height="24" rx="3" fill="#1e293b"/>
-              <text x="8" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#34d399">Token "18" (数字):</text>
-              <text x="120" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">Logit = 9.10 (保留原值)</text>
-            </g>
-
-            <!-- Row 3: Invalid Alpha -->
-            <g transform="translate(10, 82)">
-              <rect width="236" height="24" rx="3" fill="#3b0764"/>
-              <text x="8" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#f87171">Token "abc" (文本):</text>
-              <text x="120" y="16" font-family="ui-monospace, monospace" font-size="7.5" font-weight="700" fill="#fb7185">Logit ──► -∞</text>
-            </g>
-
-            <!-- Row 4: Invalid Comma -->
-            <g transform="translate(10, 110)">
-              <rect width="236" height="24" rx="3" fill="#3b0764"/>
-              <text x="8" y="16" font-family="ui-monospace, monospace" font-size="7.5" fill="#f87171">Token "," (逗号):</text>
-              <text x="120" y="16" font-family="ui-monospace, monospace" font-size="7.5" font-weight="700" fill="#fb7185">Logit ──► -∞</text>
-            </g>
-          </g>
-
-          <text x="0" y="278" font-size="8.5" fill="#9a3412">
-            • 数学证明：$e^{-\infty} = 0$，非法字符 Softmax 概率为 0%！
-          </text>
-        </g>
-      </g>
-
-      <!-- Conveyor Arrow 2 -->
-      <path d="M 580 190 L 600 190" stroke="#10b981" stroke-width="3" marker-end="url(#arrow-emerald)"/>
-
-      <!-- Col 3: Mathematical Guarantee -->
-      <g transform="translate(605, 0)">
-        <rect width="255" height="345" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="255" height="30" rx="6" fill="#dcfce7"/>
-        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">
-          3. 100% 格式绝对保证
-        </text>
-
-        <g transform="translate(12, 40)" font-family="ui-sans-serif, system-ui, sans-serif">
-          <rect width="231" height="85" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#14532d">✓ 核心收益：</text>
-          <text x="10" y="34" font-size="8" fill="#15803d">• 客户端 JSON.parse 100% 成功</text>
-          <text x="10" y="48" font-size="8" fill="#15803d">• 彻底消灭语法重试网络往返</text>
-          <text x="10" y="62" font-size="8" fill="#15803d">• 消除格式幻觉，注意力集中于字段内容</text>
-          <text x="10" y="76" font-size="8" font-weight="700" fill="#047857">• 节省 20%~40% 无效 Token 开销！</text>
-
-          <rect y="95" width="231" height="100" rx="4" fill="#dcfce7" stroke="#34d399"/>
-          <text x="10" y="18" font-size="9" font-weight="700" fill="#065f46">主流引擎实现库：</text>
-          <text x="10" y="34" font-size="8" fill="#047857">• <tspan font-weight="700">Outlines</tspan> (基于 Regex/FSM 索引)</text>
-          <text x="10" y="48" font-size="8" fill="#047857">• <tspan font-weight="700">XGrammar</tspan> (字节级高效文法树)</text>
-          <text x="10" y="62" font-size="8" fill="#047857">• <tspan font-weight="700">SGLang</tspan> (Jump-forward 投机解码加速)</text>
-          <text x="10" y="78" font-size="8" font-weight="700" fill="#166534">已全量集成至 vLLM / SGLang / OpenAI</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">底层强制约束：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 模型在物理采样层面无法选出非法 Token；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 如在数字位置绝对选不出英文字母；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 在闭合大括号前强制吐出逗号或结束符。</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Mathematically Guaranteed Filtering</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">彻底消灭语法幻觉的物理利刃</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Output</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cd-arr-accent)"/>
+
+  <!-- Col 3: Zero Error (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 3 · 100% SAFE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">100% 格式正确保障</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Zero Syntax Hallucination</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 生成内容 100% 符合 JSON Schema</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 客户端无需任何 JSON.parse 重试！</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 直接反序列化进入下游生产业务</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Flawless Enterprise Integration</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">重大工业成效：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 彻底告别提示词中“请只输出JSON”的乞求；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 生产级系统对接稳定性达 99.999%；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 成为 OpenAI / outlines / vLLM 杀手级特性！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Deterministic Structural Reliability</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">State-of-the-Art Constrained Decoding</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">JSON Schema 编译与 100% 格式正确</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Logit Masking 强制置负无穷消除语法幻觉核心</text>
 </svg>

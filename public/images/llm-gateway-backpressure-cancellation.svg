@@ -1,99 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="bc-title bc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="bc-title">幽灵推理与全链路级联取消 (AbortSignal) 架构模型</title>
+  <desc id="bc-desc">架构机制图展示客户端断开连接后，流式网关通过 AbortSignal 与 gRPC CancelContext 将取消信号毫秒级透传至 GPU 调度器并即时释放物理 KV 显存块的防幽灵推理体系。</desc>
+  <defs>
+    <marker id="bc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    <marker id="bc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型流式反压（Backpressure）与客户端断开取消传播机制</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">慢消费者 TCP 零窗口反压 ──► 网关 Socket 缓冲区填满 ──► AbortSignal 级联取消 GPU 幽灵推理</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GHOST INFERENCE &amp; CASCADE CANCELLATION · ZERO WASTED COMPUTE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">幽灵推理防御与全链路级联取消机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">客户端断开 (关闭标签页/Stop按钮) ➔ 网关检测 Socket close ➔ AbortSignal 透传 ➔ GPU 毫秒级释放 KV 显存</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Ghost Crisis (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GHOST INFERENCE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">幽灵推理危机</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">客户端已走，GPU 还在空转</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 用户点击 Stop 或直接关闭网页</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 若无取消机制，GPU 盲跑 500 步！</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 昂贵 KV 显存被僵尸请求死死霸占</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">20%~35% GPU Compute Wastage</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">严重财务恶果：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 生产环境下高达 35% 算力被幽灵吞噬；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 真实用户在 Waiting 队列饥饿排队；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 算力成本直接翻倍，商业化严重亏损。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Silent Compute Burn Trap</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zombie Request Blockade</text>
   </g>
 
-  <!-- Main Comparison Panes (435px each) -->
-  <g transform="translate(30, 75)">
-    <!-- Pane 1: Ghost Inference Disaster (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 无取消传播：幽灵推理空耗昂贵 GPU 算力</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Abort</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#bc-arr-accent)"/>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 -->
-        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#fecaca"/>
-        <text x="12" y="18" fill="#991b1b" font-weight="700">1. 用户关闭网页 / 点击“停止生成”</text>
-        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">客户端 TCP 发送 RST / FIN 包，前端直接销毁连接</text>
+  <!-- Col 2: Gateway Cascade (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CASCADE ABORT</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">网关层 AbortSignal 透传</text>
 
-        <!-- Step 2 Disaster -->
-        <g transform="translate(0, 48)">
-          <rect width="403" height="52" rx="4" fill="#fee2e2" stroke="#f87171"/>
-          <text x="12" y="18" fill="#7f1d1d" font-weight="700">2. 网关未感知，后台 GPU 仍在全力生成！</text>
-          <text x="12" y="32" font-size="9.5" fill="#991b1b">vLLM 引擎继续为该请求执行几百轮 Forward 计算，</text>
-          <text x="12" y="44" font-size="9.5" font-weight="700" fill="#b91c1c">💥 锁住 2.5GB KV Cache 显存，阻塞其他正常排队用户！</text>
-        </g>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">req.on("close") ➔ AbortSignal</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 严密监听客户端 Socket 关闭事件</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 毫秒级触发 abortController.abort()</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 通过 gRPC Context 级联压入 GPU 核心</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Zero-Latency Cancellation Propagation</text>
 
-        <!-- Step 3 Financial Waste -->
-        <g transform="translate(0, 108)">
-          <rect width="403" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="12" y="18" fill="#0f172a" font-weight="700">财务后果：</text>
-          <text x="12" y="32" font-size="9.5" fill="#475569">高达 30% 的 GPU 卡时与算力费用被浪费在“无人接收的空转”上！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Pane 2: Cascade Cancellation (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">🛡️ 生产级解法：级联取消与 TCP 反压传导</text>
-
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 Detect -->
-        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="12" y="18" fill="#14532d" font-weight="700">1. 网关实时监听 Socket `close` / `error` 事件</text>
-        <text x="12" y="32" font-size="9.5" fill="#15803d">一旦客户端断开，网关立即触发内部 `AbortController.abort()`</text>
-
-        <!-- Step 2 Signal gRPC -->
-        <g transform="translate(0, 48)">
-          <rect width="403" height="52" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-          <text x="12" y="18" fill="#065f46" font-weight="700">2. gRPC CancelContext 信号直达 vLLM 调度器</text>
-          <text x="12" y="32" font-size="9.5" fill="#047857">调度器在下一个 Iteration 瞬间将该请求移出 Running 队列，</text>
-          <text x="12" y="44" font-size="9.5" font-weight="700" fill="#047857">✓ 瞬间释放该请求占用的全部物理 GPU 显存块！</text>
-        </g>
-
-        <!-- Step 3 TCP Zero Window -->
-        <g transform="translate(0, 108)">
-          <rect width="403" height="40" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="12" y="18" fill="#1e40af" font-weight="700">3. 慢消费者 TCP 零窗口保护</text>
-          <text x="12" y="32" font-size="9.5" fill="#2563eb">若客户端消费极慢，网关暂停读取 gRPC 流，自动反压推理引擎</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">级联防线机制：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 打通前端、网关、gRPC 到 GPU 全链路；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝信号在任何微服务层截留断连；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 实现全自动化智能算力回收！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">End-to-End Context Cancellation</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">全链路取消是网关的核心天职</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">显存即生命：</tspan> 大模型服务每节省 1 毫秒无效推理，就能为排队用户多挤出 1 份 GPU 算力；<tspan font-weight="700" fill="#2563eb">全链路取消机制</tspan>是后端降本增效第一道阀门。
-    </text>
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Free</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#bc-arr-accent)"/>
+
+  <!-- Col 3: GPU KV Free (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GPU KV RELEASE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">GPU 显存瞬时释放</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">scheduler.abort_request()</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. vLLM 检测到 is_cancelled() == true</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 毫秒级移出 Running 活跃执行池</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. free_blocks() 归还所有物理页框！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Instant Slot &amp; Block Recycled</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">系统效益成效：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 槽位立刻腾出给排队的新用户；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝任何无效的 GPU 矩阵空转；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 系统整体吞吐与有效算力提升 30%！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">30% Effective Capacity Recovery</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">现代 AI 网关最关键的基础防线</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">幽灵推理危机与僵尸占用</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">AbortSignal 级联取消与 GPU 显存毫秒级释放核心</text>
 </svg>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tlb-shootdown-ipi-broadcast-multicore-overhead</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tlb-sh-title tlb-sh-desc">
+  <title id="tlb-sh-title">多核 TLB Shootdown 广播风暴：核间中断 (IPI) 停顿与大页破局</title>
+  <desc id="tlb-sh-desc">架构流程图展示内存页映射变更时 CPU 0 触发 IPI 广播强制打断 128 个核心刷新 TLB 引发的系统停顿，以及 2MB 静态大页将 IPI 频次降低 512 倍的破局之道。</desc>
+  <defs>
+    <marker id="ts-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ts-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TLB SHOOTDOWN &amp; IPI STORM · MULTI-CORE SCALABILITY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">多核 TLB Shootdown 广播风暴与大页破局</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">页映射变更 ➔ CPU 0 发起 TLB Shootdown ➔ IPI 广播打断全核刷新 ➔ CPU 停顿自旋 ➔ 静态 HugePages 512x 降频破局</text>
+
+  <!-- 4 Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Mapping Change (x=40..220, w=180) -->
+  <g transform="translate(40, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内存映射变更</text>
+
+    <!-- Trigger -->
+    <rect x="14" y="42" width="152" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">触发页表解绑</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">munmap(addr, len)</text>
+    <text x="22" y="100" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">页面回收 / 迁移</text>
+    <text x="22" y="118" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">CPU 0 修改 PTE 为无效</text>
+
+    <!-- Local Invalidate -->
+    <rect x="14" y="150" width="152" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="172" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">本地 TLB 刷新</text>
+    <text x="22" y="192" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">invlpg (addr)</text>
+    <text x="22" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">CPU 0 本地 TLB 已清</text>
+    <text x="22" y="226" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">但其余 127 核心仍缓存！</text>
+    <text x="22" y="244" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Stale TLB Risk</text>
+
+    <!-- Danger -->
+    <rect x="14" y="272" width="152" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="294" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">脏读一致性危机</text>
+    <text x="22" y="314" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">必须强制全核同步！</text>
+    <text x="22" y="332" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">否则导致内存野指针写穿</text>
+    <text x="22" y="348" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Trigger Shootdown</text>
+  </g>
+
+  <!-- Arrow 1 (x=220..250) -->
+  <text x="235" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">IPI</text>
+  <line x1="220" y1="230" x2="250" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ts-arr-accent)"/>
+
+  <!-- Col 2: IPI Broadcast Storm (x=250..470, w=220) - Focal -->
+  <g transform="translate(250, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 2</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">IPI 核间中断风暴</text>
+
+    <!-- Broadcast Box -->
+    <rect x="14" y="42" width="192" height="150" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="96" height="16" rx="2" fill="#e85d3f"/>
+    <text x="72" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">IPI BROADCAST</text>
+    <text x="126" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">硬件中断广播</text>
+    
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CPU 0 触发 APIC 硬件广播：</text>
+    <text x="24" y="104" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">smp_invalidate_interrupt()</text>
+    <text x="24" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">向其余 127 个 CPU 发射硬件 IPI</text>
+    <line x1="24" y1="134" x2="196" y2="134" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="152" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">在大规格多核 NUMA 机器上：</text>
+    <text x="24" y="170" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">总线流量爆炸，IPI 风暴肆虐！</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">128-Core SMP Lock-step</text>
+
+    <!-- Waiting Box -->
+    <rect x="14" y="202" width="192" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="224" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CPU 0 自旋等待</text>
+    <text x="24" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">CPU 0 必须阻塞自旋 (Spinlock)</text>
+    <text x="24" y="262" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">等待全部 127 核返回 ACK</text>
+    <line x1="24" y1="274" x2="196" y2="274" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="294" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">最慢的一个核心决定整体延迟</text>
+    <text x="24" y="312" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">木桶效应长尾尖刺爆发！</text>
+    <text x="24" y="332" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">%sys CPU Spikes</text>
+    <text x="24" y="348" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">数百微秒系统级死等</text>
+  </g>
+
+  <!-- Arrow 2 (x=470..500) -->
+  <text x="485" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Stall</text>
+  <line x1="470" y1="230" x2="500" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ts-arr-accent)"/>
+
+  <!-- Col 3: Cross-core Stall (x=500..710, w=210) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全核被动停顿</text>
+
+    <!-- Interrupt Stall -->
+    <rect x="14" y="42" width="182" height="142" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">127 核业务强制挂起</text>
+    <text x="24" y="84" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">CPU 1..127 硬件中断被打断</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用户态计算线程被迫暂停</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">执行 invlpg 冲刷本地 TLB</text>
+    <line x1="24" y1="130" x2="186" y2="130" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="148" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">回复 ACK 信号给 CPU 0</text>
+    <text x="24" y="164" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">L1/L2 Cache 局部性损失</text>
+    <text x="24" y="176" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Performance Penalty</text>
+
+    <!-- Penalty summary -->
+    <rect x="14" y="196" width="182" height="164" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">多核拓展性瓶颈</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">频繁内存映射变更是多核物理扩展性的死敌；</text>
+    <line x1="24" y1="250" x2="186" y2="250" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="270" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">4KB 小页频繁变更：</text>
+    <text x="24" y="288" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">每秒数万次 IPI 广播！</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">严重吞噬算力并引发毛刺</text>
+    <text x="24" y="328" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Need HugePages Fix</text>
+    <text x="24" y="346" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">必须从页大小层面根治</text>
+  </g>
+
+  <!-- Arrow 3 (x=710..740) -->
+  <text x="725" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Huge</text>
+  <line x1="710" y1="230" x2="740" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ts-arr-accent)"/>
+
+  <!-- Col 4: HugePages Relief (x=740..920, w=180) -->
+  <g transform="translate(740, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RELIEF</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">静态大页破局</text>
+
+    <!-- HugePages Feature -->
+    <rect x="14" y="42" width="152" height="142" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2MB / 1GB 大页预分配</text>
+    <text x="22" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">nr_hugepages 预扣</text>
+    <text x="22" y="102" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">内存生命周期恒定驻留</text>
+    <text x="22" y="120" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">0 动态频繁 munmap</text>
+    <text x="22" y="138" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">页数量暴减 512 倍！</text>
+    <text x="22" y="156" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">HugeTLB Architecture</text>
+
+    <!-- Ultimate Benefit -->
+    <rect x="14" y="196" width="152" height="164" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="218" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">IPI 广播中断降 512x</text>
+    <text x="22" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">破局终极收益：</text>
+    <text x="22" y="256" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• TLB Shootdown 几乎归零</text>
+    <text x="22" y="274" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• %sys CPU 消耗暴降 90%</text>
+    <text x="22" y="292" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 128 核算力 100% 释放</text>
+    <line x1="22" y1="304" x2="156" y2="304" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="22" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">高并发网关/数据库标配</text>
+    <text x="22" y="340" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero IPI Broadcast Waste</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">页映射变更与大页配置</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">IPI 硬件广播风暴与多核停顿核心</text>
+</svg>
+</main>
+</body>
+</html>

@@ -1,75 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ms-title ms-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="ms-title">万兆套接字调优与网卡多队列 NUMA 绑核</title>
+  <desc id="ms-desc">网络栈调优架构图展示 TCP_NODELAY 禁用 Nagle、SO_SNDBUF 放大至 32MB、网卡硬件多队列 RSS 分流，以及 NUMA 亲和性与 CPU 绑核优化体系。</desc>
+  <defs>
+    <marker id="ms-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ms-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">下行推流零拷贝革命：memfd_create + sendfile DMA 直通网卡</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统 read/write (4 次上下文切换 + 4 次内存拷贝打爆总线) vs sendfile (0 CPU 拷贝，DMA 引擎直推网卡 Ring Buffer)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SPEEDTEST SOCKET &amp; NIC AFFINITY · SO_SNDBUF, RSS &amp; CPU PINNING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">套接字调优与网卡多队列 NUMA 绑核</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">TCP_NODELAY 禁 Nagle ➔ SO_SNDBUF 扩大至 32MB ➔ 网卡硬件多队列 RSS ➔ CPU 绑核</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: TCP Socket Tuning (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SOCKET OPT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">套接字参数调优</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">TCP_NODELAY &amp; TFO</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 禁用 Nagle 算法，禁止延迟合并</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 启用 Fast Open 减 1 RTT 握手延时</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero-Delay Packet Emission</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">调优要点：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 强制数据包生成后立即发射；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝小包等待 ACK 引起的阻塞；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保微秒级出包响应。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Traditional IO -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统 I/O 模型：内存总线严重堵塞</text>
+  <!-- Col 2: Buffer Expansion (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SO_SNDBUF</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">发送缓冲区放大</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#f87171">1. read(fileFd, userBuf) ──► DMA 拷贝到内核页缓存</text>
-          <text y="28" fill="#ef4444">2. CPU 拷贝到用户态 userBuf (第 1 次 CPU 耗时！)</text>
-          <text y="44" fill="#f87171">3. write(socketFd, userBuf) ──► 用户态切入内核态</text>
-          <text y="58" fill="#ef4444">4. CPU 拷贝到 Socket 发送缓冲区 (第 2 次 CPU 耗时！)</text>
-          <text y="74" fill="#38bdf8">5. DMA 将 Socket 缓冲区数据推入网卡硬件</text>
-          
-          <text y="100" fill="#ef4444">🔴 恶果：推流 40Gbps 需消耗 160Gbps 内存带宽，CPU 100% 满载！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">SO_SNDBUF = 32MB</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 满足 40Gbps × 60ms RTT 需求</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 杜绝滑动窗口因发送缓存满卡死</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Long Fat Network Saturation</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">性能瓶颈：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 内存总线（Memory Bus）成为最大瓶颈；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 频繁用户态/内核态上下文切换导致高时延；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 单机推流极限仅能达到 8~10Gbps！</text>
-      </g>
-    </g>
-
-    <!-- Right: Zero-Copy -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ memfd_create + sendfile 零拷贝直通</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// 创建纯 RAM 匿名文件并预填充 64MB 随机块</text>
-          <text y="28" fill="#86efac">fd := memfd_create("speedtest_sink", MFD_CLOEXEC);</text>
-          
-          <text y="50" fill="#38bdf8">// 零拷贝直推网卡：仅传递文件描述符与内存指针</text>
-          <text y="64" fill="#34d399">sendfile(socketFd, fd, &amp;offset, 1073741824); // 推流 1GB</text>
-          
-          <text y="86" fill="#4ade80">1. 数据完全不经过用户态内存，0 CPU 拷贝！</text>
-          <text y="100" fill="#4ade80">2. DMA 引擎直接从 RAM 页面将数据推入网卡 TX Ring！</text>
-          <text y="114" fill="#4ade80">✓ 单核推流突破 40Gbps，CPU 使用率仅 3%！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 彻底释放 CPU 算力与内存带宽；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 单台 1U 服务器支撑 100Gbps 超大带宽测速；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 工业级高性能服务端基建巅峰！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">容量收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 充分注满跨国跨洋长肥管道；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 彻底释放极端高延迟下的带宽；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保证单连接极限测速发挥。</text>
   </g>
+
+  <!-- Col 3: Multi-Queue RSS (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NIC RSS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">网卡多队列 RSS</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">8~64 Hardware Queues</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 五元组哈希均衡分发至独立队列</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 彻底消除单个 CPU 软中断打满</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Hardware Interrupt Balancing</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">分流价值：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 充分调动多核多网卡硬件算力；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 并发吞吐实现近线性水平扩展；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝单核热点瓶颈。</text>
+  </g>
+
+  <!-- Col 4: NUMA CPU Pinning (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CPU PINNING</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">NUMA 亲和性绑核</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">pthread_setaffinity_np</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 队列中断绑定就近 NUMA 核心</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 0 跨插槽 QPI/UPI 内存总线延迟</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Cross-NUMA Latency</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">亲和性收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• L1/L2/L3 Cache 命中率接近 100%；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 中断与 Worker 进程紧密同核协同；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 压榨出硬件服务器的物理极限。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">套接字参数调优与 NUMA 亲和性 CPU 绑核机制</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">SO_SNDBUF 32MB 放大与网卡多队列 RSS 分流核心</text>
 </svg>

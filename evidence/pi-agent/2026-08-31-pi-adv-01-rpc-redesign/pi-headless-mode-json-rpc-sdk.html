@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pi-headless-mode-json-rpc-sdk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="hl-title hl-desc">
+  <title id="hl-title">Pi 无头模式架构与 NDJSON 双向行级协议</title>
+  <desc id="hl-desc">系统架构与数据流图展示 Pi 核心引擎在无头 RPC 模式下的运行机制、Stdout 结构化事件流输出，以及 Stdin 双向控制与中断指令注入流水线。</desc>
+  <defs>
+    <marker id="hl-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="hl-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">HEADLESS ARCHITECTURE · NDJSON OVER STDIO &amp; WEBSOCKET PROTOCOL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">无头模式架构与 NDJSON 双向协议</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">三大运行形态 ➔ Stdout 结构化输出流 (Thinking/Tools/Tokens) ➔ Stdin 双向控制流 (User/Abort/UI 响应)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Modes (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">HEADLESS</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">无头运行形态</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">pi --mode json</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• IDE 插件 (VSCode / Cursor)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• Web 协同平台 / API 网关</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• CI/CD 自动化流水线</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Standard Multi-Platform Embedding</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">无头核心价值：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别终端 ANSI 字符抓取崩溃风险；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 提供毫秒级、强类型的状态同步；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 使 Agent 轻松嵌入任意工程宿主。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Robust Cross-Process Integration</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Production Grade Embedding</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Stream</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#hl-arr-accent)"/>
+
+  <!-- Col 2: Stdout Events (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STDOUT STREAM</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">输出结构化事件流</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">JSON Lines over Stdout</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. {"type": "session_start", ...}</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. {"type": "thinking_delta", "delta": ...}</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. {"type": "tool_start", "callId": ...}</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Lossless Structured State Updates</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">事件体系优势：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 细粒度暴露思维链、工具与 Token 消耗；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 每一行均是独立完备的 JSON 对象；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 允许前端以微秒级渲染打字机动画。</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Real-Time State Machine Streaming</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高确定性异步事件分发</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Control</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#hl-arr-accent)"/>
+
+  <!-- Col 3: Stdin Control (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STDIN CONTROL</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">输入控制指令总线</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">JSON Lines over Stdin</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. {"type": "user_input", "content": ...}</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. {"type": "ui_response", "choice": ...}</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. {"type": "abort_turn"}</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Instant Bi-Directional Command Ingestion</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">控制主权收益：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 支持在 Agent 运行中即时注入新目标；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 毫秒响应 abort_turn 取消耗时计算；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 构筑出真正的双向人机交互回路！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Sub-Millisecond Interruption</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Production RPC Transport</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">无头运行模式与 Stdin 控制流</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Stdout NDJSON 结构化事件流与打字机状态同步核心</text>
+</svg>
+</main>
+</body>
+</html>

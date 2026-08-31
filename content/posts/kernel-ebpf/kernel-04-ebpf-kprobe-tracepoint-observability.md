@@ -67,25 +67,11 @@ $ sudo perf list tracepoint | grep sched:
 
 ---
 
-
-
-![Off-CPU 阻塞深度溯源：上下文切换 finish_task_switch 捕获与阻塞火焰图](../../../public/images/ebpf-off-cpu-stack-aggregation-flamegraph.svg)
-
 ## 四、 Off-CPU 深度溯源实战：精准捕获系统阻塞盲区
 
 ### 4.1 什么是 Off-CPU 时延？
 
-```
-+-------------------------------------------------------------------------+
-|                       进程物理执行时序对比图                              |
-|                                                                         |
-|  线程 A: [ On-CPU: 20ms ] ──► [ Off-CPU 挂起等待: 180ms ] ──► [ On-CPU ]  |
-|                                         │                               |
-|                                发生 futex 锁竞争 /                      |
-|                                fsync 等待机械磁头 /                     |
-|                                网络 Socket 等待数据到达                 |
-+-------------------------------------------------------------------------+
-```
+![eBPF 进程 On-CPU 算力消耗 vs Off-CPU 锁等待阻塞全景可观测性模型](../../../public/images/kernel-ebpf-off-cpu-observability-timeline.svg)
 
 一个请求的总延迟计算公式为：
 

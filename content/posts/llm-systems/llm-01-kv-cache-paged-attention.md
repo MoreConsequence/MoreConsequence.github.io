@@ -72,25 +72,13 @@ $$\text{Memory}_{\text{per-token}} = 2 \times 2 \times L \times H_{KV} \times d_
 
 在 vLLM 问世之前，主流推理系统（如 HuggingFace Accelerate、早期 FasterTransformer）采用与操作系统 1960 年代类似的**静态连续内存预分配**策略：
 
-```
-+-----------------------------------------------------------------------+
-|                 传统静态显存预分配碎片示意图 (以 max_len=2048 为例)       |
-|                                                                       |
-| [已用 50 Tokens] [          内部碎片 (未使用的 1998 Tokens 显存被锁死)       ] |
-| ───────────────────────────────────────────────────────────────────── |
-| [ 预留过量显存池 ] [ 无法被其他短请求借用 ] ──► 系统并发上限被死死卡在个位数  |
-+-----------------------------------------------------------------------+
-```
+![传统 LLM 推理静态显存预分配与内存碎片（Internal/External Fragmentation）分析](../../../public/images/llm-static-kv-cache-fragmentation-problem.svg)
 
 1. **内部碎片（Internal Fragmentation）**：为了防止生成过程中 OOM，系统不得不为每个请求预分配对应 `max_context_length`（如 8192）的连续物理显存；如果用户只生成了 100 个词，剩余 8092 个词的显存被白白锁死，任何人都无法使用；
 2. **外部碎片（External Fragmentation）**：请求在不同时刻完成并释放显存，导致物理显存空间被切得支离破碎；当新来一个需要连续 4GB 显存的长请求时，即便总剩余显存有 10GB，也会因为找不到连续物理块而报错 OOM；
 3. **无法共享显存（Reservation Waste）**：当进行并行采样（如 Temperature 采样生成 4 个候选分支）或束搜索（Beam Search）时，Prompt 部分的 KV Cache 在 4 个分支中被机械地物理复制了 4 份，造成巨大的空间冗余。
 
 ---
-
-
-
-![显存碎片对比：静态预分配内外部碎片 vs PagedAttention 零外部碎片](../../../public/images/llm-kv-cache-memory-fragmentation-comparison.svg)
 
 ## 四、 PagedAttention 架构：GPU 显存的分页虚拟化
 

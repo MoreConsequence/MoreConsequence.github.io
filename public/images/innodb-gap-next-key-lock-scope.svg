@@ -1,99 +1,142 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="lk-title lk-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="lk-title">InnoDB 锁范围拓扑：Record Lock、Gap Lock 与 Next-Key Lock 判定</title>
+  <desc id="lk-desc">架构拓扑图展示 InnoDB 在一维索引数轴上的 Record Lock 单行锁、Gap Lock 开区间锁与 Next-Key Lock 左开右闭区间锁的物理范围与插入意图锁互斥规则。</desc>
+  <defs>
+    <marker id="lk-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="lk-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB 锁范围三大形态：Record Lock vs Gap Lock vs Next-Key Lock</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">行锁 (精确锁定已存在的记录) ｜ 间隙锁 (锁定记录之间的开区间防幻读) ｜ 临键锁 (前开后闭区间，RR 隔离级别默认加锁原语)</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 记录锁 (Record Lock: [id=10])</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INNODB LOCK SCOPE · RECORD, GAP &amp; NEXT-KEY LOCK TOPOLOGY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">InnoDB 锁范围拓扑与区间判定模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Record Lock 行锁 [k] vs Gap Lock 开区间 (k1, k2) vs Next-Key Lock 左开右闭 (k1, k2] 与插入意图锁并发互斥</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">SELECT * FROM t WHERE id = 10 FOR UPDATE;</text>
-          
-          <text x="10" y="42" fill="#86efac">锁定范围：</text>
-          <text x="10" y="58" fill="#cbd5e1">• 仅锁定 id=10 这一条已存在的行记录</text>
-          <text x="10" y="74" fill="#cbd5e1">• 允许其他事务在 id=9 或 id=11 插入数据！</text>
-          <text x="10" y="90" fill="#34d399">• 仅在唯一索引等值查询且记录存在时降级生效</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 并发度最高，锁冲突范围最小！</text>
-        </g>
+  <!-- Top: 1D Number Line Strip (y=136..240, h=104) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="104" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="130" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="79" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">INDEX NUMBER LINE</text>
+    <text x="154" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">索引一维数轴上的锁区间拓扑 (Index Value Continuum)</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 保护单行数据不被并发修改；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• RC 隔离级别下的主力锁类型；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 极简纯粹。</text>
-      </g>
-    </g>
+    <!-- Number Line Visual (y=34..90) -->
+    <g transform="translate(14, 34)">
+      <!-- Base Line -->
+      <line x1="20" y1="36" x2="832" y2="36" stroke="#141413" stroke-width="1.5"/>
 
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 间隙锁 (Gap Lock: (10, 20))</text>
+      <!-- Point 10 -->
+      <circle cx="150" cy="36" r="6" fill="#141413"/>
+      <text x="150" y="20" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ID = 10</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">SELECT * FROM t WHERE id = 15 FOR UPDATE;</text>
-          <text x="10" y="34" fill="#fed7aa">(表中只有 id=10 和 id=20，15 不存在)</text>
-          
-          <text x="10" y="58" fill="#38bdf8">锁定范围：开区间 (10, 20)</text>
-          <text x="10" y="74" fill="#cbd5e1">• 禁止任何事务在此间隙内 INSERT 新行！</text>
-          <text x="10" y="90" fill="#fed7aa">• 间隙锁之间互不排斥，允许多个读事务共享</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 专门用于阻止幻读 (Phantom Read) 插入！</text>
-        </g>
+      <!-- Point 20 -->
+      <circle cx="450" cy="36" r="6" fill="#e85d3f"/>
+      <text x="450" y="20" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ID = 20</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">死锁温床：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 两个事务同时持有相同 Gap 锁并尝试插入；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 互相等待对方释放间隙，必爆死锁！</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 生产排查重灾区！</text>
-      </g>
-    </g>
+      <!-- Point 30 -->
+      <circle cx="700" cy="36" r="6" fill="#141413"/>
+      <text x="700" y="20" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ID = 30</text>
 
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 临键锁 (Next-Key Lock: (10, 20])</text>
+      <!-- Point Supremum -->
+      <rect x="800" y="26" width="32" height="20" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="816" y="39" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">+∞ (Sup)</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">SELECT * FROM t WHERE age = 18 FOR UPDATE;</text>
-          <text x="10" y="34" fill="#86efac">(普通非唯一二级索引)</text>
-          
-          <text x="10" y="58" fill="#38bdf8">锁定范围：前开后闭 (10, 20] + (20, 30)</text>
-          <text x="10" y="74" fill="#cbd5e1">• 同时锁定当前行记录与前方的间隙</text>
-          <text x="10" y="90" fill="#34d399">• 向右遍历到第一条不满足条件的记录加 Gap 锁</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ RR 隔离级别下的默认加锁基本单元！</text>
-        </g>
+      <!-- Gap Bracket (10, 20) -->
+      <rect x="160" y="44" width="280" height="14" rx="2" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="0.8" stroke-dasharray="2 2"/>
+      <text x="300" y="55" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Gap Lock (10, 20) 开区间</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构考量：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 兼具数据修改保护与幻读彻底杜绝；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 掌握临键锁加锁规则是分析死锁日志的关键；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库内核大师级技能！</text>
-      </g>
+      <!-- Record Bracket [20] -->
+      <rect x="444" y="44" width="12" height="14" rx="2" fill="#e85d3f"/>
+      <text x="450" y="55" fill="#ffffff" font-size="7" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">[20]</text>
+
+      <!-- Next-Key Bracket (10, 20] -->
+      <text x="580" y="55" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Next-Key: (10, 20] = Gap(10,20) + Record[20]</text>
     </g>
   </g>
+
+  <!-- Bottom: 3 Comparison Columns (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Col 1: Record Lock (w=270) -->
+    <g transform="translate(0, 0)">
+      <rect width="270" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RECORD</text>
+      <text x="96" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Record Lock (行记录锁)</text>
+
+      <rect x="10" y="36" width="250" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">物理范围: 仅锁单行 [ID=20]</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">WHERE id=20 (主键 / 唯一索引)</text>
+      <text x="18" y="92" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">精准等值命中，不蔓延至空隙</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">兼容性规则：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读锁 S 与 写锁 X 严格互斥</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 允许其他事务在两侧空隙自由插入！</text>
+      <line x1="10" y1="178" x2="260" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RC 隔离级别下的默认行为</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Minimal Locking Footprint</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">最高并发性能，但无法防幻读</text>
+    </g>
+
+    <!-- Col 2: Gap Lock (w=290) - Focal -->
+    <g transform="translate(284, 0)">
+      <rect width="290" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#e85d3f"/>
+      <text x="50" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GAP LOCK</text>
+      <text x="96" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Gap Lock (间隙开区间锁)</text>
+
+      <rect x="10" y="36" width="270" height="74" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">物理范围: 开区间 (10, 20)</text>
+      <text x="18" y="74" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">不包含 10 与 20 本身，仅锁中间空隙</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">WHERE id BETWEEN 11 AND 19</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">间隙锁的物理反直觉特性：</text>
+      <text x="10" y="148" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Gap Lock 与 Gap Lock 互不排斥！</text>
+      <text x="10" y="166" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">  两个事务可同时对 (10,20) 加 Gap Lock；</text>
+      <text x="10" y="184" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 唯一排斥的是：插入意图锁 (Insert)！</text>
+      <line x1="10" y1="196" x2="280" y2="196" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="216" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">死锁主要元凶：双方持 Gap 等对方释放</text>
+      <text x="10" y="234" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Insert Intention Conflict</text>
+    </g>
+
+    <!-- Col 3: Next-Key Lock (w=292) - Focal -->
+    <g transform="translate(588, 0)">
+      <rect width="292" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="90" height="16" rx="2" fill="#141413"/>
+      <text x="55" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NEXT-KEY</text>
+      <text x="106" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Next-Key Lock (左开右闭)</text>
+
+      <rect x="10" y="36" width="272" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">物理范围: 左开右闭 (10, 20]</text>
+      <text x="18" y="74" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Gap Lock(10,20) + Record Lock[20]</text>
+      <text x="18" y="92" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">RR 隔离级别下的默认加锁原子单位</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">消灭幻读的终极防线：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 锁住 20 本身，防止其他事务并发修改；</text>
+      <text x="10" y="166" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 锁住 (10,20) 间隙，彻底禁止插入新行！</text>
+      <line x1="10" y1="178" x2="282" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">降级优化法则 (优化器策略)：</text>
+      <text x="10" y="216" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">唯一索引等值查 ➔ 自动降级为 Record Lock</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Phantom Read Elimination</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Record 行锁与 Next-Key 规范</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Gap Lock 间隙开区间与插入意图冲突核心</text>
 </svg>

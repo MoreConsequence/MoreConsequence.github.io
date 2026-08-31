@@ -12,23 +12,26 @@ series: "LibreSpeed Go 源码行纪"
 
 
 ---
+## 一、总表：12 个现代与 `/backend/` API 挂载
 
-![LibreSpeed Go 12 条路由接口规范：静态资源、测速端点与遥测管理 API 全景矩阵](../../../public/images/librespeed-go-interface-routes-specification.svg)
+`web.go:67-82` 先把六组核心 handler 挂到现代路径和 `/backend/` 前缀，共 12 个 API 挂载。`web.go:85-96` 再为同六组 handler 注册 12 个 `.php` 兼容路径；它们是同一处理函数的别名，不是重定向。`empty` 与 `stats` 使用 chi 的 `HandleFunc`（任意方法），`Get` 路由还会被全局 `GetHead` 兜底为 HEAD：
 
-## 一、总表：一套逻辑 × 三种路径形态
-
-所有功能端点都挂三份：现代路径、`/backend/*` 前缀、`.php` 后缀。下表只列现代路径，其余两条等价（`web.go:67-96`）：
-
-| 路由 | 方法 | 功能 | 上游消费者 |
+| # | 注册方法 | 精确路径 | 处理与响应 |
 | --- | --- | --- | --- |
-| `/*` | GET | 静态页面（embed 资产或外部目录） | 浏览器 |
-| `/empty` | GET/POST/HEAD | 延迟基线 + 上行黑洞 | Worker |
-| `/garbage` | GET | 下行载荷（随机字节） | Worker |
-| `/getIP` | GET | 客户端 IP/ISP/距离 JSON | Worker |
-| `/results/telemetry` | POST | 结果上报，返回 ULID | Worker |
-| `/results?id=<id>` | GET | 结果 PNG 卡片 | 用户分享页 |
-| `/results/json?id=<id>` | GET | 结果 JSON API | 第三方集成 |
-| `/stats` | GET/POST | 密码门统计台（HTML） | 管理员 |
+| 1 | `HandleFunc` | `/empty` | 读取 body 到 `ioutil.Discard`；成功 `200` + `Connection: keep-alive`，读错 `400` |
+| 2 | `HandleFunc` | `/backend/empty` | 与 `/empty` 共用 `empty`；`?cors=true` 追加 PHP 兼容 CORS 头 |
+| 3 | `GET` | `/garbage` | `garbage` 写随机二进制流；默认 4 MiB，`ckSize` 大于 1024 时钳到 1 GiB |
+| 4 | `GET` | `/backend/garbage` | 与 `/garbage` 共用 `garbage`；响应 `application/octet-stream` |
+| 5 | `GET` | `/getIP` | `getIP` 返回客户端 IP 描述；`isp=true` 才查 ISP，`distance` 控制距离单位 |
+| 6 | `GET` | `/backend/getIP` | 与 `/getIP` 共用 `getIP`；全局 `NoCache` 负责禁缓存 |
+| 7 | `POST` | `/results/telemetry` | `Record` 接收测速字段并写数据库，成功返回纯文本 `id <id>` |
+| 8 | `POST` | `/backend/results/telemetry` | 与 `/results/telemetry` 共用 `Record`；数据库为 `none` 时返回 `Telemetry is disabled` |
+| 9 | `HandleFunc` | `/stats` | `Stats` 提供密码门和 HTML 统计页；认证态可读 `L100` 或单条 UUID |
+| 10 | `HandleFunc` | `/backend/stats` | 与 `/stats` 共用 `Stats`；登录错误 `403`，成功保存 Cookie 后 `307` |
+| 11 | `GET` | `/results/json` | `JSONResult` 读取 `id`，成功返回展示精度 JSON；缺参数 `400`，查不到 `404` |
+| 12 | `GET` | `/backend/results/json` | 与 `/results/json` 共用 `JSONResult`；`ResolveID` 同时接受原始或混淆 ID |
+
+另外，`GET /*` 交给静态文件 handler；结果 PNG 没有 `.php` 别名，而是单独注册 `/results`、`/results/`、`/backend/results`、`/backend/results/` 四个 GET 路径（`web.go:66,73-76`）。因此不能把静态路由、PNG 变体和上面的 12 个核心 API 混成同一张“12 条路由”列表。
 
 全局中间件按序生效：RealIP → GetHead → CORS(全开) → NoCache → Recoverer。
 
@@ -58,7 +61,7 @@ series: "LibreSpeed Go 源码行纪"
 
 | 项 | 规格 |
 | --- | --- |
-| 参数 | `isp=true` 附带 ISP 归属；`distance=km\|mi\|NM` 选距离单位；`r=` 防缓存 |
+| 参数 | `isp=true` 附带 ISP 归属；`distance=km\|NM` 走显式单位分支，其余值走英里分支；handler 不读取 `r`，全局 `NoCache` 负责禁缓存 |
 | IP 还原 | 五级链：CF-Connecting-IPv6 → Client-IP → X-Real-IP → XFF 首段 → RemoteAddr（03 篇） |
 | 私网短路 | 命中 localhost/私网/link-local/CGNAT/ULA 时直接返回描述，不查外部库 |
 | 外呼 | `isp=true` 且公网时调 ipinfo.io（失败落 MaxMind mmdb） |
@@ -100,7 +103,7 @@ ULID 由时间戳 + 单调熵生成；开启 ID 混淆时返回混淆后的形�
 
 
 
-![管理面安全鉴权：/stats 会话状态管理与防暴力破解设计](../../../public/images/librespeed-go-admin-session-security.svg)
+![管理面安全鉴权：/stats 配置门、Cookie 会话与 403/307 状态转换](../../../public/images/librespeed-go-admin-session-security.svg)
 
 ## 四、管理面：/stats 的会话合同
 
@@ -120,7 +123,7 @@ ULID 由时间戳 + 单调熵生成；开启 ID 混淆时返回混淆后的形�
 
 
 
-![端点调用时序：curl 一键复现完整测速生命周期](../../../public/images/librespeed-go-rest-curl-sequence.svg)
+![端点调用时序：curl 从身份探测、测速到结果读取与 /stats 登录](../../../public/images/librespeed-go-rest-curl-sequence.svg)
 
 ## 五、一次完整会话的 curl 序列
 

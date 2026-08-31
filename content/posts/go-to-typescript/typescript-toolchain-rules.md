@@ -107,10 +107,6 @@ node_modules/.bin/esbuild components/post/article-body.tsx \
 2. **esbuild 完全不做类型检查**：`string` 拼成 `number` 它不报错。Vite 默认用 esbuild 转译 = 开发时不查类型，构建时靠 `tsc --noEmit` 补查。
 3. 所以现代项目通常需要**两个都跑**：`esbuild`（转译）+ `tsc --noEmit`（类型检查），或 Vite + `vue-tsc` 这类组合。别以为"esbuild 能产出 JS"就能替代 tsc。
 
-
-
-![现代化构建工具链：tsc 类型检查与 esbuild/SWC 原生并行编译分工](../../../public/images/esbuild-swc-ast-transform-pipeline.svg)
-
 ## 四、@types 从哪来：类型包的分发机制
 
 后端同学还容易困惑：`import express from "express"` 的类型是谁提供的？

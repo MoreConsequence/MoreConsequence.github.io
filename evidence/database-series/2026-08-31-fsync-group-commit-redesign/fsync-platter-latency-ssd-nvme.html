@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fsync-platter-latency-ssd-nvme</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="fs-title fs-desc">
+  <title id="fs-title">fsync 物理耗时拆解：机械硬盘 10ms 寻道 vs NVMe SSD 100μs 刷盘</title>
+  <desc id="fs-desc">对比图展示 HDD 机械寻道 10ms、SATA SSD 1ms 与企业级 NVMe SSD 配合 PLP 掉电保护电容实现 100μs 极速刷盘的物理硬件与吞吐差异。</desc>
+  <defs>
+    <marker id="fs-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="fs-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">STORAGE HARDWARE LATENCY · FSYNC &amp; POWER LOSS PROTECTION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">fsync 物理耗时拆解与存储硬件介质对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">机械硬盘 (10ms 物理寻道) vs SATA SSD (1ms 闪存编程) vs NVMe SSD + PLP 掉电保护 (100μs 极速落盘)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: HDD (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">HDD</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">机械硬盘 (Platter)</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">机械物理动作瓶颈</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">1. 磁头机械臂寻道: ~5-8 ms</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">2. 7200 RPM 盘片旋转: ~4.17 ms</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. 磁通翻转物理写盘: ~1 ms</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Mechanical Seek &amp; Rotation</text>
+
+    <!-- Metrics -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">性能吞吐硬上限</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">fsync 延迟: ~10 - 15 ms</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">单线程并发极限: ~100 TPS</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">加再多 CPU 也无法打破物理锁</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构启示</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高并发事务下必须开启组提交 (Group Commit) 攒批，否则数据库直接瘫痪。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Legacy Storage Baseline</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Max Throughput: ~100 IOPS</text>
+  </g>
+
+  <!-- Col 2: SATA SSD (x=340..610, w=270) -->
+  <g transform="translate(340, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SATA SSD</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SATA 固态硬盘</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">电子闪存阵列编程</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">1. AHCI 协议栈开销: ~100 μs</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">2. NAND Flash Page 写入: ~500 μs</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. FTL 垃圾回收阻塞: ~200 μs</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">NAND Floating Gate Trapping</text>
+
+    <!-- Metrics -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">性能吞吐表现</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">fsync 延迟: ~0.5 - 1.0 ms</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">单线程并发极限: ~1,000 TPS</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">较机械盘提升整整 10 倍！</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">局限与约束</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">受限于 SATA 3.0 (6Gbps) 接口与单队列 (QD=32)，无法充分释放闪存并发。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">SATA Protocol Bottleneck</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Max Throughput: ~1K IOPS</text>
+  </g>
+
+  <!-- Col 3: NVMe SSD + PLP (x=640..920, w=280) - Focal -->
+  <g transform="translate(640, 136)">
+    <rect width="280" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NVME + PLP</text>
+    <text x="130" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">企业级 NVMe (带电容)</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="252" height="100" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">PCIe 直连与电容掉电保护</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. PCIe 直连 CPU: ~10 μs 协议耗时</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. PLP 电容安全保护 DRAM 写缓存！</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 写入 DRAM 即可瞬间返回 fsync 成功</text>
+    <text x="24" y="132" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">Power Loss Protection (PLP) Battery</text>
+
+    <!-- Metrics -->
+    <rect x="14" y="152" width="252" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">极致微秒级飞跃</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">fsync 延迟: ~50 - 100 μs！</text>
+    <text x="24" y="214" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">单线程并发极限: ~10,000+ TPS</text>
+    <text x="24" y="232" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">较机械硬盘加速整整 100 倍！</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="252" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">现代数据库生产标配</text>
+    <text x="24" y="302" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">64K 硬件多队列并发，配合电容实现零风险极速提交，消灭所有 I/O 停顿。</text>
+    <text x="24" y="326" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Zero Durability Compromise</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Max Throughput: ~100K+ IOPS</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统机械硬盘与 SATA SSD</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">企业级 NVMe SSD + PLP 掉电保护 100μs 极速刷盘核心</text>
+</svg>
+</main>
+</body>
+</html>

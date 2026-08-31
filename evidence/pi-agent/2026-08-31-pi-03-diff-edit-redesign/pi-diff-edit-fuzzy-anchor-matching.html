@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pi-diff-edit-fuzzy-anchor-matching</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="we-title we-desc">
+  <title id="we-title">全量覆写（Write）vs 局部结构化编辑（Edit）权衡与匹配陷阱</title>
+  <desc id="we-desc">对比图展示 Coding Agent 中全量覆写导致的 Token 浪费与代码丢失缺陷，对比局部结构化编辑的高效性以及面临的缩进幻觉、换行符差异与目标歧义挑战。</desc>
+  <defs>
+    <marker id="we-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="we-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CODING AGENT TOOL DESIGN · FULL-WRITE VS STRUCTURED EDIT</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">全量覆写 vs 局部结构化编辑权衡与陷阱</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">全量覆写 (O(N) Token 黑洞/偷懒丢代码) vs 局部结构化编辑 (O(K) 精准安全) + 缩进/换行/歧义三大陷阱</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Full Write (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">FULL WRITE</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全量重写 (Write File)</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">write_file(path, fullContent)</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• Token 复杂度: O(N) 全文重传，千行大文件极昂贵</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 盲目覆写，易冲掉其他进程或 Git 修改</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">致命工程缺陷：</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 模型偷懒删代码：常生成 // ... rest of code unchanged；</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 破坏原有文件格式与权限；</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 极易触发上下文长度上限导致截断崩溃。</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">High Risk Token Burn &amp; Code Loss</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用限制</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">仅允许用于创建全新空文件，绝对禁止用于已有长代码文件的日常迭代修改。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Anti-Pattern for Long Code Modification</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Prohibited for Refactoring Tasks</text>
+  </g>
+
+  <!-- Col 2: Structured Edit (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#e85d3f"/>
+    <text x="84" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STRUCTURED EDIT</text>
+    <text x="164" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">局部结构化编辑 (Edit)</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">edit(path, oldText, newText)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• Token 复杂度: O(K) 极低开销 (仅传输待修改锚点片段)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 安全锚点校验: 原文不匹配立即拒绝，0 盲目覆写！</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">必须防御的三大匹配崩溃陷阱：</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">1. 空白符幻觉：4 空格 vs 2 空格导致 indexOf == -1；</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 换行符差异：CRLF \r\n vs LF \n 跨平台不匹配；</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">3. 同名代码歧义：目标不唯一时必须强制报错！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Requires Multi-Stage Fuzzy Anchor Engine</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工业级最佳实践</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">现代顶级 Coding Agent 的核心基石，配合模糊匹配算法使编辑成功率提升至 99.5%。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Gold Standard for Agentic Code Modification</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Precise, Economical &amp; Safe</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">全量覆写缺陷与 Token 黑洞分析</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">局部结构化编辑与三大精确匹配陷阱防护核心</text>
+</svg>
+</main>
+</body>
+</html>

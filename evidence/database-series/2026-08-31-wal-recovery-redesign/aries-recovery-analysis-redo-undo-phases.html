@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aries-recovery-analysis-redo-undo-phases</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ar-title ar-desc">
+  <title id="ar-title">ARIES 崩溃恢复三阶段算法：分析 (Analysis) ➔ 重做 (Redo) ➔ 回滚 (Undo)</title>
+  <desc id="ar-desc">流程架构图展示 ARIES 崩溃恢复经典算法的分析阶段构建 ATT/DPT、重做阶段 Repeating History 正向前滚以及回滚阶段反向撤销未提交事务全流程。</desc>
+  <defs>
+    <marker id="ar-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ar-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ARIES CRASH RECOVERY ALGORITHM · THREE-PHASE RESTORATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">ARIES 崩溃恢复经典三阶段算法全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Phase 1 Analysis (构建 ATT 与 DPT) ➔ Phase 2 Redo (正向重放历史) ➔ Phase 3 Undo (反向回滚未提交事务)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Analysis (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHASE 1 · ANALYSIS</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">分析阶段 (正向扫描)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">从 Checkpoint 扫至 Crash 点</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 构建活跃事务表 (ATT, Active Tx)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 构建脏页表 (DPT, Dirty Page Table)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 确定 Redo 阶段起点: min(RecLSN)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">State Reconstruction</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心任务目标：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 找出断电时哪些事务未提交 (Loser Tx)；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 找出哪些脏页未及落盘；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 精准锚定 Redo 重放的物理起点。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Determination of Redo Boundary</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Zero Guesswork Execution</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Redo</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ar-arr-accent)"/>
+
+  <!-- Col 2: Redo (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PHASE 2 · REDO</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">重做阶段 (前滚历史)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Repeating History (重现历史)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 从 min(RecLSN) 顺序扫至 Crash 点</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 重做所有修改 (含已提交与未提交!)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 判定: Log.LSN &gt; Page.PageLSN 则写</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Deterministic Replay to Crash Point</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">重做阶段哲学：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不偏不倚，精确还原崩溃前一微秒的状态；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 哪怕未提交事务也先重做，后续再回滚；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保所有并发锁与数据结构状态绝对自洽。</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Exact Pre-Crash State Restored</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">严格幂等，重复重放结果绝对一致</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Undo</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ar-arr-accent)"/>
+
+  <!-- Col 3: Undo (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PHASE 3 · UNDO</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">回滚阶段 (反向撤销)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">从 Crash 点反向回扫日志</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 撤销 ATT 中所有未提交事务</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 写入 CLR (补偿日志记录)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. CLR 包含 UndoNextLSN 指针</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Compensation Log Records</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CLR 防二次崩溃死循环：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 哪怕在 Undo 阶段再次断电；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 重启后直接沿 CLR 跳过已撤销动作；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 绝不发生重复回滚死循环！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Idempotent Safe Rollback</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">保证恢复最终绝对收敛</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Analysis 状态分析与 Undo 回滚</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Repeating History 正向重做与 CLR 幂等回滚核心</text>
+</svg>
+</main>
+</body>
+</html>

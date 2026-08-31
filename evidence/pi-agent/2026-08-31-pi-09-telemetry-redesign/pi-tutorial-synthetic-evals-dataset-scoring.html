@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pi-tutorial-synthetic-evals-dataset-scoring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ep-title ep-desc">
+  <title id="ep-title">企业级 Agent 自动化评测流水线与 Pass@1 判定模型</title>
+  <desc id="ep-desc">流程架构图展示从团队真实 PR 提取评测用例、在隔离沙箱中自动化运行与验证，以及结合 Pass@1 测试通过率与 Token 成本/时延硬约束的多维评测裁决模型。</desc>
+  <defs>
+    <marker id="ep-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ep-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">PRODUCTION EVAL PIPELINE · DATASET EXTRACTION &amp; SCORING MODEL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">企业级 Agent 自动化评测与裁决流水线</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">生产 PR 提取 ➔ 隔离沙箱自动化执行 ➔ 隐藏 Golden 测试验证 ➔ Pass@1 + 成本/时延硬约束多维裁决</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Dataset Extraction (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DATASET</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">真实 PR 用例提取</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">从私有代码库自动提取</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• Issue / PR 原始需求描述</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 待修复的 Base Commit 代码镜像</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 隐藏 Golden 单测 (防模型作弊)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">High Fidelity Ground Truth Extraction</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数据集特征：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 100% 贴合团队真实业务代码与架构；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝公网开源基准过拟合污染；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 具备极高的业务参考价值。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Enterprise Contextual Relevance</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zero Data Contamination</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Exec</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ep-arr-accent)"/>
+
+  <!-- Col 2: Sandbox Exec & Pass@1 (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SANDBOX RUNNER</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">沙箱执行与 Pass@1</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">自动化沙箱回归闭环</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 在隔离容器/Bwrap 中注入任务</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. Agent 自动化编辑并尝试修复</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 运行 npm test 验证单测是否全绿</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Deterministic Execution Verification</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">严谨性保证：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不依赖 LLM-as-a-Judge 主观打分；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 以编译器/单测 exitCode === 0 为准；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保评测结果 100% 可重复、可信任。</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Objective Test-Driven Evaluation</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">工业级 CI/CD 自动化评测标准</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Judge</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ep-arr-accent)"/>
+
+  <!-- Col 3: ROI Hard Budget Gate (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ROI GATE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">成本时延硬约束</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">三维综合裁决模型</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. Pass@1 === True (单测必须全绿)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. Token 预算 &lt;= 30,000 (成本受控)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 总耗时 &lt;= 120s (超限直接判负)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Multi-Dimensional ROI Evaluation</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终身工程收益：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝单 PR 消耗数十美元的低效 Agent；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保模型升级时性能与成本双向优化；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 打造高商业性价比的生产 Agent 系统！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Cost-Effective Agent Deployments</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Production Engineering Completed</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">真实 PR 提取与 Pass@1 单测验证</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">沙箱自动化运行与 Token 成本时延硬约束裁决核心</text>
+</svg>
+</main>
+</body>
+</html>

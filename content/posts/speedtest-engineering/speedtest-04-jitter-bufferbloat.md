@@ -101,10 +101,6 @@ export class RFC3550JitterCalculator {
 }
 ```
 
-
-
-![主动队列管理 (AQM)：FQ-CoDel 稀疏流优先与动态时延控制](../../../public/images/cake-fq-codel-active-queue-management.svg)
-
 ## 四、满载时延与 Bufferbloat（缓冲区膨胀）排队度量
 
 ### 1. 什么是 Bufferbloat（缓冲区膨胀）？

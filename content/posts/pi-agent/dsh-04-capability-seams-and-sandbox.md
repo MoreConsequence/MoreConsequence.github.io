@@ -144,10 +144,6 @@ flowchart TD
 
 ---
 
-
-
-![DSH Bubblewrap 与 Seccomp 物理沙箱内核隔离拓扑](../../../public/images/dsh-bubblewrap-seccomp-namespace-isolation.svg)
-
 ## 四、架构启示与工程收获
 
 1. **接口先行，抹平环境异构性**：在项目第一天就确立 `ctx.fs` 与 `ctx.subprocess` 的 Seam 契约，是系统未来能够平滑支持 Docker、E2B、Wasm 和 Kubernetes 的最大底牌；

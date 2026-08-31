@@ -1,49 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="pa-title pa-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="pa-title">pprof 协程泄漏排查工作流与增量诊断</title>
+  <desc id="pa-desc">Go 并发诊断工作流图展示双帧采样抓取、-base 差分自动过滤常驻协程、-traces 堆栈穿透定位源码行号，以及接入 Context 与增量归零验证闭环。</desc>
+  <defs>
+    <marker id="pa-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="pa-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go Goroutine 泄漏排查实战流水线 (pprof Diagnosis Pipeline)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 监控告警发现协程数暴涨 ──► 2. 拉取 /debug/pprof/goroutine?debug=1 聚合分析 ──► 3. 定位异常堆栈与阻塞原语 ──► 4. 灰度热修上线</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">PPROF WORKFLOW · TWO-FRAME DELTA BASE, TOP/TRACES DRILLDOWN &amp; REMEDIATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">pprof 协程泄漏排查与增量诊断</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">双帧抓取 ➔ -base 差分过滤常驻噪声 ➔ -traces 穿透源码行号 ➔ 接入 Context 修复验证</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Two-Frame Capture (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TWO-FRAME</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">双帧采样抓取</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">g1.prof ➔ sleep 10s ➔ g2.prof</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 间隔固定时间连续抓取两份快照</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 记录协程总数与等待堆栈的动态演变</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Temporal Snapshot Collection</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">抓取规范：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严禁只凭单次采样总数妄下断言；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 单帧无法区分常驻协程与泄漏协程；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 动态时间差分是科学诊断第一步。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Prometheus 监控水位告警 (Metric: go_goroutines &gt; 50,000)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">服务上线后 Goroutine 数量呈严格单调线性递增趋势 ──► 内存不断被蚕食 ──► 触发 SRE 核心告警</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">精准捕捉泄漏初期的异常指标偏离！</text>
+  <!-- Col 2: Delta Base (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">-BASE DELTA</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">差分过滤噪声</text>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. pprof 聚合抓取分析 (curl /debug/pprof/goroutine?debug=1)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">获取按调用栈自动聚合的摘要 ──► 瞬间发现 48,200 个协程停留在同一行代码: "chan send (runtime.chansend)"</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">瞬间收敛定位到具体的问题函数！</text>
-      </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">pprof -base g1.prof g2.prof</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 自动消除 HTTP Accept / GC 常驻噪声</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 精准聚焦这 10 秒内净增加的异常堆栈</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Noise-Free Differential Focus</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. debug=2 详细调用栈深度审查 (Exact Line Number &amp; Wait State)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">打印全量堆栈: goroutine 18029 [chan send, 320 minutes]: api/v1/handler.go:88 ──► 确认是超时分支漏读通道</text>
-        <text x="15" y="62" font-size="8" fill="#047857">铁证如山，精准还原事故代码现场！</text>
-      </g>
-
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 修复验证与协程水位回落 (Fix &amp; Watermark Verification)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">给 channel 增加容量 1 ──► 发布灰度补丁 ──► 协程总数瞬间平稳收敛至 200 个以内！</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">Go 后端工程师生产排障必备技能！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">差分价值：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 瞬间滤除 99% 的系统正常背景干扰；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 让真正的泄漏源在热点排行上一目了然；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极大地提高线上故障定位效率。</text>
   </g>
+
+  <!-- Col 3: Stack Drilldown (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">-TRACES</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">穿透源码行号</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">gopark ➔ chansend ➔ main.go:14</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 从 gopark 沿调用链逐层下钻分析</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 直接穿透到业务代码卡死的具体行号</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Exact Source Line Resolution</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">定位要诀：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 重点看业务层最后一帧而非 runtime；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 确认哪个通道或锁处于未释放状态；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 锁定泄漏根本代码源头。</text>
+  </g>
+
+  <!-- Col 4: Fix Validation (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">REMEDIATE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">修复治理闭环</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Context + Timeout + Close</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 补齐 ctx.Done() 超时退出分支</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 重启复测，两帧增量彻底归零</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero-Leak Verification</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 所有启动的协程都必须有明确退出路径；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝无超时无 context 的裸协程；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保障服务端系统长周期永续稳定运行。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">双帧采样抓取与修复治理增量归零验证</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">-base 差分过滤常驻噪声与 -traces 源码行号穿透核心</text>
 </svg>

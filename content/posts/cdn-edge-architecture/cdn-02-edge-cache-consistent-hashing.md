@@ -21,7 +21,7 @@ featured: true
 
 面对每秒数百万次查询（QPS, Queries Per Second）的高密请求，若全部由内存承载，成本将呈指数级爆炸；若全部读取磁盘，NVMe 的纳秒级 I/O 排队依然会拖慢首包响应时延（TTFB, Time To First Byte）。因此，现代 CDN 演进出了严格的 **分层存储架构（Storage Hierarchy）**。
 
-![七层边缘分层缓存架构与 Singleflight 回源请求合并熔断拓扑](../../../public/images/cdn-cache-hierarchy-collapse.svg)
+![七层边缘分层存储金字塔与穿透收敛拓扑](../../../public/images/cdn-cache-hierarchy-collapse.svg)
 
 ### 1. 存储金字塔的物理特征矩阵
 
@@ -35,11 +35,7 @@ featured: true
 ### 2. 零拷贝与 Direct I/O：消除内核缓冲区双重拷贝
 在 L2 磁盘层读取数十兆的静态视频或安装包时，传统 `read()` + `write()` 系统调用会在内核页缓存（Page Cache）与用户态内存之间发生 2 次 CPU 拷贝和 4 次上下文切换：
 
-```
-[磁盘 NVMe] ──(DMA拷贝)──► [内核 PageCache] ──(CPU拷贝)──► [用户态内存 Buffer]
-                                                                  │
-[网卡 NIC]  ◄──(DMA拷贝)── [内核 SocketBuffer] ◄──(CPU拷贝)────────┘
-```
+![传统 4 次数据拷贝与零拷贝 Direct I/O 对比](../../../public/images/cdn-traditional-four-copy-bottleneck.svg)
 
 现代 CDN 反向代理（如基于 Nginx/Envoy 或自研 Rust/Go 引擎）在 L2 命中时，采用 **Linux `sendfile` 系统调用结合异步 I/O（`io_uring`）**：
 - DMA（直接内存访问）控制器直接将磁盘数据送入内核缓冲区，并由网卡分散-聚集（Scatter-Gather）机制直接读取发送，**CPU 拷贝次数严格归零**，单机大文件吞吐轻松跑满 100Gbps 网卡线速。
@@ -86,10 +82,6 @@ Ketama 的工程解法是引入 **虚拟节点（Virtual Slots）**：
 
 ---
 
-
-
-![回源风暴拦截：Singleflight 请求合并与 RFC 5861 SWR 异步重校验](../../../public/images/cdn-singleflight-thundering-herd-request-collapse.svg)
-
 ## 三、 回源风暴（Thundering Herd）与 Singleflight 请求合并熔断
 
 在 CDN 生产运营中，最危险的场景从来不是持续的平稳流量，而是 **突发热点资源在缓存失效瞬间的“回源雪崩”（Cache Stampede / Thundering Herd）**。
@@ -106,37 +98,7 @@ Ketama 的工程解法是引入 **虚拟节点（Virtual Slots）**：
 
 现代 CDN 边缘代理（如 Go/Rust 自研代理或 Nginx `proxy_cache_use_stale updating`）内置了高效的 **Singleflight 请求合并机制**。
 
-```
-[20,000 个用户并发请求同一 URL]
-              │
-              ▼
-    [检查本地缓存是否失效？] ──(有效)──► [直接返回 L1/L2 缓存 (0ms)]
-              │ (失效/未命中)
-              ▼
-   ┌──────────────────────────────────────────────┐
-   │         Singleflight 核心并发状态机          │
-   │                                              │
-   │  加互斥锁 (Mutex.Lock) 检查 In-flight 哈希表 │
-   └───────┬──────────────────────────────┬───────┘
-           │                              │
-     (第一个到达的请求)           (后续 19,999 个并发请求)
-           │                              │
-           ▼                              ▼
-  [升级为 Leader 主请求]        [登记为 Follower 订阅者]
-  [创建 inFlightCall 结构体]    [获取同一个 Channel/Event 句柄]
-  [立即释放全局互斥锁]          [在内存 Channel 上阻塞挂起等待]
-           │                              │
-           ▼                              │
-  [独占发起 1 次跨洋回源请求]              │
-  [获取源站 200 OK 完整响应]               │
-           │                              │
-           ▼                              │
-  [将数据写入 L1/L2 边缘缓存]              │
-  [关闭 Channel 并广播唤醒所有等待者] ─────┘
-           │
-           ▼
-[20,000 个用户全部毫秒级拿到相同数据，源站仅承受 1 次回源！]
-```
+![Singleflight 互斥锁与并发请求合并 (Request Coalescing) 防回源雪崩拓扑](../../../public/images/cdn-singleflight-request-coalescing.svg)
 
 ### 3. Singleflight 核心机制深度解析
 
@@ -178,16 +140,7 @@ Cache-Control: max-age=60, stale-while-revalidate=300, stale-if-error=86400
 ETag: "01928374a"
 ```
 
-```
-时间轴 (Seconds)
-  0s                      60s                                   360s
-  ├────────────────────────┼──────────────────────────────────────┼─────────────►
-  │◄───── 1. 绝对新鲜期 ───►│◄────── 2. SWR 异步重校验宽限期 ──────►│ 3. 彻底失效
-  │     (Fresh Window)     │         (Stale-While-Revalidate)     │ (Hard Expired)
-  │                        │                                      │
-  │  直接返回本地缓存       │  ⚡ 极速返回旧缓存 (0ms TTFB)         │ 同步回源拉取
-  │  (Cache Hit, 1ms)      │  + 异步 Worker 在后台静默回源更新      │ (Cache Miss)
-```
+![HTTP RFC 5861 Stale-While-Revalidate 异步后台重校验时间轴模型](../../../public/images/cdn-stale-while-revalidate-timeline.svg)
 
 1. **绝对新鲜期（0 ~ 60s）**：直接返回 L1/L2 缓存，TTFB $\le 5\text{ms}$；
 2. **SWR 宽限期（60s ~ 360s）**：
@@ -212,6 +165,9 @@ ETag: "01928374a"
 
 ### 2. Surrogate-Key / Cache-Tag 的倒排索引魔法
 对于复杂的现代 Web 页面（例如一个电商商品详情页包含：商品信息、商家评价、推荐列表、库存状态），其由多个微服务数据组合而成：
+
+![Surrogate-Key 倒排索引与版本代数全球秒级失效拓扑](../../../public/images/cdn-surrogate-key-cache-tag-invalidation.svg)
+
 - 源站在输出 HTTP 响应头时注入标签：
   ```http
   Surrogate-Key: product_9527 merchant_88 category_digital

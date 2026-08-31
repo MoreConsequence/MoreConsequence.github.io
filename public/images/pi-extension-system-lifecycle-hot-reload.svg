@@ -1,56 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ex-title ex-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="ex-title">进程内扩展架构（In-Process）与 5 组全生命周期事件总线</title>
+  <desc id="ex-desc">架构对比图展示进程外 RPC 插件的高开销与干预局限，对比 Pi 进程内原生 TypeScript 扩展架构在零开销内存调用、5 组生命周期事件总线与深度 TUI 交互方面的核心优势。</desc>
+  <defs>
+    <marker id="ex-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ex-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 扩展插件系统：生命周期事件流与 /reload 毫秒级热重载</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">onTurnStart ──► beforeLLM ──► beforeTool ──► afterTool ──► onTurnEnd ｜ /reload 动态清空模块缓存并重新挂载插件</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">IN-PROCESS EXTENSION ARCHITECTURE · LIFECYCLE EVENT BUS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">进程内原生扩展与生命周期事件总线</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">进程外 RPC 局限 vs 进程内 TypeScript 共享堆 (零开销/5 组生命周期事件流/TUI 菜单直接唤起)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Out of Process RPC (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">OUT-OF-PROCESS</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">进程外 RPC 模式 (MCP / IPC)</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">独立子进程 + JSON-RPC 管道通信</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 通信开销: 毫秒级进程间序列化与管道 IO</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅能被动提供工具，无法深度干预生命周期</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">主要局限：</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 无法拦截 Turn 循环或动态改写 Prompt；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 难以无缝嵌入终端 TUI 原生交互组件；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 插件自修改与重启极其繁重复杂。</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Limited Observability &amp; High IPC Latency</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用场景</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">跨多语言（Python/Rust）外部工具集成、企业级不可信远程微服务沙箱调用。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Good for Cross-Language Tools</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Heavier Process Footprint</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <!-- Step 1 -->
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 进程内生命周期钩子链条 (In-Process Lifecycle Hooks)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">api.on('before_tool_call', fn) ──► 支持修改入参、动态注入环境变量、甚至抛错拦截执行</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">纯函数式洋葱模型，以极简 API 赋予扩展插件控制整个执行流的强大能力！</text>
+  <!-- Col 2: In-Process Native (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#e85d3f"/>
+    <text x="84" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">IN-PROCESS</text>
+    <text x="164" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Pi 进程内原生扩展 (Native)</text>
 
-      <!-- Step 2 -->
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. Agent 自编写扩展与自我进化 (Self-Modification Loop)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Agent 调用 write 工具在 .pi/extensions/ 编写新插件 ──► 自动扩展自身从未具备的新功能</text>
-        <text x="15" y="62" font-size="8" fill="#047857">打破固化工具集束缚，实现真正意义上的智能体自主工具构建与自我进化！</text>
-      </g>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">同进程内存共享 + 5 组生命周期事件总线</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• session_start / before_turn / tool_call / tool_result</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 零通信开销: 原生 TypeScript 函数调用 (0 延迟)</text>
 
-      <!-- Step 3 -->
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. /reload 模块缓存物理清理与热重载 (Hot-Reload Mechanism)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">delete require.cache[path] ──► 触发旧插件 dispose() ──► 动态 import() 重新装配生效！</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">重载耗时仅 10 毫秒，且完整保留已有会话历史与上下文树，0 重启主进程！</text>
-      </g>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">极致干预与自省能力：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 深度拦截：修改 Prompt、拦截重写危险工具入参；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. 原生 TUI 交互：直接调用 ctx.ui.select 弹出确认菜单；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 自修改闭环：Agent 自己改代码，一条 /reload 毫秒热载！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Deep Lifecycle Interception &amp; Instant Hot-Reload</text>
 
-      <!-- Step 4 -->
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 权限隔离与安全沙箱门禁 (Extension Security Gate)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">限制第三方不可信插件仅能访问只读 API ──► 危险宿主调用需显式申请权限令牌</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">兼顾极致灵活的扩展性与企业级生产安全合规底线！</text>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工业级评价</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">为个人开发者与单机 Agent 提供无与伦比的自省与自进化能力，开发心智极其轻巧。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Zero-Overhead In-Process Native Extension</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Self-Evolving Agent Framework Design</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">进程外 RPC 插件模式与局限</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Pi 进程内原生扩展与 5 组生命周期事件总线核心</text>
 </svg>

@@ -45,10 +45,6 @@ flowchart LR
 
 Go 换来的不是“零停顿”，而是把一次大头工作拆成并发阶段，并将必须全局一致的部分压缩成两次 STW 边界。
 
-
-
-![GODEBUG=gctrace=1 日志全字段公式解剖：STW 耗时、堆伸缩与 P 算力占用](../../../public/images/gctrace-log-parsing-formula-breakdown.svg)
-
 ## 二、用同一个可配置程序采集真实现场
 
 ```go

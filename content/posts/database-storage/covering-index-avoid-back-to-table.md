@@ -37,10 +37,6 @@ flowchart LR
 
 **回表为什么可能贵**：第二次定位可能访问与二级索引叶子页不相邻的聚簇索引页。若页在 buffer pool 中，它主要是内存访问；若是冷页，成本由存储设备、并发、预读和 buffer pool 状态共同决定，不能用固定的 1–5ms 代替所有环境。数据库真正怕的是“一个查询产生 N 个候选，再触发 N 次分散的 row lookup”——列表页、低选择性条件和深分页都会放大这个形状。
 
-
-
-![覆盖索引与回表路径对照：二级索引直接返回 vs 主键索引二次随机 I/O](../../../public/images/covering-index-btree-lookup-path.svg)
-
 ## 二、EXPLAIN 翻译成人话
 
 `EXPLAIN SELECT ...` 的 `Extra` 是这张账的晴雨表：

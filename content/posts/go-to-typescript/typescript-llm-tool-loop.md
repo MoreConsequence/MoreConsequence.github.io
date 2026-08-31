@@ -102,10 +102,6 @@ async function executeBatch(calls: ToolCall[], timeoutMs: number): Promise<ToolR
 - `ToolResult` 是可辨识联合（`ok` 判别），**"成功一半"成为一等公民**——调用方对每个结果都必须分流 `if (result.ok)`，忘了处理失败分支会怎样？`result` 类型是联合，`result.value` 只在 `ok:true` 分支可见——编译器逼你处理。Go 里两个返回值 `(val, err)` 也是同理，区别是 TS 把它做进类型。
 - `Promise.all(pending)` 不再出现 rejection（每个已降级为 `ok:false`），所以全部结果安全到达。
 
-
-
-![工具调用自愈闭环：Schema 校验报错格式化与大模型自动修正重试](../../../public/images/tool-call-validation-auto-retry-feedback.svg)
-
 ## 四、超时是竞态，不是过滤器
 
 上面 `Promise.race` 的超时实现有一个非常隐蔽的问题——它是**竞态**：`timeoutMs` 到了并不代表工具"真的停"：

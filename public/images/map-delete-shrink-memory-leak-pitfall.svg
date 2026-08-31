@@ -1,74 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="md-title md-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="md-title">Map 渐进式扩容与删除不缩容陷阱</title>
+  <desc id="md-desc">Go Map 扩容与生命周期架构图展示负载因子 6.5 触发 2x 翻倍扩容、growWork 增量渐进式迁移、delete 槽位清空不缩容内存泄漏陷阱以及定期重建 Map 方案。</desc>
+  <defs>
+    <marker id="md-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="md-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go Map 内存永不缩容陷阱与自愈重置方案</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">delete(m, k) 仅清空槽位数据但绝不减少已分配的 2^B 个桶 ｜ 存过 1000 万条记录的 Map 即使清空仍常驻数 GB 内存 ｜ 必须定时置 nil 重新 make</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">MAP LIFECYCLE · INCREMENTAL EVACUATION, DELETE NO-SHRINK &amp; REBUILD</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Map 渐进扩容与删除不缩容陷阱</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">负载因子 6.5 ➔ 2x 翻倍 ➔ 增量渐进迁移 (growWork) ➔ delete 不缩容 ➔ 重建回收</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Trigger (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GROWTH</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">负载因子触发</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Load Factor &gt; 6.5 (13/16)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 桶均元素超标触发 2x 翻倍扩容</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 申请 2^(B+1) 全新桶数组</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Capacity Threshold Detection</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">扩容代价：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 未预分配插入 10 万项多耗时 25.7%；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 产生 37.6% 的额外内存分配税；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 倡导显式 make(map, n) 预分配。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Map Leak -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ delete 永不缩容：幽灵内存持续常驻</text>
+  <!-- Col 2: Evacuation (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GROWWORK</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">增量渐进式迁移</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#38bdf8">1. 业务高峰期写入 10,000,000 条 Key ──► 扩容至 B=21 (约 200 万个桶)</text>
-          <text y="28" fill="#f87171">2. 进程占用内存达到 2.5GB</text>
-          
-          <text y="50" fill="#ef4444">3. 随后执行 delete 删除了 9,999,999 条数据：</text>
-          <text y="66" fill="#ef4444">• len(m) 变为 1</text>
-          <text y="82" fill="#ef4444">• 但 200 万个 bmap 桶内存结构体绝对不释放！</text>
-          <text y="98" fill="#f87171">• 进程依然死死霸占 2.5GB 内存无法归还操作系统！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">evacuate 2 Buckets/Write</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每次写/删顺手迁移当前桶与进度桶</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 彻底消灭扩容时的停顿毛刺</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Amortized Zero-Jitter Migration</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产危害：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 长时间运行的微服务内存不断膨胀虚高；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 极易在下一次突发峰值时触发 OOM-Killed；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• Go 最知名的内存设计特性！</text>
-      </g>
-    </g>
-
-    <!-- Right: Map Reset -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 定时置换与重建：彻底归还内存</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// 黄金实践：周期性新建 Map 覆盖旧实例</text>
-          <text y="28" fill="#86efac">newMap := make(map[string]Val, len(oldMap))</text>
-          <text y="42" fill="#38bdf8">for k, v := range oldMap { newMap[k] = v }</text>
-          <text y="56" fill="#34d399">holder.Store(&amp;newMap) // 原子替换对外引用</text>
-          <text y="70" fill="#4ade80">oldMap = nil          // 释放旧大 Map 引用！</text>
-          
-          <text y="94" fill="#4ade80">✓ 下一次 GC 瞬间将数 GB 旧桶数组彻底回收！</text>
-          <text y="110" fill="#34d399">内存占用平稳回落至 10MB，系统恢复健康！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 维持长周期运行服务的极低常驻内存基线；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 杜绝内存泄漏隐患；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• Go 高可靠后端生产级治理标准！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">迁移机制：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 旧桶均摊拆分至 low/high 两个新桶；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 迁移期间读操作同时检索新旧桶；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全部迁完自动释放 oldbuckets。</text>
   </g>
+
+  <!-- Col 3: Delete Hazard (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NO-SHRINK</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">删除绝不自动缩容</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">delete(m, k) (8.0ns)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅标空 tophash，桶内存绝不回落</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 哪怕删光 10 万项，9MB 内存依然驻留</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Memory Retention Hazard</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">隐性泄漏：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 长生命周期全局缓存 map 内存只增不减；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 容易在不知不觉中引发系统 OOM；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须设计周期性重建机制。</text>
+  </g>
+
+  <!-- Col 4: Rebuild (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">REBUILD</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">定期重建回收</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Copy to New Map &amp; GC</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 定期新建 map 并迁移有效键值</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 将旧 map 解引用交由 GC 彻底回收</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Memory Compaction Strategy</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 生产预估容量消除扩容税；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 缓存数据结构引入 LRU 或重建机制；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保持系统长期内存水位健康平稳。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">负载因子 6.5 触发扩容与定期重建回收</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">growWork 增量渐进迁移与 delete 不缩容陷阱核心</text>
 </svg>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ebpf-kprobe-int3-breakpoint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="kp-title kp-desc">
+  <title id="kp-title">Kprobe 动态插桩机理：断点指令替换与寄存器上下文捕获</title>
+  <desc id="kp-desc">时序流程图展示 Kprobe 通过将内核函数入口替换为 0xCC (int3) 断点指令，触发硬件陷阱捕获 pt_regs 寄存器现场并单步执行原指令恢复执行的全过程。</desc>
+  <defs>
+    <marker id="kp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="kp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">KPROBE DYNAMIC INSTRUMENTATION · INT3 BREAKPOINT TRAP</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Kprobe 动态插桩：0xCC 断点注入与现场捕获</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">目标函数首字节替换为 0xCC ➔ 触发 CPU #BP 陷阱 ➔ 封装 pt_regs 寄存器现场 ➔ 执行 eBPF ➔ 单步恢复原指令</text>
+
+  <!-- 4 Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Registration (x=40..220, w=180) -->
+  <g transform="translate(40, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">注册与指令备份</text>
+
+    <!-- Content -->
+    <rect x="14" y="42" width="152" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">目标内核函数</text>
+    <text x="22" y="84" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">sys_enter_openat()</text>
+    <text x="22" y="100" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Original: 55 (push %rbp)</text>
+    <text x="22" y="118" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">只读代码段 (.text)</text>
+
+    <rect x="14" y="150" width="152" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="172" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">备份原始操作码</text>
+    <text x="22" y="192" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">struct kprobe {</text>
+    <text x="22" y="208" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">  opcode = 0x55;</text>
+    <text x="22" y="224" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">  addr = 0xffffffff81..</text>
+    <text x="22" y="242" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">};</text>
+
+    <rect x="14" y="272" width="152" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="294" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">注册进内核探针表</text>
+    <text x="22" y="314" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">register_kprobe()</text>
+    <text x="22" y="332" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">挂入全局 Hash 表</text>
+    <text x="22" y="348" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Ready for text_poke</text>
+  </g>
+
+  <!-- Arrow 1 (x=220..250) -->
+  <text x="235" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Poke</text>
+  <line x1="220" y1="230" x2="250" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#kp-arr-accent)"/>
+
+  <!-- Col 2: Breakpoint (x=250..470, w=220) - Focal -->
+  <g transform="translate(250, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 2</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">0xCC 断点指令注入</text>
+
+    <!-- Poke Box -->
+    <rect x="14" y="42" width="192" height="150" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="64" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">INT3 BREAKPOINT</text>
+    <text x="112" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">text_poke 写穿透</text>
+    
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 临时开启内核写保护</text>
+    <text x="24" y="104" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 将首字节写入 0xCC (int3)</text>
+    <text x="24" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 刷新 CPU 指令缓存 (ICache)</text>
+    <line x1="24" y1="134" x2="196" y2="134" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="152" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">CPU 执行该函数时：</text>
+    <text x="24" y="170" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">硬件触发 #BP 断点异常！</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Exception Vector 3 (Breakpoint)</text>
+
+    <!-- IRQ Trap -->
+    <rect x="14" y="202" width="192" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="224" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">异常捕获处理 (Trap)</text>
+    <text x="24" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">do_int3() 异常处理例程接管</text>
+    <text x="24" y="262" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">根据 IP 寄存器反查 kprobe</text>
+    <text x="24" y="280" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">kprobe_handler(kp, regs)</text>
+    <line x1="24" y1="292" x2="196" y2="292" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="312" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无需修改应用代码或重启内核</text>
+    <text x="24" y="330" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">动态插桩，随用随插！</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Overhead: ~100-300ns</text>
+  </g>
+
+  <!-- Arrow 2 (x=470..500) -->
+  <text x="485" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Trap</text>
+  <line x1="470" y1="230" x2="500" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#kp-arr-accent)"/>
+
+  <!-- Col 3: Registers & eBPF (x=500..710, w=210) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">寄存器现场与 eBPF</text>
+
+    <!-- pt_regs Box -->
+    <rect x="14" y="42" width="182" height="142" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">struct pt_regs 现场压栈</text>
+    <text x="24" y="84" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">%rdi: 1st Arg (fd / path)</text>
+    <text x="24" y="100" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">%rsi: 2nd Arg (flags)</text>
+    <text x="24" y="116" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">%rax: Return / Syscall Nr</text>
+    <text x="24" y="132" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">%rip: Instruction Pointer</text>
+    <line x1="24" y1="144" x2="186" y2="144" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="162" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">作为入参 R1 传递给 eBPF</text>
+    <text x="24" y="176" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">PT_REGS_PARM1(ctx)</text>
+
+    <!-- eBPF Execution -->
+    <rect x="14" y="196" width="182" height="164" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">执行 eBPF 探针逻辑</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">安全读取函数参数与调用栈：</text>
+    <text x="24" y="256" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">bpf_probe_read_user_str()</text>
+    <text x="24" y="274" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">bpf_get_stackid()</text>
+    <line x1="24" y1="286" x2="186" y2="286" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="306" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">数据写入 BPF Map 共享内存</text>
+    <text x="24" y="324" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">0 侵入采集真实生产指标！</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Execution Done</text>
+  </g>
+
+  <!-- Arrow 3 (x=710..740) -->
+  <text x="725" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Resume</text>
+  <line x1="710" y1="230" x2="740" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#kp-arr-accent)"/>
+
+  <!-- Col 4: Single Step Resume (x=740..920, w=180) -->
+  <g transform="translate(740, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 4</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单步恢复原逻辑</text>
+
+    <!-- Slot Exec -->
+    <rect x="14" y="42" width="152" height="142" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">专用插槽单步执行</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">Single-step out-of-line</text>
+    <text x="22" y="102" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">执行被备份的 0x55</text>
+    <text x="22" y="120" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">恢复 CPU 寄存器现场</text>
+    <text x="22" y="138" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">IP += 1 (跳过断点)</text>
+    <text x="22" y="156" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">iret 退出中断异常</text>
+
+    <!-- Original Flow -->
+    <rect x="14" y="196" width="152" height="164" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="218" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">继续内核原始业务</text>
+    <text x="22" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">内核函数继续执行：</text>
+    <text x="22" y="256" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• 打开文件描述符</text>
+    <text x="22" y="272" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• 执行磁盘 I/O 读写</text>
+    <text x="22" y="288" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• 返回给用户态应用</text>
+    <line x1="22" y1="300" x2="156" y2="300" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="22" y="320" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">全过程应用进程 0 感知！</text>
+    <text x="22" y="338" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">Zero Disruption to App</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">注册准备与恢复阶段</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">0xCC 断点触发与寄存器现场捕获核心</text>
+</svg>
+</main>
+</body>
+</html>

@@ -1,76 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="dn-title dn-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="dn-title">DNS 递归迭代解析链路与 TTL 逐跳倒计时</title>
+  <desc id="dn-desc">DNS 层次解析拓扑图展示客户端 Stub、递归解析器迭代询问根/顶级域/权威服务器、逐跳剩余 TTL 倒计时机制，以及生产环境变更收敛工程规范。</desc>
+  <defs>
+    <marker id="dn-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="dn-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">DNS 逐跳递归缓存与 SOA 负向缓存 (NXDOMAIN) 机制</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Local DNS 缓存穿透 ｜ 正向 A 记录 TTL 递减 ｜ SOA 记录 Minimum TTL 锁死错误解析</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DNS RESOLUTION &amp; TTL DECAY · ITERATIVE HIERARCHY &amp; HOP-BY-HOP CACHE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">DNS 递归迭代解析与 TTL 逐跳倒计时</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">客户端 Stub ➔ 递归解析器 ➔ 根/TLD/权威迭代 ➔ 逐跳剩余 TTL 倒计时 ➔ 变更收敛</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Client Stub (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLIENT STUB</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">客户端解析栈</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">App + OS Stub Cache</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 浏览器/JVM + systemd-resolved 缓存</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 未命中时发起递归查询至 LocalDNS</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Local Ingress Point</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缓存特征：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优先复用本地已解析记录；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 本机刷新无法改变上游缓存；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 形成第一层解析屏障。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: Recursive Hierarchy (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">HIERARCHY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">树状迭代查询</text>
 
-    <!-- Left Box: Resolution Hop (420px) -->
-    <g transform="translate(20, 20)">
-      <rect width="420" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="420" height="30" rx="6" fill="#dbeafe"/>
-      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">1. DNS 四级逐跳缓存递减机制</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Root ➔ TLD ➔ Authoritative</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 递归器逐级向下迭代询问</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 最终向权威服务器获取真实 A 记录</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Standard Iterative Resolution</text>
 
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="390" height="38" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="22" font-size="8.5" font-weight="700" fill="#1d4ed8">1. 浏览器/OS 缓存 (TTL=60s: 最短生命周期)</text>
-
-        <rect y="44" width="390" height="38" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="22" font-size="8.5" font-weight="700" fill="#1d4ed8">2. Local DNS (运营商 114.114.114.114 / 8.8.8.8)</text>
-
-        <rect y="88" width="390" height="38" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="22" font-size="8.5" font-weight="700" fill="#1d4ed8">3. 权威 DNS (Authoritative Server: 真实配置 300s)</text>
-
-        <rect y="136" width="390" height="90" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#38bdf8">// 为什么改了权威 DNS 无法立即全网生效？</text>
-          <text y="30" fill="#93c5fd">• 各省运营商 Local DNS 存在独立 TTL 倒计时器</text>
-          <text y="46" fill="#93c5fd">• 部分劣质 Local DNS 强行篡改 TTL 锁死缓存 24 小时</text>
-          <text y="64" fill="#34d399">► 生产切流量必须提前 1 天将 TTL 降至 60 秒！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Right Box: Negative Caching SOA (420px) -->
-    <g transform="translate(460, 20)">
-      <rect width="420" height="345" rx="6" fill="#fee2e2" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="420" height="30" rx="6" fill="#fecaca"/>
-      <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#991b1b">2. 致命陷阱：SOA 负向缓存 (Negative TTL)</text>
-
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="390" height="110" rx="4" fill="#ffffff" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="9" font-weight="700" fill="#991b1b">NXDOMAIN 域名不存在错误缓存流程：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">1. 上线前配置失误，用户访问了未绑定的新域名 api.test.com</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">2. 权威 DNS 返回 NXDOMAIN 错误 + SOA 记录 (TTL=86400s)</text>
-        <text x="10" y="64" font-size="7.5" font-weight="700" fill="#dc2626">3. Local DNS 将"域名不存在"强行缓存整整 1 天！</text>
-        <text x="10" y="80" font-size="7.5" fill="#7f1d1d">4. 即使你 1 秒后在权威后台补齐了解析，用户依然全天报 404！</text>
-
-        <rect y="120" width="390" height="105" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// RFC 2308 破局解法：</text>
-          <text y="30" fill="#86efac">1. 检查 SOA 记录末尾的 MINTTL (负向缓存时间)</text>
-          <text y="46" fill="#86efac">2. 强制将 SOA MINTTL 从默认 86400 改为 300 秒</text>
-          <text y="64" fill="#fbbf24">3. 采用 HTTPDNS (绕过运营商 Local DNS 递归劫持)</text>
-          <text y="80" fill="#38bdf8">4. 客户端直连权威 IP，彻底消除负向缓存黑洞！</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">层级分工：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 根与 TLD 仅返回 NS 委派指引；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 权威服务器给出权威答案与 TTL；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确立 DNS 分布式树状核心。</text>
   </g>
+
+  <!-- Col 3: Hop-by-Hop Decay (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TTL DECAY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">逐跳剩余 TTL</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">TTL Countdown (300➔0)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 权威指定 300s 初始缓存窗口</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 递归器对下游返回递减的剩余时间</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">No Uniform Global Button</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">倒计时本质：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不存在瞬时全网统一刷新；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 各 Resolver 缓存时刻与剩余各异；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须按生命周期等待自然衰减。</text>
+  </g>
+
+  <!-- Col 4: Change Engineering (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CHANGE FLOW</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">变更收敛规范</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Pre-decrease TTL</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 提前 24h 降低 TTL 至 60s</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 待旧 TTL 倒计走完再正式切换 IP</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Safe Cutover Protocol</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 避免线上切流出现长时间流量割裂；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 多点 dig 探测核实真实收敛进度；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成稳健的生产切换实践。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">客户端 Stub 解析与生产变更安全切流规范</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">树状层级迭代查询与逐跳剩余 TTL 倒计时核心</text>
 </svg>

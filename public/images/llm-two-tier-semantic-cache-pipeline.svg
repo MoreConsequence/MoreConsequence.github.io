@@ -1,136 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tc-title tc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="tc-title">生产级大模型双层缓存架构与实体交叉校验管道</title>
+  <desc id="tc-desc">架构流程图展示 L1 精准哈希、L2 向量检索、实体/否定词交叉校验防抖以及 Singleflight 并发防击穿回填的工业级语义缓存完整管道。</desc>
+  <defs>
+    <marker id="tc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="tc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">生产级大模型双层缓存架构：L1 精确哈希 + L2 向量语义 + 交叉校验管道</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">L1 精准 Hash 极速过滤 ──► L2 向量近似检索（HNSW） ──► 实体一致性交叉校验 ──► 透传 LLM 保护</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TWO-TIER SEMANTIC CACHE · MULTI-LAYER DEFENSE PIPELINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">生产级双层语义缓存与交叉校验管道</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">L1 精确哈希 (&lt;1ms/Redis) ➔ L2 向量检索 (HNSW/Sim&gt;=0.90) ➔ 实体/反义词交叉校验 ➔ Singleflight 防击穿</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: L1 Exact (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TIER 1 · EXACT</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L1 精确哈希快速路径</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">SHA256(normalize(prompt))</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 规范化: 去空格/小写/停用词</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• Redis 内存检索耗时 &lt; 1ms</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 命中则 100% 绝对安全直接返回</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Sub-1ms Ultra-Fast Path</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">第一道防线：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 过滤完全相同的重复高频请求；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 0 向量化开销，单机轻松抗 10W QPS；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 未命中时才进入 L2 语义层。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Zero-Cost Ingestion Guard</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Guaranteed Deterministic Safety</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Miss</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tc-arr-accent)"/>
 
-    <!-- 4 Pipeline Blocks (200px each, gap 15px) -->
-    <g transform="translate(20, 20)">
-      <!-- Stage 1: L1 Exact Hash -->
-      <g>
-        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">1. L1 精确 Hash 缓存</text>
+  <!-- Col 2: L2 Semantic & Verify (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TIER 2 · SEMANTIC</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">L2 向量检索与交叉校验</text>
 
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1d4ed8" font-weight="700">Redis String Hash</text>
-          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb">Key: SHA256(Prompt)</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">HNSW ANN (Sim &gt;= 0.90) + Verify</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 生成 1536 维向量检索 Top-1 (8ms)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 实体一致性校验 (NER Key Check)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 极性/反义词校验 (读写/开关/not)</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Cross-Verification Safety Net</text>
 
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">性能指标：</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">• 耗时 &lt; 1ms</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">• 100% 准确无幻觉</text>
-
-          <rect y="106" width="175" height="42" rx="3" fill="#eff6ff"/>
-          <text x="8" y="16" fill="#64748b">命中直接返回；</text>
-          <text x="8" y="28" fill="#64748b">未命中进入 L2 ──►</text>
-        </g>
-      </g>
-
-      <!-- Stage 2: L2 Vector Search -->
-      <g transform="translate(210, 0)">
-        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. L2 向量语义检索</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">Embedding 生成</text>
-          <text x="8" y="30" font-size="9" fill="#15803d">调用轻量 text-embed 向量</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#166534" font-weight="700">Milvus / Qdrant</text>
-          <text x="8" y="30" font-size="9" fill="#15803d">• HNSW 极速 Top-1 检索</text>
-          <text x="8" y="42" font-size="9" fill="#15803d">• 耗时 $\approx 8\text{ms}$</text>
-
-          <rect y="106" width="175" height="42" rx="3" fill="#f0fdf4"/>
-          <text x="8" y="16" fill="#64748b">计算 Cosine Score；</text>
-          <text x="8" y="28" fill="#64748b">Score &gt; 0.90 进校验 ──►</text>
-        </g>
-      </g>
-
-      <!-- Stage 3: Cross Verification -->
-      <g transform="translate(420, 0)">
-        <rect width="195" height="235" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#ffedd5"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#c2410c" text-anchor="middle">3. 实体交叉校验</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#fed7aa"/>
-          <text x="8" y="16" fill="#9a3412" font-weight="700">实体提取 (NER)</text>
-          <text x="8" y="30" font-size="9" fill="#c2410c">校验函数名/变量/数字是否一致</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#fed7aa"/>
-          <text x="8" y="16" fill="#c2410c" font-weight="700">否定词/方向校验</text>
-          <text x="8" y="30" font-size="9" fill="#9a3412">• 严防 "读" 匹配为 "写"</text>
-          <text x="8" y="42" font-size="9" fill="#9a3412">• 严防 "开" 匹配为 "关"</text>
-
-          <rect y="106" width="175" height="42" rx="3" fill="#fff7ed"/>
-          <text x="8" y="16" fill="#64748b">校验通过 ──► 命中返回</text>
-          <text x="8" y="28" fill="#64748b">校验失败 ──► 透传 LLM</text>
-        </g>
-      </g>
-
-      <!-- Stage 4: LLM Fallback & Write Back -->
-      <g transform="translate(630, 0)">
-        <rect width="230" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
-        <rect width="230" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="115" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">4. 透传推理与异步回填</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="210" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="8" y="16" fill="#0f172a" font-weight="700">透传 GPU 推理集群</text>
-          <text x="8" y="30" font-size="9" fill="#475569">vLLM 重新计算输出</text>
-
-          <rect y="48" width="210" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">异步回填双层缓存</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">• 异步写入 Redis L1 Hash</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">• 异步写入 Milvus L2 向量库</text>
-
-          <rect y="106" width="210" height="42" rx="3" fill="#f0fdf4"/>
-          <text x="8" y="16" font-weight="700" fill="#047857">收益：平均节省 40% Token 成本！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">生产工程精髓：</tspan> 双层缓存架构在保持 <tspan font-weight="700" fill="#047857">“0 误判假阳性率”</tspan> 的同时，
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#2563eb" text-anchor="middle">
-        将重复 Prompt 的响应时间从 10 秒级直接压缩至 10 毫秒以内，极大地削峰填谷保护了底层昂贵的 GPU 资源。
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心安全防线：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 彻底消灭 0.91 高相似度下的假阳性错乱；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保返回内容与用户核心逻辑 100% 吻合；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 校验失败坚决判定 Miss 并透传 GPU！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Zero False-Positive Mission</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用交叉校验锁死语义正确性</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Pass</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tc-arr-accent)"/>
+
+  <!-- Col 3: Singleflight (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#141413"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SINGLEFLIGHT</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">防击穿与异步回填</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">GPU 透传与并发合并</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 100 个相同并发仅发 1 次 GPU</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 其余 99 个请求挂起共享结果</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 异步写回 L1 Redis 与 L2 向量库</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Breakdown Ingestion</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">系统效益：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝瞬时热点流量击穿 GPU 显存；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 建立起自学习、自扩充的动态缓存池；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 长期削减 40%~60% API 费用！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">40%~60% Long-Term Cost Savings</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Robust Production Cache Tier</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">L1 精准哈希与 Singleflight 并发防击穿</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">L2 向量检索与实体/反义词交叉校验防抖核心</text>
 </svg>

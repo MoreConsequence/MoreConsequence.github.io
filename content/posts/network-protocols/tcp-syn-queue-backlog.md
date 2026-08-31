@@ -33,10 +33,6 @@ flowchart LR
 
 排队是数学：**只要应用 accept() 的速度比连接到达的速度慢，accept 队列就会堆满**；只要客户端答应 ACK 的速度跟不上，SYN 队列就会堆满。超时的本质不是"谁慢了"，而是"容不下排队的人"。
 
-
-
-![SYN 洪水攻击防御：tcp_syncookies 哈希计算与无状态握手机理](../../../public/images/tcp-syn-flood-cookie-mitigation.svg)
-
 ## 二、capacity 从哪里来：listen(backlog) 与内核参数的合同
 
 两条队列的容量不是由同一个参数单方面决定：

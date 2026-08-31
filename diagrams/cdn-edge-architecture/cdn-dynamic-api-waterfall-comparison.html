@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cdn-dynamic-api-waterfall-comparison · diagram source</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f5f5f5;display:flex;justify-content:center}svg{width:100%;max-width:960px;height:auto}</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="100%" height="100%" role="img" aria-labelledby="wf-title wf-desc">
+<title id="wf-title">直连跨洋源站 vs CDN 边缘动态加速时序瀑布对比</title>
+<desc id="wf-desc">时序对比图：左为直连公网，客户端与美东源站 3 轮跨洋 RTT（TCP/TLS/HTTP 各 180ms）加计算 20ms，TTFB 560ms；右为 CDN 边缘动态加速，本地 3×4ms 终结后零握手回源 155ms 加计算 20ms，TTFB 187ms，下降 67%。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
+  
+  
+  
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+<!-- Header -->
+<text x="40" y="28" fill="#2d3142" font-size="16" font-weight="400" font-family="'Instrument Serif', serif">直连跨洋源站 vs CDN 边缘动态加速 · 时序瀑布对比</text>
+<text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif" letter-spacing="0.02em">不可缓存的动态 API：消灭跨洋 2 次协议握手 + 零握手回源，TTFB 由 560ms 压缩至 187ms（−67%）</text>
+
+<!-- ============ Panel A: 直连 560ms ============ -->
+<rect x="40" y="72" width="420" height="356" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="76" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="108" y="85" fill="rgba(45,49,66,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DIRECT · 560ms</text>
+<!-- lifelines A -->
+<line x1="120" y1="100" x2="120" y2="400" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+<line x1="380" y1="100" x2="380" y2="400" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+<!-- actors A -->
+<rect x="56" y="92" width="128" height="20" rx="4" fill="#f5f5f5" stroke="#7a8399" stroke-width="1"/><text x="120" y="106" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">客户端</text>
+<rect x="316" y="92" width="128" height="20" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/><text x="380" y="106" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东源站</text>
+<!-- messages A: 3 RTT x180 + Tcalc -->
+<line x1="120" y1="140" x2="380" y2="140" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="196" y="120" width="88" height="12" rx="2" fill="#f5f5f5"/><text x="240" y="129" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TCP 握手 180ms</text>
+<line x1="120" y1="188" x2="380" y2="188" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="196" y="168" width="88" height="12" rx="2" fill="#f5f5f5"/><text x="240" y="177" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TLS 1.3 180ms</text>
+<line x1="120" y1="236" x2="380" y2="236" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="180" y="216" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="240" y="225" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">HTTP 请求/响应 180ms</text>
+<line x1="120" y1="284" x2="380" y2="284" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+<rect x="196" y="264" width="88" height="12" rx="2" fill="#f5f5f5"/><text x="240" y="273" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">Tcalc 20ms</text>
+<!-- cumulative A -->
+<text x="120" y="324" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">TTFB 累计</text>
+<text x="120" y="344" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', sans-serif">560ms</text>
+<text x="120" y="364" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">3×180 + 20 · 跨洋冷启动</text>
+
+<!-- ============ Panel B: CDN DCA 187ms ============ -->
+<rect x="500" y="72" width="420" height="356" rx="8" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<rect x="508" y="76" width="160" height="12" rx="2" fill="#f5f5f5"/><text x="588" y="85" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CDN DCA · 187ms</text>
+<!-- lifelines B -->
+<line x1="580" y1="100" x2="580" y2="400" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+<line x1="700" y1="100" x2="700" y2="400" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+<line x1="820" y1="100" x2="820" y2="400" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+<!-- actors B -->
+<rect x="516" y="92" width="128" height="20" rx="4" fill="#f5f5f5" stroke="#7a8399" stroke-width="1"/><text x="580" y="106" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">客户端</text>
+<rect x="636" y="92" width="128" height="20" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/><text x="700" y="106" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">边缘 PoP</text>
+<rect x="756" y="92" width="128" height="20" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/><text x="820" y="106" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东源站</text>
+<!-- messages B: local 3x4 + backhaul 0-RTT 155 + Tcalc -->
+<line x1="580" y1="140" x2="700" y2="140" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="600" y="120" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="630" y="129" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TCP 4ms</text>
+<line x1="580" y1="176" x2="700" y2="176" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="600" y="156" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="630" y="165" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">TLS 4ms</text>
+<line x1="580" y1="212" x2="700" y2="212" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="600" y="192" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="630" y="201" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">POST 4ms</text>
+<line x1="700" y1="248" x2="820" y2="248" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="704" y="228" width="112" height="12" rx="2" fill="#f5f5f5"/><text x="760" y="237" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">0-RTT 回源 155ms</text>
+<line x1="700" y1="284" x2="820" y2="284" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+<rect x="724" y="264" width="72" height="12" rx="2" fill="#f5f5f5"/><text x="760" y="273" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">Tcalc 20ms</text>
+<!-- cumulative B -->
+<text x="580" y="324" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">TTFB 累计</text>
+<text x="580" y="344" fill="#eb6c36" font-size="20" font-weight="600" font-family="'Geist', sans-serif">187ms</text>
+<text x="580" y="364" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">3×4 + 155 + 20 · 本地终结</text>
+
+<!-- ============ Headline ============ -->
+<rect x="392" y="232" width="176" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="480" y="256" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">时延下降</text>
+<text x="480" y="278" fill="#eb6c36" font-size="24" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">−67%</text>
+
+<!-- Legend -->
+<line x1="40" y1="452" x2="920" y2="452" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="40" y="468" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+<line x1="40" y1="481" x2="76" y2="481" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/><text x="84" y="485" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">本地/跨洋建连</text>
+<line x1="236" y1="481" x2="272" y2="481" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/><text x="280" y="485" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">零握手回源（骨干专网）</text>
+<line x1="500" y1="481" x2="536" y2="481" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/><text x="544" y="485" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">源站计算 Tcalc</text>
+</svg>
+</body>
+</html>

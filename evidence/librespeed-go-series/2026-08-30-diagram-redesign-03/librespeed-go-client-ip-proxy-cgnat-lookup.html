@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>从请求到展示：候选 IP 的两条后续路径</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201%201%22%3E%3C%2Fsvg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --paper: #f5f5f5;
+      --ink: #2d3142;
+      --muted: #4f5d75;
+      --soft: #7a8399;
+      --accent: #eb6c36;
+      --accent-tint: rgba(235,108,54,0.08);
+      --font-sans: 'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif;
+      --font-serif: 'Instrument Serif', 'Noto Serif SC', serif;
+      --font-mono: 'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px;
+      background: var(--paper);
+      color: var(--ink);
+    }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="librespeed-go-client-ip-proxy-cgnat-lookup-title librespeed-go-client-ip-proxy-cgnat-lookup-desc"><title id="librespeed-go-client-ip-proxy-cgnat-lookup-title">从请求到展示：候选 IP 的两条后续路径</title><desc id="librespeed-go-client-ip-proxy-cgnat-lookup-desc">Flowchart showing getIP selecting a candidate IP, short-circuiting on a special address, and otherwise using the isp flag and the API-to-mmdb fallback before rendering the result.</desc>
+      <defs>
+        <marker id="librespeed-go-client-ip-proxy-cgnat-lookup-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="librespeed-go-client-ip-proxy-cgnat-lookup-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="librespeed-go-client-ip-proxy-cgnat-lookup-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="960" height="600" fill="#f5f5f5"/>
+
+      <text x="40" y="52" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LIBRESPEED GO · /GETIP</text>
+      <text x="40" y="92" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">从请求到展示：候选 IP 的两条后续路径</text>
+      <text x="40" y="120" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif">先按五级链取得候选值，再由 classifyPrivateIP 决定是否继续查询 ISP</text>
+
+      <!-- Connectors: emitted before all flow nodes. -->
+      <line x1="192" y1="204" x2="248" y2="204" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <line x1="424" y1="204" x2="464" y2="204" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <line x1="608" y1="204" x2="704" y2="204" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <line x1="536" y1="244" x2="536" y2="284" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <path d="M464 324 H304 Q296 324 296 332 V408 Q296 416 288 416 H272" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <line x1="608" y1="324" x2="656" y2="324" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <line x1="768" y1="352" x2="768" y2="376" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <path d="M840 416 H896 Q904 416 904 424 V492 Q904 500 896 500 H880" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+      <path d="M696 416 H616 Q608 416 608 424 V480 Q608 488 600 488 H168 Q160 488 160 480 V460" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-client-ip-proxy-cgnat-lookup-arrow)"/>
+
+      <!-- Branch labels: opaque masks leave an 8px visible gap to each connector. -->
+      <rect x="636" y="184" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="656" y="193" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">YES</text>
+      <rect x="548" y="252" width="32" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="564" y="261" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">NO</text>
+      <rect x="612" y="276" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="632" y="285" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">YES</text>
+      <rect x="404" y="300" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="424" y="309" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">NO</text>
+      <rect x="848" y="392" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="868" y="401" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">YES</text>
+      <rect x="632" y="392" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="652" y="401" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle" letter-spacing="0.06em">NO</text>
+
+      <!-- Flow nodes. -->
+      <rect x="48" y="176" width="144" height="56" rx="28" fill="#f5f5f5"/>
+      <rect x="48" y="176" width="144" height="56" rx="28" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="120" y="202" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">GET /getIP</text>
+      <text x="120" y="220" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">HTTP request</text>
+
+      <rect x="248" y="176" width="176" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="248" y="176" width="176" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="260" y="184" width="48" height="16" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="284" y="196" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">FUNC</text>
+      <text x="336" y="210" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">getClientIP</text>
+      <text x="336" y="226" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">5 candidates · first valid</text>
+
+      <polygon points="536,164 608,204 536,244 464,204" fill="#f5f5f5"/>
+      <polygon points="536,164 608,204 536,244 464,204" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="536" y="200" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">special address?</text>
+      <text x="536" y="220" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">classifyPrivateIP</text>
+
+      <rect x="704" y="176" width="208" height="56" rx="28" fill="#f5f5f5"/>
+      <rect x="704" y="176" width="208" height="56" rx="28" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="808" y="202" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">return desc</text>
+      <text x="808" y="220" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">clientIP + " - " + desc</text>
+
+      <polygon points="536,284 608,324 536,364 464,324" fill="#f5f5f5"/>
+      <polygon points="536,284 608,324 536,364 464,324" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="536" y="328" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">isp = "true"?</text>
+
+      <rect x="48" y="388" width="224" height="72" rx="36" fill="#f5f5f5"/>
+      <rect x="48" y="388" width="224" height="72" rx="36" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="160" y="414" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">no ISP enrichment</text>
+      <text x="160" y="432" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">isp=false → clientIP</text>
+      <text x="160" y="448" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">lookup empty → Unknown ISP</text>
+
+      <rect x="656" y="288" width="224" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="656" y="288" width="224" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="668" y="296" width="56" height="16" rx="2" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="696" y="308" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">LOOKUP</text>
+      <text x="768" y="320" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">getISPInfoByPriority</text>
+      <text x="768" y="340" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">ipinfo.io → GeoIP .mmdb → empty</text>
+
+      <polygon points="768,376 840,416 768,456 696,416" fill="#f5f5f5"/>
+      <polygon points="768,376 840,416 768,456 696,416" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="768" y="420" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">org / country?</text>
+
+      <rect x="656" y="464" width="224" height="56" rx="28" fill="#f5f5f5"/>
+      <rect x="656" y="464" width="224" height="56" rx="28" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="768" y="490" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">ISP result</text>
+      <text x="768" y="508" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" text-anchor="middle">org · country · loc</text>
+
+      <!-- Horizontal legend strip. -->
+      <line x1="40" y1="532" x2="920" y2="532" fill="none" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="560" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+      <rect x="144" y="548" width="32" height="16" rx="8" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="184" y="560" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace">START / END</text>
+      <rect x="304" y="548" width="40" height="16" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="352" y="560" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace">STEP</text>
+      <polygon points="456,556 472,548 488,556 472,564" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="504" y="560" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace">DECISION</text>
+      <rect x="680" y="548" width="32" height="16" rx="4" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="720" y="560" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace">FOCAL DECISION</text>
+    </svg>
+  </main>
+</body>
+</html>

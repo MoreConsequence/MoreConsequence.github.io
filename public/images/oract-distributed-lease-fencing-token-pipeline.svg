@@ -1,49 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="fp-title fp-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="fp-title">Fencing 纪元栅栏脑裂防御与 OEP 跨语言管道</title>
+  <desc id="fp-desc">流程架构图展示 ORACT 解决分布式脑裂与幽灵写入的 Fencing Token 纪元门禁防御模型，以及 Go 控制面与 Python 异构 Worker 间的 OEP 跨语言双向 mTLS 协议架构。</desc>
+  <defs>
+    <marker id="fp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="fp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Oract 分布式租约 (Lease) 与栅栓令牌 (Fencing Token) 防脑裂模型</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 节点抢占 10s 租约 ──► 2. 获取单调自增 Fencing Token (token=42) ──► 3. GC 假死导致租约过期被节点 B 抢占 (token=43) ──► 4. 存储层拒绝老 Token 写入</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ORACT FENCING &amp; OEP PROTOCOL · SPLIT-BRAIN DEFENSE &amp; MTLS WORKERS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Fencing 纪元栅栏与 OEP 跨语言管道</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Fencing Token 递增 ➔ 写入门禁拦截 ➔ 幽灵写 Fail-Fast 自毁 ➔ OEP 跨语言 mTLS</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Split-Brain Risk (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SPLIT-BRAIN</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">假死双主危机</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Zombie Primary Dilemma</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 旧主 GC 停顿，新主抢占接管</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 旧主苏醒并发起过期延迟写</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Dangerous State Corruption</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">危机根因：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 单纯租约无法拦截后到的延迟 I/O；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 旧版本覆盖新版本导致状态崩坏；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须建立纪元隔离栅栏。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 分布式租约持有 (Distributed Lease Acquisition)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">Agent Worker A 在 etcd 成功注册带有 TTL=10s 的分布式锁 ──► 获得任务独占执行权并周期性续租 (Heartbeat)</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">确保同一时刻仅有单主执行！</text>
+  <!-- Col 2: Fencing Guard (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">FENCING</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Fencing 门禁校验</text>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 栅栓令牌单调递增签发 (Monotonic Fencing Token Generation)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">中心协调器为 Worker A 签发 fencing_token = 42 ──► 之后的所有文件系统与数据库写请求必须附带该令牌</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">将时间依赖转化为因果顺序依赖！</text>
-      </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">fencing_token Monotonic</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每次选主数据库原子自增 Token</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 写入强制附带 Token 前置断言</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Strict Epoch Gate Assertion</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#fef2f2" stroke="#f87171"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">3. 节点假死与新主选举 (GC Pause &amp; Lease Stealing by Worker B)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#ef4444">Worker A 发生 15s Full GC 假死 ──► 租约超时 ──► Worker B 接管并获得递增的 fencing_token = 43</text>
-        <text x="15" y="62" font-size="8" fill="#dc2626">经典分布式脑裂与双主并发危机！</text>
-      </g>
-
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">4. 存储层原子拒收过时写 (Storage Fencing Validation &amp; Rejection)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">Worker A 苏醒试图写入旧数据 (token=42) ──► 存储层判定 42 &lt; 43 强行抛出 StaleTokenError 拒收！</text>
-        <text x="15" y="62" font-size="8" fill="#047857">彻底封死幽灵写入与脏数据覆盖！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">门禁机制：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 新主抢升 Token=102；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 旧主持有 Token=101 写入直接失效；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 物理级阻断过期并发数据污染。</text>
   </g>
+
+  <!-- Col 3: Ghost Write Rejection (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">FAIL-FAST</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">幽灵写自毁拦截</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">ErrFencingTokenStale</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 数据库影响行数为 0 即判定失效</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 旧主主动触发自毁退出停机</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Deterministic Node Suicide</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">自毁保障：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 避免假死节点继续发起后续工具；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 毫秒级回收无效协程算力；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护集群状态绝对纯粹统一。</text>
+  </g>
+
+  <!-- Col 4: OEP Protocol (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OEP MTLS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">OEP 跨语言通信</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Go Control ➔ Py Worker</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 双向 mTLS 加密与 RunSpec 绑定</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 私钥签名 Receipt 证据链回传</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Cross-Language Security Bridge</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">异构优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Go 扛顶层高并发状态机调度；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Python 专精复杂数据科学工具；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成企业级最佳异构协作体系。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">假死双主脑裂危机与 OEP 跨语言 mTLS 通信</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Fencing Token 纪元门禁校验与幽灵写自毁拦截核心</text>
 </svg>

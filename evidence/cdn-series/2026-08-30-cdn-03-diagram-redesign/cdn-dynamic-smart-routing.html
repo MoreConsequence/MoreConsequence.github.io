@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-dynamic-smart-routing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-routing-title cdn-routing-desc">
+  <title id="cdn-routing-title">公网 BGP 单线拥塞 vs CDN 智能多跳覆盖网动态选路对比</title>
+  <desc id="cdn-routing-desc">架构拓扑图对比公网 BGP 商业选路引发的丢包拥塞黑洞，以及基于加权 Dijkstra 算法的北京-东京-硅谷-美东智能多跳避障机制。</desc>
+  <defs>
+    <marker id="cdn-rt-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-rt-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SMART OVERLAY ROUTING · DYNAMIC DIJKSTRA</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">公网 BGP 单线拥塞 vs CDN 智能多跳覆盖网对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">公网 BGP 仅依据商业跳数选路导致拥塞丢包；CDN 合成探针 + 加权 Dijkstra 毫秒级多跳绕道直通源站</text>
+
+  <!-- Track 1: Public Internet BGP (Mode A, y=140..290) -->
+  <g transform="translate(40, 140)">
+    <rect width="880" height="152" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE A</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">公网原生 BGP 商业选路：单一僵化路径与拥塞黑洞</text>
+
+    <!-- Node 1: Beijing Client -->
+    <rect x="14" y="46" width="180" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">北京客户端终端</text>
+    <text x="26" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">AS4837 · 直连跨洋</text>
+
+    <!-- Arrow 1 -> Congestion -->
+    <line x1="194" y1="78" x2="340" y2="78" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#cdn-rt-arr)"/>
+    <rect x="220" y="66" width="84" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="262" y="76" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">AS-Path=1 直连</text>
+
+    <!-- Node 2: Congested Cable Hotspot -->
+    <rect x="334" y="46" width="220" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="346" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">公网拥塞跨洋海缆</text>
+    <text x="346" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">丢包率 8% · 权重 W = 324</text>
+    <text x="346" y="102" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">排队时延飙升至 280ms</text>
+
+    <!-- Arrow Congestion -> Origin -->
+    <line x1="554" y1="78" x2="690" y2="78" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#cdn-rt-arr)"/>
+    <rect x="580" y="66" width="76" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="618" y="76" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">超时重传 ➔</text>
+
+    <!-- Node 3: US East Origin -->
+    <rect x="684" y="46" width="182" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="696" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">美东业务源站 (IAD)</text>
+    <text x="696" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">AWS us-east-1</text>
+
+    <text x="14" y="132" fill="#6b6a64" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif">
+      BGP 无法感知真实丢包，流量死锁在拥塞链路上，动态 API 频繁超时甚至失败
+    </text>
+  </g>
+
+  <!-- Track 2: CDN Smart Overlay Routing (Mode B, y=310..490) - Focal Track -->
+  <g transform="translate(40, 310)">
+    <rect width="880" height="186" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE B</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CDN 智能多跳覆盖网：实时探针加权 Dijkstra 两跳避障</text>
+
+    <!-- Node 1: Beijing PEK-PoP (x=14..180) -->
+    <rect x="14" y="46" width="166" height="82" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">北京 PEK-PoP</text>
+    <text x="24" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">接入与探针计算</text>
+    <text x="24" y="106" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">毫秒级路由决策</text>
+
+    <!-- Arrow Hop 1 (x=180..244) -->
+    <line x1="180" y1="87" x2="250" y2="87" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-rt-arr-accent)"/>
+    <rect x="188" y="74" width="46" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="211" y="84" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">30ms</text>
+
+    <!-- Node 2: Tokyo NRT-PoP (x=244..410) -->
+    <rect x="244" y="46" width="166" height="82" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="254" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">东京 NRT 中继站</text>
+    <text x="254" y="88" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">FASTER 海缆入口</text>
+    <text x="254" y="106" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">丢包 0% · W₁ = 30</text>
+
+    <!-- Arrow Hop 2 (x=410..474) -->
+    <line x1="410" y1="87" x2="480" y2="87" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-rt-arr-accent)"/>
+    <rect x="418" y="74" width="46" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="441" y="84" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">85ms</text>
+
+    <!-- Node 3: Silicon Valley SJC-PoP (x=474..640) -->
+    <rect x="474" y="46" width="166" height="82" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="484" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">硅谷 SJC 中继站</text>
+    <text x="484" y="88" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">美国陆地骨干网</text>
+    <text x="484" y="106" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">丢包 0% · W₂ = 85</text>
+
+    <!-- Arrow Hop 3 (x=640..704) -->
+    <line x1="640" y1="87" x2="710" y2="87" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-rt-arr-accent)"/>
+    <rect x="648" y="74" width="46" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="671" y="84" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">40ms</text>
+
+    <!-- Node 4: US East IAD Origin (x=704..866) -->
+    <rect x="704" y="46" width="162" height="82" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="714" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">美东业务源站 (IAD)</text>
+    <text x="714" y="88" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">总时延: 155ms</text>
+    <text x="714" y="106" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">总权重: 155 ≪ 324</text>
+
+    <text x="14" y="152" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="500">
+      覆盖网总时延仅 155ms，丢包率严格保持 0%，通过高速专网多跳中继彻底打破公网拥塞黑洞
+    </text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <line x1="120" y1="556" x2="144" y2="556" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#cdn-rt-arr)"/>
+  <text x="152" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">公网 BGP 单线拥塞路径 (8% 丢包)</text>
+  <line x1="390" y1="556" x2="414" y2="556" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-rt-arr-accent)"/>
+  <text x="422" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">CDN 覆盖网智能多跳专线 (0% 丢包)</text>
+</svg>
+</main>
+</body>
+</html>

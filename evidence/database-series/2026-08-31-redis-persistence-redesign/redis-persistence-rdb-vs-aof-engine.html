@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>redis-persistence-rdb-vs-aof-engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="rp-title rp-desc">
+  <title id="rp-title">Redis 持久化机制全景：RDB 快照 vs AOF 日志重放 vs 混合持久化</title>
+  <desc id="rp-desc">架构全景图展示 Redis RDB 状态快照、AOF 命令重放与现代混合持久化在记录本质、丢失窗口、恢复速度与运行开销上的全景权衡。</desc>
+  <defs>
+    <marker id="rp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="rp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">REDIS PERSISTENCE MATRIX · RDB VS AOF VS HYBRID PREAMBLE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Redis 持久化机制全景矩阵对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">RDB (状态结果/恢复极快/丢分钟级) vs AOF (过程命令/恢复慢/丢1秒) vs 混合模式 (RDB前导+增量AOF)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: RDB (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RDB SNAPSHOT</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">RDB 状态快照 (结果)</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">二进制整库点备份</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 记录内容: 某时刻全量内存状态</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 丢失窗口: 分钟级 (最后成功快照后)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 恢复速度: 极快 (反序列化装载)</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Compact Binary Dump (dump.rdb)</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">系统运行代价：</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• fork() 拷贝页表瞬间存在毫秒停顿；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 高并发写时触发 COW 内存翻倍风险；</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每次全量重写磁盘，I/O 放大明显。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">定位与适用</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">冷备份、异地灾备、对分钟级丢失不敏感的纯缓存业务。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Point-In-Time State Backup</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Fast Cold-Start Boot</text>
+  </g>
+
+  <!-- Col 2: AOF (x=340..610, w=270) -->
+  <g transform="translate(340, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">AOF LOGGING</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">AOF 命令日志 (过程)</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">RESP 明文命令追加</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 记录内容: 每一条写命令操作流</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 丢失窗口: 仅 1 秒！(everysec 档位)</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 恢复速度: 较慢 (逐条重放海量命令)</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Append-Only Command Stream</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">系统运行代价：</text>
+    <text x="24" y="194" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 需周期性执行 BGREWRITEAOF 压缩；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 重启恢复时吃满单核 CPU 逐行重放；</text>
+    <text x="24" y="232" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 大数据集下恢复耗时显著增加。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">定位与适用</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">对数据丢失极其敏感的持久化业务 (丢失控制在 1 秒内)。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">1-Second Low Loss Bound</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Granular Command Replay</text>
+  </g>
+
+  <!-- Col 3: Hybrid (x=640..920, w=280) - Focal -->
+  <g transform="translate(640, 136)">
+    <rect width="280" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">HYBRID (RECOMMENDED)</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">混合持久化 (RDB+AOF)</text>
+
+    <!-- Specs -->
+    <rect x="14" y="42" width="252" height="100" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">RDB 前导 + 增量 AOF 尾部</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 格式: [RDB Header] + [AOF Tail]</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 丢失窗口: 仅 1 秒！(继承 AOF 优势)</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 恢复速度: 极快！(继承 RDB 优势)</text>
+    <text x="24" y="132" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">aof-use-rdb-preamble = yes (5.0+ 默认)</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="252" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">双剑合璧的机制破局：</text>
+    <text x="24" y="194" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. Rewrite 时直接将快照写为二进制前导；</text>
+    <text x="24" y="214" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 重启时先极速装载 RDB 恢复 99% 数据；</text>
+    <text x="24" y="232" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 仅需重放尾部极少量的增量 AOF 命令！</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="252" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">现代生产最佳实践</text>
+    <text x="24" y="302" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">彻底终结 RDB 丢得多与 AOF 启动慢的二选一困境，兼得极致恢复速度与高安全性！</text>
+    <text x="24" y="326" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Optimal Recovery &amp; Low Loss Standard</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Redis 5.0+ Production Default</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统 RDB 快照与 AOF 重放</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">混合持久化 RDB 前导 + 增量 AOF 核心标配</text>
+</svg>
+</main>
+</body>
+</html>

@@ -1,104 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ls-title ls-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="ls-title">Mini-LSM 存储架构与读写链路</title>
+  <desc id="ls-desc">LSM-Tree 存储引擎架构图展示 WAL 顺序追加、MemTable 跳表冻结刷盘、SSTable 稀疏索引与布隆过滤器物理结构，以及四级读加速链路与随机写转顺序写机制。</desc>
+  <defs>
+    <marker id="ls-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ls-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LSM-Tree 存储引擎全景：写吞吐物理极致与写放大 (WA) / 读放大 (RA) 权衡</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">WAL 顺序追加 + 内存 MemTable ──► L0~LN 分层 SSTable ──► Leveled Compaction 归并整理</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">MINI-LSM ARCHITECTURE · WRITE PATH, SST FORMAT &amp; READ PIPELINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Mini-LSM 存储架构与读写链路</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">WAL 顺序追加 + MemTable ➔ Immutable 冻结 ➔ BlockCache + BloomFilter + 稀疏索引点查</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Write & MemTable (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">WRITE PATH</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内存跳表与 WAL</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">WAL Append + Skiplist</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Put(k, v) 顺序追加落盘 WAL</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 写入内存有序 Skiplist (MemTable)</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero-Random-Disk-Write</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">刷盘控制：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达 write_buffer_size 原地冻结；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Immutable 后台线程顺序刷出 L0；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 刷盘期间前台写入 0 阻塞。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Panes (285px each) -->
-    <!-- Col 1: MemTable & WAL -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 内存层 (Write Buffer)</text>
+  <!-- Col 2: SST Format (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SST FORMAT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">SST 物理结构</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">// 顺序追加与跳表并发写</text>
-          <text x="10" y="34" fill="#93c5fd">1. 写 WAL (Write-Ahead Log, 磁盘顺序IO)</text>
-          <text x="10" y="48" fill="#93c5fd">2. 插入 Active MemTable (内存 SkipList)</text>
-          <text x="10" y="68" fill="#34d399">✓ 写入延迟极低 (仅纳秒级内存写)</text>
-          <text x="10" y="86" fill="#fbbf24">3. 写满 64MB 转为 Immutable MemTable</text>
-          <text x="10" y="102" fill="#86efac">4. 后台线程异步 Flush 刷写到 L0 磁盘</text>
-          <text x="10" y="124" fill="#38bdf8">► 将随机写彻底转化为纯顺序写！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Data / Index / Bloom / Meta</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Data Blocks: 有序连续键值对</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Index Block: 记录块最大键与文件偏移</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Compact Immutable Table Format</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">写优势：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 写入吞吐量远超传统 B+Tree 10x 倍</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 充分发挥 NVMe SSD 顺序追加写带宽</text>
-        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 适合时序、日志、海量追加写场景</text>
-      </g>
-    </g>
-
-    <!-- Col 2: SSTable Hierarchy -->
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 磁盘分层 (SSTable Layers)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">// 多层有序不可变文件 (Sorted String Table)</text>
-          <text x="10" y="34" fill="#fed7aa">Level 0: Key 范围相互重叠 (需扫描全部)</text>
-          <text x="10" y="48" fill="#fed7aa">Level 1 (10MB): 各 SSTable Key 互不重叠</text>
-          <text x="10" y="62" fill="#fed7aa">Level 2 (100MB): 容量放大 10 倍</text>
-          <text x="10" y="76" fill="#fed7aa">Level N (10GB+): 最终数据归宿</text>
-          <text x="10" y="98" fill="#34d399">SSTable 内部结构：</text>
-          <text x="10" y="112" fill="#86efac">[ Data Blocks ] + [ Index ] + [ Bloom Filter ]</text>
-          <text x="10" y="128" fill="#38bdf8">布隆过滤器消除 99% 无效磁盘 IO 探测！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">读放大 (Read Amplification):</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 读单行需从 MemTable 查到 L0 再查到 LN</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 严重依赖 Block Cache 与 Bloom Filter</text>
-        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 点查延迟通常略逊于直接 B+Tree</text>
-      </g>
-    </g>
-
-    <!-- Col 3: Compaction -->
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 归并整理 (Compaction)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">// 多路归并排序与垃圾回收</text>
-          <text x="10" y="34" fill="#86efac">1. 选定 Li 的一个 SSTable 与 Li+1 重叠表</text>
-          <text x="10" y="48" fill="#86efac">2. 顺序读入多路流，执行归并排序</text>
-          <text x="10" y="62" fill="#86efac">3. 清理被覆写的历史旧版本与 Tombstone 墓碑</text>
-          <text x="10" y="78" fill="#86efac">4. 顺序写入 Li+1 新 SSTable，删除旧文件</text>
-          <text x="10" y="98" fill="#f87171">❌ 写放大税 (Write Amplification):</text>
-          <text x="10" y="114" fill="#fca5a5">同一行数据在多层间被重复读取/重写 10~30 次！</text>
-          <text x="10" y="130" fill="#fb7185">Compaction 剧烈争抢后台磁盘 IO 带宽！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">现代 LSM 调优：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 限制并发 Compaction 线程与速率限制 (Rate Limit)</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 结合 RocksDB / LevelDB 生产最佳配置</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 采用 Universal Compaction 降低写放大</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">稀疏索引价值：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅记录块边界，体积极小常驻内存；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 二分查找将定位复杂度降为 O(log Block)；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构成高效点查基础。</text>
   </g>
+
+  <!-- Col 3: Read Pipeline (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">READ PATH</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">四级读加速链路</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Mem ➔ Cache ➔ Bloom ➔ SST</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 1. 内存 MemTable / Immutable 命中</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 2. Bloom 拦截 99%+ 不存在的键</text>
+    <text x="20" y="110" font-size="7.5" font-family="'Geist Mono', monospace">Multi-Tier Read Acceleration</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">读放大抑制：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Bloom 过滤大多数无效磁盘 I/O；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• Block Cache 缓存热点数据块；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成亚毫秒级点查性能。</text>
+  </g>
+
+  <!-- Col 4: Storage Essence (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STORAGE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">存储引擎本质</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Sequential Disk Power</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 将一切写操作转为顺序追加</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 压榨 SSD/NVMe 物理最大写入吞吐</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Modern Storage Pillar</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">设计权衡：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 顺序写换取极致写入吞吐；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 代价是 Compaction 引入写放大；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构成工业级 LSM-Tree 核心逻辑。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">WAL 顺序追加与存储引擎顺序写本质</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">SST 稀疏索引物理结构与四级读加速链路核心</text>
 </svg>

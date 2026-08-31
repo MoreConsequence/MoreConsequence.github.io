@@ -51,74 +51,69 @@ const SANDBOX_LIST = [
 
 export default function PlaygroundPage() {
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12">
+    <div className="playground-page">
       {/* Hero Header */}
-      <div className="mb-12 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/70 px-3.5 py-1 text-xs font-bold text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
+      <div className="playground-hero">
+        <div className="playground-badge">
           <span>✨</span> Interactive Engineering Labs
         </div>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+        <h1 className="playground-title">
           交互式系统设计实验室
         </h1>
-        <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-400">
+        <p className="playground-desc">
           突破静态图文边界。在这里，你可以直接在浏览器中滑动参数、注入网络故障、把玩分布式状态机与显存/网络调度内核。
         </p>
       </div>
 
       {/* Sandbox Cards Nav */}
-      <div className="mb-16 grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="playground-grid">
         {SANDBOX_LIST.map((box) => (
-          <div
-            key={box.id}
-            className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-700"
-          >
+          <div key={box.id} className="playground-card">
             <div>
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xl shadow-inner dark:bg-slate-800">
+              <div className="playground-card-header">
+                <span className="playground-card-icon">
                   {box.icon}
                 </span>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                <h2 className="playground-card-title">
                   {box.title}
                 </h2>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+              <p className="playground-card-desc">
                 {box.desc}
               </p>
             </div>
 
-            <div className="mt-5 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <div className="flex items-center justify-between text-xs">
-                <Link
-                  href={box.relatedArticle}
-                  className="truncate text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
-                  title={box.relatedTitle}
-                >
-                  📖 专栏对应文章
-                </Link>
-                <a
-                  href={`#${box.id}`}
-                  className="font-bold text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  向下直达把玩 ↓
-                </a>
-              </div>
+            <div className="playground-card-footer">
+              <Link
+                href={box.relatedArticle}
+                className="playground-card-link"
+                title={box.relatedTitle}
+              >
+                📖 专栏对应文章
+              </Link>
+              <a
+                href={`#${box.id}`}
+                className="playground-card-action"
+              >
+                向下直达把玩 ↓
+              </a>
             </div>
           </div>
         ))}
       </div>
 
       {/* Sandbox 1: LLM Calculator */}
-      <section id="llm-calc" className="mb-16 scroll-mt-20">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧮</span>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+      <section id="llm-calc" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🧮</span>
+            <h2 className="playground-section-title">
               1. 大模型显存容量与吞吐配平计算器
             </h2>
           </div>
           <Link
             href="/writing/llm-01-kv-cache-paged-attention"
-            className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+            className="playground-section-sublink"
           >
             查看原理解析 ──►
           </Link>
@@ -127,17 +122,17 @@ export default function PlaygroundPage() {
       </section>
 
       {/* Sandbox 2: Raft Simulator */}
-      <section id="raft-sim" className="mb-16 scroll-mt-20">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🏛️</span>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+      <section id="raft-sim" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🏛️</span>
+            <h2 className="playground-section-title">
               2. Raft 分布式集群与网络分区模拟器
             </h2>
           </div>
           <Link
             href="/writing/consensus-01-raft-state-machine-replication"
-            className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+            className="playground-section-sublink"
           >
             查看原理解析 ──►
           </Link>
@@ -146,17 +141,17 @@ export default function PlaygroundPage() {
       </section>
 
       {/* Sandbox 3: Vector Clock */}
-      <section id="vector-clock" className="mb-16 scroll-mt-20">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧭</span>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+      <section id="vector-clock" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🧭</span>
+            <h2 className="playground-section-title">
               3. 向量时钟因果分叉与冲突判定沙盒
             </h2>
           </div>
           <Link
             href="/writing/consensus-04-logical-clocks-vector-spanner-truetime"
-            className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+            className="playground-section-sublink"
           >
             查看原理解析 ──►
           </Link>
@@ -165,17 +160,17 @@ export default function PlaygroundPage() {
       </section>
 
       {/* Sandbox 4: Linux TC Pacing */}
-      <section id="tc-pacing" className="mb-16 scroll-mt-20">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🎛️</span>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+      <section id="tc-pacing" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🎛️</span>
+            <h2 className="playground-section-title">
               4. Linux TC 流量控制与 BBR/fq Pacing 模拟器
             </h2>
           </div>
           <Link
             href="/writing/kernel-05-tc-bbr-qdisc-traffic-shaping"
-            className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400"
+            className="playground-section-sublink"
           >
             查看原理解析 ──►
           </Link>

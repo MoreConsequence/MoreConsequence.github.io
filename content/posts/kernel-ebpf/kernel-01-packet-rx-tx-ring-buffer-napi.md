@@ -34,24 +34,7 @@ series: "Linux 内核网络与 eBPF 性能工程"
 
 为了解决这一物理死局，Linux 引入了 **NAPI（New API）机制**：
 
-```
-[ 网卡收到第 1 个包 ] ──► 触发 1 次硬中断 ──► CPU 执行硬中断处理函数
-                                                │
-                                    ┌───────────┴───────────┐
-                                    ▼                       ▼
-                            [ 立即关闭该网卡硬中断 ]   [ 触发 NET_RX_SOFTIRQ 软中断 ]
-                                                            │
-                                                            ▼
-                                                [ ksoftirqd 线程批量轮询 ]
-                                                net_rx_action(budget=64)
-                                                从 RX Ring Buffer 连续消费 64 个包
-                                                            │
-                                           ┌────────────────┴────────────────┐
-                                           ▼                                 ▼
-                                  [ Ring 中还有剩余数据 ]           [ Ring 已被排空 ]
-                                           │                                 │
-                                   继续下一轮 SoftIRQ 轮询           [ 重新开启网卡硬件中断 ]
-```
+![Linux NAPI 软中断轮询机制与硬中断合并状态转换拓扑](../../../public/images/kernel-napi-interrupt-polling-transition.svg)
 
 ### 2.1 NAPI 的核心设计精髓
 

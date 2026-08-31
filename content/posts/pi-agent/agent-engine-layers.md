@@ -24,9 +24,7 @@ series: "Agent 的方方面面"
 
 这不是广告。Databricks 的目的恰恰是论证"harness 与模型可以解耦"（他们为此做了 Omnigent 元 harness），Pi 只是被测试的对象之一。但对我们要理解的问题，这个实验是完美的入口：**一个只卖 4 个工具、提示词以千级 token 计的极简 harness，在同一模型上赢了功能最全的竞品。** 为什么？答案要从它的分层开始。
 
-
-
-![Agent 引擎四层分层架构：Driver (驱动层) -> Memory (状态层) -> Core Loop (内核) -> Protocol (协议)](../../../public/images/agent-engine-four-layer-modular-architecture.svg)
+---
 
 ## 二、五层地图：每层回答一个问题
 

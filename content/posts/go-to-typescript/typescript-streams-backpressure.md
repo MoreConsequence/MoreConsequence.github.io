@@ -93,10 +93,6 @@ flowchart LR
 
 图中最后一条虚线很重要：本地 `for await` 消费得慢，只能约束它前面的队列；如果 `emitToUI()` 把 chunk 放进另一个无界数组，积压只是换了地址。
 
-
-
-![TransformStream 高低水位线 (highWaterMark) 与管道排队溢出控制](../../../public/images/transform-stream-highwatermark-flow.svg)
-
 ## 四、Go channel 不是无界 push
 
 Go channel 的容量在创建时确定：`make(chan T)` 是无缓冲，`make(chan T, n)` 是容量为 `n` 的有限缓冲。无缓冲 send 需要 receiver 就绪，有缓冲 channel 满时 send 阻塞。它不是无界队列，也不能因为“除非缓冲满才阻塞”就写成无界。

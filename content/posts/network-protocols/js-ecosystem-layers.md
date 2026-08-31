@@ -34,10 +34,6 @@ flowchart LR
 
 看懂这张图，浏览器大战、运行时之争、Electron 的吐槽、RN 与 Flutter 的对比，全部归位为同一个问题的不同答案：**在一个 JS 引擎外，加什么部件去解决什么场景的问题**。本文剩下的篇幅，就是逐层把每道题和每笔账写清楚。
 
-
-
-![JavaScript 生态四层架构：ECMAScript 规范 -> V8 引擎 -> Node/Deno/Bun 运行时 -> 应用框架](../../../public/images/javascript-runtime-engine-spec-layers.svg)
-
 ## 二、引擎层：把 JS 变成机器码的翻译官
 
 第一道题最基础：JS 是脚本语言，谁把它变成机器能跑的代码？答案是引擎。1995 年 Brendan Eich 十天设计出 JS 的时候，它只是给 Netscape 用的脚本；今天独立存在的 JS 引擎只剩四台名声在外的：

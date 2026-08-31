@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>innodb-buffer-pool-lru-young-old-sublist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="lru-title lru-desc">
+  <title id="lru-title">InnoDB Buffer Pool 变种 LRU：Young (5/8) 与 Old (3/8) 子链表抗预读污染</title>
+  <desc id="lru-desc">架构流程图展示 InnoDB Buffer Pool 变种 LRU 链表将内存划分为 Young 热区 63% 与 Old 冷区 37%，通过中点插入与 old_blocks_time 1000ms 时间屏障有效抵御全表扫描对热点缓存的污染。</desc>
+  <defs>
+    <marker id="bp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="bp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INNODB BUFFER POOL · LRU MIDPOINT INSERTION STRATEGY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">InnoDB Buffer Pool 变种 LRU 与防扫描污染</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">新页默认插入 Old 头部 (37% 中点) ➔ 经过 1000ms 再次访问方可晋升 Young ➔ 彻底隔离大表全表扫描污染</text>
+
+  <!-- Top: LRU Double-Linked Chain (y=136..240, h=104) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="104" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="130" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="79" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">LRU CHAIN TOPOLOGY</text>
+    <text x="154" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">LRU 链表分段拓扑结构 (Young 63% + Old 37%)</text>
+
+    <!-- Visual Chain Bar -->
+    <g transform="translate(14, 34)">
+      <!-- Young Area (5/8, 63%, w=530) -->
+      <rect x="0" y="0" width="530" height="56" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="20" y="22" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Young Sublist (热区 · 5/8 ≈ 63%)</text>
+      <text x="20" y="38" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Head (最热) ➔ [Page A ⇄ Page B ⇄ Page C ⇄ ...]</text>
+      <text x="20" y="50" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高频访问热点驻留区，前 1/4 区域内再次被访问不移动，减少互斥锁争用</text>
+
+      <!-- Midpoint Splitter (w=30) -->
+      <line x1="530" y1="0" x2="530" y2="56" stroke="#e85d3f" stroke-width="2" stroke-dasharray="3 2"/>
+
+      <!-- Old Area (3/8, 37%, w=310) -->
+      <rect x="542" y="0" width="310" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="22" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">Old Sublist (冷区 · 3/8 ≈ 37%)</text>
+      <text x="14" y="38" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Midpoint ➔ [Page X ⇄ Page Y] ➔ Tail (淘汰)</text>
+      <text x="14" y="50" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">所有新加载页面的着陆缓冲区与快速淘汰通道</text>
+    </g>
+  </g>
+
+  <!-- Bottom: 3 Operational Flows (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Stage 1: Initial Read (w=260) -->
+    <g transform="translate(0, 0)">
+      <rect width="260" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1</text>
+      <text x="96" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">新页加载着陆中点</text>
+
+      <rect x="10" y="36" width="240" height="80" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">从磁盘加载物理页 Page #88</text>
+      <text x="18" y="74" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">直接插入 Old Sublist 头部！</text>
+      <text x="18" y="92" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">记录首次访问时间戳 t_access</text>
+      <text x="18" y="106" fill="#141413" font-size="7" font-family="'Geist Mono', monospace">innodb_old_blocks_pct = 37</text>
+
+      <text x="10" y="138" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统 LRU 的致命缺陷：</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">传统 LRU 直接把新页塞入 Head；</text>
+      <text x="10" y="174" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">导致 mysqldump 或大表扫描一瞬间</text>
+      <line x1="10" y1="186" x2="250" y2="186" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="206" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">将全部真实热点全部冲刷清空！</text>
+      <text x="10" y="226" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Buffer Pool Flushing Disaster</text>
+    </g>
+
+    <!-- Arrow 1 (x=260..290) -->
+    <text x="275" y="125" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Filter</text>
+    <line x1="260" y1="133" x2="290" y2="133" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#bp-arr-accent)"/>
+
+    <!-- Stage 2: Time Barrier Promotion (w=280) - Focal -->
+    <g transform="translate(290, 0)">
+      <rect width="280" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="90" height="16" rx="2" fill="#e85d3f"/>
+      <text x="55" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 2 · CORE</text>
+      <text x="106" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">1000ms 时间屏障与晋升</text>
+
+      <rect x="10" y="36" width="260" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">innodb_old_blocks_time = 1000 (ms)</text>
+      <text x="18" y="74" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">全表扫描场景：行在 100ms 内读完</text>
+      <text x="18" y="90" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Δt &lt; 1000ms ➔ 绝不晋升，任其在 Old 淘汰</text>
+      <text x="18" y="108" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">真正的热点：Δt ≥ 1000ms 后再次被读取</text>
+      <text x="18" y="122" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">➔ 触发晋升至 Young Sublist 头部！</text>
+
+      <text x="10" y="152" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">屏障防护收益：</text>
+      <text x="10" y="170" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 扫描页仅在 Old 区域流转，最多占 37% 内存</text>
+      <text x="10" y="188" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• Young 热区的 63% 核心数据绝对免受侵蚀！</text>
+      <line x1="10" y1="200" x2="270" y2="200" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="220" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">Buffer Pool Hit Rate: 99.5%+ 稳定！</text>
+      <text x="10" y="238" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Scan Resistance Architecture</text>
+    </g>
+
+    <!-- Arrow 2 (x=570..600) -->
+    <text x="585" y="125" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Evict</text>
+    <line x1="570" y1="133" x2="600" y2="133" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#bp-arr-accent)"/>
+
+    <!-- Stage 3: Cold Eviction (w=280) -->
+    <g transform="translate(600, 0)">
+      <rect width="280" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 3</text>
+      <text x="96" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">尾部淘汰与读写交汇</text>
+
+      <rect x="10" y="36" width="260" height="80" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">LRU Tail 物理淘汰判定：</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 若是 Clean 页 ➔ 直接从哈希表抹除释放；</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 若是 Dirty 脏页 ➔ 必须触发同步落盘！</text>
+      <text x="18" y="106" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Synchronous Flush on Eviction</text>
+
+      <text x="10" y="138" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">读账与写账的唯一交汇点：</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读路径负责腾出可用空闲页；</text>
+      <text x="10" y="174" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 若写路径脏页积压严重，淘汰会发生 I/O 阻塞；</text>
+      <line x1="10" y1="186" x2="270" y2="186" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="206" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">因此需要后台 Page Cleaner 异步平滑刷盘</text>
+      <text x="10" y="226" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Async Flush List Decoupling</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Young 热区与常规流程</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">1000ms 时间屏障与 Old 冷区隔离核心</text>
+</svg>
+</main>
+</body>
+</html>

@@ -7,11 +7,11 @@ import { RaftSimulator } from "./raft-simulator";
 import { VectorClockSimulator } from "./vector-clock-simulator";
 import { TCPacingSimulator } from "./tc-pacing-simulator";
 
-const SANDBOX_MAP: Record<string, React.ReactElement> = {
-  "llm-calculator": <LLMCalculator />,
-  "raft-simulator": <RaftSimulator />,
-  "vector-clock": <VectorClockSimulator />,
-  "tc-pacing": <TCPacingSimulator />,
+const SANDBOX_FACTORIES: Record<string, () => React.ReactElement> = {
+  "llm-calculator": () => <LLMCalculator />,
+  "raft-simulator": () => <RaftSimulator />,
+  "vector-clock": () => <VectorClockSimulator />,
+  "tc-pacing": () => <TCPacingSimulator />,
 };
 
 export function SandboxMountRenderer() {
@@ -20,20 +20,25 @@ export function SandboxMountRenderer() {
     const roots: Root[] = [];
 
     containers.forEach((container) => {
-      // Check if already mounted
       if (container.dataset.mounted === "true") return;
 
       const sandboxType = container.getAttribute("data-sandbox");
-      if (!sandboxType || !SANDBOX_MAP[sandboxType]) return;
+      if (!sandboxType || !SANDBOX_FACTORIES[sandboxType]) return;
 
       container.dataset.mounted = "true";
       const root = createRoot(container);
-      root.render(SANDBOX_MAP[sandboxType]);
+      root.render(SANDBOX_FACTORIES[sandboxType]());
       roots.push(root);
     });
 
     return () => {
-      // Cleanup on unmount if needed
+      roots.forEach((root) => {
+        try {
+          root.unmount();
+        } catch {
+          // ignore unmount errors
+        }
+      });
     };
   }, []);
 

@@ -362,10 +362,6 @@ notHandled();
 
 Go 代码里错误通常作为返回值沿着调用栈传递；JavaScript 里有人可以 `throw` 字符串、数字甚至普通对象，Promise rejection 也不一定是 `Error`。`catch` 变量在严格配置下应该先当成 `unknown`，再做 `instanceof Error` 或自定义守卫。
 
-
-
-![Go 开发者踩坑之二：IEEE-754 双精度浮点精度丢失与 BigInt 金融计费模型](../../../public/images/floating-point-ieee754-precision-trap.svg)
-
 ## 四、`this` 是运行时绑定，不是方法的永久属性
 
 后端开发者常把类方法当作“带着接收者的函数”。JavaScript 的普通方法不是这样：调用形式决定 `this`。给方法写显式的 `this` 参数，可以让 TypeScript 把这个运行时要求暴露出来：

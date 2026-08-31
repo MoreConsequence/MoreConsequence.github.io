@@ -40,9 +40,7 @@ featured: true
 
 传统 Linux 防火墙（如 `iptables` / `nftables`）在处理网络报文时，必须经过完整的内核网络栈路径：
 
-```
-[网卡接收数据] ──► [DMA 拷贝到环形缓冲区 RingBuffer] ──► [分配 sk_buff 结构体 (分配堆内存)] ──► [触发软中断 NET_RX_SOFTIRQ] ──► [iptables 规则匹配]
-```
+![Linux 内核传统协议栈 sk_buff 软中断瓶颈 vs eBPF/XDP 网卡线速丢包架构](../../../public/images/cdn-linux-sk-buff-softirq-vs-xdp-drop.svg)
 
 为每个垃圾数据包分配 `sk_buff` 结构体需要消耗大量 CPU 周期和内存分配器锁。在 $40\text{Mpps}$（每秒四千万数据包）的洪峰冲击下，CPU 100% 的算力被用于处理软中断与内存分配，系统瞬间陷入假死。
 
@@ -54,10 +52,6 @@ featured: true
 - **单机吞吐能力**：单台边缘物理机即可线速清洗超过 **4000 万 PPS（Packets Per Second）** 的四层垃圾报文。
 
 ---
-
-
-
-![边缘安全防御：JA4 TLS 客户端指纹识别与分布式令牌桶频控模型](../../../public/images/cdn-waf-ja4-fingerprint-token-bucket-rate-limiting.svg)
 
 ## 三、 七层边缘 WAF：JA4 协议指纹与分布式令牌桶频控
 

@@ -30,9 +30,7 @@ series: "Agent 的方方面面"
 
 如果 Harness 承诺“内置权限系统足以保证安全”，反而会给开发者带来虚假的安全感。因此，Pi 确立了清晰的职责划分：**应用层只管向模型清晰报告工具调用的输入输出，执行环境的物理隔离交给系统级容器。**
 
-
-
-![Agent 引擎三层安全防御纵深：静态命令 AST 过滤 -> Linux Bubblewrap 沙箱 -> 人工授权确认](../../../public/images/agent-security-three-tier-sandbox-isolation.svg)
+---
 
 ## 二、BashOperations 接口：把执行权推向容器
 

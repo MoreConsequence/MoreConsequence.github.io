@@ -45,9 +45,7 @@ sequenceDiagram
 2. **Resources（资源）**：类似只读文件的上下文数据源（如数据库 Schema、日志文件）；
 3. **Prompts（提示模板）**：服务器预定义的标准化交互模板。
 
-
-
-![Pi MCP 网关统一路由与熔断器架构：多 Server 聚合与鉴权](../../../public/images/pi-mcp-gateway-router-circuit-breaker.svg)
+---
 
 ## 二、为什么不能把 50 个 MCP 工具全部塞进上下文？
 

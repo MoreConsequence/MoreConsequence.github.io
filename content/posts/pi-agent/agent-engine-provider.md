@@ -26,9 +26,7 @@ series: "Agent 的方方面面"
 
 **统一消息结构**：`AgentMessage`/`Message` 双形态（02 篇的文件头注释："循环内部用 AgentMessage，只在 LLM 调用边界转换"）——转换函数 `convertToLlm` 是唯一认识 "OpenAI 的 assistant 消息长什么样 vs Anthropic 的 user message 含 blocks" 的地方。transform 只在边界发生，循环里永远只见自己的类型。
 
-
-
-![多模型服务商流式 SSE 协议归一化管道：Claude, OpenAI, DeepSeek 差异抹平](../../../public/images/agent-provider-streaming-sse-event-normalization.svg)
+---
 
 ## 二、一次可信调用：retry 像 SDK，但睡眠能被取消
 

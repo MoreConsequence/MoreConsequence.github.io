@@ -1,78 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="kc-title kc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="kc-title">Prompt Caching 物理机制与五大缓存击穿陷阱</title>
+  <desc id="kc-desc">机制对比图展示动态时间戳与工具乱序导致 KV Cache 瞬间击穿的五大陷阱，对比 GPU 显存公共前缀复用享受 90% 费率折扣与 80% 首字延迟下降的核心原理。</desc>
+  <defs>
+    <marker id="kc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="kc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">KV Cache 字节级对齐：Prompt Caching 缓存命中率从 0% 提升至 98%</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">动态前缀插入破坏缓存 (0% 命中，天价账单) vs 静态前缀严格冻结 + 尾部增量 Append (98% 命中，享受 1 折价格与毫秒级首字延迟)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">KV CACHE PHYSICS · PROMPT CACHING &amp; ANNIHILATION PITFALLS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Prompt Caching 物理机制与击穿陷阱</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">五大致命击穿陷阱 (动态时间/乱序/随机 ID) vs GPU 显存前缀复用 (0.1x 费率折扣 + TTFT 下降 80%)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Pitfalls (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CACHE ANNIHILATION</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">五大自杀式击穿陷阱</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">微小改动导致前缀哈希破碎</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 缓存命中率: 从 95% 瞬间暴跌至 0%</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• TTFT 首字延迟由 400ms 恶化至 6s</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">典型错误写法：</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 在 System 中动态注入 new Date()；</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 工具列表未经排序，引擎遍历乱序；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 会话头部插入随机 UUID 或当前工作目录。</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Prefix Hash Invalidation &amp; Expensive Re-Prefill</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代价</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">导致单次 Turn 输入成本增加 10 倍，企业月度账单直接失控。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">10x Cost Explosion on Long Contexts</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Unacceptable Production Waste</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Cache Miss Anti-Pattern -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 错误姿势：动态变量污染前缀导致 0% 命中</text>
+  <!-- Col 2: Cache Reuse Model (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#e85d3f"/>
+    <text x="84" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CACHE REUSE</text>
+    <text x="164" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">GPU 显存 KV 前缀复用</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#f87171">// 在 System Prompt 顶部插入动态时间戳</text>
-          <text y="28" fill="#fca5a5">"Current Time: " + Date.now() + "
-" + SystemPrompt</text>
-          
-          <text y="52" fill="#ef4444">🔴 灾难性后果：</text>
-          <text y="68" fill="#fb7185">1. 每一个毫秒的改变都会彻底使整个 50k 上下文的前缀哈希失效！</text>
-          <text y="84" fill="#ef4444">2. 供应商 GPU 每次都必须从第 0 个 Token 重新做 Attention 计算！</text>
-          <text y="102" fill="#f87171">3. Prompt Caching 命中率 = 0%，成本增加 10 倍！</text>
-        </g>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">显存 Radix Tree 树状持久化复用</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 第 1 轮 Cache Write: 写入 2,000 Tokens 前缀块</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 第 2 轮 Cache Read: 直接复用，享 90% 费率折扣！</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产陷阱：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 随机 UUID、动态系统时间严禁放入前缀；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 工具列表乱序排列同样会击穿缓存；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 极易被工程师忽视的隐蔽性能杀手！</text>
-      </g>
-    </g>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">底层优化收益：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 零重复计算：无需对 20k+ 历史重新执行 Prefill 计算；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. 价格极度下探：Claude 读取仅 0.1x，DeepSeek 仅 0.5x；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 毫秒级首字：交互流畅度达到极致！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Sub-Second TTFT &amp; Massive Cost Reduction</text>
 
-    <!-- Right: Cache Hit Best Practice -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 正确姿势：静态不可变前缀 + 尾部追加</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// 严格遵循 KV Cache 字节级对齐规范</text>
-          <text y="28" fill="#86efac">1. [静态 System Prompt + 字典序工具定义] (前 50k Tokens 绝对不可变！)</text>
-          <text y="44" fill="#38bdf8">2. [会话历史 Append-Only 追加] (只在末尾增加新 Turn)</text>
-          <text y="60" fill="#fed7aa">3. [当前动态时间/环境] (以独立 User Message 放在最末尾！)</text>
-          
-          <text y="88" fill="#34d399">✓ 供应商 GPU 100% 命中已有 KV Cache 显存指针！</text>
-          <text y="104" fill="#4ade80">✓ 首字时延 (TTFT) 从 4000ms 骤降至 180ms！</text>
-          <text y="120" fill="#4ade80">✓ Token 计费直接打 1 折 (节省 90% 资金)！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 深度理解大模型物理硬件推理工作原理；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 用纯软件工程技巧撬动数十倍性能与成本飞跃；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造商业化 Agent 必修的内功底牌！</text>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工程效益</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">使重构等长轮次 Agent 任务在保持极高智能度的同时具备商业可行性。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Zero-Waste KV Cache Architecture</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">High Efficiency Prompt Caching Model</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">五大自杀式缓存击穿陷阱与高昂代价</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">GPU 显存 KV Cache 公共前缀复用与 90% 折扣核心</text>
 </svg>

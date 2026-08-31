@@ -76,8 +76,6 @@ TIME_WAIT 期间，旧连接的四元组和序列空间仍影响新连接的判�
 
 ## 三、TIME_WAIT 在保护谁：三个具体的险情
 
-![TCP TIME_WAIT 状态物理原因与 NAT PAWS 丢包黑洞架构](../../../public/images/tcp-time-wait-2msl-paws-hazard.svg)
-
 说"TIME_WAIT 防止旧报文干扰新连接"是对的，但太抽象。具体到报文层面，它保护三件事。
 
 **险情一：迟到的重复段污染新连接。**

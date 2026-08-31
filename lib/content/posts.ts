@@ -96,18 +96,26 @@ export function getPostSources(environment = process.env.NODE_ENV) {
 export async function getAllPosts(
   environment = process.env.NODE_ENV,
 ): Promise<CompiledPost[]> {
-  const cacheKey = environment ?? "development";
-  const cached = compiledPostCache.get(cacheKey);
-  if (cached) return cached;
+  if (environment === "production") {
+    const cached = compiledPostCache.get("production");
+    if (cached) return cached;
 
-  const compilation = Promise.all(
+    const compilation = Promise.all(
+      getPostSources(environment).map(async (post) => ({
+        ...post,
+        ...(await compileMarkdown(post.body)),
+      })),
+    );
+    compiledPostCache.set("production", compilation);
+    return compilation;
+  }
+
+  return Promise.all(
     getPostSources(environment).map(async (post) => ({
       ...post,
       ...(await compileMarkdown(post.body)),
     })),
   );
-  compiledPostCache.set(cacheKey, compilation);
-  return compilation;
 }
 
 export async function getPostBySlug(slug: string) {

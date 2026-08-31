@@ -28,10 +28,6 @@ series: "Go 的设计哲学"
 
 创建成本来自栈、调度上下文和队列管理；具体分配与回收路径会受编译器、Go 版本、`GOMAXPROCS` 和 benchmark 结构影响。每秒百万次的线性外推只能作为容量预算起点，不能替代并发服务的 trace、pprof 和尾延迟。
 
-
-
-![GMP 调度模型与工作窃取 (Work Stealing)：本地 runq 队列与全局 runq 负载均衡](../../../public/images/gmp-work-stealing-runq-balance.svg)
-
 ## 二、三张表：G 是执行体，P 是调度权，M 是 OS 线程
 
 ```mermaid

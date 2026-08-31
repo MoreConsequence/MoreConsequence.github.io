@@ -38,9 +38,7 @@ flowchart TD
 3. **副作用隔离（Side-effect Isolation）**：每个 Eval Case 在独立的临时容器中运行，避免任务之间互相污染磁盘或端口；
 4. **多维度成本画像（Multi-dimensional Profiling）**：综合衡量通过率（Pass@1）、平均耗时（Duration）、平均消耗 Token 与金钱成本。
 
-
-
-![企业级 Agent 评估基准矩阵：SWE-bench 修复率、Token 成本与执行耗时三维评估](../../../public/images/pi-enterprise-evals-matrix-swe-bench-pass-rate.svg)
+---
 
 ## 二、如何从 Git 历史自动提取 Eval 任务？
 

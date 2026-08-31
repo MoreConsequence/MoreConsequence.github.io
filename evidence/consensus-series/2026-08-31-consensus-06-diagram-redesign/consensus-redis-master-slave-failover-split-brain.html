@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-redis-master-slave-failover-split-brain</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ms-title ms-desc">
+  <title id="ms-title">Redis 异步复制与 Sentinel 故障切换丢锁脑裂拓扑</title>
+  <desc id="ms-desc">拓扑架构图展示 Redis Master 在向 Slave 异步复制锁前宕机，Sentinel 提拔无锁 Slave 为新 Master 导致两个客户端同时持锁并发双写的致命缺陷。</desc>
+  <defs>
+    <marker id="ms-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ms-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">REDIS ASYNC REPLICATION · FAILOVER LOCK LOSS HAZARD</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Redis 异步复制与故障切换丢锁脑裂拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Master 写入锁成功 ➔ 异步复制未达 Slave ➔ Master 宕机 ➔ Slave 晋升 ➔ Client 2 再次获锁 (双主持锁脑裂)</text>
+
+  <!-- 3 Main Process Blocks (y=136..506, h=370) -->
+  <!-- Block 1: Clients (x=40..260, w=220) -->
+  <g transform="translate(40, 136)">
+    <rect width="220" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLIENTS</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">双客户端并发请求</text>
+
+    <!-- Client 1 -->
+    <rect x="14" y="42" width="192" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Client 1 (已持锁)</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">SET lock:order uuid1 NX</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">向旧 Master 写入成功</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: Holding Lock ✓</text>
+    <text x="24" y="136" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">正在执行临界区业务计算</text>
+
+    <!-- Client 2 -->
+    <rect x="14" y="162" width="192" height="120" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="184" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Client 2 (新申请者)</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">SET lock:order uuid2 NX</text>
+    <text x="24" y="222" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">向晋升后的新 Master 申请</text>
+    <text x="24" y="240" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">新 Master 无此 key ➔ 获锁成功！</text>
+    <text x="24" y="260" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">同时进入临界区执行写操作</text>
+
+    <!-- Conflict Result -->
+    <rect x="14" y="292" width="192" height="68" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="314" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">脑裂冲突结果</text>
+    <text x="24" y="332" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">双客户端同时持锁并发双写！</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">互斥性保证彻底失效</text>
+  </g>
+
+  <!-- Arrow 1 (x=260..300) -->
+  <line x1="260" y1="190" x2="300" y2="190" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ms-arr-accent)"/>
+
+  <!-- Block 2: Redis Replication (x=300..630, w=330) - Focal -->
+  <g transform="translate(300, 136)">
+    <rect width="330" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">REDIS NODES</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Redis 主从异步拓扑</text>
+
+    <!-- Old Master (Crash!) -->
+    <rect x="14" y="42" width="302" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="64" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OLD MASTER</text>
+    <text x="114" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Redis 节点 1 (崩溃前写成功)</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Memory: key "lock:order" = uuid1</text>
+    <text x="24" y="104" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">⚡ 异步复制未送出，机器突发掉电！</text>
+    <text x="24" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">锁数据随着 Old Master 宕机而在集群中蒸发</text>
+    <text x="24" y="140" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Repl Buffer: Empty / Dropped</text>
+
+    <!-- Async Replication Gap (Warning) -->
+    <line x1="165" y1="152" x2="165" y2="182" stroke="#e85d3f" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ms-arr-accent)"/>
+    <rect x="100" y="160" width="130" height="16" rx="2" fill="#f5f4ed"/>
+    <text x="165" y="172" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">异步复制延迟 (未同步！)</text>
+
+    <!-- New Master (Promoted Slave) -->
+    <rect x="14" y="190" width="302" height="170" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <rect x="24" y="198" width="90" height="16" rx="2" fill="#141413"/>
+    <text x="69" y="210" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NEW MASTER</text>
+    <text x="124" y="211" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Redis 节点 2 (Sentinel 提拔)</text>
+    <text x="24" y="234" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Memory: key "lock:order" ➔ NOT FOUND</text>
+    <text x="24" y="252" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Sentinel 发现 Master 宕机，自动 Failover</text>
+    <text x="24" y="270" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Slave 成为新领袖，但内部无任何锁记录</text>
+    <line x1="24" y1="282" x2="306" y2="282" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="302" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Client 2 申请时直接授予锁！</text>
+    <text x="24" y="322" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">AP 系统设计无法保证主从切换强一致</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Raft 共识系统 (etcd) 才能从根源避免</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..670) -->
+  <line x1="630" y1="280" x2="670" y2="280" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ms-arr-accent)"/>
+
+  <!-- Block 3: DB Impact (x=670..920, w=250) -->
+  <g transform="translate(670, 136)">
+    <rect width="250" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STORAGE</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数据库并发写入冲突</text>
+
+    <!-- DB Hazard -->
+    <rect x="14" y="42" width="222" height="160" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">MySQL / 共享业务存储</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Client 1: Update(order, A)</text>
+    <text x="24" y="104" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Client 2: Update(order, B)</text>
+    <line x1="24" y1="116" x2="226" y2="116" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="136" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">并发写冲突 / 脏数据覆盖！</text>
+    <text x="24" y="156" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">锁服务失效导致后端数据</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">完全失去并发保护</text>
+
+    <!-- Final Takeaway -->
+    <rect x="14" y="212" width="222" height="148" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="234" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构师防坑法则</text>
+    <text x="24" y="254" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 严禁将 Redis 锁用于强资金</text>
+    <text x="24" y="272" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 资金扣减走数据库事务行锁</text>
+    <text x="24" y="292" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. 强一致协调选 etcd Raft</text>
+    <text x="24" y="312" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">4. 配合 Fencing Token 双重防护</text>
+    <text x="24" y="332" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">End-to-End Safety Principle</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">正常业务与存储交互</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">主从切换丢锁与脑裂冲突点</text>
+</svg>
+</main>
+</body>
+</html>

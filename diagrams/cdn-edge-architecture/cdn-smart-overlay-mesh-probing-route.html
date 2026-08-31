@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cdn-smart-overlay-mesh-probing-route · diagram source</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f5f5f5;display:flex;justify-content:center}svg{width:100%;max-width:960px;height:auto}</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="100%" height="100%" role="img" aria-labelledby="mesh-title mesh-desc">
+<title id="mesh-title">智能覆盖网实时多路径探测与次优路径避障</title>
+<desc id="mesh-desc">架构图：全球 PoP 间每秒相互发送合成探针构成探测矩阵；公网直连北京至美东权重 W=324（丢包 8%）形成拥塞黑洞，动态加权 Dijkstra 计算最优多跳中继 PEK→NRT(30ms)→SJC(85ms)→IAD(40ms)，总权重 155ms，毫秒级绕行。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
+  
+  
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+<!-- Header -->
+<text x="40" y="28" fill="#2d3142" font-size="16" font-weight="400" font-family="'Instrument Serif', serif">智能覆盖网：实时多路径探测与次优路径避障</text>
+<text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif" letter-spacing="0.02em">全球 PoP 合成探针矩阵 → 动态加权 Dijkstra → PEK→NRT→SJC→IAD 总权重 155ms ≪ 直连拥塞 W=324（丢包 8%）</text>
+
+<!-- Background probe mesh (faint, no markers) -->
+<g stroke="rgba(45,49,66,0.14)" stroke-width="1">
+<line x1="144" y1="228" x2="324" y2="162"/>
+<line x1="144" y1="228" x2="364" y2="342"/>
+<line x1="324" y1="162" x2="516" y2="130"/>
+<line x1="324" y1="162" x2="710" y2="232"/>
+<line x1="364" y1="342" x2="636" y2="342"/>
+<line x1="516" y1="130" x2="710" y2="232"/>
+<line x1="636" y1="342" x2="710" y2="232"/>
+<line x1="710" y1="232" x2="876" y2="232"/>
+</g>
+
+<!-- Congested direct link (公网直连拥塞黑洞) -->
+<line x1="144" y1="228" x2="876" y2="232" stroke="#4f5d75" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+<rect x="452" y="244" width="118" height="14" rx="2" fill="#f5f5f5"/><text x="511" y="254" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">直连拥塞 W=324</text>
+
+<!-- Highlighted optimal multi-hop relay (accent) -->
+<line x1="144" y1="228" x2="324" y2="162" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="324" y1="162" x2="710" y2="232" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="710" y1="232" x2="876" y2="232" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+<!-- Total weight callout -->
+<rect x="713" y="268" width="160" height="20" rx="4" fill="rgba(235,108,54,0.10)" stroke="#eb6c36" stroke-width="1"/><text x="793" y="282" fill="#eb6c36" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">155ms (30+85+40) &lt;&lt; 324</text>
+
+<!-- Nodes -->
+<g>
+  <rect x="64" y="196" width="160" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="72" y="204" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="88" y="213" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PEK</text>
+  <text x="144" y="232" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京 PEK</text>
+  <text x="144" y="248" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">客户端接入</text>
+</g>
+<g>
+  <rect x="248" y="132" width="152" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="256" y="140" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="272" y="149" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">NRT</text>
+  <text x="324" y="168" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">东京 NRT</text>
+  <text x="324" y="184" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">中继 PoP</text>
+</g>
+<g>
+  <rect x="288" y="312" width="152" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="296" y="320" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="312" y="329" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SIN</text>
+  <text x="364" y="348" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">新加坡 SIN</text>
+  <text x="364" y="364" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">探测 PoP</text>
+</g>
+<g>
+  <rect x="440" y="100" width="152" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="448" y="108" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="464" y="117" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FRA</text>
+  <text x="516" y="136" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">法兰克福 FRA</text>
+  <text x="516" y="152" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">探测 PoP</text>
+</g>
+<g>
+  <rect x="560" y="312" width="152" height="60" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="568" y="320" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="584" y="329" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LAX</text>
+  <text x="636" y="348" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">洛杉矶 LAX</text>
+  <text x="636" y="364" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">探测 PoP</text>
+</g>
+<g>
+  <rect x="632" y="200" width="156" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="640" y="208" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="656" y="217" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SJC</text>
+  <text x="710" y="236" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">硅谷 SJC</text>
+  <text x="710" y="252" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">FASTER 海缆</text>
+</g>
+<g>
+  <rect x="800" y="200" width="152" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="808" y="208" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="824" y="217" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">IAD</text>
+  <text x="876" y="236" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东 IAD</text>
+  <text x="876" y="252" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">us-east-1 源站</text>
+</g>
+
+<!-- Legend -->
+<line x1="40" y1="392" x2="76" y2="392" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/><text x="84" y="396" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">最优多跳中继路径（动态 Dijkstra）</text>
+<line x1="360" y1="392" x2="396" y2="392" stroke="#4f5d75" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#arrow)"/><text x="404" y="396" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">公网直连拥塞黑洞（W=324）</text>
+<line x1="644" y1="392" x2="680" y2="392" stroke="rgba(45,49,66,0.20)" stroke-width="0.8"/><text x="688" y="396" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">全球合成探针矩阵（每秒互探）</text>
+
+<!-- Note card -->
+<rect x="32" y="408" width="896" height="76" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="40" y="430" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif">动态加权 Dijkstra 成本函数</text>
+<text x="40" y="446" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">Wᵢⱼ = RTTᵢⱼ · ( 1 + α·p_loss + β·σ_jitter / RTTᵢⱼ )   ·   α = 10, β = 2</text>
+<text x="40" y="468" fill="#eb6c36" font-size="8.5" font-weight="600" font-family="'Geist', sans-serif">→ PEK→NRT(30)→SJC(85)→IAD(40) 总权重 155ms，彻底绕开公网拥塞黑洞（W=324），端到端时延下降 67%</text>
+</svg>
+</body>
+</html>

@@ -1,190 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="100%" height="100%">
-  <defs>
-    <!-- Crisp Tech Editorial Filter -->
-    <filter id="soft-shadow" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
-    </filter>
-    <filter id="badge-shadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.06"/>
-    </filter>
-
-    <!-- Markers: 正向定义契约 (No Manual Inversion) -->
-    <marker id="seq-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <marker id="seq-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <marker id="seq-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
-    </marker>
-    <marker id="seq-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="5" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
-    </marker>
-
-    <!-- Subtle Editorial Grid -->
-    <pattern id="editorial-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-      <circle cx="12" cy="12" r="0.75" fill="#cbd5e1" opacity="0.65"/>
-    </pattern>
-  </defs>
-
-  <!-- 1. Background Canvas -->
-  <rect width="960" height="580" fill="#ffffff"/>
-  <rect width="960" height="580" fill="url(#editorial-grid)"/>
-
-  <!-- Top Title Banner -->
-  <g transform="translate(40, 24)">
-    <text x="0" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="16" font-weight="700" fill="#0f172a">
-      传统直连握手 vs CDN 边缘四层 TCP/TLS 终结代理物理时序对比
-    </text>
-    <text x="0" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">
-      RTT 物理距离消除 · 分段握手隔离 · 预热保活连接池消除回源握手
-    </text>
-  </g>
-
-  <!-- 2. Region Stage Panels (Painter's Algorithm: 底板先画) -->
-  <!-- Left Mode: Direct Origin Handshake (Slate/Warning) -->
-  <rect x="40" y="76" width="420" height="476" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <rect x="54" y="90" width="145" height="24" rx="4" fill="#64748b"/>
-  <text x="64" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">
-    🔴 模式 A：跨洋直连源站
-  </text>
-  <text x="210" y="106" font-family="ui-monospace, monospace" font-size="11" fill="#dc2626" font-weight="600">
-    TTFB ≈ 630ms (3.5 RTT)
-  </text>
-
-  <!-- Right Mode: Edge Termination Proxy (Blue/Production) -->
-  <rect x="490" y="76" width="430" height="476" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
-  <rect x="504" y="90" width="145" height="24" rx="4" fill="#2563eb"/>
-  <text x="514" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff">
-    🟢 模式 B：边缘终结代理
-  </text>
-  <text x="660" y="106" font-family="ui-monospace, monospace" font-size="11" fill="#059669" font-weight="600">
-    TTFB ≈ 25ms(命中) / 180ms
-  </text>
-
-  <!-- 3. Lifelines: 纵向虚线生命线 (严禁被实体底板遮挡) -->
-  <!-- Mode A Lifelines -->
-  <line x1="115" y1="165" x2="115" y2="485" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
-  <line x1="385" y1="165" x2="385" y2="485" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
-
-  <!-- Mode B Lifelines -->
-  <line x1="550" y1="165" x2="550" y2="485" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
-  <line x1="705" y1="165" x2="705" y2="485" stroke="#60a5fa" stroke-width="1.8" stroke-dasharray="4 4"/>
-  <line x1="860" y1="165" x2="860" y2="485" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
-
-  <!-- 4. Mode A Sequence Arrows & Messages (直连握手) -->
-  <!-- TCP SYN -->
-  <path d="M 115 180 L 380 205" stroke="#64748b" stroke-width="1.8" marker-end="url(#seq-slate)"/>
-  <rect x="185" y="180" width="130" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="193" font-family="ui-monospace, monospace" font-size="9" fill="#475569" font-weight="600" text-anchor="middle">TCP SYN (90ms)</text>
-
-  <!-- TCP SYN-ACK -->
-  <path d="M 385 215 L 120 240" stroke="#64748b" stroke-width="1.8" marker-end="url(#seq-slate)"/>
-  <rect x="180" y="215" width="140" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="228" font-family="ui-monospace, monospace" font-size="9" fill="#475569" font-weight="600" text-anchor="middle">SYN-ACK (90ms)</text>
-
-  <!-- TLS 1.3 ClientHello -->
-  <path d="M 115 255 L 380 280" stroke="#ea580c" stroke-width="1.8" marker-end="url(#seq-orange)"/>
-  <rect x="170" y="255" width="160" height="18" rx="4" fill="#ffffff" stroke="#fdba74" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="268" font-family="ui-monospace, monospace" font-size="9" fill="#ea580c" font-weight="600" text-anchor="middle">TLS 1.3 ClientHello</text>
-
-  <!-- TLS 1.3 ServerHello -->
-  <path d="M 385 290 L 120 315" stroke="#ea580c" stroke-width="1.8" marker-end="url(#seq-orange)"/>
-  <rect x="170" y="290" width="160" height="18" rx="4" fill="#ffffff" stroke="#fdba74" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="303" font-family="ui-monospace, monospace" font-size="9" fill="#ea580c" font-weight="600" text-anchor="middle">ServerHello + Cert</text>
-
-  <!-- HTTP GET + Response -->
-  <path d="M 115 330 L 380 355" stroke="#2563eb" stroke-width="1.8" marker-end="url(#seq-blue)"/>
-  <rect x="170" y="330" width="160" height="18" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="343" font-family="ui-monospace, monospace" font-size="9" fill="#1d4ed8" font-weight="600" text-anchor="middle">HTTP/2 GET Request</text>
-
-  <path d="M 385 365 L 120 390" stroke="#2563eb" stroke-width="2" marker-end="url(#seq-blue)"/>
-  <rect x="175" y="365" width="150" height="18" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="250" y="378" font-family="ui-monospace, monospace" font-size="9" fill="#1d4ed8" font-weight="600" text-anchor="middle">200 OK + 1st Byte</text>
-
-  <!-- Mode A Total Bracket -->
-  <line x1="72" y1="180" x2="72" y2="390" stroke="#dc2626" stroke-width="2"/>
-  <line x1="66" y1="180" x2="78" y2="180" stroke="#dc2626" stroke-width="2"/>
-  <line x1="66" y1="390" x2="78" y2="390" stroke="#dc2626" stroke-width="2"/>
-  <text x="60" y="290" font-family="ui-monospace, monospace" font-size="11" fill="#dc2626" font-weight="700" text-anchor="end">
-    630ms
-  </text>
-
-  <!-- 5. Mode B Sequence Arrows & Messages (边缘终结) -->
-  <!-- Fast Local TCP (5ms) -->
-  <path d="M 550 180 L 700 190" stroke="#059669" stroke-width="2" marker-end="url(#seq-emerald)"/>
-  <rect x="575" y="174" width="110" height="18" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="630" y="187" font-family="ui-monospace, monospace" font-size="8.5" fill="#059669" font-weight="600" text-anchor="middle">SYN (5ms 本地)</text>
-
-  <path d="M 705 198 L 555 208" stroke="#059669" stroke-width="2" marker-end="url(#seq-emerald)"/>
-  <rect x="575" y="194" width="110" height="18" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="630" y="207" font-family="ui-monospace, monospace" font-size="8.5" fill="#059669" font-weight="600" text-anchor="middle">SYN-ACK (5ms)</text>
-
-  <!-- Fast Local TLS 1.3 (5ms) -->
-  <path d="M 550 220 L 700 230" stroke="#059669" stroke-width="2" marker-end="url(#seq-emerald)"/>
-  <path d="M 705 235 L 555 245" stroke="#059669" stroke-width="2" marker-end="url(#seq-emerald)"/>
-  <rect x="570" y="222" width="120" height="18" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="630" y="235" font-family="ui-monospace, monospace" font-size="8.5" fill="#059669" font-weight="600" text-anchor="middle">TLS 1.3 本地握手</text>
-
-  <!-- L7 Cache Hit Branch (Green Box) -->
-  <rect x="530" y="258" width="200" height="52" rx="6" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
-  <text x="630" y="276" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#065f46" text-anchor="middle">
-    ⚡ 场景 1：边缘静态缓存命中
-  </text>
-  <text x="630" y="296" font-family="ui-monospace, monospace" font-size="9" fill="#047857" font-weight="600" text-anchor="middle">
-    HTTP GET → 200 OK (TTFB = 25ms)
-  </text>
-
-  <!-- Pre-warmed Connection to Origin (Long-lived Pool) -->
-  <path d="M 705 335 L 855 355" stroke="#2563eb" stroke-width="2" marker-end="url(#seq-blue)"/>
-  <rect x="730" y="333" width="120" height="18" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="790" y="346" font-family="ui-monospace, monospace" font-size="8.5" fill="#1d4ed8" font-weight="600" text-anchor="middle">预热长连接池复用</text>
-
-  <path d="M 860 370 L 710 390" stroke="#2563eb" stroke-width="2" marker-end="url(#seq-blue)"/>
-  <rect x="730" y="368" width="120" height="18" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="790" y="381" font-family="ui-monospace, monospace" font-size="8.5" fill="#1d4ed8" font-weight="600" text-anchor="middle">源站动态 API 计算</text>
-
-  <path d="M 705 405 L 555 415" stroke="#2563eb" stroke-width="2" marker-end="url(#seq-blue)"/>
-  <rect x="575" y="400" width="110" height="18" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1" filter="url(#badge-shadow)"/>
-  <text x="630" y="413" font-family="ui-monospace, monospace" font-size="8.5" fill="#1d4ed8" font-weight="600" text-anchor="middle">极速转发客户端</text>
-
-  <!-- Mode B Total Comparison Callout (宽卡片双行排版，彻底避免文字触碰边框) -->
-  <g transform="translate(515, 438)">
-    <rect width="380" height="42" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2" filter="url(#soft-shadow)"/>
-    <text x="190" y="17" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#1e40af" font-weight="700" text-anchor="middle">
-      🚀 消除 4 次跨洋握手，动态回源冷启动从 630ms 降至 180ms
-    </text>
-    <text x="190" y="33" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#059669" font-weight="600" text-anchor="middle">
-      ⚡ 静态资源边缘秒级就近命中，首包 TTFB ≤ 25ms
-    </text>
-  </g>
-
-  <!-- 6. Actor Cards (顶层绘制，加宽至 110~116px 留出 30% 安全边距) -->
-  <!-- Mode A Actors -->
-  <g transform="translate(60, 125)" filter="url(#soft-shadow)">
-    <rect width="110" height="36" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
-    <text x="55" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">📱 终端用户</text>
-  </g>
-
-  <g transform="translate(330, 125)" filter="url(#soft-shadow)">
-    <rect width="110" height="36" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
-    <text x="55" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">🏢 远端源站</text>
-  </g>
-
-  <!-- Mode B Actors -->
-  <g transform="translate(495, 125)" filter="url(#soft-shadow)">
-    <rect width="110" height="36" rx="6" fill="#ffffff" stroke="#2563eb" stroke-width="1.2"/>
-    <text x="55" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">📱 终端用户</text>
-  </g>
-
-  <g transform="translate(650, 125)" filter="url(#soft-shadow)">
-    <rect width="110" height="36" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
-    <text x="55" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">⚡ CDN 边缘</text>
-  </g>
-
-  <g transform="translate(805, 125)" filter="url(#soft-shadow)">
-    <rect width="110" height="36" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
-    <text x="55" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">🏢 远端源站</text>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="proxy-title proxy-desc">
+<title id="proxy-title">四层 TCP/TLS 终结代理与连接分段 · 时延对比</title>
+<desc id="proxy-desc">对比图：左侧直连跨洋 3.0 RTT 约 560ms；右侧边缘终结将握手压缩至本地 15ms，配合预热连接池，命中 17ms、未命中 185ms，期望 33.8ms。</desc>
+<defs>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+<text x="40" y="28" fill="#2d3142" font-size="16" font-weight="400" font-family="'Instrument Serif', serif">边缘四层终结代理：把 560ms 斩至 17ms 的分段隔离</text>
+<text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif" letter-spacing="0.02em">Local Leg 5ms RTT 就近终结 + Backhaul Leg 私网池化复用(0ms 建连) · Mathis 公式 36× 吞吐跃升</text>
+<!-- Zones -->
+<rect x="40" y="68" width="440" height="384" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="48" y="76" width="140" height="12" rx="2" fill="#ffffff" stroke="rgba(196,50,45,0.22)" stroke-width="0.8"/><text x="118" y="85" fill="#c4442f" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">直连源站 · 3.0 RTT</text>
+<rect x="480" y="68" width="440" height="384" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<rect x="488" y="76" width="156" height="12" rx="2" fill="#ffffff" stroke="rgba(235,108,54,0.30)" stroke-width="0.8"/><text x="566" y="85" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">边缘终结 · 分段隔离</text>
+<!-- Lifelines -->
+<line x1="136" y1="156" x2="136" y2="424" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="384" y1="156" x2="384" y2="424" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="576" y1="156" x2="576" y2="424" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="700" y1="156" x2="700" y2="424" stroke="rgba(235,108,54,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="824" y1="156" x2="824" y2="424" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<!-- Activation bars -->
+<rect x="380" y="188" width="8" height="204" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+<rect x="696" y="188" width="8" height="108" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8"/>
+<rect x="820" y="332" width="8" height="44" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+<!-- Direct arrows -->
+<line x1="136" y1="188" x2="384" y2="188" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="384" y1="228" x2="136" y2="228" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<line x1="136" y1="268" x2="384" y2="268" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<line x1="384" y1="308" x2="136" y2="308" stroke="#2e5aa8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+<line x1="136" y1="348" x2="384" y2="348" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="384" y1="388" x2="136" y2="388" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+<!-- Proxy arrows -->
+<line x1="576" y1="188" x2="700" y2="188" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="700" y1="224" x2="576" y2="224" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<line x1="576" y1="260" x2="700" y2="260" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<line x1="700" y1="292" x2="576" y2="292" stroke="#2e5aa8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+<line x1="576" y1="332" x2="700" y2="332" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="700" y1="332" x2="824" y2="332" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+<line x1="824" y1="368" x2="700" y2="368" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<line x1="700" y1="404" x2="576" y2="404" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+<!-- Direct labels -->
+<rect x="200" y="168" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="177" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SYN · 0→180ms</text>
+<rect x="204" y="208" width="112" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="217" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SYN-ACK · 180ms</text>
+<rect x="192" y="248" width="136" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="257" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">CLIENT HELLO · 360ms</text>
+<rect x="192" y="288" width="136" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="297" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SERVER HELLO · 360ms</text>
+<rect x="200" y="328" width="120" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="337" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">HTTP GET · 540ms</text>
+<rect x="196" y="368" width="128" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="377" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">200 OK · TTFB 560ms</text>
+<!-- Proxy labels -->
+<rect x="608" y="168" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="177" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SYN 5ms</text>
+<rect x="604" y="204" width="68" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="213" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">SYN-ACK 10ms</text>
+<rect x="604" y="240" width="68" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="249" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">HELLO 15ms</text>
+<rect x="600" y="272" width="76" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="281" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">HELLO 15ms</text>
+<rect x="612" y="312" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="321" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">GET 17ms</text>
+<rect x="732" y="312" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="758" y="321" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">池复用</text>
+<rect x="732" y="348" width="64" height="12" rx="2" fill="#f5f5f5"/><text x="764" y="357" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">回源 150ms</text>
+<rect x="612" y="384" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="638" y="393" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">200 17ms</text>
+<!-- Actors Direct -->
+<g>
+  <rect x="56" y="100" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="56" y="100" width="160" height="56" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+  <rect x="64" y="108" width="24" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/><text x="76" y="117" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">CLI</text>
+  <text x="136" y="132" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京客户端</text>
+  <text x="136" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Browser</text>
+</g>
+<g>
+  <rect x="304" y="100" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="304" y="100" width="160" height="56" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+  <rect x="312" y="108" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.20)" stroke-width="0.8"/><text x="326" y="117" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">ORIG</text>
+  <text x="384" y="132" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东源站</text>
+  <text x="384" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">IAD · 180ms RTT</text>
+</g>
+<!-- Actors Proxy -->
+<g>
+  <rect x="496" y="100" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="496" y="100" width="160" height="56" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+  <rect x="504" y="108" width="24" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8"/><text x="516" y="117" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">CLI</text>
+  <text x="576" y="132" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京客户端</text>
+  <text x="576" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Browser</text>
+</g>
+<g>
+  <rect x="620" y="100" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="620" y="100" width="160" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+  <rect x="628" y="108" width="28" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/><text x="642" y="117" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">EDGE</text>
+  <text x="700" y="132" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PEK-PoP ★</text>
+  <text x="700" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">5ms · 终结代理</text>
+</g>
+<g>
+  <rect x="744" y="100" width="160" height="56" rx="6" fill="#f5f5f5"/><rect x="744" y="100" width="160" height="56" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+  <rect x="752" y="108" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.20)" stroke-width="0.8"/><text x="766" y="117" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">ORIG</text>
+  <text x="824" y="132" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东源站</text>
+  <text x="824" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">池化 · 150ms</text>
+</g>
+<!-- Bottom math cards -->
+<g>
+  <rect x="40" y="468" width="440" height="56" rx="6" fill="#f5f5f5"/><rect x="40" y="468" width="440" height="56" rx="6" fill="#ffffff" stroke="rgba(196,50,45,0.20)" stroke-width="1"/>
+  <text x="48" y="488" fill="#c4442f" font-size="8" font-weight="600" font-family="'Geist', sans-serif">T<tspan baseline-shift="sub" font-size="7">direct</tspan> = 3×180 + 20 = 560ms</text>
+  <text x="48" y="504" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Mathis 吞吐上界 0.65 Mbps · p=1% · MSS 1460</text>
+  <text x="48" y="516" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace">长肥管道 LFN 冷启动惩罚</text>
+</g>
+<g>
+  <rect x="480" y="468" width="440" height="56" rx="6" fill="#f5f5f5"/><rect x="480" y="468" width="440" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="rgba(235,108,54,0.35)" stroke-width="1"/>
+  <text x="488" y="488" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist', sans-serif">E[T<tspan baseline-shift="sub" font-size="7">cdn</tspan>] = 0.9×17 + 0.1×185 = 33.8ms</text>
+  <text x="488" y="504" fill="#2d7a52" font-size="8" font-weight="600" font-family="'Geist', sans-serif">命中 17ms(-97%) · 未命中 185ms(-67%) · 23.36 Mbps</text>
+  <text x="488" y="516" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace">H=90% 期望 · 预热池 0ms 建连</text>
+</g>
+<!-- Legend -->
+<line x1="40" y1="540" x2="920" y2="540" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="40" y="552" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
 </svg>

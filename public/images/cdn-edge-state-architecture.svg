@@ -1,136 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="100%" height="100%" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-state-title cdn-state-desc">
   <defs>
     <style>
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
     </style>
-    <pattern id="state-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="10" cy="10" r="0.8" fill="#cbd5e1"/>
-    </pattern>
-    <marker id="arr-st-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+  </defs>
+  <title id="cdn-state-title">边缘分布式状态编排：最终一致性 KV vs 区域强一致 Raft 体系</title>
+  <desc id="cdn-state-desc">架构拓扑图对比全球边缘只读 KV 的 AP 最终一致性本地读取，与区域 Raft 事务共识的 CP 强一致性 Durable Objects 状态机。</desc>
+  <defs>
+    <marker id="cdn-state-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arr-st-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
+    <marker id="cdn-state-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="st-shadow" x="-6%" y="-6%" width="112%" height="116%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06"/>
-    </filter>
   </defs>
 
-  <!-- Background Canvas -->
-  <rect width="100%" height="100%" fill="#ffffff" rx="8" stroke="#e2e8f0" stroke-width="1"/>
-  <rect width="100%" height="100%" fill="url(#state-grid)"/>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Eyebrow & Title -->
-  <text x="40" y="32" fill="#2563eb" font-size="10" font-weight="600" class="mono" letter-spacing="0.14em">EDGE STORAGE · DISTRIBUTED STATE &amp; CONSISTENCY ORCHESTRATION</text>
-  <text x="40" y="52" fill="#0f172a" font-size="16" font-weight="700">边缘分布式状态编排：边缘最终一致性 KV vs 区域强一致 Raft 体系</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EDGE STATE ARCHITECTURE · KV AP VS RAFT CP</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">边缘状态编排：最终一致性 KV vs 区域强一致 Raft</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">只读 Edge KV 支撑 300+ PoP 微秒级就近读；区域 Raft 事务（Durable Objects）支撑零超卖强一致写</text>
 
-  <!-- ================= TOP: TWO COMPONENT STORAGE MODELS (x: 40 ~ 920, w: 880) ================= -->
-  
-  <!-- Model 1: Edge KV (Read-at-Edge / Eventual Consistency) [x: 40 ~ 460, w: 420] -->
-  <g transform="translate(40, 75)" filter="url(#st-shadow)">
-    <rect width="420" height="235" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-    <rect x="0" y="0" width="420" height="5" rx="2" fill="#2563eb"/>
-    <rect x="14" y="12" width="200" height="22" rx="4" fill="#2563eb"/>
-    <text x="114" y="27" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">模式 A：边缘只读 KV (最终一致性)</text>
+  <!-- Left Column: Mode A Edge KV (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE A</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">边缘只读分布式 KV (AP 模型 · 最终一致性)</text>
 
-    <!-- Sub Boxes -->
-    <g transform="translate(14, 44)">
-      <!-- PoP 1 -->
-      <rect x="0" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
-      <text x="60" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">北京 PEK 节点</text>
-      <rect x="8" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
-      <text x="60" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
-      <text x="60" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+    <!-- Read Path -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 全球边缘本地极速读取 (Read-at-Edge)</text>
+    <text x="26" y="86" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">全量数据广播缓存在 300+ PoP 内存中</text>
+    <text x="394" y="86" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">读时延: ≤ 100µs</text>
 
-      <!-- PoP 2 -->
-      <rect x="135" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
-      <text x="195" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">法兰克福 FRA 节点</text>
-      <rect x="143" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
-      <text x="195" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
-      <text x="195" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+    <!-- Write Path -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 异步权威写入与 Gossip 广播</text>
+    <text x="26" y="158" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">写入主节点 ➔ 全球后台异步推送同步</text>
+    <text x="394" y="158" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">收敛耗时: 1~3s</text>
 
-      <!-- PoP 3 -->
-      <rect x="270" y="0" width="120" height="85" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
-      <text x="330" y="20" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">硅谷 SJC 节点</text>
-      <rect x="278" y="28" width="104" height="20" rx="3" fill="#f8fafc"/>
-      <text x="330" y="42" fill="#059669" font-size="8.5" class="mono" text-anchor="middle">Read: &lt; 100μs</text>
-      <text x="330" y="70" fill="#2563eb" font-size="8.5" text-anchor="middle">本地内存索引</text>
+    <!-- Business Scenarios -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用业务形态 (99.9% 读 / 0.1% 写)</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 功能开关 (Feature Flags) · 灰度路由规则</text>
+    <text x="26" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 商品类目字典 · 用户黑白名单 · 域名 SSL 证书配置</text>
 
-      <!-- Broadcast Bar -->
-      <rect x="0" y="95" width="390" height="26" rx="4" fill="#dbeafe"/>
-      <text x="195" y="112" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">全局异步多主复制广播 (秒级全网同步收敛)</text>
-    </g>
-
-    <!-- Metrics -->
-    <line x1="14" y1="175" x2="406" y2="175" stroke="#bfdbfe" stroke-width="1"/>
-    <text x="14" y="195" fill="#1e40af" font-size="10.5">· 读性能：<tspan font-weight="700" fill="#059669">微秒级 (本地命中无需跨机房)</tspan></text>
-    <text x="14" y="215" fill="#1e40af" font-size="10.5">· 适用场景：<tspan font-weight="600">配置开关、用户权限黑白名单、路由规则表</tspan></text>
+    <!-- Total Metric -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="286" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构特征与物理权衡</text>
+    <text x="26" y="306" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">一致性级别: AP 最终一致性 (Eventual Consistency)</text>
+    <text x="26" y="324" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">全球 100% 读高可用，容忍秒级增量同步延迟</text>
+    <text x="26" y="342" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无需跨洋读锁，读性能达到物理极致</text>
   </g>
 
-  <!-- Model 2: Strong Consistency Raft (Durable Objects / Edge SQL) [x: 500 ~ 920, w: 420] -->
-  <g transform="translate(500, 75)" filter="url(#st-shadow)">
-    <rect width="420" height="235" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
-    <rect x="0" y="0" width="420" height="5" rx="2" fill="#ea580c"/>
-    <rect x="14" y="12" width="220" height="22" rx="4" fill="#ea580c"/>
-    <text x="124" y="27" fill="#ffffff" font-size="10" font-weight="700" text-anchor="middle">模式 B：区域强一致存储 (Raft 事务)</text>
+  <!-- Right Column: Mode B Raft Transaction (x=500..920, w=420) - Focal Column -->
+  <g transform="translate(500, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE B</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">区域强一致 Raft 事务 (CP 模型 · Durable Objects)</text>
 
-    <!-- Sub Boxes -->
-    <g transform="translate(14, 44)">
-      <!-- Raft Cluster -->
-      <rect x="0" y="0" width="390" height="85" rx="4" fill="#ffffff" stroke="#fed7aa" stroke-width="1"/>
-      <text x="195" y="20" fill="#9a3412" font-size="10" font-weight="700" text-anchor="middle">区域 Raft 共识集群 (Durable Objects / D1 SQL)</text>
-      
-      <rect x="12" y="28" width="115" height="48" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
-      <text x="69" y="46" fill="#c2410c" font-size="9" font-weight="700" text-anchor="middle">Leader 节点</text>
-      <text x="69" y="62" fill="#059669" font-size="8" text-anchor="middle">唯一写事务入口</text>
+    <!-- Actor Model -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 单键单线程 Actor 协调器 (Zero Lock)</text>
+    <text x="26" y="86" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">每个 Object ID 路由至唯一核心节点，内存排队执行</text>
+    <text x="394" y="86" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">无锁竞争</text>
 
-      <rect x="137" y="28" width="115" height="48" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
-      <text x="194" y="46" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">Follower #1</text>
-      <text x="194" y="62" fill="#64748b" font-size="8" text-anchor="middle">多数派 Quorum 确认</text>
+    <!-- Raft Quorum -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 区域 Raft 多数派共识 (Quorum ≥ 2/3)</text>
+    <text x="26" y="158" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">WAL 日志强同步复制 + 嵌入式 SQLite / D1 事务</text>
+    <text x="394" y="158" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">严格 ACID</text>
 
-      <rect x="262" y="28" width="115" height="48" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
-      <text x="319" y="46" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">Follower #2</text>
-      <text x="319" y="62" fill="#64748b" font-size="8" text-anchor="middle">多数派 Quorum 确认</text>
+    <!-- Business Scenarios -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用业务形态 (严禁超卖 / 强一致协同)</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 秒杀实时库存扣减 · 订单支付状态机</text>
+    <text x="26" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 在线协作光标同步 · 实时游戏房间状态 · 聊天室</text>
 
-      <!-- Coordination Bar -->
-      <rect x="0" y="95" width="390" height="26" rx="4" fill="#fed7aa"/>
-      <text x="195" y="112" fill="#9a3412" font-size="10" font-weight="700" text-anchor="middle">单键原子排队锁 (Single-threaded Execution / 0 并发冲突)</text>
-    </g>
-
-    <!-- Metrics -->
-    <line x1="14" y1="175" x2="406" y2="175" stroke="#fed7aa" stroke-width="1"/>
-    <text x="14" y="195" fill="#9a3412" font-size="10.5">· 强一致性：<tspan font-weight="700" fill="#ea580c">严格线性一致性（Linearizable Consistency）</tspan></text>
-    <text x="14" y="215" fill="#9a3412" font-size="10.5">· 适用场景：<tspan font-weight="600">协作文档协调者、秒杀实时计数器、分布式游戏房间</tspan></text>
+    <!-- Total Metric -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="26" y="286" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构特征与物理保证</text>
+    <text x="26" y="306" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">一致性级别: CP 线性一致性 (Linearizability)</text>
+    <text x="26" y="324" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">严格杜绝并发双花与超卖，天然消除死锁</text>
+    <text x="26" y="342" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">区域 15ms 内完成 Raft 共识，兼顾强一致与低时延</text>
   </g>
 
-
-  <!-- ================= BOTTOM: SYSTEM ARCHITECTURE TRADE-OFF MATRIX (x: 40, y: 325, h: 105) ================= -->
-  <g transform="translate(40, 325)">
-    <rect width="880" height="105" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
-    
-    <!-- Box 1 -->
-    <g transform="translate(16, 12)">
-      <rect width="270" height="80" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
-      <text x="12" y="22" fill="#1e40af" font-size="10.5" font-weight="700">CAP 定理在边缘的物理取舍</text>
-      <text x="12" y="42" fill="#475569" font-size="9.5">跨大洋网络分区是不可避免的常态；</text>
-      <text x="12" y="60" fill="#475569" font-size="9.5">边缘存储架构必须在 AP 与 CP 间严格隔离。</text>
-    </g>
-
-    <!-- Box 2 -->
-    <g transform="translate(305, 12)">
-      <rect width="270" height="80" rx="4" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
-      <text x="12" y="22" fill="#c2410c" font-size="10.5" font-weight="700">就近读 + 区域写（Read-at-Edge）</text>
-      <text x="12" y="42" fill="#9a3412" font-size="9.5">读请求 100% 命中同城边缘 PoP；</text>
-      <text x="12" y="60" fill="#9a3412" font-size="9.5">写事务自动路由至就近的数据权威中心。</text>
-    </g>
-
-    <!-- Box 3 -->
-    <g transform="translate(594, 12)">
-      <rect width="270" height="80" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
-      <text x="12" y="22" fill="#065f46" font-size="10.5" font-weight="700">边缘微前端与流式拼装 (ESI 2.0)</text>
-      <text x="12" y="42" fill="#065f46" font-size="9.5">利用 TransformStream 在边缘流式合成；</text>
-      <text x="12" y="60" fill="#065f46" font-size="9.5">个性化用户信息与静态骨架边拉边渲染。</text>
-    </g>
-  </g>
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">模式 A 边缘只读 KV (AP 最终一致)</text>
+  <rect x="330" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">模式 B 区域 Raft 事务 (CP 强一致)</text>
+  <line x1="570" y1="556" x2="594" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-state-arr-accent)"/>
+  <text x="602" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">兼顾微秒级读与零超卖写</text>
 </svg>

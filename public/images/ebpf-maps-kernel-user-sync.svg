@@ -1,107 +1,131 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="map-title map-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="map-title">BPF Maps 共享内存体系：Hash Map、Per-CPU 锁消除与 RingBuffer 事件流</title>
+  <desc id="map-desc">架构对比图展示 BPF Maps 在内核态与用户态间的三大通信范式：通用 Hash Map、消除多核伪共享的 Per-CPU Array 以及 epoll 事件驱动的 BPF RingBuffer。</desc>
+  <defs>
+    <marker id="mp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="mp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">eBPF Maps 内核态与用户态无锁共享内存通信机制</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">内核 eBPF 程序极速更新 ──► BPF Maps（Hash / Per-CPU / RingBuffer） ──► 用户态 Go/C++ 应用程序 mmap 零拷贝消费</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">BPF MAPS ARCHITECTURE · KERNEL-USER SHARED MEMORY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">BPF Maps 共享内存体系：三大通信范式</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">内核 eBPF 与用户态 Go / C 之间零拷贝、无锁共享内存通信：通用 Hash、Per-CPU 锁消除与 RingBuffer 事件流</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Hash Map (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TYPE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">BPF_MAP_TYPE_HASH</text>
+
+    <!-- Schema -->
+    <rect x="14" y="42" width="242" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">通用 Key-Value 哈希表</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Key: IP (32b) ➔ Val: Rule (64b)</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">支持内核/用户态双向原子查改</text>
+
+    <!-- Use Cases -->
+    <rect x="14" y="126" width="242" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">经典应用场景</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 动态 IP 黑名单 / 白名单过滤</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• TCP 四元组连接跟踪表 (Conntrack)</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 路由转发 FIB 表映射</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Lookup: bpf_map_lookup_elem()</text>
+
+    <!-- Tradeoffs -->
+    <rect x="14" y="256" width="242" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">性能权衡 (Tradeoff)</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">并发多核写入时存在 Bucket 自旋锁争用；高频计数不推荐使用。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Lock Contention on Update</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Max Entries: 65536+</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: Per-CPU Array (x=340..620, w=280) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="280" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TYPE 2 (HOT)</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">PERCPU_ARRAY (锁消除)</text>
 
-    <!-- Left: Kernel Space eBPF (270px) -->
-    <g transform="translate(20, 20)">
-      <rect width="260" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="260" height="32" rx="6" fill="#dbeafe"/>
-      <text x="130" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">内核态 (Kernel Space eBPF)</text>
+    <!-- Per-CPU Memory Strip -->
+    <rect x="14" y="42" width="252" height="142" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">各 CPU 独占物理内存数组</text>
 
-      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-        <rect width="236" height="42" rx="4" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="16" fill="#1d4ed8" font-weight="700">Hook 点事件触发</text>
-        <text x="10" y="30" font-size="9.5" fill="#2563eb">网络包到达、系统调用发生</text>
+    <!-- 4 CPU slices -->
+    <rect x="24" y="74" width="232" height="22" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="89" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">CPU 0 Mem: [Cnt: 10420] ➔ 0 跨核开销</text>
 
-        <rect y="50" width="236" height="52" rx="4" fill="#ffffff" stroke="#3b82f6"/>
-        <text x="10" y="16" fill="#1e40af" font-weight="700">bpf_map_update_elem()</text>
-        <text x="10" y="30" font-size="9.5" fill="#2563eb">• 纳秒级原子写入 Map</text>
-        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 或向 RingBuf 提交事件流</text>
+    <rect x="24" y="100" width="232" height="22" rx="2" fill="rgba(232,93,63,0.1)" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="32" y="115" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">CPU 1 Mem: [Cnt: 98402] ➔ 0 跨核开销</text>
 
-        <rect y="110" width="236" height="36" rx="4" fill="#eff6ff"/>
-        <text x="10" y="22" font-size="9.5" fill="#1e40af">物理开销：&lt; 10 纳秒</text>
-      </g>
-    </g>
+    <rect x="24" y="126" width="232" height="22" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="141" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">CPU 2 Mem: [Cnt: 42100] ➔ 0 跨核开销</text>
 
-    <!-- Center: BPF Maps Shared Memory (300px) -->
-    <g transform="translate(300, 20)">
-      <rect width="300" height="230" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="300" height="32" rx="6" fill="#dcfce7"/>
-      <text x="150" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">BPF Maps 共享内存中枢</text>
+    <text x="24" y="170" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">彻底消灭 CPU 缓存行伪共享 (False Sharing)!</text>
 
-      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-        <rect width="276" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="10" y="16" fill="#14532d" font-weight="700">BPF_MAP_TYPE_HASH</text>
-        <text x="10" y="30" font-size="9.5" fill="#15803d">键值映射表，支持原子并发读写</text>
-
-        <rect y="50" width="276" height="42" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="10" y="16" fill="#14532d" font-weight="700">BPF_MAP_TYPE_PERCPU_ARRAY</text>
-        <text x="10" y="30" font-size="9.5" fill="#15803d">每 CPU 独占内存，彻底消除锁争用</text>
-
-        <rect y="100" width="276" height="52" rx="4" fill="#d1fae5" stroke="#10b981"/>
-        <text x="10" y="16" fill="#065f46" font-weight="700">BPF_MAP_TYPE_RINGBUF ★</text>
-        <text x="10" y="30" font-size="9.5" fill="#047857">单生产者多消费者环形缓冲区</text>
-        <text x="10" y="42" font-size="9.5" font-weight="700" fill="#047857">mmap 零内存拷贝，支持事件推送</text>
-      </g>
-    </g>
-
-    <!-- Right: User Space App (260px) -->
-    <g transform="translate(620, 20)">
-      <rect width="260" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="260" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="130" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">用户态应用 (Go / cilium/ebpf)</text>
-
-      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-        <rect width="236" height="42" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="10" y="16" fill="#0f172a" font-weight="700">文件描述符 (FD) 句柄</text>
-        <text x="10" y="30" font-size="9.5" fill="#64748b">通过 bpf() 系统调用创建/打开 Map</text>
-
-        <rect y="50" width="236" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-        <text x="10" y="16" fill="#1e40af" font-weight="700">ringbuf.Reader.Read()</text>
-        <text x="10" y="30" font-size="9.5" fill="#2563eb">• epoll 事件驱动无阻塞拉取</text>
-        <text x="10" y="42" font-size="9.5" fill="#2563eb">• 零上下文切换，极速吞吐</text>
-
-        <rect y="110" width="236" height="36" rx="4" fill="#f8fafc"/>
-        <text x="10" y="22" font-size="9.5" fill="#475569">指标上报 Prometheus / 链路汇总</text>
-      </g>
-    </g>
+    <!-- Super Performance -->
+    <rect x="14" y="196" width="252" height="164" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">高频指标极致性能</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">内核态 `*val += 1` 仅修改本地 L1 Cache，无需原子指令 `lock add`</text>
+    <text x="24" y="256" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">QPS: 10,000,000+ / core</text>
+    <line x1="24" y1="268" x2="256" y2="268" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="288" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用户态汇总聚合：</text>
+    <text x="24" y="306" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Go 应用一次性读取全核数值，在用户态 Sum 求和，零内核锁干扰。</text>
+    <text x="24" y="328" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">适用于 Prometheus 监控指标打点</text>
+    <text x="24" y="346" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">bpf_map_lookup_elem(percpu)</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">通信架构进化：</tspan> 相比老旧 Perf Buffer 每 CPU 独立缓冲导致的内存浪费，<tspan font-weight="700" fill="#2563eb">BPF RingBuf 提供了全局单环与内存按序到达</tspan>，是高性能可观测性的首选。
-    </text>
+  <!-- Col 3: RingBuffer (x=650..920, w=270) -->
+  <g transform="translate(650, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TYPE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">BPF_MAP_TYPE_RINGBUF</text>
+
+    <!-- RingBuffer Concept -->
+    <rect x="14" y="42" width="242" height="84" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">现代事件流推送神器</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Linux 5.8+ 全局共享环形队列</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">全面替代旧 Perf Event Array</text>
+    <text x="24" y="116" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">Memory Waste Reduced by 80%</text>
+
+    <!-- Strengths -->
+    <rect x="14" y="136" width="242" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="158" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">四大压倒性优势</text>
+    <text x="24" y="178" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 变长记录 (Variable-Length Data)</text>
+    <text x="24" y="196" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 内核 Reserve ➔ Submit 零拷贝</text>
+    <text x="24" y="214" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. 用户态 epoll 事件驱动唤醒</text>
+    <text x="24" y="232" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">4. 多核心全局顺序定序</text>
+    <text x="24" y="246" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">ring_buffer__poll()</text>
+
+    <!-- Use cases -->
+    <rect x="14" y="266" width="242" height="94" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="288" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用场景</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">安全审计 (Falco)、系统调用 Trace、网络丢包原因实时捕获投递。</text>
+    <text x="24" y="332" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Event-driven Stream Pipeline</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Zero Polling Waste</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">常规键值存储与事件流</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Per-CPU Array 锁消除极致性能</text>
 </svg>

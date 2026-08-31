@@ -1,160 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="raft-fsm-title raft-fsm-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="raft-fsm-title">Raft 节点角色状态机转换与选举时序全景</title>
+  <desc id="raft-fsm-desc">状态机图展示 Follower、Candidate 与 Leader 三种角色的流转条件、Term 任期单调递增约束与多数派胜选跃迁机理。</desc>
+  <defs>
+    <marker id="raft-fsm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="raft-fsm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Raft 节点角色状态机转换与日志复制仲裁全景</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">三态流转（Follower ──► Candidate ──► Leader）与基于 Quorum 多数派的单调提交点推进</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">RAFT CONSENSUS · THREE-STATE FINITE STATE MACHINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Raft 节点角色状态机转换与选举时序全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Follower 超时进入 Candidate 竞选，赢得多数派赞成票晋升为 Leader；发现更高 Term 无条件回退 Follower</text>
+
+  <!-- State 1: Follower (x=60, y=220, w=240, h=220) -->
+  <g transform="translate(60, 220)">
+    <rect width="240" height="220" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 1</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Follower (跟随者)</text>
+
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">运行机制与职责</text>
+    <text x="24" y="86" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">被动响应 Leader 心跳与日志追加</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">响应 Candidate 的 RequestVote 拉票</text>
+
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">选举定时器 (Timer)</text>
+    <text x="24" y="156" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Timeout: 150ms ~ 300ms (随机熵)</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">心跳到达即重置定时器</text>
+    <text x="24" y="192" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">超时未收到心跳 ➔ 触发竞选</text>
   </g>
 
-  <!-- Main Card -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- State 2: Candidate (x=360, y=140, w=240, h=220) - Focal State -->
+  <g transform="translate(360, 140)">
+    <rect width="240" height="220" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 2</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Candidate (候选人)</text>
 
-    <!-- Left Box: State Machine Flow (400px) -->
-    <g transform="translate(20, 20)">
-      <rect width="390" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="390" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="195" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">一、 节点三态转换状态机 (Node Lifecycle)</text>
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">竞选初始化动作</text>
+    <text x="24" y="86" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Term = Term + 1 (自增物理任期)</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">为自己投一票，向集群广播拉票</text>
 
-      <!-- State: Follower -->
-      <g transform="translate(20, 48)">
-        <rect width="100" height="46" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
-        <text x="50" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">Follower</text>
-        <text x="50" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#2563eb" text-anchor="middle">(跟随者)</text>
-      </g>
-
-      <!-- State: Candidate -->
-      <g transform="translate(260, 48)">
-        <rect width="100" height="46" rx="6" fill="#fff7ed" stroke="#f97316" stroke-width="1.5"/>
-        <text x="50" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">Candidate</text>
-        <text x="50" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#ea580c" text-anchor="middle">(候选人)</text>
-      </g>
-
-      <!-- State: Leader -->
-      <g transform="translate(140, 148)">
-        <rect width="110" height="52" rx="6" fill="#f0fdf4" stroke="#10b981" stroke-width="2"/>
-        <text x="55" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" fill="#047857" text-anchor="middle">⭐ Leader</text>
-        <text x="55" y="40" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#059669" text-anchor="middle">(权威领导者)</text>
-      </g>
-
-      <!-- Transitions -->
-      <!-- Follower -> Candidate -->
-      <path d="M 120 62 L 250 62" fill="none" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-orange)"/>
-      <text x="185" y="55" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#ea580c" text-anchor="middle">选举超时(150-300ms)</text>
-
-      <!-- Candidate -> Leader -->
-      <path d="M 310 94 L 310 174 L 255 174" fill="none" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
-      <text x="315" y="140" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#10b981">赢得多数派选票</text>
-
-      <!-- Leader -> Follower -->
-      <path d="M 140 174 L 70 174 L 70 98" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-slate)"/>
-      <text x="50" y="140" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#64748b">发现更高 Term</text>
-
-      <!-- Candidate -> Follower -->
-      <path d="M 260 80 L 125 80" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-slate)"/>
-      <text x="190" y="92" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" fill="#64748b" text-anchor="middle">收到合法 Leader 心跳</text>
-    </g>
-
-    <!-- Right Box: Log Replication Quorum (450px) -->
-    <g transform="translate(430, 20)">
-      <rect width="450" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="450" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="225" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">二、 日志条目复制与多数派仲裁 (AppendEntries Quorum)</text>
-
-      <!-- Leader Log -->
-      <g transform="translate(16, 44)" font-family="ui-monospace, monospace" font-size="10">
-        <text x="0" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" fill="#047857">Leader (Node 1):</text>
-        <rect x="110" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="137" y="19" fill="#065f46" text-anchor="middle">[T1:k=a]</text>
-
-        <rect x="170" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="197" y="19" fill="#065f46" text-anchor="middle">[T1:k=b]</text>
-
-        <rect x="230" y="4" width="55" height="22" rx="3" fill="#dbeafe" stroke="#3b82f6"/>
-        <text x="257" y="19" fill="#1e40af" text-anchor="middle">[T2:k=c]</text>
-
-        <rect x="290" y="4" width="55" height="22" rx="3" fill="#fef3c7" stroke="#f59e0b"/>
-        <text x="317" y="19" fill="#92400e" text-anchor="middle">[T2:k=d]*</text>
-        <text x="350" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#2563eb">matchIndex=4</text>
-      </g>
-
-      <!-- Follower 1 Log (Committed) -->
-      <g transform="translate(16, 80)" font-family="ui-monospace, monospace" font-size="10">
-        <text x="0" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600" fill="#334155">Follower 2:</text>
-        <rect x="110" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="137" y="19" fill="#065f46" text-anchor="middle">[T1:k=a]</text>
-
-        <rect x="170" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="197" y="19" fill="#065f46" text-anchor="middle">[T1:k=b]</text>
-
-        <rect x="230" y="4" width="55" height="22" rx="3" fill="#dbeafe" stroke="#3b82f6"/>
-        <text x="257" y="19" fill="#1e40af" text-anchor="middle">[T2:k=c]</text>
-
-        <rect x="290" y="4" width="55" height="22" rx="3" fill="#fef3c7" stroke="#f59e0b"/>
-        <text x="317" y="19" fill="#92400e" text-anchor="middle">[T2:k=d]*</text>
-        <text x="350" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#16a34a">✓ 达到多数派(3/5)</text>
-      </g>
-
-      <!-- Follower 2 Log (Lagging) -->
-      <g transform="translate(16, 116)" font-family="ui-monospace, monospace" font-size="10">
-        <text x="0" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="600" fill="#64748b">Follower 3:</text>
-        <rect x="110" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="137" y="19" fill="#065f46" text-anchor="middle">[T1:k=a]</text>
-
-        <rect x="170" y="4" width="55" height="22" rx="3" fill="#d1fae5" stroke="#10b981"/>
-        <text x="197" y="19" fill="#065f46" text-anchor="middle">[T1:k=b]</text>
-
-        <rect x="230" y="4" width="55" height="22" rx="3" fill="#dbeafe" stroke="#3b82f6"/>
-        <text x="257" y="19" fill="#1e40af" text-anchor="middle">[T2:k=c]</text>
-
-        <rect x="290" y="4" width="55" height="22" rx="3" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="3 3"/>
-        <text x="317" y="19" fill="#94a3b8" text-anchor="middle">空缺</text>
-        <text x="350" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#f59e0b">同步中...</text>
-      </g>
-
-      <!-- Quorum Bar -->
-      <g transform="translate(16, 155)">
-        <rect width="418" height="58" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
-        <text x="12" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#065f46">🎯 多数派提交安全准则 (Commit Invariants)：</text>
-        <text x="12" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#047857">• 仅当当前 Term (T2) 的日志复制到多数派节点时，Leader 方可推进 commitIndex；</text>
-        <text x="12" y="49" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#047857">• 一旦条目被 Commit 并应用至状态机，后续任何合法 Leader 必定包含此条目！</text>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">共识核心本质：</tspan> Raft 通过 <tspan font-weight="700" fill="#2563eb">“强 Leader 单向同步”</tspan> 彻底消除了 Multi-Paxos 的并发日志决议冲突，将共识简化为 Leader 选举与日志追加两阶段。
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        （随机化心跳超时如 150-300ms 是打破 Candidate 选票平局 Split-Vote 的关键物理随机熵）
-      </text>
-    </g>
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">胜选与流转条件</text>
+    <text x="24" y="156" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">票数 ≥ ⌊N/2⌋ + 1 ➔ 晋升 Leader</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">收到合法 Leader 心跳 ➔ 降级</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">再次选举超时 ➔ 自增 Term 重选</text>
   </g>
+
+  <!-- State 3: Leader (x=660, y=220, w=240, h=220) -->
+  <g transform="translate(660, 220)">
+    <rect width="240" height="220" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 3</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Leader (领导者)</text>
+
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">领袖统治与权威维持</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">周期性广播空 AppendEntries 心跳</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Heartbeat: 20ms ~ 50ms 压制从节点</text>
+
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">写请求与退位判定</text>
+    <text x="24" y="156" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">接收客户端写命令 ➔ 日志单向追加</text>
+    <text x="24" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">收到任何更大 Term ➔ 立即退位</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无条件将自己降级为 Follower</text>
+  </g>
+
+  <!-- Connectors -->
+  <!-- Follower -> Candidate (Up & Right) -->
+  <text x="270" y="162" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">选举超时 ➔ 自增 Term</text>
+  <path d="M 180,220 V 180 Q 180,170 190,170 H 360" fill="none" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+
+  <!-- Candidate -> Leader (Right & Down) -->
+  <text x="685" y="172" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">赢得多数派选票 ➔ 胜选</text>
+  <path d="M 600,180 H 770 Q 780,180 780,190 V 220" fill="none" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+
+  <!-- Candidate -> Follower (Down & Left) -->
+  <text x="350" y="382" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">收到合法 Leader</text>
+  <path d="M 400,360 V 380 Q 400,390 390,390 H 300" fill="none" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#raft-fsm-arr)"/>
+
+  <!-- Leader -> Follower (Bottom Return) -->
+  <text x="480" y="482" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">发现更高 Term ➔ 立即退位</text>
+  <path d="M 780,440 V 480 Q 780,490 770,490 H 190 Q 180,490 180,480 V 440" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#raft-fsm-arr)"/>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="540" x2="920" y2="540" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="568" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="556" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">稳定角色状态</text>
+  <rect x="270" y="556" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="290" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">竞选跃迁核心角色</text>
+  <line x1="470" y1="562" x2="494" y2="562" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+  <text x="502" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">正向胜选升级流</text>
 </svg>

@@ -35,10 +35,6 @@ flowchart LR
 
 不要把这理解成“每次函数调用都在复制栈”。搬家只发生在增长点；但增长点的成本是一次集中成本，不能用平均 ns/op 掩盖它的尾部形状。
 
-
-
-![连续栈扩容 (Continuous Stack) 机理：2KB 初始栈 -> 翻倍扩容 -> 栈帧指针修正](../../../public/images/continuous-stack-growth-reallocation-copy.svg)
-
 ## 二、一次本机 probe：生命周期成本与递归总耗时不是一回事
 
 实验入口是 `experiments/go-runtime-boundary/`，原始输出保存在 `evidence/go-goroutine-stack-growth/2026-08-16-local/`。环境是 Go 1.25.1、Darwin arm64、Apple M1 Pro；递归 probe 每个 sample 都从一个新 goroutine 开始，计时器在 goroutine 内、递归调用前启动，所以递归数字不包含 goroutine 创建和 join。

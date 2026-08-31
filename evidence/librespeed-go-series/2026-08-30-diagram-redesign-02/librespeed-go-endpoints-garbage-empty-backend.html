@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LibreSpeed Go endpoint overview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 32px 24px;
+      background: #f5f5f5;
+      color: #2d3142;
+    }
+    main { width: min(960px, 100%); }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="librespeed-go-endpoints-garbage-empty-backend-title librespeed-go-endpoints-garbage-empty-backend-desc">
+      <title id="librespeed-go-endpoints-garbage-empty-backend-title">LibreSpeed Go 端点总览</title>
+      <desc id="librespeed-go-endpoints-garbage-empty-backend-desc">Architecture showing HTTP requests entering garbage, empty, and getIP Go handlers, with route aliases and their distinct response responsibilities.</desc>
+      <defs>
+        <style>
+          .eyebrow { fill: #4f5d75; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 500; letter-spacing: .18em; }
+          .title { fill: #2d3142; font-family: 'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif; font-size: 28px; font-weight: 400; }
+          .subtitle { fill: #4f5d75; font-family: 'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 12px; font-weight: 400; }
+          .zone-label { fill: #7a8399; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 500; letter-spacing: .14em; }
+          .tag { fill: #4f5d75; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 600; letter-spacing: .08em; }
+          .node-name { fill: #2d3142; font-family: 'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 12px; font-weight: 600; }
+          .tech { fill: #4f5d75; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 400; }
+          .note { fill: #7a8399; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 400; }
+          .focal-name { fill: #2d3142; font-family: 'Geist', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 12px; font-weight: 600; }
+          .focal-tag { fill: #eb6c36; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 600; letter-spacing: .08em; }
+          .legend { fill: #4f5d75; font-family: 'Geist Mono', 'Noto Sans Mono CJK SC', monospace; font-size: 8px; font-weight: 400; }
+        </style>
+        <marker id="librespeed-go-endpoints-garbage-empty-backend-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#4f5d75"/>
+        </marker>
+        <marker id="librespeed-go-endpoints-garbage-empty-backend-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#eb6c36"/>
+        </marker>
+        <marker id="librespeed-go-endpoints-garbage-empty-backend-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#2e5aa8"/>
+        </marker>
+      </defs>
+
+      <rect width="960" height="600" fill="#f5f5f5"/>
+
+      <text x="40" y="32" class="eyebrow">ENDPOINT OVERVIEW · SOURCE @ 59CFF12</text>
+      <text x="40" y="68" class="title">三个端点，三条职责：路径如何进入 handler</text>
+      <text x="40" y="96" class="subtitle">garbage 产出字节；empty 接住请求体；getIP 返回身份结果</text>
+
+      <!-- Zones -->
+      <rect x="40" y="128" width="184" height="376" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="240" y="128" width="444" height="376" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="704" y="128" width="216" height="376" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="52" y="132" width="104" height="16" rx="4" fill="#f5f5f5"/>
+      <text x="104" y="144" class="zone-label" text-anchor="middle">HTTP ENTRY</text>
+      <rect x="252" y="132" width="148" height="16" rx="4" fill="#f5f5f5"/>
+      <text x="326" y="144" class="zone-label" text-anchor="middle">ROUTE → HANDLER</text>
+      <rect x="716" y="132" width="112" height="16" rx="4" fill="#f5f5f5"/>
+      <text x="772" y="144" class="zone-label" text-anchor="middle">OBSERVATION</text>
+
+      <!-- Connectors: the router uses three distinct attach points. -->
+      <line x1="132" y1="228" x2="132" y2="300" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <path d="M200,316 H220 Q228,316 228,308 V212 Q228,204 236,204 H260" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <line x1="200" y1="332" x2="260" y2="332" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <path d="M200,348 H220 Q228,348 228,356 V452 Q228,460 236,460 H260" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <line x1="660" y1="204" x2="744" y2="204" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <line x1="660" y1="332" x2="744" y2="332" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <line x1="660" y1="460" x2="744" y2="460" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+
+      <!-- HTTP client and server router -->
+      <rect x="64" y="164" width="136" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="64" y="164" width="136" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="72" y="172" width="48" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="96" y="184" class="tag" text-anchor="middle">CLIENT</text>
+      <text x="132" y="204" class="node-name" text-anchor="middle">HTTP client</text>
+      <text x="132" y="224" class="tech" text-anchor="middle">method + path</text>
+
+      <rect x="64" y="300" width="136" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="64" y="300" width="136" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="72" y="308" width="32" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="88" y="320" class="tag" text-anchor="middle">GO</text>
+      <text x="132" y="340" class="node-name" text-anchor="middle">ListenAndServe</text>
+      <text x="132" y="360" class="tech" text-anchor="middle">chi route table</text>
+
+      <!-- Focal garbage handler -->
+      <rect x="260" y="164" width="400" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="260" y="164" width="400" height="80" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <rect x="272" y="172" width="64" height="16" rx="4" fill="transparent" stroke="#eb6c36" stroke-width="0.8"/>
+      <text x="304" y="184" class="focal-tag" text-anchor="middle">HANDLER</text>
+      <text x="460" y="204" class="focal-name" text-anchor="middle">garbage(w, r)</text>
+      <text x="460" y="224" class="tech" text-anchor="middle">GET /garbage · /backend/garbage</text>
+      <text x="460" y="240" class="tech" text-anchor="middle">.php aliases · randomData × chunks · cap 1024 MiB</text>
+
+      <!-- Focal empty handler -->
+      <rect x="260" y="292" width="400" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="260" y="292" width="400" height="80" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <rect x="272" y="300" width="64" height="16" rx="4" fill="transparent" stroke="#eb6c36" stroke-width="0.8"/>
+      <text x="304" y="312" class="focal-tag" text-anchor="middle">HANDLER</text>
+      <text x="460" y="332" class="focal-name" text-anchor="middle">empty(w, r)</text>
+      <text x="460" y="352" class="tech" text-anchor="middle">/empty · /backend/empty · .php aliases</text>
+      <text x="460" y="368" class="tech" text-anchor="middle">GET ping + POST upload → Discard</text>
+
+      <!-- Shallow getIP row retained for the article's endpoint overview -->
+      <rect x="260" y="420" width="400" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="260" y="420" width="400" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="272" y="428" width="64" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="304" y="440" class="tag" text-anchor="middle">HANDLER</text>
+      <text x="460" y="460" class="node-name" text-anchor="middle">getIP(w, r)</text>
+      <text x="460" y="480" class="tech" text-anchor="middle">GET /getIP · /backend/getIP · .php aliases</text>
+      <text x="460" y="496" class="tech" text-anchor="middle">client IP → JSON result</text>
+
+      <!-- Client-visible response responsibilities -->
+      <rect x="744" y="164" width="160" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="744" y="164" width="160" height="80" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="756" y="172" width="32" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="772" y="184" class="tag" text-anchor="middle">OUT</text>
+      <text x="824" y="204" class="node-name" text-anchor="middle">download bytes</text>
+      <text x="824" y="224" class="tech" text-anchor="middle">octet-stream response</text>
+
+      <rect x="744" y="292" width="160" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="744" y="292" width="160" height="80" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="756" y="300" width="32" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="772" y="312" class="tag" text-anchor="middle">OUT</text>
+      <text x="824" y="332" class="node-name" text-anchor="middle">empty response</text>
+      <text x="824" y="352" class="tech" text-anchor="middle">body drained · 200 / 400</text>
+
+      <rect x="744" y="420" width="160" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="744" y="420" width="160" height="80" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <rect x="756" y="428" width="32" height="16" rx="4" fill="transparent" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="772" y="440" class="tag" text-anchor="middle">OUT</text>
+      <text x="824" y="460" class="node-name" text-anchor="middle">identity JSON</text>
+      <text x="824" y="480" class="tech" text-anchor="middle">getIP result</text>
+
+      <text x="40" y="520" class="note">SHARED CONTRACT · .php aliases remain mapped · ?cors=true adds CORS headers</text>
+
+      <line x1="40" y1="540" x2="920" y2="540" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="556" class="legend">LEGEND</text>
+      <rect x="112" y="544" width="24" height="16" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <text x="148" y="556" class="legend">HTTP input / response</text>
+      <rect x="328" y="544" width="24" height="16" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="364" y="556" class="legend">Go route / handler</text>
+      <rect x="544" y="544" width="24" height="16" rx="4" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <text x="580" y="556" class="legend">handler focus</text>
+      <line x1="736" y1="552" x2="768" y2="552" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-go-endpoints-garbage-empty-backend-arrow)"/>
+      <text x="780" y="556" class="legend">request / data path</text>
+    </svg>
+  </main>
+</body>
+</html>

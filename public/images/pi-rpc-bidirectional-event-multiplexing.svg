@@ -1,75 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="seq-title seq-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="seq-title">跨进程异步挂起与 Human-in-the-Loop 门禁交互时序</title>
+  <desc id="seq-desc">时序图展示应用层扩展触发 ctx.ui.select 时，Pi 核心进程如何创建临时 Promise 挂起执行并通过 Stdout/Stdin 与外部 VSCode IDE 宿主完成跨进程人机交互确认闭环。</desc>
+  <defs>
+    <marker id="seq-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="seq-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi RPC 双向流多路复用 (Multiplexing) 与连接保活拓扑</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">短连接轮询 (高延迟、高 CPU 开销) vs 单 TCP/Stdio 连接多路复用 (请求-响应、流式上报、心跳 Ping-Pong 共享单通道)</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Short Polling -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ HTTP 短轮询：高延迟与握手开销</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CROSS-PROCESS ASYNC SUSPENSION · HUMAN-IN-THE-LOOP RPC SEQUENCE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">跨进程异步门禁与人机交互时序</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">扩展调用 ctx.ui.select ➔ 核心挂起 Promise ➔ Stdout 派发 ui_request ➔ IDE 用户授权 ➔ Stdin 回填恢复执行</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#f87171">每 200ms 发起一次 HTTP GET /agent/status：</text>
-          
-          <text y="38" fill="#ef4444">架构劣势：</text>
-          <text y="52" fill="#fca5a5">• 反复 TCP 握手与 TLS 加解密，浪费大量 CPU</text>
-          <text y="68" fill="#ef4444">• 存在 200ms 固定时延，无法做到丝滑逐字打字机</text>
-          <text y="84" fill="#ef4444">• 用户按 Ctrl+C 中止无法即时打断后台正在执行的任务！</text>
-          
-          <text y="106" fill="#f87171">🔴 传统 Web 轮询难以满足实时交互需求！</text>
-        </g>
+  <!-- Participant Lifelines (4 lanes: x=110, 350, 590, 830) -->
+  <g transform="translate(0, 136)">
+    <!-- Lifelines -->
+    <line x1="110" y1="36" x2="110" y2="380" stroke="rgba(20,20,19,0.16)" stroke-width="1" stroke-dasharray="4 4"/>
+    <line x1="350" y1="36" x2="350" y2="380" stroke="rgba(20,20,19,0.16)" stroke-width="1" stroke-dasharray="4 4"/>
+    <line x1="590" y1="36" x2="590" y2="380" stroke="rgba(20,20,19,0.16)" stroke-width="1" stroke-dasharray="4 4"/>
+    <line x1="830" y1="36" x2="830" y2="380" stroke="rgba(20,20,19,0.16)" stroke-width="1" stroke-dasharray="4 4"/>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">生产痛点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 延迟高、体验卡顿；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 缺乏实时双向控制能力；</text>
-        <text x="10" y="62" font-size="7.5" fill="#dc2626">• 必须升级为双向流通道！</text>
-      </g>
+    <!-- Participant Headers -->
+    <g transform="translate(30, 0)">
+      <rect width="160" height="36" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <text x="80" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">1. Extension</text>
+    </g>
+    <g transform="translate(270, 0)">
+      <rect width="160" height="36" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="80" y="22" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700" text-anchor="middle">2. Pi Core (Harness)</text>
+    </g>
+    <g transform="translate(510, 0)">
+      <rect width="160" height="36" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <text x="80" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">3. PiClient SDK</text>
+    </g>
+    <g transform="translate(750, 0)">
+      <rect width="160" height="36" rx="4" fill="#141413"/>
+      <text x="80" y="22" fill="#ffffff" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">4. Host (VSCode / UI)</text>
     </g>
 
-    <!-- Right: Multiplexing Stream -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ Pi RPC 多路复用：0 延迟双向全双工</text>
+    <!-- Message 1 (y=70): Ext -> Core -->
+    <text x="230" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">1. ctx.ui.select(prompt, ["Yes", "No"])</text>
+    <line x1="110" y1="70" x2="350" y2="70" stroke="#141413" stroke-width="1.2" marker-end="url(#seq-arr)"/>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">单通道双向事件流多路复用：</text>
-          
-          <text y="36" fill="#86efac">1. 下行流: 毫秒级推送 Thought &amp; Tool 执行事件</text>
-          <text y="50" fill="#38bdf8">2. 上行流: 客户端随时注入 userInput 或 abort 取消</text>
-          <text y="64" fill="#34d399">3. 心跳检测: 5s Ping-Pong 自动重连自愈</text>
-          <text y="78" fill="#4ade80">4. 延迟 &lt; 1ms，CPU 占用近乎 0%！</text>
-          
-          <text y="104" fill="#4ade80">✓ 打造极致流畅、电光火石般的开发体验！</text>
-        </g>
+    <!-- Self Loop 2 (y=110): Core Suspends -->
+    <text x="365" y="105" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. create pendingPromise(req_1) &amp; Suspend Tool</text>
+    <path d="M 350 95 L 420 95 L 420 125 L 350 125" fill="none" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#seq-arr-accent)"/>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 兼具极致性能与优雅的工程抽象；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 支撑 IDE 插件与 CLI 共享同一套 Agent 后台；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代化 Agent SDK 行业标杆！</text>
-      </g>
-    </g>
+    <!-- Message 3 (y=160): Core -> SDK -->
+    <text x="470" y="152" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">3. Stdout: {"type": "ui_request", "requestId": "req_1"}</text>
+    <line x1="350" y1="160" x2="590" y2="160" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#seq-arr-accent)"/>
+
+    <!-- Message 4 (y=210): SDK -> Host -->
+    <text x="710" y="202" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">4. emit("ui_request") ➔ Show UI Prompt</text>
+    <line x1="590" y1="210" x2="830" y2="210" stroke="#141413" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+
+    <!-- Self Loop 5 (y=250): Host Interaction -->
+    <text x="845" y="245" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">5. 用户在 VSCode 点击 "Yes (Allow)"</text>
+    <path d="M 830 235 L 900 235 L 900 265 L 830 265" fill="none" stroke="#141413" stroke-width="1.2" marker-end="url(#seq-arr)"/>
+
+    <!-- Message 6 (y=300): Host -> SDK -> Core (Stdin) -->
+    <text x="590" y="292" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">6. Stdin: {"type": "ui_response", "requestId": "req_1", "choice": "Yes"}</text>
+    <line x1="830" y1="300" x2="350" y2="300" stroke="#e85d3f" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#seq-arr-accent)"/>
+
+    <!-- Message 7 (y=350): Core -> Ext -->
+    <text x="230" y="342" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">7. resolve("Yes") ➔ 放行工具并恢复执行</text>
+    <line x1="350" y1="350" x2="110" y2="350" stroke="#141413" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#seq-arr)"/>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">本地进程与 SDK 事件派发时序</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Pi 核心挂起 Promise 与跨进程 Stdin/Stdout 回填授权核心</text>
 </svg>

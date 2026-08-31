@@ -32,10 +32,6 @@ TCP 是字节流协议，没有"消息"概念。应用写 12 字节，内核何�
 
 两个策略的代价都是"延迟"，收益都是"少包"。在本地回环（RTT ≈ 0）上，两者几乎无感；一旦 RTT 变大，就成了互相亏欠。
 
-
-
-![Nagle 算法与延迟确认 (Delayed ACK) 40ms 死锁踩踏时序模型](../../../public/images/nagle-algorithm-vs-delayed-ack-deadlock.svg)
-
 ## 二、踩踏现场：谁在等谁
 
 经典死锁（Linux 内核注释里叫 "delayed ACK debacle"）：

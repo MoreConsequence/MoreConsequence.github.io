@@ -52,55 +52,33 @@
 
 ## 五、 图表与视觉工程规范（Diagrams & Assets）
 
-文章配图是技术表达的核心支柱。在需要表现系统架构、数据流、时序交互、状态机、对比矩阵或关键算法机理时，**必须调用 `diagram-design` 技能包**，绘制具有现代科技出版级（Tech Editorial）质感的独立 SVG 矢量图，并与轻量横向 Mermaid 流程图形成互补对照。
+图表必须先解决读者的关系理解，再解决装饰问题。若一段话或一个表格能表达同样的信息，就不要强行画图。
 
-### 1. 技能调用与图表生成规范
-- 深度剖析、复杂拓扑与对比图表：**一律使用 `diagram-design` 技能**生成原生自包含 SVG，保存至 `public/images/<name>.svg`；
-- 图表风格严格遵循 `diagram-design` 的现代浅色工程主题（Crisp Light Theme），避免单调简陋的纯文本或低质感手绘；
-- 避免过度复杂的纵向层级，善用 `diagram-design` 提供的泳道（Swimlane）、时序（Sequence）、三通道并行流（Three-Lane Parallel Flow）等工业级拓扑模式。
+### 1. 唯一规范来源
 
-### 2. 相对路径与双端兼容契约
-- 正文中所有图片引用一律使用相对路径：`![描述](../../../public/images/<name>.svg)`（3 级深度）。
-- 底层 Markdown 编译管线（`lib/content/markdown.ts` 中的 `rehypeNormalizeImagePaths`）已自动处理路径映射。
-- 此契约保证在 **IDE 本地 Markdown 预览（Cursor / VS Code 分栏预览）** 与 **Next.js 本地/线上 Web 站点** 两端均能 100% 正常秒开预览。
+- 使用当前 Agent 的 `~/.codex/skills/diagram-design/SKILL.md`；来源仓库是 `https://github.com/cathrynlavery/diagram-design`。只认当前 Agent 的安装路径，不要把 Skill 的颜色表、字体表和完整反模式复制进本文件。
+- 每次绘图前读取主 Skill、选定的 `references/type-*.md`；行为/状态是主轴时再读取 `semantic-patterns.md`，导出 SVG/PNG 时读取 `export.md`。
+- 绘制前先确定并说明四个参数：图表类型、尺寸 preset、detail、audience；同时记录会合并、折叠或删除的内容。无法确定时保留假设，不伪造结构。
 
-### 3. 图表布局与尺寸规范
-- **横向流式优先**：杜绝纵向过度拉伸（如 `flowchart TD`），全面采用宽屏横向拓扑（`direction LR` / `viewBox="0 0 960 H"`），彻底避免高分屏拉伸失真。
-- **无交叉平行流（Zero Crossing）**：多通道数据流采用平行管道布局，严禁连线横穿中间其他无关节点卡片。
-- **数学级连线贴合**：箭头端点坐标必须精准抵拢目标卡片边框（0px 间隙、0 悬空、0 穿模）。
+### 2. 资产生成合同
 
-### 4. 色彩与视觉调性（Tech Editorial Palette）
-- **杜绝红绿等高饱和度剧烈撞色**。
-- **对照组（传统/反面做法）**：统一使用沉稳内敛的深板岩灰（Slate `#64748b` + 背景 `#f8fafc`）。
-- **生产解法（标准做法）**：使用高通透科技蓝（Tech Blue `#2563eb`），关键核心组件使用单一暖橙焦点（`#ea580c`）。
-- 遵循单图 1-Accent 聚焦原则，背景使用清爽白底与精致网格微底纹（`#cbd5e1` 细点）。
+- HTML 是图表的生成源和唯一编辑源：使用内联 SVG、静态输出；按 Skill 的导出流程生成最终 SVG。不要只手工改最终 SVG。
+- 文章资产放在 `public/images/`；正文图片引用固定使用 `../../../public/images/<name>.svg`。`out/` 只由 `npm run build` 生成，禁止手工编辑。
+- 重绘旧图只继承已核对的事实和关系，不继承旧布局、配色、口号或错误路径；合并/删减项写入对应的 dated evidence fidelity ledger。
+- 图内每个路径、数字、性能或安全断言都必须能追溯到当前源码、官方资料或 dated evidence。没有证据的“高并发、10Gbps、零拷贝、100% 兼容”等宣传性文案删除，不把图表当作证据本身。
 
-### 5. 字体与标签渲染
-- SVG 统一采用系统无衬线字体栈（`ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei'`）与等宽字体栈（`ui-monospace`），严禁依赖外部网络字体。
-- 严禁在 SVG `<text>` 中残留 Markdown 符号（如 `**粗体**`），统一使用标准的 `<tspan font-weight="700">`。
+### 3. 最小视觉与语义约束
 
-### 6. Mermaid 编写与工程渲染规范
-- **一律横向优先（`flowchart LR` / `direction LR`）**：严禁无理由使用纵向拉伸的 `flowchart TD / TB`，彻底杜绝高分屏下出现极端狭长畸变与长宽比失调；
-- **节点文案结构与换行**：节点内文案统一使用 `Node["主标题<br/>(补充说明)"]` 结构，单行不超过 14 个汉字，主动使用 `<br/>` 换行，杜绝文字溢出截断；
-- **连线标签与防遮挡**：连线说明使用 `-->|简洁动作|`，严禁在标签内嵌套复杂符号或冲突字符（如 `->`、内部双引号等）；连线与节点边框保持安全间隙，杜绝相互覆盖；
-- **与 SVG 矢量图分工互补**：Mermaid 专用于轻量级逻辑主线流转（高可读性、高检索性），独立 SVG 专用于复杂工业拓扑与多维时序；两者风格色彩严格统一于 Tech Editorial 现代浅色调。
+- 优先使用干净浅色纸面、层次化描边和 1–2 个焦点色；禁止阴影、深色代码块、彩虹式节点和默认等宽卡片网格。
+- 关系必须与图名一致：分层图不要叫 dependency graph；多 URL 指向同一 Handler 要画收敛关系；三列字符串映射若无额外关系，改用 Markdown 表格。
+- 遵循 Skill 的 4px 网格、正交圆角连接、标签遮罩、独立 attach point、无非端点穿线、CJK fallback 和可访问 SVG（`role="img"`、前缀 `<title>` / `<desc>`）。具体数值以 Skill 和类型参考为准，不在本文件维护副本。
+- Mermaid 只承担轻量逻辑主线，默认横向 `flowchart LR`；复杂拓扑、时序、分层和关系图使用符合 Skill 的 SVG。
 
-### 7. SVG 几何、图层与箭头防错红线（SVG Geometry, Z-Index & Marker Safeguards）
-- **Marker 箭头定义与自动旋转契约（No Manual Inversion）**：
-  - SVG `<marker>` 的多边形顶点一律使用正向右指定义：`points="0 0, 8 3, 0 6"`，并设置 `orient="auto"` 与 `refX="7"`；
-  - **严禁**为了反向绘制（如从右向左回包）手工定义反向顶点（如 `8 0, 0 3, 8 6`），否则与 `orient="auto"` 叠加会发生二次反向，导致箭头严重错误反指！
-- **Painter's Algorithm 图层顺序约束（Z-Order By DOM）**：
-  - SVG 内部元素没有 CSS `z-index`，绘制层级完全由 DOM 出现顺序决定（后绘制覆盖先绘制）；
-  - **严格顺序**：`底图背景画布 -> 区域/阶段底板卡片 -> 纵向生命线 (Lifeline) / 连线 -> 连线标签与文本 -> 实体卡片 (Actor/Node) 与高亮浮层`；
-  - **严禁**将底板卡片写在纵向虚线生命线之后，杜绝生命线被底板卡片不透明白色背景遮盖切断。
-- **标签与连线防切线规范（Connector Non-Interference）**：
-  - 连线说明标签（Badge/Mask）必须位于连线垂直上方（或侧边）至少 6~8px，严禁将标签矩形中心对齐在连线上导致彩色数据管道被切断；
-  - 数据管道若代表特定通信阶段，连线垂直高度必须与两侧实体卡片中轴线严格对齐（数学级垂直居中）。
-- **多列矩阵等宽对称与文本留白（Grid Symmetry & Text Safety）**：
-  - 对比卡片一律按总可用宽度进行数学等分（如 4 列等宽 185px），内边距统一 $\ge 12px$；
-  - 单行文本字符数严格限制在卡片宽度 85% 以内，杜绝文本触碰边框或溢出。
-- **单图 1-Accent 聚焦原则（Color Restraint）**：
-  - 基础卡片与连线统一使用板岩灰（`#64748b`）与高通透科技蓝（`#2563eb`），关键焦点与黑洞吸收等核心组件使用单一暖橙（`#ea580c`），严禁红绿高饱和度撞色。
+### 4. 图表验证
+
+- 对每个 HTML 工作源运行安装 Skill 的 `scripts/self_check.py`，对导出的 SVG 做 XML 解析和浏览器渲染检查；桌面和窄屏都要看文字是否重叠、裁切或失去层级。
+- 仓库若存在几何校验脚本就运行；不存在时明确记录“不可用”，不得把未运行的检查写成通过。
+- 文章或图片发生变化时运行 `npm test`、`npm run lint`、`npm run build`、`git diff --check`，并检查目标 `out/` 页面和资源。本地 build/server 不等于 GitHub Pages 已部署。
 
 ## 六、 格式与可读性
 
@@ -143,7 +121,7 @@
 | 单个事实、链接或段落 | 定点来源核对；必要时目标 Markdown 编译 | 全文或全库已审 |
 | `draft: true` 文章 | development 环境读取目标 source，并用 `compileMarkdown` 断言 HTML/TOC；运行文章直接实验 | production 列表、发布或部署已验证 |
 | 文章直接实验 | 目标 README/入口命令；记录 dated evidence | 根测试绿色等于实验正确 |
-| production 内容变化 | production pipeline 实测 slug 顺序；`npm test`、`npm run lint`、`npm run build` | GitHub Pages 已发布 |
+| production 内容或图片变化 | production pipeline 实测 slug 顺序；`npm test`、`npm run lint`、`npm run build` | GitHub Pages 已发布 |
 | 站点代码/渲染变化 | `npm test`、`npm run lint`、`npm run build`；检查目标 `out/` marker 和渲染页面 | 线上缓存或部署已刷新 |
 
 检查结果必须区分：
@@ -155,9 +133,9 @@
 
 ## 十、 发布流程
 
-1. 保持 `draft: true`，先完成事实、证据、实验和 development 编译。
-2. 证据闸门通过后，本地改为 `draft: false`。
-3. 用 `readPostSources(dir, "production")` 实测当前 slug 顺序并更新 `tests/content.test.ts`。
+1. 新文章保持 `draft: true`，先完成事实、证据、实验和 development 编译；修改已发布文章时不为流程形式强行改草稿状态。
+2. 新文章证据闸门通过后，本地改为 `draft: false`；已发布文章保持原状态。
+3. 用 `readPostSources(dir, "production")` 实测当前 slug 顺序；只有顺序或筛选契约改变时才更新 `tests/content.test.ts`。
 4. 运行文章直接实验，以及 `npm test`、`npm run lint`、`npm run build`。
 5. 任一检查失败则恢复草稿状态或明确阻塞；所有本地检查通过后，也只能称“本地可发布”。
 6. **最终确认**：待用户审阅确认并授权后，方可进行后续 Git 提交与发布流程。

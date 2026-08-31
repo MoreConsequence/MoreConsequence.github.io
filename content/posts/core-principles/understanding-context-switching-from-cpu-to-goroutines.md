@@ -367,10 +367,6 @@ __switch_to_asm:
 上下文切换总开销 = 显性物理耗时 (Direct Cost) + 隐性微架构污染 (Indirect Cost)
 ```
 
-![CPU 缓存与 TLB 失效在进程切换时的隐性开销分析图](../../../public/images/tlb-cache-miss-diagram.svg)
-
-*图注：进程上下文切换对 CPU 微架构造成的隐性惩罚——写入 CR3 引发 TLB 清空，新进程执行初期遭遇高昂的 4 级页表遍历；原有 L1/L2 热点缓存行被驱逐，引发大量 Core Stall 停顿等待。*
-
 ### 4.1 隐性成本一：TLB Invalidation (页表高速缓存失效)
 
 TLB (Translation Lookaside Buffer) 是 CPU 内部专门用于将虚拟地址快速翻译为物理地址的高速 SRAM 缓存。

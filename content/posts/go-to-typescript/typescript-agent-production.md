@@ -83,10 +83,6 @@ try {
 
 这比“成功后才 `executed.add(key)`”多表达了一件事：并发调用能够共享执行结果，失败可以被观察到，而不是被伪装成已完成。它仍有明确限制：进程重启丢状态，多实例不共享，第一个执行成功但响应丢失时仍需要持久化的结果记录来处理未知结果。
 
-
-
-![事务发件箱 (Transactional Outbox) 与 PostgreSQL CDC 异步事件拓扑](../../../public/images/distributed-outbox-pg-cdc-flow.svg)
-
 ## 三、成本单位：`/1k` 是公式的一部分
 
 模拟费率是输入 `$0.01 / 1k tokens`、输出 `$0.03 / 1k tokens`。正确计算是：

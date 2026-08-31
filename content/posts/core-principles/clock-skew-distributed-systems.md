@@ -31,10 +31,6 @@ elapsed := t2.Sub(t1)     // 同一进程内优先使用 monotonic reading
 
 `t2.Sub(t1)` 在两个 `time.Time` 都保留 monotonic reading 时使用单调读数；NTP 把墙上时钟拨回一小时，进程内的测量仍不依赖该跳变。它也不是跨睡眠、跨进程或跨机器的绝对保证。一旦**持久化**（写数据库、序列化传远程），单调读数会被丢弃，只剩墙上时钟——**回拨风险随之而来**。这就是为什么“比较本机经过时间”要留在进程内，而“记录时间点”必须明确接受墙上钟的误差。
 
-
-
-![Google TrueClock [earliest, latest] 不确定性区间与 Commit Wait 时钟等待](../../../public/images/trueclock-time-uncertainty-interval-commit-wait.svg)
-
 ## 二、回拨从哪来：NTP 的 step 与 slew
 
 NTP 客户端发现本机与服务器偏差时，有两种校准方式：

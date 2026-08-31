@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-ddos-xdp-mitigation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-ddos-title cdn-ddos-desc">
+  <title id="cdn-ddos-title">边缘多层级 DDoS 分布式清洗与 eBPF/XDP 线速防御架构</title>
+  <desc id="cdn-ddos-desc">流程图展示 Anycast 空间稀释将 10Tbps 洪峰拆解至每机房 33Gbps，并由 eBPF/XDP 在网卡驱动层实现纳秒级线速清洗。</desc>
+  <defs>
+    <marker id="cdn-ddos-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-ddos-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EDGE SECURITY · MULTI-TIER DDOS MITIGATION PIPELINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">边缘多层级 DDoS 清洗与 eBPF/XDP 防御架构</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Anycast 空间稀释将 10Tbps 洪峰拆解至 300+ PoP，网卡驱动层 eBPF/XDP 纳秒级丢包根绝内核软中断打爆</text>
+
+  <!-- Stage 1: Ingress Attack Flood (x=40..230, w=190) -->
+  <g transform="translate(40, 140)">
+    <rect width="190" height="330" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">INGRESS</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">海量洪峰入站</text>
+
+    <rect x="14" y="48" width="162" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="70" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全球攻击体量</text>
+    <text x="24" y="90" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Peak: 10 Tbps</text>
+    <text x="24" y="108" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">PPS: ≥ 1.2 亿包/秒</text>
+
+    <rect x="14" y="132" width="162" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="154" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">常见攻击向量</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• SYN Flood 握手洪泛</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• UDP/DNS 放大反射</text>
+
+    <rect x="14" y="216" width="162" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">直连源站后果</text>
+    <text x="24" y="258" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">单机房出口瞬间打满</text>
+    <text x="24" y="278" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Conntrack 表溢出</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">源站完全不可用</text>
+  </g>
+
+  <!-- Arrow 1 (x=230..260) -->
+  <line x1="230" y1="305" x2="260" y2="305" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-ddos-arr)"/>
+
+  <!-- Stage 2: Anycast Spatial Dispersion (x=260..460, w=200) -->
+  <g transform="translate(260, 140)">
+    <rect width="200" height="330" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TIER 1</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Anycast 空间稀释</text>
+
+    <rect x="14" y="48" width="172" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="70" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全球宣告机制</text>
+    <text x="24" y="90" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">300+ PoP 共同宣告</text>
+    <text x="24" y="108" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">BGP 最短 AS 路径吸附</text>
+
+    <rect x="14" y="132" width="172" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="154" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">流量打散收益</text>
+    <text x="24" y="174" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">每 PoP 仅 ~33 Gbps</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">化整为零，本地消化</text>
+
+    <rect x="14" y="216" width="172" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">拓扑吸附分布</text>
+    <text x="24" y="258" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 北美机房吸附本地肉鸡</text>
+    <text x="24" y="278" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 欧洲/亚太本地阻截</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">跨洋链路完全无流量污染</text>
+  </g>
+
+  <!-- Arrow 2 (x=460..490) -->
+  <line x1="460" y1="305" x2="490" y2="305" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-ddos-arr-accent)"/>
+
+  <!-- Stage 3: eBPF/XDP Line-rate Drop (x=490..700, w=210) - Focal Stage -->
+  <g transform="translate(490, 140)">
+    <rect width="210" height="330" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TIER 2</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">eBPF/XDP 线速清洗</text>
+
+    <rect x="14" y="48" width="182" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="70" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">执行位置与延迟</text>
+    <text x="24" y="90" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">NIC Driver 驱动层</text>
+    <text x="24" y="108" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">单包判定 ≤ 10ns</text>
+
+    <rect x="14" y="132" width="182" height="74" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="154" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心清洗机理</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 零 sk_buff 内存分配</text>
+    <text x="24" y="192" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">XDP_DROP 极速抛弃</text>
+
+    <rect x="14" y="216" width="182" height="96" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单机吞吐表现</text>
+    <text x="24" y="258" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">≥ 4000 万 PPS</text>
+    <text x="24" y="278" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">100Gbps 网卡满线速丢弃</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">CPU 软中断使用率 &lt; 5%</text>
+  </g>
+
+  <!-- Arrow 3 (x=700..730) -->
+  <line x1="700" y1="305" x2="730" y2="305" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-ddos-arr)"/>
+
+  <!-- Stage 4: WAF & Clean Traffic Origin (x=730..920, w=190) -->
+  <g transform="translate(730, 140)">
+    <rect width="190" height="330" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TIER 3</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">七层净化与回源</text>
+
+    <rect x="14" y="48" width="162" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="70" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">七层 WAF 规则</text>
+    <text x="24" y="90" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">JA4 协议指纹识别</text>
+    <text x="24" y="108" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分布式令牌桶频控</text>
+
+    <rect x="14" y="132" width="162" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="154" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">恶意流量拦截</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 阻断 OWASP Top 10</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• JS 算力质询过滤爬虫</text>
+
+    <rect x="14" y="216" width="162" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">源站 100% 纯净</text>
+    <text x="24" y="258" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">真实 IP 严格隐藏</text>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">回源仅剩有效业务流</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">99.999% 可用率保障</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">入站与七层清洗阶段</text>
+  <rect x="300" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">核心 eBPF/XDP 网卡线速清洗层</text>
+  <line x1="530" y1="556" x2="554" y2="556" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-ddos-arr-accent)"/>
+  <text x="562" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">逐级稀释清洗数据流</text>
+</svg>
+</main>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" role="img" aria-labelledby="hlc-merge-sequence-title hlc-merge-sequence-desc">
+  <title id="hlc-merge-sequence-title">HLC 跨节点合并时序</title>
+  <desc id="hlc-merge-sequence-desc">Node A 在墙钟 100 处本地写入得到 HLC(100,0) 并发送给 Node B；B 的墙钟仅 98，但接收时取 max 把 l 提到 100，平局下逻辑计数器加一得到 HLC(100,1)，因果序因此保留，与物理时钟快慢无关。</desc>
+
+  <defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+    
+    
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <!-- Title -->
+  <text x="40" y="48" fill="#2d3142" font-size="24" font-family="'Instrument Serif', Georgia, serif">HLC 跨节点合并：墙钟落后也能保因果</text>
+  <text x="40" y="72" fill="#4f5d75" font-size="12" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">接收方 B 墙钟比发送方 A 慢 2ms，仍靠 max(l) + 逻辑计数器维持序</text>
+
+  <!-- Lifelines -->
+  <line x1="240" y1="144" x2="240" y2="430" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <line x1="640" y1="144" x2="640" y2="430" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+  <!-- Activation bars -->
+  <rect x="236" y="164" width="8" height="44" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="636" y="284" width="8" height="60" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+
+  <!-- Actor boxes -->
+  <rect x="160" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="240" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Node A</text>
+  <text x="240" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">墙钟基准 100</text>
+
+  <rect x="560" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="640" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Node B</text>
+  <text x="640" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">墙钟基准 98</text>
+
+  <!-- M1: A local write (self message) -->
+  <path d="M 240,180 H 208 V 196 H 240" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr)"/>
+  <rect x="176" y="148" width="136" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="244" y="157" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">本地写 pt=100 → (100,0)</text>
+
+  <!-- M2: A sends HLC(100,0) to B -->
+  <line x1="248" y1="312" x2="632" y2="312" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr)"/>
+  <rect x="372" y="292" width="136" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="440" y="301" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">携带 HLC(100,0)</text>
+
+  <!-- Merge note box (between lifelines) -->
+  <rect x="300" y="356" width="300" height="56" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1"/>
+  <text x="316" y="378" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">B 合并：l' = max(98, 100, 100) = 100</text>
+  <text x="316" y="396" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">平局 ⇒ c' = max(0,0)+1 = 1 → HLC(100,1)</text>
+
+  <!-- Bottom insight callout (coral focal) -->
+  <rect x="120" y="444" width="640" height="64" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="136" y="472" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">关键：B 墙钟(98) &lt; A 墙钟(100)，但 HLC(B)=(100,1) &gt; HLC(A)=(100,0)</text>
+  <text x="136" y="492" fill="#2d3142" font-size="11" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">因果序只由 max(l) + 逻辑计数器决定，与物理时钟快慢无关</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="528" x2="840" y2="528" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="548" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="542" width="10" height="10" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="138" y="551" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">关键结论</text>
+  <line x1="240" y1="547" x2="264" y2="547" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr)"/>
+  <text x="272" y="551" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">消息 / 激活条</text>
+</svg>

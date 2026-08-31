@@ -24,9 +24,7 @@ Claude Code、Codex、Pi 这类工具的共同结构是一条消息流水线之�
 
 Pi 把答案收进一个文件：`agent-loop.ts` 共 805 行（2026-08-23 复测 @b23741269；首篇基线 796 行 @5cd93f6），注释第一行就标明了设计定位——"循环内部统一用 AgentMessage，只在 LLM 调用边界转换为 Message"。
 
-
-
-![Agent Turn 与 Step 双层循环状态机：Idle -> Thinking -> ToolCalling -> Executing -> Responding](../../../public/images/agent-turn-step-fsm-state-machine.svg)
+---
 
 ## 二、双层循环：外层管 turn，内层管工具
 

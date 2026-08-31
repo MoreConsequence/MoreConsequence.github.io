@@ -25,10 +25,6 @@ series: "Go 的设计边界"
 
 所以语言层面的默认行为是：**需要独立生命周期时，转换就是新分配 + memcpy**。这不只是实现细节，也是安全承诺——只有编译器能证明结果不会逃逸，或调用者明确承担 `unsafe` 的共享存储合同，才有资格绕过拷贝。
 
-
-
-![string (16B) 与 []byte (24B) 内存结构体差异与只读性语义契约](../../../public/images/string-struct-vs-slice-header-layout.svg)
-
 ## 二、三类路径实测：默认拷贝、编译器临时转换与 unsafe 视图
 
 统一入口本机实测（Go 1.25.1、Darwin arm64、`-cpu=8`）：

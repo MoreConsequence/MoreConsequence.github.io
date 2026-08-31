@@ -82,10 +82,6 @@ SERVER_APPLIED id=order-1 at=…        ← 服务端视角：请求照常处理
 
 机制很直白：abort 关闭的是**客户端这边的等待**，而 HTTP 请求早已完整到达对端，服务端的 handler 会继续跑完。TCP 连接的中断不会给服务器发"请撤销你刚才要做的事"。把这两层混为一谈，就是"超时重试导致重复下单"这类事故的全部成因——[幂等性工程篇](/writing/idempotency-engineering)的 27 次乘法上界，起点正是这里。
 
-
-
-![协作式中止检查点 (Cooperative Cancellation Checkpoint) 状态流转](../../../public/images/async-task-cooperative-abort-checkpoint.svg)
-
 ## 四、工程答案：把副作用设计成可对账，而不是可阻止
 
 既然"事前阻止"只在窗口极窄的路径上成立，正确的设计目标就变成**让每个副作用事后可裁决**：

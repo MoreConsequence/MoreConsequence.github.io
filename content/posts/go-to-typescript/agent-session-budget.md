@@ -21,10 +21,6 @@ series: "从 Go 到 TypeScript"
 
 于是任何"先执行再记账"的策略都面临同一结构：最后一笔账永远可能超出余额。
 
-
-
-![Token 预算多维流控：每分钟 Token 计数器 (TPM) 与滑动窗口熔断算法](../../../public/images/token-bucket-sliding-window-rate-limit.svg)
-
 ## 二、四种刹车的对照实验
 
 固定分布（基础步长 6k + 15% 概率的 0~30k 尖峰）、300 个独立种子会话、预算 100k token：

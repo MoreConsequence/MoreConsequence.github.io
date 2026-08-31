@@ -99,9 +99,7 @@ export enum ErrorCategory {
 }
 ```
 
-
-
-![Pi 流式 SSE Chunk 分片重组与 Tool Call JSON 动态拼接机理](../../../public/images/pi-tutorial-sse-stream-chunk-reassembly.svg)
+---
 
 ## 四、动手实战：手写 RobustModelGateway
 

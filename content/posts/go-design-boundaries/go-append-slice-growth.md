@@ -41,10 +41,6 @@ newcap += (newcap + 3*threshold) >> 2
 
 **翻倍在 256 处停止，但后续不是简单的 `oldCap * 1.25`。** 公式会平滑过渡，且最后一次增长要满足新的长度；不同元素大小、追加步长、目标长度和 Go 版本都可能改变实际容量序列。文章中的数字来自真实 `append` probe，而不是手抄一组容量常数。
 
-
-
-![Go 1.18+ 切片扩容平滑过渡算法：从 2x 到 1.25x 的数学递推曲线](../../../public/images/go-slice-growth-algorithm-transition-curve.svg)
-
 ## 二、真实增长 probe：停止位置会改变累计搬运比例
 
 总搬运量按每次扩容前的旧长度累加。它近似回答“如果元素是固定宽度，运行时需要搬多少元素”，但不包含 allocator 清零、GC、cache 和真实设备行为。仓库 probe 使用真实 `append` 记录容量变化：

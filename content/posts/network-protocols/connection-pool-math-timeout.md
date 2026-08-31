@@ -71,10 +71,6 @@ Little 定律：一个稳定系统里，**在途请求数 L = 到达率 λ × �
 
 模拟结论复用两处：TCP 侧的排队见[握手排队的机制](/writing/tcp-syn-queue-backlog)，服务端侧的队列见后文。
 
-
-
-![连接泄漏排查机制：借出堆栈追踪 (Borrow Stacktrace) 与超时自动回收](../../../public/images/connection-pool-leak-detection-tracker.svg)
-
 ## 四、超时的分工：四把参数闸，各管一段
 
 连接池的参数多，最常被搞混的就是"这个超时到底在给谁设限"。表一张说清：

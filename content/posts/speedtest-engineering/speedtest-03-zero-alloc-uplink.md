@@ -88,29 +88,11 @@ export class MobileSpeedtestUploader {
 }
 ```
 
-
-
-![Linux splice 管道零拷贝黑洞：内核态 Socket 直通 /dev/null](../../../public/images/splice-pipe-zero-copy-sink.svg)
-
 ## 二、服务端 TCP Zero-Window 反压：测速断崖的幕后元凶
 
 这是上行测速服务端最隐蔽、最严重的系统级故障：
 
-```
-+-------------------------------------------------------------------------------------------+
-|                          TCP Zero-Window 零窗口反压导致上行测速断崖机制                     |
-|                                                                                           |
-|  [客户端 APP] ──(全速推流)──> [服务端内核套接字接收队列 (Recv-Q)] ──(应用层读取迟缓)──> [应用层] |
-|                                       │                                                   |
-|                                       ▼ 当 Recv-Q 填满溢出                                |
-|                         服务端内核协议栈自动向客户端发送: TCP ZeroWindow 通告报文          |
-|                                       │                                                   |
-|                                       ▼                                                   |
-|                      客户端操作系统的 TCP 发送引擎被强制挂起，上行速率瞬间暴跌至 0         |
-|                                       │                                                   |
-|                      数秒后服务端才慢吞吞把数据读走，通告 Window Update 恢复发送           |
-+-------------------------------------------------------------------------------------------+
-```
+![TCP Zero-Window 零窗口反压导致网卡上行队列拥塞与内核锁死机理](../../../public/images/speedtest-tcp-zero-window-backpressure-flow.svg)
 
 ### 1. 物理成因与机制
 TCP 是一种基于接收端滑动窗口的端到端流控协议。若服务端应用层在 `read()` 循环中做了任何耗时操作：
@@ -184,10 +166,6 @@ func (s *SpeedtestSinkServer) HandleUplinkConnection(conn net.Conn) {
 ```
 
 该实现单协程对数据的消费速度可达 **40Gbps+**，CPU 占用率极低，彻底杜绝了服务端产生 `TCP ZeroWindow` 反压的物理可能。
-
-
-
-![TCP 接收窗口自动调优：tcp_rmem 三元组与快速内存回收机制](../../../public/images/tcp-rmem-auto-tuning-reclaim.svg)
 
 ## 四、权威计量确认：客户端 Write vs 服务端 Read 差异
 

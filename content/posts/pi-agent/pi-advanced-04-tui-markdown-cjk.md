@@ -43,9 +43,7 @@ Chunk 3: "10;\n"
 
 如果仅使用 `str.slice(0, 80)` 来做终端 80 列宽度折行，遇到中文时终端实际输出宽度会变成 120 列，导致终端自动换行并破坏垂直布局！
 
-
-
-![Pi TUI 终端中英文 (CJK) 与 Emoji 字符宽度对齐与渲染算法](../../../public/images/pi-tui-wcwidth-cjk-layout-alignment.svg)
+---
 
 ## 二、CJK 字符宽度算法：手写轻量 `wcwidth`
 

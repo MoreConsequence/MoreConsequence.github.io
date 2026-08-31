@@ -1,105 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="lg-title lg-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="lg-title">805 行 Harness 核心双循环与三大终止闸门</title>
+  <desc id="lg-desc">流程架构图展示 Pi 的 agent-loop.ts 805 行双层循环架构与三大确定性终止闸门：Error/Aborted 立即退场、Length 截断整批作废重发，以及全体工具 Terminate 确认提前停。</desc>
+  <defs>
+    <marker id="lg-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="lg-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Agent 调度循环三大终止闸门：为什么大模型不会自己停下来</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">闸门 1: 自然完成判定 (finish_reason = stop) ｜ 闸门 2: 最大步数硬顶 (Max Steps = 50) ｜ 闸门 3: 重复调用哈希检测 (Anti-Loop Hash)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">AGENT HARNESS CONTROL · DUAL WHILE LOOPS &amp; THREE TERMINATION GATES</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">805 行 Harness 核心循环与三大终止闸门</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">外层 Turn 循环 + 内层工具循环 ➔ 闸门 1 (Error立即停) ➔ 闸门 2 (截断整批作废) ➔ 闸门 3 (全体确认)</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Dual While (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DUAL WHILE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">嵌套双循环</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">agent-loop.ts:170/174</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 外层 while: 管理用户 Turn</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 内层 while: 驱动工具收敛</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Separated Convergence Scopes</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">循环分界：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• "干活"与"换话题"彻底解耦；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 支持连续 10+ 次工具执行；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 工具不再请求时话题才结束。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <!-- Col 1 -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 闸门一：自然完成判定</text>
+  <!-- Col 2: Gate 1 (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GATE 1 · ABORT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">错误与中止</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">// 正常结束条件</text>
-          <text x="10" y="34" fill="#93c5fd">if (response.toolCalls.length === 0 &amp;&amp;</text>
-          <text x="16" y="48" fill="#93c5fd">    response.finishReason === 'stop') {</text>
-          <text x="16" y="66" fill="#34d399">  return Result.Done(response.text);</text>
-          <text x="10" y="80" fill="#93c5fd">}</text>
-          
-          <text x="10" y="104" fill="#4ade80">✓ 模型已得出最终结论，不再请求工具执行</text>
-          <text x="10" y="120" fill="#38bdf8">✓ 调度循环正常收敛退出。</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">error / aborted</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 立即终止，绝不盲目重试</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 触发 turn_end &amp; return</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Fail-Safe State Recovery</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 理想状态下的成功路径；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 此时向用户输出最终回答 Markdown；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 结束本轮 Turn 生命周期。</text>
-      </g>
-    </g>
-
-    <!-- Col 2 -->
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 闸门二：最大步数硬顶</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">// 兜底最大循环次数</text>
-          <text x="10" y="34" fill="#86efac">const MAX_STEPS = 50;</text>
-          <text x="10" y="50" fill="#86efac">if (currentStep &gt;= MAX_STEPS) {</text>
-          <text x="16" y="66" fill="#f87171">  throw new MaxStepsExceededError(</text>
-          <text x="22" y="80" fill="#fca5a5">    '达到最大步数限制，已强制终止'</text>
-          <text x="16" y="94" fill="#f87171">  );</text>
-          <text x="10" y="108" fill="#86efac">}</text>
-          <text x="10" y="124" fill="#34d399">✓ 物理级兜底，防止耗尽用户所有余额！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 限制单次任务的最大爆炸半径；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 防止模型陷入无休止的代码尝试；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 保证系统确定性运行。</text>
-      </g>
-    </g>
-
-    <!-- Col 3 -->
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 闸门三：重复调用哈希防死锁</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">// 检测相同工具参数连续调用</text>
-          <text x="10" y="34" fill="#fed7aa">hash = sha256(toolName + jsonArgs)</text>
-          <text x="10" y="50" fill="#fed7aa">if (historyHashes.count(hash) &gt;= 3) {</text>
-          <text x="16" y="68" fill="#f87171">  // 连续 3 次传入相同错误入参！</text>
-          <text x="16" y="84" fill="#34d399">  injectSystemFeedback(</text>
-          <text x="22" y="98" fill="#34d399">    '警告: 你正在陷入死循环，请尝试换一种方案'</text>
-          <text x="16" y="112" fill="#34d399">  );</text>
-          <text x="10" y="126" fill="#fed7aa">}</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 智能识别模型卡死在特定报错上的死结；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 动态注入系统反思提示词强制模型跳出死循环；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造极其聪慧自愈的 Agent 引擎！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">设计哲学：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 状态已在 Session 中落盘；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 优雅退场胜过死循环盲试；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保随时可以精准重放。</text>
   </g>
+
+  <!-- Col 3: Gate 2 (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GATE 2 · LENGTH</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">截断整批作废</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">stopReason === "length"</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 撞上限时整批工具全部作废</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• failToolCallsFromTruncated</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Zero Truncated Code Mutation</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">防护逻辑：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 截断参数可能畸变改错文件；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 拒绝执行任何残缺参数；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 回填提示让模型完整重发。</text>
+  </g>
+
+  <!-- Col 4: Gate 3 (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GATE 3 · TERM</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全体确认终止</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">every(f =&gt; terminate)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 只有全部工具声明停才停</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝部分任务未做完即退出</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Deterministic Batch Convergence</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">收敛语义：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 错误立即停，成功需全体确认；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• stopReason 属于模型；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 终止闸门属于 Harness！</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">双层循环架构与全体确认终止闸门</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">错误立即中止与 length 截断整批作废核心</text>
 </svg>

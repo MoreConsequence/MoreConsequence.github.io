@@ -1,74 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="am-title am-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="am-title">atomic 单指令硬件原语 vs sync.Mutex 状态机</title>
+  <desc id="am-desc">Go 并发同步原语架构图展示 atomic 单字原子硬件指令、sync.Mutex 三级争锁状态机（Fast/Spin/Slow Path）、复合不变量保护语义，以及选型决策分界线。</desc>
+  <defs>
+    <marker id="am-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="am-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">atomic (CAS) vs sync.Mutex 在不同争用程度下的物理延迟曲线</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">零争用 (atomic 7ns 完胜) vs 极高争用 (atomic 缓存一致性风暴暴跌至 128ns+，Mutex 排队反超)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SYNCHRONIZATION PRIMITIVES · ATOMIC SINGLE-WORD VS MUTEX INVARIANT STATE MACHINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">atomic 硬件原语 vs sync.Mutex 状态机</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">atomic (单字原子指令) vs sync.Mutex (三级状态机，保护复合不变量) ➔ 选型边界</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Atomic (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ATOMIC</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单字硬件指令</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">LOCK XADD / CAS</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 编译器直译为底层单条硬件原子指令</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 无锁对象、无自旋、无休眠队列</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Single-Word Hardware Primitive</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">语义局限：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅保证单个 64 位整数读写原子性；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 无法跨字段提供组合一致性；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 适合计数器与状态位标记。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: Mutex State Machine (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">MUTEX</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">三级争锁状态机</text>
 
-    <!-- Left Chart Area (520px) -->
-    <g transform="translate(30, 30)">
-      <line x1="40" y1="280" x2="480" y2="280" stroke="#94a3b8" stroke-width="1.5"/>
-      <line x1="40" y1="280" x2="40" y2="30" stroke="#94a3b8" stroke-width="1.5"/>
-      
-      <text x="480" y="295" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#64748b" text-anchor="end">并发 Goroutine 争用数 (1 → 64 核心)</text>
-      <text x="35" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#64748b">单次操作耗时 (纳秒 ns)</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Fast ➔ Spin ➔ Slow Path</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Fast: 单次 CAS 抢占 state (约 18ns)</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Spin: 活跃自旋 ➔ Slow: 信号量挂起</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Adaptive Contention Resolution</text>
 
-      <text x="30" y="284" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">0ns</text>
-      <text x="30" y="200" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">40ns</text>
-      <text x="30" y="120" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">80ns</text>
-      <text x="30" y="40" font-family="ui-monospace, monospace" font-size="8" fill="#94a3b8" text-anchor="end">140ns</text>
-
-      <line x1="40" y1="200" x2="480" y2="200" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
-      <line x1="40" y1="120" x2="480" y2="120" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
-      <line x1="40" y1="40" x2="480" y2="40" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
-
-      <!-- atomic curve (starts very low 7ns, skyrockets on heavy contention) -->
-      <path d="M 40 270 Q 200 240 320 140 T 460 50" fill="none" stroke="#ef4444" stroke-width="3"/>
-      <circle cx="40" cy="270" r="4" fill="#ef4444"/>
-      <circle cx="160" cy="250" r="4" fill="#ef4444"/>
-      <circle cx="320" cy="140" r="4" fill="#ef4444"/>
-      <circle cx="460" cy="50" r="5" fill="#ef4444"/>
-      <text x="465" y="54" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#dc2626">atomic.Add (高并发总线风暴 128ns+)</text>
-
-      <!-- Mutex curve (starts ~15ns, plateaus ~60-70ns due to queuing) -->
-      <path d="M 40 245 Q 160 210 320 180 T 460 160" fill="none" stroke="#2563eb" stroke-width="2.5"/>
-      <circle cx="40" cy="245" r="4" fill="#2563eb"/>
-      <circle cx="160" cy="210" r="4" fill="#2563eb"/>
-      <circle cx="320" cy="180" r="4" fill="#2563eb"/>
-      <circle cx="460" cy="160" r="4" fill="#2563eb"/>
-      <text x="465" y="164" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#1d4ed8">sync.Mutex (排队平稳 65ns)</text>
-    </g>
-
-    <!-- Right Summary Cards (300px) -->
-    <g transform="translate(560, 30)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="310" height="135" rx="6" fill="#fee2e2" stroke="#fca5a5"/>
-      <text x="12" y="20" font-size="10.5" font-weight="700" fill="#991b1b">🔴 atomic 并非银弹的原因</text>
-      <text x="12" y="38" font-size="8" fill="#7f1d1d">• 单个变量被 64 核同时 CAS 写入时：</text>
-      <text x="12" y="54" font-size="8" fill="#7f1d1d">• 触发 CPU MESI 缓存一致性协议狂发 Invalidate 广播</text>
-      <text x="12" y="70" font-size="8" fill="#7f1d1d">• 各核 L1/L2 Cache Line 频繁失效，总线拥堵</text>
-      <text x="12" y="88" font-size="8" font-weight="700" fill="#dc2626">• 导致 99% 的 CAS 持续失败自旋，耗时暴增！</text>
-
-      <g transform="translate(0, 150)">
-        <rect width="310" height="145" rx="6" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="12" y="20" font-size="10.5" font-weight="700" fill="#166534">✓ 生产选型决策树</text>
-        <text x="12" y="38" font-size="8" fill="#15803d">1. <tspan font-weight="700">低争用 / 只读多写少</tspan>：首选 atomic.Value / LoadInt64 (7ns)；</text>
-        <text x="12" y="56" font-size="8" fill="#15803d">2. <tspan font-weight="700">高并发热点计数器</tspan>：采用分段计数器 (Striped Counter) 将热点分散到各 CPU P；</text>
-        <text x="12" y="80" font-size="8" fill="#047857">3. <tspan font-weight="700">复杂复合多变量操作</tspan>：坚决使用 sync.Mutex 保护临界区！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">状态机优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无冲突时快路径逼近 atomic 性能；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 极端冲突下休眠等待，保护 CPU 算力；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 兼顾极速与高并发退避韧性。</text>
   </g>
+
+  <!-- Col 3: Scope Invariants (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">INVARIANTS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">保护不变量范围</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Composite Consistency</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Mutex 保护临界区内任意复合状态</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 杜绝多个 atomic 顺序拼接的幻读</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Guaranteed Critical Section</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">设计原则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 单值用 atomic，多值必须上 Mutex；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 业务正确性永远高于微基准优化；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保状态转移原子且排他。</text>
+  </g>
+
+  <!-- Col 4: Decision Boundary (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DECISION</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">选型决策分界</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Scale Sharding &gt; Locks</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严重争用时 atomic 和 Mutex 都会排队</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 根本解法是分片/分区降低共享竞争</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Concurrency Architecture Pattern</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程结论：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优先通过架构消除共享竞争；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免在热点锁上死磕微纳秒优化；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构建高并发弹性系统架构。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">atomic 单字硬件指令与分片降争用架构决策</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">sync.Mutex 三级争锁状态机与复合不变量保护核心</text>
 </svg>

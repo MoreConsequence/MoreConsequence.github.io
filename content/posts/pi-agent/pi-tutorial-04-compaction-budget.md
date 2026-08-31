@@ -25,9 +25,7 @@ series: "Pi Agent 通才教程"
 
 因此，**主动管理上下文生命周期（Context Compaction & Budgeting）是高级 Harness 的硬性门槛**。
 
-
-
-![Pi 上下文压缩水位线状态机：高水位报警 -> 后台摘要 -> 低水位恢复](../../../public/images/pi-tutorial-compaction-budget-watermark-fsm.svg)
+---
 
 ## 二、为什么传统滑动窗口（Sliding Window）会惨败？
 

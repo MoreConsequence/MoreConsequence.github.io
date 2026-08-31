@@ -1,98 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="vm-title vm-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="vm-title">投机采样数学无损证明：接受-拒绝采样算法</title>
+  <desc id="vm-desc">数学推导架构图展示投机采样的接受概率判定公式、拒绝时的残差重采样分布以及全概率展开证明输出分布与大模型原生推理 100% 绝对等价的证明过程。</desc>
+  <defs>
+    <marker id="vm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <marker id="vm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">投机采样数学无损证明：接受-拒绝采样算法（Acceptance/Rejection Sampling）</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">目标分布 $p(x)$ 与草稿分布 $q(x)$ 的概率比值修正 ──► 严谨证明采样质量零衰减、输出分布严格无损</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">MATHEMATICAL RIGOR · ACCEPTANCE/REJECTION &amp; RESIDUAL RESAMPLING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">投机采样数学无损证明：接受-拒绝采样模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">接受判定 P(accept) = min(1, p/q) ➔ 残差分布 p'(x) 重抽样 ➔ 全概率公式恒等证明 P(output) ≡ p(x)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Acceptance (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1 · ACCEPT</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">接受概率判定</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">P(accept x) = min(1, p(x)/q(x))</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• q(x): 小草稿模型预测概率</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• p(x): 大目标模型计算概率</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 若 p(x) &gt;= q(x) ➔ 100% 必然接受！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Exact Probability Match</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数学物理直觉：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 只要大模型比草稿模型更倾向该词；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 则无条件采纳该候选词；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅当草稿模型高估概率时才随机淘汰。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Proportional Probability Filter</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Zero Overestimation Bias</text>
   </g>
 
-  <!-- Main Content Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Reject</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#vm-arr-accent)"/>
 
-    <!-- Left Box: Sampling Formula & Mechanics (420px) -->
-    <g transform="translate(20, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="420" height="32" rx="6" fill="#eff6ff"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#1d4ed8" text-anchor="middle">一、 接受概率公式与拒绝修正分布</text>
+  <!-- Col 2: Residual Resampling (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 2 · RESIDUAL</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">残差分布重采样</text>
 
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Acceptance Probability -->
-        <rect width="388" height="44" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" font-weight="700" fill="#0f172a">1. 接受概率 (Acceptance Probability)：</text>
-        <text x="12" y="34" font-family="ui-monospace, monospace" font-size="11" fill="#1e40af">P(accept) = min(1,  p(x) / q(x) )</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">p'(x) = max(0, p(x) - q(x)) / Z</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 当 u &gt; P(accept x) 触发拒绝</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 不丢弃已算 Logits，构建残差分布</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 从 p'(x) 中抽样出正确词并截断后续</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Residual Probability Mass Sampling</text>
 
-        <!-- Rejection Resampling -->
-        <g transform="translate(0, 50)">
-          <rect width="388" height="58" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-          <text x="12" y="18" font-weight="700" fill="#166534">2. 拒绝时的重采样分布 (Residual Distribution)：</text>
-          <text x="12" y="34" font-size="9.5" fill="#14532d">若 Token $x$ 被拒绝，从残差分布重采样：</text>
-          <text x="12" y="48" font-family="ui-monospace, monospace" font-size="10" fill="#047857">p'(x) = norm( max(0, p(x) - q(x)) )</text>
-        </g>
-
-        <!-- Math invariant -->
-        <g transform="translate(0, 114)">
-          <rect width="388" height="32" rx="4" fill="#d1fae5"/>
-          <text x="194" y="20" font-weight="700" fill="#065f46" text-anchor="middle">数学定理：边缘采样分布严格满足 P(final = x) ≡ p(x)</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Right Box: Speedup vs Acceptance Rate Alpha (420px) -->
-    <g transform="translate(460, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="420" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">二、 理论加速比与草稿命中率 $\alpha$ 关系</text>
-
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Expected Speedup Formula -->
-        <rect width="388" height="44" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" font-weight="700" fill="#0f172a">📐 单步期望产出 Token 数：</text>
-        <text x="12" y="34" font-family="ui-monospace, monospace" font-size="11" fill="#ea580c">E[Tokens] = (1 - α^(K+1)) / (1 - α)</text>
-
-        <!-- Matrix table -->
-        <g transform="translate(0, 52)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="388" height="92" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <!-- Row 1 -->
-          <text x="12" y="20" font-weight="700" fill="#334155">• 代码生成/结构化 JSON ($\alpha \approx 0.85$):</text>
-          <text x="260" y="20" font-weight="700" fill="#16a34a">🚀 真实加速 3.0x ~ 3.8x</text>
-
-          <!-- Row 2 -->
-          <text x="12" y="44" font-weight="700" fill="#334155">• 通用自然语言对话 ($\alpha \approx 0.65$):</text>
-          <text x="260" y="44" font-weight="700" fill="#2563eb">⚡ 真实加速 2.0x ~ 2.5x</text>
-
-          <!-- Row 3 -->
-          <text x="12" y="68" font-weight="700" fill="#334155">• 强数学推导/低确定性 ($\alpha \approx 0.40$):</text>
-          <text x="260" y="68" font-weight="700" fill="#64748b">🐢 真实加速 1.2x ~ 1.4x</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">零代价白嫖算力：</tspan> 投机采样是深度学习领域极少见的 <tspan font-weight="700" fill="#2563eb">“既不需要重新微调训练、又完全无损精度”</tspan> 的纯推理工程优化；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        特别适合代码补全（Copilot）、SQL 生成和 JSON 提取等模式确定性极高的高价值后端场景。
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">残差纠偏数学本质：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 将大模型“未被草稿模型覆盖的概率质量”归一化；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 保证被拒绝时依然能纠正出一个正确 Token；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保单次 Forward 至少产出 1 个保底 Token！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Guaranteed Forward Progress</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">绝无单步 0 产出的死循环</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Prove</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#vm-arr-accent)"/>
+
+  <!-- Col 3: Proof (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 3 · Q.E.D.</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全概率恒等证明</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">P(out) = min(q,p) + max(0, p-q)</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="10" font-family="'Geist Mono', monospace" font-weight="700">       ≡ p(x)   (Q.E.D. 证毕!)</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 第一项: 接受概率 = min(q, p)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 第二项: 纠偏概率 = max(0, p - q)</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">Strict Statistical Equivalence</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">重大工业意义：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 无论草稿模型多粗糙、多小；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 输出统计分布与原生 70B 绝对等价；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 彻底打破“加速必损智力”的教条！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Zero Accuracy Loss Assurance</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Mathematical Ground Truth</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">接受概率判定与全概率恒等</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">残差分布 p'(x) 重采样与无损精度 Q.E.D. 核心</text>
 </svg>

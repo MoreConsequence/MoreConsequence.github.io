@@ -1,99 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tpc-title tpc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="tpc-title">两阶段提交（2PC）协议时序与协调者单点阻塞死锁模型</title>
+  <desc id="tpc-desc">时序架构图展示 2PC 准备阶段与提交阶段交互，以及协调者在决议后宕机导致参与者持有行锁陷入不可知悬挂死锁的物理困境。</desc>
+  <defs>
+    <marker id="tpc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    <marker id="tpc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">两阶段提交（2PC）协调者单点阻塞困境与 3PC 局限性</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">参与者锁定资源进入 Prepared 状态后协调者突发宕机 ──► 资源无限期死锁与脑裂风险</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DISTRIBUTED TRANSACTIONS · TWO-PHASE COMMIT PROTOCOL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">两阶段提交（2PC）与协调者单点阻塞死锁</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Phase 1 锁资源准备 ➔ Phase 2 决议提交；协调者一旦在中途宕机，参与者将陷入无法自主提交的悬挂死锁</text>
+
+  <!-- 3 Participants Columns -->
+  <!-- Col 1: Coordinator (x=40..300, w=260) -->
+  <g transform="translate(40, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">COORDINATOR</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全局事务协调者</text>
+
+    <!-- Phase 1 -->
+    <rect x="14" y="42" width="232" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Phase 1: 准备阶段 (Prepare)</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">广播 PREPARE 指令</text>
+    <text x="24" y="98" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">等待全员回复 VOTE_COMMIT</text>
+
+    <!-- Crash Point (Focal) -->
+    <rect x="14" y="126" width="232" height="110" rx="4" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">⚡ 致命单点宕机时刻</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">落盘 commit_decision 日志后</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">协调者突发硬件掉电 / 进程崩溃！</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">未向参与者送出 Global_Commit</text>
+
+    <!-- Bottom State -->
+    <rect x="14" y="246" width="232" height="114" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="270" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2PC 缺陷本质</text>
+    <text x="24" y="290" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">强中心化依赖，缺乏去中心化仲裁</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">吞吐极低: &lt; 500 QPS (持跨网锁)</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">故障自愈需人工介入 XA 恢复</text>
   </g>
 
-  <!-- Main Card -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow Coord -> Participants (x=300..350) -->
+  <text x="324" y="172" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">Prepare</text>
+  <line x1="300" y1="180" x2="350" y2="180" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#tpc-arr)"/>
 
-    <!-- Left Box: 2PC Flow & Coordinator Crash Block (435px) -->
-    <g transform="translate(20, 20)">
-      <rect width="435" height="230" rx="6" fill="#f8fafc" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="32" rx="6" fill="#fef2f2"/>
-      <text x="217" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 2PC 致命死锁：协调者在 Commit 阶段前夕宕机</text>
+  <!-- Col 2: Participant A (Order DB, x=350..620, w=270) -->
+  <g transform="translate(350, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PARTICIPANT A</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">参与者：订单库 (MySQL A)</text>
 
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Phase 1 -->
-        <rect width="403" height="36" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" font-weight="700" fill="#0f172a">阶段一：Prepare 预备投票</text>
-        <text x="12" y="30" font-size="9.5" fill="#64748b">协调者询问参与者 A/B ──► 双方写 Redo/Undo Log 并锁住数据行，回复 YES</text>
+    <!-- Phase 1 Execution -->
+    <rect x="14" y="42" width="242" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">本地预执行与锁资源</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">写入 Redo/Undo 准备落盘</text>
+    <text x="24" y="98" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">持有订单行级排他排他锁 (X-Lock)</text>
 
-        <!-- Coordinator Crash Line -->
-        <g transform="translate(0, 44)">
-          <rect width="403" height="42" rx="4" fill="#fee2e2" stroke="#ef4444"/>
-          <text x="12" y="18" font-weight="700" fill="#991b1b">⚡ 突发故障：协调者 (Coordinator) 彻底宕机！</text>
-          <text x="12" y="32" font-size="9.5" fill="#7f1d1d">参与者 A、B 已进入 PREPARED 状态，手握排他行锁却等不到 Commit/Rollback 指令</text>
-        </g>
+    <!-- Indoubt State (Focal) -->
+    <rect x="14" y="126" width="242" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">悬挂事务死锁 (Indoubt State)</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">已投出赞成票，无法单方回滚</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">未收到 Commit，无法单方提交</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">无限期持有锁，后续事务全被阻塞！</text>
 
-        <!-- Consequence -->
-        <g transform="translate(0, 94)">
-          <rect width="403" height="50" rx="4" fill="#fff1f2" stroke="#fda4af"/>
-          <text x="12" y="18" font-weight="700" fill="#9f1239">💥 致命死局（Indoubt 悬挂事务）：</text>
-          <text x="12" y="32" font-size="9.5" fill="#881337">• A 不能单方面 Commit（B 可能没准备好）</text>
-          <text x="12" y="44" font-size="9.5" fill="#881337">• A 不能单方面 Rollback（协调者可能已通知 B 提交了） ──► 永久阻塞！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Right Box: 3PC Attempts & Real-world Solution (435px) -->
-    <g transform="translate(465, 20)">
-      <rect width="435" height="230" rx="6" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1.2"/>
-      <rect width="435" height="32" rx="6" fill="#eff6ff"/>
-      <text x="217" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#1e40af" text-anchor="middle">🛡️ 3PC 的尝试与现代工业解法</text>
-
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- 3PC Flow -->
-        <rect width="403" height="48" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" font-weight="700" fill="#334155">3PC 的尝试：CanCommit ──► PreCommit ──► DoCommit</text>
-        <text x="12" y="32" font-size="9.5" fill="#64748b">引入超时机制解除参与者永久阻塞，<tspan font-weight="700" fill="#dc2626">但在网络分区时仍会导致数据脑裂不一致！</tspan></text>
-        <text x="12" y="44" font-size="9.5" fill="#64748b">(工业界极少直接采用 3PC)</text>
-
-        <!-- Modern Solutions -->
-        <g transform="translate(0, 56)">
-          <rect width="403" height="85" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-          <text x="12" y="20" font-weight="700" fill="#166534">现代工业标准解法：</text>
-          <text x="12" y="38" font-size="10" fill="#14532d"><tspan font-weight="700" fill="#2563eb">1. 强一致场景：</tspan> Raft-based 2PC（TiDB/Spanner，协调者与参与者全上 Raft）</text>
-          <text x="12" y="54" font-size="10" fill="#14532d"><tspan font-weight="700" fill="#ea580c">2. 跨微服务场景：</tspan> SAGA 状态机编排 / 本地消息表 + CDC 最终一致性</text>
-          <text x="12" y="72" font-size="10" fill="#15803d">👉 放弃传统同步 2PC 跨库大锁，采用异步补偿与最终一致解耦！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">物理架构红线：</tspan> 传统 2PC 的本质是 <tspan font-weight="700" fill="#ea580c">“在不可靠网络上强行实现单机 ACID 幻觉”</tspan>，持有锁跨越网络 RTT 必定带来吞吐雪崩；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#2563eb" text-anchor="middle">
-        分布式系统必须通过业务幂等、重试与逆向补偿（SAGA）拥抱最终一致性。
-      </text>
-    </g>
+    <!-- Impact -->
+    <rect x="14" y="246" width="242" height="114" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="270" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数据库连接池雪崩</text>
+    <text x="24" y="290" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">后续相关订单写请求排队堆积</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Max_connections 迅速打满</text>
+    <text x="24" y="326" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">单点宕机扩散为全站服务瘫痪</text>
   </g>
+
+  <!-- Col 3: Participant B (Stock DB, x=650..920, w=270) -->
+  <g transform="translate(650, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PARTICIPANT B</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">参与者：库存库 (MySQL B)</text>
+
+    <!-- Phase 1 Execution -->
+    <rect x="14" y="42" width="242" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">本地预执行与锁资源</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">写入 Redo/Undo 准备落盘</text>
+    <text x="24" y="98" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">持有商品 SKU 库存排他锁</text>
+
+    <!-- Indoubt State -->
+    <rect x="14" y="126" width="242" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">悬挂事务死锁 (Indoubt State)</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">已投出赞成票，无法单方回滚</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">未收到 Commit，无法单方提交</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">无限期锁定 SKU，商品无法下单！</text>
+
+    <!-- Impact -->
+    <rect x="14" y="246" width="242" height="114" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="270" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">热点资源全死锁</text>
+    <text x="24" y="290" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">同一 SKU 所有用户的购买请求阻塞</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">直至协调者重启并解析 XA 日志</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">方能解除锁阻塞恢复业务</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">2PC 正常事务组件</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">协调者宕机与悬挂死锁故障点</text>
 </svg>

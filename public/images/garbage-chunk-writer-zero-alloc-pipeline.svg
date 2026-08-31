@@ -1,49 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
-  <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
-  </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
-
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Garbage 端点零分配推流：1MB 预分配不可压缩缓冲区循环泵出</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">服务启动时 crypto/rand 预生成 1MB 高熵随机数据 ──► 每次请求循环推流 ──► 0 动态内存申请 ──► GC 压力彻底归零</text>
-  </g>
-
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 服务启动期单次预热 (Global Initialization: 1MB Random Buffer)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">var randomChunk [1048576]byte; crypto.Read(randomChunk[:]) ──► 高熵随机字节填满</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">全生命周期常驻内存，严禁在每次 HTTP 请求到来时动态 make([]byte)！</text>
-
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 入参安全钳制与边界防御 (Param Clamping: ckSize 1~1024)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">ckSize = min(max(ckSize, 1), 1024) ──► 限制单次下行最大传输 1024 个 Chunk (1GB)</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">防止恶意客户端传入 ckSize=9999999 耗尽服务器带宽！</text>
-      </g>
-
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 极速循环推流与反压探测 (Zero-Alloc Stream Loop)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">for i := 0; i &lt; ckSize; i++ { _, err := w.Write(randomChunk[:]) } ──► 0 堆内存分配！</text>
-        <text x="15" y="62" font-size="8" fill="#047857">若客户端关闭连接，立即捕获 broken pipe 退出，0 CPU 浪费！</text>
-      </g>
-
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 纯净二进制流输出 (Raw Octet-Stream)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Content-Type: application/octet-stream | Cache-Control: no-store ──► 极限榨干物理网卡带宽</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">单机万兆测速服务必备核心实现！</text>
-      </g>
-    </g>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="librespeed-go-garbage-pipeline-title librespeed-go-garbage-pipeline-desc">
+<title id="librespeed-go-garbage-pipeline-title">garbage：启动预热，循环写出</title>
+<desc id="librespeed-go-garbage-pipeline-desc">流程图展示 garbage 在启动时生成 1 MiB 随机数据，请求时按 ckSize 限制循环写出，并在写入错误后停止。</desc>
+<defs><style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');</style><marker id="librespeed-go-garbage-pipeline-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/></marker><marker id="librespeed-go-garbage-pipeline-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/></marker><marker id="librespeed-go-garbage-pipeline-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2d5a8a"/></marker></defs>
+<rect width="960" height="600" fill="#f5f4ed"/>
+<text x="40" y="52" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="start" letter-spacing="0.18em">FLOW · DOWNLINK</text>
+<text x="40" y="92" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', 'Songti SC', serif" font-weight="400" text-anchor="start">garbage：启动预热，循环写出</text>
+<text x="40" y="120" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="400" text-anchor="start">预热成本留在启动期，运行路径只重复写出已有字节</text>
+<text x="56" y="196" fill="#857a69" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="start" letter-spacing="0.14em">STARTUP</text><text x="392" y="196" fill="#857a69" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="start" letter-spacing="0.14em">REQUEST</text><text x="728" y="196" fill="#857a69" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="start" letter-spacing="0.14em">CLOSE</text><rect x="56" y="244" width="144" height="88" rx="6" fill="#f5f4ed" stroke="none" stroke-width="1"/><rect x="56" y="244" width="144" height="88" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/><rect x="68" y="256" width="40" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/><text x="88" y="268" fill="#141413" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">BOOT</text><text x="128" y="292" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="600" text-anchor="middle">启动预热</text><text x="128" y="312" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="middle">getRandomData(1 MiB)</text><rect x="224" y="244" width="144" height="88" rx="6" fill="#f5f4ed" stroke="none" stroke-width="1"/><rect x="224" y="244" width="144" height="88" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/><rect x="236" y="256" width="56" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/><text x="264" y="268" fill="#141413" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">BUFFER</text><text x="296" y="292" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="600" text-anchor="middle">randomData</text><text x="296" y="312" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="middle">package variable</text><rect x="392" y="244" width="144" height="88" rx="6" fill="#f5f4ed" stroke="none" stroke-width="1"/><rect x="392" y="244" width="144" height="88" rx="6" fill="rgba(232,93,63,0.10)" stroke="#e85d3f" stroke-width="1.2"/><rect x="404" y="256" width="48" height="16" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/><text x="428" y="268" fill="#e85d3f" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">LIMIT</text><text x="464" y="292" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="600" text-anchor="middle">ckSize</text><text x="464" y="312" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="middle">max = 1024</text><rect x="560" y="244" width="144" height="88" rx="6" fill="#f5f4ed" stroke="none" stroke-width="1"/><rect x="560" y="244" width="144" height="88" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/><rect x="572" y="256" width="48" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/><text x="596" y="268" fill="#141413" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">WRITE</text><text x="632" y="292" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="600" text-anchor="middle">w.Write</text><text x="632" y="312" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="middle">repeat chunks</text><rect x="728" y="244" width="144" height="88" rx="6" fill="#f5f4ed" stroke="none" stroke-width="1"/><rect x="728" y="244" width="144" height="88" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/><rect x="740" y="256" width="40" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/><text x="760" y="268" fill="#141413" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="middle" letter-spacing="0.08em">EXIT</text><text x="800" y="292" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="600" text-anchor="middle">连接结束</text><text x="800" y="312" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="middle">write error → break</text><line x1="200" y1="288" x2="224" y2="288" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#librespeed-go-garbage-pipeline-arrow)"/><line x1="368" y1="288" x2="392" y2="288" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#librespeed-go-garbage-pipeline-arrow)"/><line x1="536" y1="288" x2="560" y2="288" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#librespeed-go-garbage-pipeline-arrow)"/><line x1="704" y1="288" x2="728" y2="288" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#librespeed-go-garbage-pipeline-arrow)"/><text x="56" y="392" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', 'PingFang SC', sans-serif" font-weight="400" text-anchor="start">服务端只在启动期生成一次随机块；请求路径重复写出同一块，客户端断开时停止循环。</text><line x1="40" y1="532" x2="920" y2="532" fill="none" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/><text x="40" y="560" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="500" text-anchor="start" letter-spacing="0.14em">LEGEND</text><rect x="136" y="548" width="12" height="12" rx="2" fill="#6b6a64" stroke="#6b6a64" stroke-width="0.8"/><text x="156" y="560" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="start">INTERNAL STEP</text><rect x="356" y="548" width="12" height="12" rx="2" fill="#e85d3f" stroke="#e85d3f" stroke-width="0.8"/><text x="376" y="560" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', 'SFMono-Regular', monospace" font-weight="400" text-anchor="start">BOUNDARY</text>
 </svg>

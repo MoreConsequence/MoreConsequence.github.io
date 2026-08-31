@@ -1,121 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tb-title tb-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="tb-title">Pi 128k 上下文黄金配比模型与双阈值压缩流水线</title>
+  <desc id="tb-desc">架构与预算分配图展示 Pi 在 128k 上下文窗口中对 System 前缀、历史摘要、16k 热活跃区与工作区余量的黄金配比，以及 20000/16384 双阈值压缩状态机。</desc>
+  <defs>
+    <marker id="tb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="tb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 128k 上下文窗口四大板块黄金预算配比拓扑</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 静态 System Prompt (10k) ｜ 2. 长期压缩摘要 (20k) ｜ 3. 近期活跃消息窗口 (35k) ｜ 4. 输出与预留缓冲区 (8k)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TOKEN BUDGET ALLOCATION · 20000 KEEP &amp; 16384 RESERVE MODEL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">128k 上下文黄金配比与双阈值压缩流水线</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">System 固定区 (4k) + 摘要区 (2k) + 16k 热活跃区 + 102k 工作区余量 + 渐进式技能披露</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Budget Breakdown (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">128K BUDGET</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">窗口黄金配比模型</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">上下文各区域容量规划</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• System &amp; Rules: ~4k (前缀锁死)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• History Summary: ~2k (结构化摘要)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• Active Window: 16,384 Tokens</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">102k Headroom for Big Workspace Files</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">配比哲学：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 绝不让历史对话无序吃满窗口；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 保留 102k 充裕余量读取工程大文件；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 预留 4k 输出缓冲彻底防止截断！</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Disciplined Window Segmentation</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zero OOM &amp; Context Starvation</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Columns (210px each) -->
-    <g>
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. System &amp; Tools (10k)</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Trigger</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tb-arr-accent)"/>
 
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#38bdf8">不可驱逐的核心锚点：</text>
-          
-          <text x="8" y="38" fill="#86efac">• 角色设定与安全边界</text>
-          <text x="8" y="54" fill="#38bdf8">• 完整 JSON Schema 工具集</text>
-          <text x="8" y="70" fill="#34d399">• 100% 命中 Prompt Caching</text>
-          
-          <text x="8" y="100" fill="#4ade80">✓ 永驻显存前缀基石！</text>
-        </g>
+  <!-- Col 2: Two-Threshold FSM (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DUAL THRESHOLD</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">双阈值压缩状态机</text>
 
-        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 字节级稳定，严禁注入动态时间；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 享受 90% 费用打折；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 极速预热。</text>
-      </g>
-    </g>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">20000 Keep / 16384 Reserve</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. Total &lt; 20,000: 稳态直通，享长缓存</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. Total &gt;= 20,000: 触发压缩，保留最近 16k</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 冷历史折叠为 [SESSION SUMMARY] 节点</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Stable Prompt Cache Reuse Window</text>
 
-    <g transform="translate(225, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Compacted Memory (20k)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#4ade80">长期结构化决策记忆：</text>
-          
-          <text x="8" y="38" fill="#86efac">• 历史 50 步的关键决策摘要</text>
-          <text x="8" y="54" fill="#38bdf8">• 消除 90% 冗余中间文件读取</text>
-          <text x="8" y="70" fill="#4ade80">• 动态增量滚动更新</text>
-          
-          <text x="8" y="100" fill="#4ade80">✓ 突破窗口物理极限！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 避免长任务出现灾难性失忆；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 保持极高信息密度；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 长期记忆中枢。</text>
-      </g>
-    </g>
-
-    <g transform="translate(450, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fff7ed"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Active Window (35k)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#fb923c">近期活跃原始数据：</text>
-          
-          <text x="8" y="38" fill="#fed7aa">• 最近 5 轮完整用户交互</text>
-          <text x="8" y="54" fill="#38bdf8">• 完整的测试报错堆栈</text>
-          <text x="8" y="70" fill="#4ade80">• 未被截断的最新代码 Diff</text>
-          
-          <text x="8" y="100" fill="#4ade80">✓ 保证当前推理绝对精准！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 提供法医级最近操作现场；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 支撑复杂算法的精细调试；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工作记忆核心。</text>
-      </g>
-    </g>
-
-    <g transform="translate(675, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#c084fc" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#7e22ce" text-anchor="middle">4. Output Reserve (8k)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#c084fc">生成空间安全红线：</text>
-          
-          <text x="8" y="38" fill="#e9d5ff">• 预留给大模型生成长代码</text>
-          <text x="8" y="54" fill="#38bdf8">• 绝不让输入挤占输出空间</text>
-          <text x="8" y="70" fill="#4ade80">• 避免触发生成截断导致代码残缺</text>
-          
-          <text x="8" y="100" fill="#4ade80">✓ 保证交付物完整落地！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#7e22ce">沉淀效益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#6b21a8">• 科学严谨的预算分配模型；</text>
-        <text x="10" y="48" font-size="7.5" fill="#6b21a8">• 支撑系统在高压下稳健运行；</text>
-        <text x="10" y="62" font-size="7.5" fill="#6b21a8">• 工业级大模型工程标准！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心算法优势：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 避免每轮请求微量裁剪导致缓存高频失效；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 保持 4k~8k Token 的超长稳态缓存区间；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 压缩时保证 tool_call 对应对绝对完整！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Cache-Aware Boundary Compaction</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保证推理成本与性能最佳平衡点</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Assemble</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tb-arr-accent)"/>
+
+  <!-- Col 3: Progressive Disclosure (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PROGRESSIVE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">渐进式技能披露</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Skills / AGENTS.md 按需加载</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 初始仅注入 Skill 概要与触发词</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 命中特定任务时才动态读取 SKILL.md</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 节省 80% 开局静态 Token 浪费！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Lazy-Loading Token Optimization</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程落地效益：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝开局无脑灌入数十个 Skill 规范；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保持系统 Prompt 精炼与高注意力聚焦；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 构筑可持续运转的生产级 Agent 知识库！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Lean &amp; Scalable Context Pipeline</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Production Standard Implementation</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">128k 窗口预算配比与渐进式披露</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">20000/16384 双阈值压缩状态机核心</text>
 </svg>

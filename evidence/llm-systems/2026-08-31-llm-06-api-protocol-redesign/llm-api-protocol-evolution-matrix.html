@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>llm-api-protocol-evolution-matrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="pe-title pe-desc">
+  <title id="pe-title">大模型 API 接口协议代际演进与架构权衡全景</title>
+  <desc id="pe-desc">架构演进全景图展示大模型通信协议从第一代纯文本续写定界符危机、第二代 ChatML 角色隔离、第三代多态工具调用、第四代受限解码，到第五代全双工 Realtime 实时帧的完整代际跃迁。</desc>
+  <defs>
+    <marker id="pe-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="pe-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">API PROTOCOL GENERATIONS · 2020 TO 2026 EVOLUTION MATRIX</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">大模型 API 协议代际演进与架构权衡</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">纯文本续写 (定界符碰撞) ➔ ChatML 角色分流 (SSE 流) ➔ 工具多态化 ➔ 受限解码 (100% 合法) ➔ Realtime 全双工打断</text>
+
+  <!-- 5 Columns Architecture (y=136..506, h=370) -->
+  <!-- Gen 1 (x=40..200, w=160) -->
+  <g transform="translate(40, 136)">
+    <rect width="160" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="10" y="12" width="70" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="45" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GEN 1</text>
+    <text x="86" y="26" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">纯文本续写</text>
+
+    <!-- Box -->
+    <rect x="10" y="42" width="140" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">/v1/completions</text>
+    <text x="18" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 裸字符串输入输出</text>
+    <text x="18" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 定界符碰撞漏洞</text>
+    <text x="18" y="110" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Stop 截断失效</text>
+
+    <!-- Details -->
+    <rect x="10" y="148" width="140" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">初代特征：</text>
+    <text x="18" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 2020~2022 年主导；</text>
+    <text x="18" y="208" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 极易遭 Prompt 越狱；</text>
+    <text x="18" y="226" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 客户端手工压平；</text>
+    <text x="18" y="244" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 缺乏角色物理边界。</text>
+  </g>
+
+  <!-- Gen 2 (x=216..376, w=160) -->
+  <g transform="translate(216, 136)">
+    <rect width="160" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="10" y="12" width="70" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="45" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GEN 2</text>
+    <text x="86" y="26" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">ChatML 结构</text>
+
+    <!-- Box -->
+    <rect x="10" y="42" width="140" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">/v1/chat/completions</text>
+    <text x="18" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• messages: [{role, content}]</text>
+    <text x="18" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 特殊控制 Token 隔离</text>
+    <text x="18" y="110" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• HTTP/SSE 单向流式</text>
+
+    <!-- Details -->
+    <rect x="10" y="148" width="140" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">演进特征：</text>
+    <text x="18" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 行业事实标准；</text>
+    <text x="18" y="208" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 彻底杜绝注入伪造；</text>
+    <text x="18" y="226" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 暴露出 UTF-8 截断；</text>
+    <text x="18" y="244" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 计费 Usage 滞后痛点。</text>
+  </g>
+
+  <!-- Gen 3 (x=392..562, w=170) -->
+  <g transform="translate(392, 136)">
+    <rect width="170" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="10" y="12" width="70" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="45" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GEN 3</text>
+    <text x="86" y="26" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工具调用多态</text>
+
+    <!-- Box -->
+    <rect x="10" y="42" width="150" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">tool_use &amp; blocks</text>
+    <text x="18" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 强类型多态内容块</text>
+    <text x="18" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 块生命周期显式状态</text>
+    <text x="18" y="110" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 终结字符串拼装噩梦</text>
+
+    <!-- Details -->
+    <rect x="10" y="148" width="150" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构跨越：</text>
+    <text x="18" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Anthropic Messages 代表；</text>
+    <text x="18" y="208" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 文本/视觉/工具块统一；</text>
+    <text x="18" y="226" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• block_start/delta/stop；</text>
+    <text x="18" y="244" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 奠定 Agent 底层接口。</text>
+  </g>
+
+  <!-- Gen 4 (x=578..748, w=170) - Focal -->
+  <g transform="translate(578, 136)">
+    <rect width="170" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="10" y="12" width="70" height="18" rx="2" fill="#e85d3f"/>
+    <text x="45" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GEN 4</text>
+    <text x="86" y="26" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">受限解码输出</text>
+
+    <!-- Box -->
+    <rect x="10" y="42" width="150" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="18" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Structured Outputs</text>
+    <text x="18" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• JSON Schema ➔ CFG/FSM</text>
+    <text x="18" y="94" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">• Logit Masking 非法=-inf</text>
+    <text x="18" y="110" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 100% 格式合法保证</text>
+
+    <!-- Details -->
+    <rect x="10" y="148" width="150" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="18" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数学级突破：</text>
+    <text x="18" y="190" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 彻底消灭语法幻觉；</text>
+    <text x="18" y="208" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 采样层严格文法约束；</text>
+    <text x="18" y="226" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 0 解析重试成本；</text>
+    <text x="18" y="244" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 企业系统集成刚需。</text>
+  </g>
+
+  <!-- Gen 5 (x=764..920, w=156) - Focal -->
+  <g transform="translate(764, 136)">
+    <rect width="156" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="10" y="12" width="70" height="18" rx="2" fill="#141413"/>
+    <text x="45" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GEN 5</text>
+    <text x="86" y="26" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Realtime 双向</text>
+
+    <!-- Box -->
+    <rect x="10" y="42" width="136" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">WSS /v1/realtime</text>
+    <text x="18" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全双工双向事件帧</text>
+    <text x="18" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 24kHz 音频流并发</text>
+    <text x="18" y="110" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• truncate 毫秒打断</text>
+
+    <!-- Details -->
+    <rect x="10" y="148" width="136" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="18" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">实时交互未来：</text>
+    <text x="18" y="190" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 推翻 HTTP 半双工；</text>
+    <text x="18" y="208" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 物理时间轴精准裁剪；</text>
+    <text x="18" y="226" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 亚秒级多模态对话；</text>
+    <text x="18" y="244" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 具身智能与实时语音。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">纯文本、ChatML 与工具调用代际演进</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">受限解码 Logit 掩码与 Realtime 全双工打断核心</text>
+</svg>
+</main>
+</body>
+</html>

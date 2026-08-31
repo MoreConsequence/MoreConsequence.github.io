@@ -47,9 +47,7 @@ flowchart TD
 
 Pi 的核心定论是：**对于单机个人开发者与团队工作流，进程内原生扩展以极低的开发成本提供了最强大的自省与定制能力。**
 
-
-
-![Pi 插件拦截链与洋葱模型 (Onion Model)：前置校验 -> 执行 -> 后置审计](../../../public/images/pi-tutorial-extension-hook-interceptor-chain.svg)
+---
 
 ## 二、5 组全生命周期事件流设计
 

@@ -1,86 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="fq-bbr-title fq-bbr-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="fq-bbr-title">Fair Queueing (fq) 匀速起搏与 Google BBR 拥塞控制深度联动</title>
+  <desc id="fq-bbr-desc">对比图展示传统 CUBIC 突发大包引发交换机 Bufferbloat 延迟膨胀与 Google BBR 联动 fq 纳秒级 EDT 匀速起搏消灭排队延迟的物理机理。</desc>
+  <defs>
+    <marker id="fb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="fb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Fair Queueing (fq) 匀速起搏（Pacing）与 Google BBR 拥塞控制深度联动</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">传统突发大包打爆交换机 Buffer (Bufferbloat) vs fq 排队规则按 BDP 速率纳秒级匀速发送消除排队时延</text>
-  </g>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TCP PACING &amp; CONGESTION CONTROL · FQ &amp; BBR SYNERGY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Fair Queueing 匀速起搏与 Google BBR 深度联动</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">传统 CUBIC 突发丢包与 Bufferbloat 延迟膨胀 vs Google BBR 测算 BDP 联动 fq 纳秒级 EDT 匀速发包</text>
 
-  <!-- Main Comparison Panes (435px each) -->
-  <g transform="translate(30, 75)">
-    <!-- Pane 1: Traditional Burst & Bufferbloat (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统无 Pacing：突发大包与 Bufferbloat 拥塞</text>
+  <!-- Lane 1: Traditional CUBIC + pfifo_fast (y=136..306, h=170) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="170" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="150" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="89" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CUBIC + PFIFO_FAST</text>
+    <text x="174" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统 CUBIC 突发发包引发 Bufferbloat 灾难</text>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Steps -->
-        <rect width="403" height="36" rx="4" fill="#ffffff" stroke="#fecaca"/>
-        <text x="12" y="16" fill="#991b1b" font-weight="700">1. TCP 窗口一次性释放一整组数据包 (Burst)</text>
-        <text x="12" y="28" font-size="9.5" fill="#7f1d1d">几十个数据包瞬间并发涌向网卡队列</text>
+    <!-- 4 Stage Blocks Across -->
+    <g transform="translate(14, 42)">
+      <!-- Box 1 -->
+      <rect x="0" y="0" width="195" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. CWND 突发释放</text>
+      <text x="12" y="40" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">一口气释放整窗数据包</text>
+      <text x="12" y="56" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Burst: 64KB+ 瞬间涌入</text>
 
-        <rect y="42" width="403" height="42" rx="4" fill="#fee2e2" stroke="#f87171"/>
-        <text x="12" y="16" fill="#7f1d1d" font-weight="700">2. 中间交换机缓冲区瞬间被填满 (Bufferbloat)</text>
-        <text x="12" y="30" font-size="9.5" fill="#991b1b">引发高达数百毫秒的排队延迟，甚至突发丢包！</text>
+      <line x1="195" y1="37" x2="220" y2="37" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#fb-arr)"/>
 
-        <rect y="92" width="403" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-        <text x="12" y="16" fill="#0f172a" font-weight="700">3. CUBIC 算法误判为网络拥塞</text>
-        <text x="12" y="30" font-size="9.5" fill="#64748b">拥塞窗口断崖式减半，吞吐发生剧烈震荡！</text>
-      </g>
+      <!-- Box 2 -->
+      <rect x="220" y="0" width="200" height="74" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 交换机队列填满</text>
+      <text x="12" y="40" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">中间路由器 FIFO 队列溢出</text>
+      <text x="12" y="56" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Bufferbloat 缓冲区膨胀</text>
+
+      <line x1="420" y1="37" x2="445" y2="37" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#fb-arr)"/>
+
+      <!-- Box 3 -->
+      <rect x="445" y="0" width="200" height="74" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 排队时延暴增</text>
+      <text x="12" y="40" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RTT: 10ms ➔ 500ms+</text>
+      <text x="12" y="56" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">微秒级接口被长尾挤爆</text>
+
+      <line x1="645" y1="37" x2="670" y2="37" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#fb-arr)"/>
+
+      <!-- Box 4 -->
+      <rect x="670" y="0" width="182" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4. 丢包与窗口减半</text>
+      <text x="12" y="40" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">CWND 腰斩 50%</text>
+      <text x="12" y="56" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">带宽剧烈颠簸震荡</text>
     </g>
 
-    <!-- Pane 2: fq Pacing + BBR (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">⚡ fq 匀速 Pacing + BBR 算法：极速且平滑</text>
+    <!-- Bottom summary line -->
+    <rect x="14" y="126" width="852" height="32" rx="2" fill="#f5f4ed"/>
+    <text x="24" y="146" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">致命痛点：基于丢包反馈的传统拥塞控制无法区分“丢包”与“排队”，导致高吞吐下延迟不可控！</text>
+  </g>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Steps -->
-        <rect width="403" height="36" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="12" y="16" fill="#14532d" font-weight="700">1. BBR 精确测量网络瓶颈带宽 (BtlBw) 与 RTT</text>
-        <text x="12" y="28" font-size="9.5" fill="#15803d">计算出最优发包速率 Pacing Rate = BtlBw × 1.0</text>
+  <!-- Lane 2: Google BBR + Fair Queueing (y=320..506, h=186) - Focal -->
+  <g transform="translate(40, 320)">
+    <rect width="880" height="186" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">BBR + FQ PACING</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Google BBR 联动 fq 纳秒级匀速起搏 (0 排队延迟)</text>
 
-        <rect y="42" width="403" height="42" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-        <text x="12" y="16" fill="#047857" font-weight="700">2. fq 排队规则负责微秒级定时起搏发送 (Pacing)</text>
-        <text x="12" y="30" font-size="9.5" fill="#065f46">将数据包严格均匀间隔（如每 20μs 发 1 包），零突发！</text>
+    <!-- 4 Stages Across -->
+    <g transform="translate(14, 42)">
+      <!-- Stage 1 (Focal) -->
+      <rect x="0" y="0" width="200" height="88" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="12" y="24" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">1. BDP 物理建模测算</text>
+      <text x="12" y="42" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">BDP = BtlBw * RTprop</text>
+      <text x="12" y="58" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">测得瓶颈带宽与最小时延</text>
+      <text x="12" y="74" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Pacing Rate = BtlBw (线速)</text>
 
-        <rect y="92" width="403" height="42" rx="4" fill="#d1fae5"/>
-        <text x="12" y="16" fill="#065f46" font-weight="700">3. 交换机队列排队时延趋近于 0</text>
-        <text x="12" y="30" font-size="9.5" font-weight="700" fill="#047857">吞吐跑满带宽的同时，网络往返延迟降至物理光纤极限！</text>
-      </g>
+      <line x1="200" y1="44" x2="225" y2="44" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fb-arr-accent)"/>
+
+      <!-- Stage 2 -->
+      <rect x="225" y="0" width="200" height="88" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">2. EDT 时间戳打标</text>
+      <text x="12" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Earliest Departure Time</text>
+      <text x="12" y="54" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">skb->tstamp = now + Δt</text>
+      <text x="12" y="70" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">按微秒均匀间隔打标</text>
+
+      <line x1="425" y1="44" x2="450" y2="44" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fb-arr-accent)"/>
+
+      <!-- Stage 3 -->
+      <rect x="450" y="0" width="200" height="88" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">3. fq 红黑树起搏调度</text>
+      <text x="12" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Fair Queueing Flow Hash</text>
+      <text x="12" y="54" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">高精度定时器严格定序</text>
+      <text x="12" y="70" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">每 20μs 平滑推入 1 包</text>
+
+      <line x1="650" y1="44" x2="675" y2="44" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fb-arr-accent)"/>
+
+      <!-- Stage 4 -->
+      <rect x="675" y="0" width="177" height="88" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="12" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">4. 交换机 0 积压</text>
+      <text x="12" y="38" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Queue Backlog = 0</text>
+      <text x="12" y="54" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">RTT 恒定 10ms 极限</text>
+      <text x="12" y="70" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700">100% 满带宽无损吞吐</text>
     </g>
+
+    <!-- Bottom summary line -->
+    <rect x="14" y="140" width="852" height="34" rx="2" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="161" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">调优铁律：开启 BBR 时必须配置 net.core.default_qdisc = fq，提供内核硬件时钟 Pacing 支撑！</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">内核网络调优铁律：</tspan> 开启 BBR 时必须配置 <tspan font-weight="700" fill="#2563eb">`net.core.default_qdisc = fq`</tspan>；
-      BBR 负责计算大脑，fq 负责物理肢体匀速发包，二者双剑合璧方能发挥真正威力。
-    </text>
-  </g>
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统突发拥塞路径</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">BBR 测算与 fq 纳秒起搏核心</text>
 </svg>

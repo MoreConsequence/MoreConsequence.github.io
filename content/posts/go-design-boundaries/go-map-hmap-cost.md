@@ -42,10 +42,6 @@ type bmap struct {
 2. **哈希种子 hash0 随机**：每次建 map 种子不同，攻击者无法构造哈希碰撞队列（防 HashDoS）。代价是同一个 key 在不同 map 里哈希不同——所以遍历顺序随机是设计承诺，不是 bug。
 3. **负载因子 13/16 ≈ 6.5**：桶均元素超过 6.5 就翻倍扩容。6.5 是"查找快（桶不深）"和"内存省（桶不满）"的折中点。
 
-
-
-![Go Map 物理布局：hmap 结构体、bmap 桶结构、tophash 快速比对与溢出桶 (overflow)](../../../public/images/hmap-bmap-tophash-overflow-bucket-layout.svg)
-
 ## 二、查找为什么 O(1)：tophash 筛子 + fast key 通道
 
 实测（Go 1.25.1，8 核）命中查找：

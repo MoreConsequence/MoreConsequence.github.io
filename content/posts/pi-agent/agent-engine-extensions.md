@@ -75,9 +75,7 @@ pi.on("tool_call", async (event, ctx) => {
 
 这个闭环的价值被大多数工具低估：不用等厂商实现你的 workflow，直接把 workflow 写进扩展文件，让 agent 自己迭代它。Databricks 基准里的"Omnigent 元 harness"想要做的事（模型与 harness 解耦、按任务换 harness），Pi 在单进程内用扩展 API 给了个人开发者同等的能力。
 
-
-
-![插件沙箱安全隔离边界：WASM / QuickJS 独立沙箱与能力权限最小化](../../../public/images/agent-extension-sandbox-isolation-boundary.svg)
+---
 
 ## 四、结论：功能的默认状态是「可后装」，不是「没有」
 

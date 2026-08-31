@@ -40,9 +40,7 @@ graph TD
 - **分支是廉价的**：同一个会话文件可以同时包含方案 A 与方案 B 的完整探索轨迹；
 - **回滚是无损的**：通过切换当前“叶子节点指针（Leaf Pointer）”，可以在历史任意时刻分叉出新的探索路径。
 
-
-
-![Pi 会话树 JSONL 数据结构与父子节点指针关联模型](../../../public/images/pi-tutorial-session-tree-jsonl-schema.svg)
+---
 
 ## 二、为什么选择 JSONL（追加式日志）？
 

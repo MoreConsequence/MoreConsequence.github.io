@@ -50,14 +50,7 @@ series: "分布式共识与高可用容错"
 
 ### 2.1 异步复制与故障切换丢锁
 Redis 主从同步是**异步（Asynchronous Replication）**的：
-```
-Client 1 ──► [Redis Master]  (写入 SET lock:123 ... 成功返回 OK)
-                │
-                ├── (Master 突然物理断电宕机！此时该 key 尚未复制到 Slave)
-                ▼
-             [Redis Slave]  (被 Sentinel 提升为新 Master)
-Client 2 ──► [New Master]   (查询 lock:123 不存在，成功抢到同一把锁！)
-```
+![Redis 主从异步复制与 Sentinel 故障切换导致分布式锁丢失冲突拓扑](../../../public/images/consensus-redis-master-slave-failover-split-brain.svg)
 此时，Client 1 和 Client 2 同时认为自己持有同一把锁，锁的互斥性被瞬间击穿。
 
 ### 2.2 Redlock 算法与时钟漂移陷阱
@@ -104,10 +97,6 @@ keepAliveChan, _ := client.KeepAlive(ctx, leaseResp.ID)
 - **Watch 机制消除轮询开销**：未抢到锁的客户端通过 `Watch` 监听事件挂起等待，释放时由服务端精准唤醒，消除 CPU 空转与 Redis 轮询风暴。
 
 ---
-
-
-
-![Martin Kleppmann 分布式锁 Fencing Token 防护令牌与存储层单调自增校验](../../../public/images/distributed-lock-fencing-token-kleppmann-diagram.svg)
 
 ## 四、 终极防御：存储层 Fencing Token（防护令牌）
 

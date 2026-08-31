@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="napi-title napi-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="napi-title">Linux NAPI 状态机：硬中断拉起与软中断批量轮询自适应流转</title>
+  <desc id="napi-desc">状态机图展示 Linux NAPI 机制在低负载时中断响应与高负载时自适应关闭硬中断、批量软中断轮询消费的完整状态流转。</desc>
+  <defs>
+    <marker id="np-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="np-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="560" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">NAPI STATE MACHINE · ADAPTIVE INTERRUPT MERGING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux NAPI 状态机：硬中断拉起与软中断轮询</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">数据包到达 ➔ 硬中断拉起并立即关中断 ➔ 挂入 Poll 列表 ➔ 批量轮询消费 ➔ 队列清空重开中断</text>
+
+  <!-- 3 State Cards Grid (y=136..470, h=334) -->
+  <!-- State 1: IRQ Enabled / Idle (x=40..280, w=240) -->
+  <g transform="translate(40, 136)">
+    <rect width="240" height="334" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">中断监听空闲态</text>
+
+    <!-- Content -->
+    <rect x="14" y="42" width="212" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡硬件中断状态</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Hard IRQ: ENABLED ✓</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">网卡硬件中断已就绪使能</text>
+
+    <rect x="14" y="126" width="212" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">运行特性</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 队列为空或处于低负载</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无软中断轮询消耗 CPU</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 首个网络包保证微秒级响应</text>
+    <text x="24" y="222" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Zero Idle CPU Waste</text>
+
+    <rect x="14" y="246" width="212" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="268" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">触发转移事件</text>
+    <text x="24" y="288" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Packet Arrived ➔ 触发硬中断</text>
+    <text x="24" y="306" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Transition ➔ State 2</text>
+  </g>
+
+  <!-- Arrow State 1 -> State 2 (x=280..360) -->
+  <text x="320" y="192" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">1st Packet</text>
+  <line x1="280" y1="200" x2="360" y2="200" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#np-arr-accent)"/>
+
+  <!-- State 2: Scheduled (x=360..600, w=240) -->
+  <g transform="translate(360, 136)">
+    <rect width="240" height="334" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 2</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">调度挂起排队态</text>
+
+    <!-- Actions -->
+    <rect x="14" y="42" width="212" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">硬中断处理程序 (Top Half)</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">1. 立即禁用网卡硬中断！</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">   irq_disable() 封锁后续中断</text>
+    <text x="24" y="120" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">2. napi_schedule(napi)</text>
+    <text x="24" y="138" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂入当前 CPU 的 poll_list 链表</text>
+
+    <rect x="14" y="162" width="212" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心防灾价值</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">杜绝 1400w PPS 中断风暴</text>
+    <text x="24" y="222" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">硬中断耗时低于 1μs，迅速退出</text>
+    <text x="24" y="240" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">拉起软中断线程：</text>
+    <text x="24" y="258" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">raise_softirq(NET_RX_SOFTIRQ)</text>
+    <line x1="24" y1="270" x2="216" y2="270" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="290" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">由 ksoftirqd 或中断返回处理</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Transition ➔ State 3</text>
+  </g>
+
+  <!-- Arrow State 2 -> State 3 (x=600..680) -->
+  <text x="640" y="192" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SoftIRQ</text>
+  <line x1="600" y1="200" x2="680" y2="200" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#np-arr-accent)"/>
+
+  <!-- State 3: Polling (x=680..920, w=240) - Focal -->
+  <g transform="translate(680, 136)">
+    <rect width="240" height="334" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">软中断批量轮询态</text>
+
+    <!-- Polling Loop -->
+    <rect x="14" y="42" width="212" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">net_rx_action() 批量轮询</text>
+    <text x="24" y="84" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">work_done = dev->poll(budget)</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 连续从 Ring Buffer 取包</text>
+    <text x="24" y="120" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 预算约束: budget = 64 (防饿死)</text>
+    <text x="24" y="138" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 封装 SKB 并调用 GRO 合并</text>
+    <text x="24" y="154" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">napi_gro_receive()</text>
+
+    <!-- Decision Branches -->
+    <rect x="14" y="172" width="212" height="148" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="194" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">状态退出分支判定</text>
+
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 队列已清空 (work_done &lt; budget):</text>
+    <text x="24" y="230" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">napi_complete_done()</text>
+    <text x="24" y="246" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">➔ 重新使能硬中断 ➔ 回到 State 1</text>
+
+    <line x1="24" y1="256" x2="216" y2="256" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+
+    <text x="24" y="274" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 预算耗尽但仍有数据 (work == budget):</text>
+    <text x="24" y="292" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保持关中断，让出 CPU 重新排队</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">➔ 本地循环 ➔ 再次进入 State 3</text>
+  </g>
+
+  <!-- Bottom Return Path State 3 -> State 1 (y=490) -->
+  <text x="480" y="482" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">队列清空 ➔ napi_complete_done() ➔ 重新开启网卡硬中断</text>
+  <path d="M 800,470 V 490 Q 800,500 790,500 H 170 Q 160,500 160,490 V 470" fill="none" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#np-arr-accent)"/>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="520" x2="920" y2="520" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="546" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="534" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="546" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">硬中断与调度阶段</text>
+  <rect x="280" y="534" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="300" y="546" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">NAPI 批量软中断轮询核心</text>
+</svg>

@@ -22,10 +22,6 @@ series: "Go 的设计边界"
 
 原因在于 goroutine 的成本结构：阻塞在 channel 上的 goroutine 可能主要体现为 runtime 栈、调度元数据和它持有的引用，不一定像业务 `make([]byte, ...)` 那样在 heap profile 里归因到泄漏函数。数字还受 Go 版本、栈增长、profile 采样和 goroutine 所持对象影响。每个卡死的 goroutine 背后却都是一个**永远不完成的逻辑**：连接没释放、任务没结束、资源没人收。OOM 可能是晚期症状，也可能先表现为调度、文件描述符或下游资源耗尽。
 
-
-
-![Goroutine 泄漏三大经典死因：无缓冲 Channel 阻塞、锁未释放与外部 IO 挂起](../../../public/images/goroutine-leak-three-classic-patterns.svg)
-
 ## 二、实验：同一批泄漏，两把尺子量出两种结果
 
 仓库内的 `experiments/go-goroutine-leak-pprof/main.go` 不依赖 HTTP 服务：每种阻塞形状固定启动 300 个 goroutine，等待它们都进入阻塞点，再读取 `runtime.NumGoroutine`、`runtime.MemStats` 和 `pprof.Lookup("goroutine")`。命令：

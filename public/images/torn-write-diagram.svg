@@ -1,103 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tw-title tw-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="tw-title">物理页撕裂 (Torn Write) 机理与防御：半页损坏与双写/全页镜像</title>
+  <desc id="tw-desc">架构机制图展示数据库 16KB/8KB 页面被拆分为多次物理 4KB 扇区写入、中途断电导致新旧混合半页损坏以及 MySQL Doublewrite 与 PostgreSQL 全页镜像防御方案。</desc>
+  <defs>
+    <marker id="tw-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    <marker id="tw-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
   <!-- Header -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">页撕裂（Torn Write）物理本质与 MySQL Doublewrite 双写缓冲恢复</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">16KB 逻辑页 vs 4KB 物理扇区：掉电半写导致校验和崩溃，双写区如何提供干净副本</text>
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">HARDWARE IO ATOMICITY · TORN WRITE &amp; PAGE INTEGRITY DEFENSE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">物理页撕裂 (Torn Write) 机理与双写/全页镜像</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">8KB/16KB 页拆分 4KB 扇区写入 ➔ 掉电导致新旧混合半页 ➔ MySQL Doublewrite / PG full_page_writes 镜像救赎</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Split (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理扇区拆分</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">16KB / 8KB 数据库页</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 操作系统/磁盘原子写入: 4KB / 512B</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 单页落盘被拆分为多次 I/O (#1, #2...)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 硬件层面无跨扇区事务性原子保障</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Multiple Physical Sector Writes</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">非原子性物理现实：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 数据库逻辑页大小远超物理扇区；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 多次 I/O 在纳秒至微秒级依次落盘；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 存在致命的时间空窗！</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Sector Boundary Mismatch</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">底层磁盘协议固有限制</text>
   </g>
 
-  <!-- Main Comparison Grid (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Crash</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tw-arr-accent)"/>
 
-    <!-- Left Box: Torn Write Process (420px wide) -->
-    <g transform="translate(20, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#fecaca" stroke-width="1"/>
-      <rect width="420" height="32" rx="6" fill="#fef2f2"/>
-      <text x="14" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b">⚠️ 硬件物理限制：16KB 写入被扇区拆分，中途掉电</text>
+  <!-- Col 2: Torn Page (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · DISASTER</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">断电导致半页撕裂</text>
 
-      <g transform="translate(16, 46)">
-        <!-- 4KB Sector 1 (Written) -->
-        <rect x="0" y="0" width="200" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">扇区 1 (0-4KB) ── [已落盘 V2 新数据]</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">中途掉电: I/O #1 成功，I/O #2 丢失</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 前半页: 新写入的物理行与 LSN</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 后半页: 旧版本残留碎片数据</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 页校验和 (Checksum) 彻底损坏！</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Torn Page Corrupted (半页废纸)</text>
 
-        <!-- 4KB Sector 2 (Written) -->
-        <rect x="0" y="38" width="200" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-        <text x="100" y="59" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">扇区 2 (4-8KB) ── [已落盘 V2 新数据]</text>
-
-        <!-- Power Cut Lightning Line -->
-        <line x1="210" y1="75" x2="380" y2="75" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrow-red)"/>
-        <text x="295" y="68" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#dc2626" text-anchor="middle">⚡ 突发掉电 (Power Cut)</text>
-
-        <!-- 4KB Sector 3 (Lost) -->
-        <rect x="0" y="76" width="200" height="34" rx="4" fill="#fee2e2" stroke="#f87171"/>
-        <text x="100" y="97" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#991b1b" text-anchor="middle">扇区 3 (8-12KB) ── [丢失! 仍为 V1]</text>
-
-        <!-- 4KB Sector 4 (Lost) -->
-        <rect x="0" y="114" width="200" height="34" rx="4" fill="#fee2e2" stroke="#f87171"/>
-        <text x="100" y="135" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#991b1b" text-anchor="middle">扇区 4 (12-16KB) ── [丢失! 仍为 V1]</text>
-
-        <!-- Result note -->
-        <rect x="210" y="90" width="180" height="58" rx="4" fill="#fef2f2" stroke="#fca5a5"/>
-        <text x="300" y="112" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#b91c1c" text-anchor="middle">❌ 页损坏 (Torn Page)</text>
-        <text x="300" y="128" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#7f1d1d" text-anchor="middle">新旧数据杂糅，Checksum</text>
-        <text x="300" y="140" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#7f1d1d" text-anchor="middle">校验彻底失败，WAL 无法回放！</text>
-      </g>
-    </g>
-
-    <!-- Right Box: Doublewrite Buffer Solution (420px wide) -->
-    <g transform="translate(460, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1"/>
-      <rect width="420" height="32" rx="6" fill="#eff6ff"/>
-      <text x="14" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">🛡️ 工业解法：InnoDB Doublewrite Buffer（双写区）</text>
-
-      <g transform="translate(16, 46)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 -->
-        <rect width="388" height="36" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" fill="#0f172a" font-weight="700">步骤 1：顺序写入 Doublewrite Buffer (连续磁盘区)</text>
-        <text x="12" y="30" fill="#64748b" font-size="9.5">脏页先批量顺序刷入系统表空间连续双写槽位，性能开销仅增加 ~5%</text>
-
-        <!-- Step 2 -->
-        <rect y="44" width="388" height="36" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="62" fill="#0f172a" font-weight="700">步骤 2：离散刷盘到真实数据表空间 (*.ibd)</text>
-        <text x="12" y="74" fill="#64748b" font-size="9.5">离散写入若遭遇掉电产生撕裂损坏，无需恐慌</text>
-
-        <!-- Step 3 Recovery -->
-        <rect y="88" width="388" height="54" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="12" y="106" fill="#166534" font-weight="700">步骤 3：崩溃恢复时从双写区复制完整副本 (Crash Safe)</text>
-        <text x="12" y="122" fill="#15803d" font-size="10">• 校验和失败发现撕裂页 ──► 从 Doublewrite 区找到未损坏完整旧页</text>
-        <text x="12" y="136" fill="#15803d" font-size="10">• 用干净页覆盖损坏页 ──► 重新应用 Redo Log 推进至最新一致位点！</text>
-      </g>
-    </g>
-
-    <!-- Bottom Summary Bar -->
-    <g transform="translate(20, 260)">
-      <rect width="860" height="55" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">设计权衡：</tspan> Redo Log 记录的是物理增量差量，<tspan font-weight="700" fill="#ea580c">假定基础数据页未被物理破坏</tspan>；Doublewrite Buffer 提供了兜底的“纯净基底页”，确保 ACID 持久性。
-      </text>
-      <text x="430" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">
-        (PostgreSQL 等效机制：`full_page_writes=on`，每个 Checkpoint 后的首次页修改将整页完整写入 WAL)
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">普通 Redo Log 瘫痪死穴：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Redo Log 记录的是增量差异 (Delta)；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 物理底页已撕裂毁容，无法计算目标偏移；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 若无底页整页镜像，数据库永久损坏！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Fatal Base Page Corruption</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">增量重放无法在坏页上起跳</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Defend</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tw-arr-accent)"/>
+
+  <!-- Col 3: Solutions (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#141413"/>
+    <text x="52" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">两大救赎对策</text>
+
+    <!-- PG Solution -->
+    <rect x="14" y="42" width="232" height="60" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">PG: full_page_writes = on</text>
+    <text x="24" y="78" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Checkpoint 后首改直接塞整页镜像进 WAL</text>
+    <text x="24" y="92" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Log Bloat for Safety</text>
+
+    <!-- MySQL Solution -->
+    <rect x="14" y="110" width="232" height="60" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="130" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">MySQL: Doublewrite Buffer</text>
+    <text x="24" y="146" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">刷盘前先写 doublewrite 共享区备份</text>
+    <text x="24" y="160" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Double Write IO Overhead</text>
+
+    <!-- Details -->
+    <rect x="14" y="178" width="232" height="182" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="198" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">恢复期自动治愈：</text>
+    <text x="24" y="218" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 发现 Checksum 撕裂损坏；</text>
+    <text x="24" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 从完整镜像直接覆盖坏页；</text>
+    <text x="24" y="258" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 再重放增量 Redo 顺利恢复！</text>
+    <line x1="24" y1="270" x2="236" y2="270" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="290" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Zero-Loss Page Restoration</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Defend Hardware Torn Writes</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">物理扇区拆分与全页镜像恢复方案</text>
+  <rect x="350" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="370" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">中途掉电导致新旧混合半页撕裂灾难核心</text>
 </svg>

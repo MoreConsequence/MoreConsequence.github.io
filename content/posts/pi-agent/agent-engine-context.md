@@ -72,9 +72,7 @@ const candidates = ["AGENTS.override.md", "AGENTS.md", "AGENTS.MD", "CLAUDE.md",
 
 这段代码还处理了一个少见的坑：`findShadowedContextFile` 专门识别 git worktree 场景——主仓库与 linked worktree 的上下文文件指向同一个逻辑仓库，两个都加载会重复注入，所以被遮蔽的那个会被跳过。**上下文装配的边界问题已经细到"同仓库跨 worktree 不重复"**，这提醒我们：指令文件的继承链是状态，必须显式建模。
 
-
-
-![KV Cache 提示词前缀对齐与 Prompt Caching 成本归零法则](../../../public/images/kv-cache-prompt-caching-breakpoint-alignment.svg)
+---
 
 ## 四、compaction：两个数字闸门加一道 LLM 摘要
 

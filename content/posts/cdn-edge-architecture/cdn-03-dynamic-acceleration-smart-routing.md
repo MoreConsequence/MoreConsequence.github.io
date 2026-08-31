@@ -26,17 +26,7 @@ featured: true
 
 ![边缘动态请求终结与私有骨干预热长连接池复用拓扑](../../../public/images/cdn-connection-pool-reuse.svg)
 
-```
-[客户端 (中国北京)]                                         [美东源站 (RTT = 180ms)]
-   │                                                                    │
-   ├─────── 1. TCP SYN ────────────────────────────────────────────────>│ (1.0 RTT = 180ms)
-   │<────── 2. TCP SYN-ACK ─────────────────────────────────────────────┤
-   ├─────── 3. TCP ACK + TLS 1.3 ClientHello ──────────────────────────>│ (2.0 RTT = 360ms)
-   │<────── 4. TLS 1.3 ServerHello + Finished ──────────────────────────┤
-   ├─────── 5. HTTP POST /api/order ───────────────────────────────────>│ (3.0 RTT = 540ms)
-   │        [源站业务执行计算与数据库写入: T_calc = 20ms]               │
-   │<────── 6. HTTP 200 OK Response ────────────────────────────────────┤ (TTFB = 560ms)
-```
+![直连跨洋源站 vs CDN 边缘动态加速时序瀑布对比 (560ms vs 187ms)](../../../public/images/cdn-dynamic-api-waterfall-comparison.svg)
 
 1. **跨洋协议冷启动开销**：单次请求必须在太平洋海底来回穿梭 3 次（TCP 握手 1 RTT + TLS 协商 1 RTT + HTTP 请求响应 1 RTT），在数据还没开始处理前就已经耗费了 $540\text{ms}$；
 2. **公网 BGP 路由僵化与单点拥塞**：公网 BGP 选路只看自治系统跳数（AS-Path），当某个跨洋主干路由器发生光纤老化、拥塞排队甚至 $5\%\sim 8\%$ 随机丢包时，公网路由器无法自动感知与绕道，导致 TCP 频繁超时重传，延迟飙升至数秒；
@@ -75,15 +65,13 @@ $$\text{TTFB}_{dca} = 3 \times 4\text{ ms} + 155\text{ ms} + 20\text{ ms} = 187\
 
 ---
 
-
-
-![智能覆盖网（Smart Overlay Routing）：实时多路径探测与次优路径避障](../../../public/images/cdn-smart-overlay-mesh-probing-route.svg)
-
 ## 三、 全球实时探测智能覆盖网（Smart Overlay Routing）
 
 长途跨洋物理链路的质量是瞬息万变的。公网原生 BGP 路由器只依据商业跳数选路，缺乏对链路丢包、抖动和队列积压的实时感知。
 
 现代 CDN 构建了覆盖全球的 **应用层覆盖网络（Application Layer Overlay Network）**，实现了毫秒级动态智能选路。
+
+![智能覆盖网（Smart Overlay Routing）：实时多路径探测与次优路径避障](../../../public/images/cdn-smart-overlay-mesh-probing-route.svg)
 
 ![公网 BGP 单线拥塞 vs CDN 多跳智能探测覆盖网对比](../../../public/images/cdn-dynamic-smart-routing.svg)
 

@@ -1,121 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="c10-title c10-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="c10-title">从 C10K 到 C10M 架构演进与 ET/LT 模式</title>
+  <desc id="c10-desc">系统 I/O 演进架构图展示从 select/poll 全量扫描到 epoll 就绪链表、ET/LT 触发模式排空机制、多队列 RSS 与 NAPI 忙轮询，以及 DPDK/XDP 内核旁路零拷贝体系。</desc>
+  <defs>
+    <marker id="c10-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="c10-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">从 C10K 到 C10M：四代高性能 I/O 架构演进史</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">一代: select/poll (O(N) 线性遍历) ──► 二代: epoll (O(1) 红黑树+就绪链表) ──► 三代: io_uring (SQ/CQ 共享内存零系统调用) ──► 四代: DPDK (内核旁路零拷贝)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">I/O PARADIGM SHIFT · SELECT, EPOLL, RSS, NAPI &amp; DPDK/XDP KERNEL BYPASS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">从 C10K 到 C10M 架构演进与 ET/LT 模式</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">select O(N) ➔ epoll O(就绪) ➔ ET 循环排空 ➔ RSS 忙轮询 ➔ DPDK/XDP 内核旁路</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: C10K Select to epoll (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">C10K SHIFT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">从轮询到就绪</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">select O(N) ➔ epoll O(1)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• select 每次传递全量位图并扫描</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• epoll 就绪链表彻底解决万并发瓶颈</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Event-Driven Revolution</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">演进红利：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 摆脱每次全量 fd 进出内核拷贝；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• CPU 从“找活干”中彻底释放；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 支撑 Nginx / Redis 万并发神话。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Columns (210px each) -->
-    <g>
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#fef2f2"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">1. select / poll (C1K)</text>
+  <!-- Col 2: ET vs LT (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ET VS LT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">边缘触发与排空</text>
 
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#f87171">O(N) 线性轮询：</text>
-          
-          <text x="8" y="38" fill="#cbd5e1">• 每次调用将整个 fd 数组从用户态拷贝进内核</text>
-          <text x="8" y="62" fill="#ef4444">• 内核 O(N) 逐个扫描 1024 个 fd 是否有数据</text>
-          <text x="8" y="86" fill="#f87171">• 连接数越大，性能直线暴跌！</text>
-          
-          <text x="8" y="116" fill="#ef4444">🔴 极限: 1,000 连接</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">EPOLLET: Loop read EAGAIN</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• LT: 缓冲区未空反复通知，易于编码</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• ET: 仅通知一次，必须循环读至 EAGAIN</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Zero-Redundant Notification</text>
 
-        <rect y="162" width="186" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#991b1b">瓶颈：</text>
-        <text x="8" y="34" font-size="7.5" fill="#7f1d1d">• 频繁内存全量拷贝；</text>
-        <text x="8" y="48" font-size="7.5" fill="#7f1d1d">• 线性扫描浪费 CPU；</text>
-        <text x="8" y="62" font-size="7.5" fill="#dc2626">• 早期互联网无奈方案。</text>
-      </g>
-    </g>
-
-    <g transform="translate(225, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. epoll (C100K 革命)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#38bdf8">O(1) 事件回调通知：</text>
-          
-          <text x="8" y="38" fill="#86efac">• 内核红黑树管理 fd 集合 (单次注册)</text>
-          <text x="8" y="62" fill="#34d399">• 网卡中断触发 ep_poll_callback 写入就绪链表</text>
-          <text x="8" y="86" fill="#4ade80">• 仅返回真正活跃的连接！</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 支撑 100 万并发常驻！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="8" y="34" font-size="7.5" fill="#1d4ed8">• Nginx / Netty / Redis 核心基石；</text>
-        <text x="8" y="48" font-size="7.5" fill="#1d4ed8">• 彻底解决 C10K 难题；</text>
-        <text x="8" y="62" font-size="7.5" fill="#047857">• 统治互联网二十年。</text>
-      </g>
-    </g>
-
-    <g transform="translate(450, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. io_uring (C1M 突破)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#4ade80">双无锁环形队列 (SQ/CQ):</text>
-          
-          <text x="8" y="38" fill="#86efac">• 提交队列 (SQ) 与完成队列 (CQ) 共享内存</text>
-          <text x="8" y="62" fill="#38bdf8">• 0 系统调用下发海量 I/O 请求</text>
-          <text x="8" y="86" fill="#34d399">• 内核内核线程自动异步执行并回填</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 单机突破 300 万 IOPS！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="8" y="34" font-size="7.5" fill="#15803d">• 消除系统调用上下文切换开销；</text>
-        <text x="8" y="48" font-size="7.5" fill="#15803d">• 统一文件与网络异步模型；</text>
-        <text x="8" y="62" font-size="7.5" fill="#047857">• Linux 现代 I/O 未来。</text>
-      </g>
-    </g>
-
-    <g transform="translate(675, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">4. DPDK (C10M 巅峰)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#fb923c">内核旁路 (Kernel Bypass):</text>
-          
-          <text x="8" y="38" fill="#fed7aa">• 用户态驱动直接通过 DMA 读写网卡</text>
-          <text x="8" y="62" fill="#34d399">• 彻底绕过 Linux 内核协议栈</text>
-          <text x="8" y="86" fill="#4ade80">• 纯轮询模式 (PMD) 消除中断开销</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 单机吞吐 10,000,000 PPS！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#c2410c">极端性能：</text>
-        <text x="8" y="34" font-size="7.5" fill="#9a3412">• 万兆/十万兆网关、SDN 路由器专用；</text>
-        <text x="8" y="48" font-size="7.5" fill="#9a3412">• 压榨物理硬件绝对极限；</text>
-        <text x="8" y="62" font-size="7.5" fill="#ea580c">• 工业级网络终极圣杯！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">ET 陷阱防范：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 若未读尽数据将永久卡死无新通知；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 结合非阻塞 I/O 达成极致事件吞吐；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 是高性能网络库标准配置。</text>
   </g>
+
+  <!-- Col 3: C10M RSS & NAPI (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">C10M RSS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">多队列与忙轮询</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">RSS + NAPI Polling</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 多队列网卡绑定特定 CPU 核心</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• NAPI 忙轮询消除中断上下文切换开销</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Interrupt Storm Elimination</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">瓶颈转移：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 瓶颈从事件分发移至内核中断与锁；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 专用核专啃专用网卡队列；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 支撑超高 PPS 网络负载。</text>
+  </g>
+
+  <!-- Col 4: DPDK Kernel Bypass (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DPDK / XDP</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内核旁路极限</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Zero Protocol Stack</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 用户态直接驱动网卡 Ring Buffer</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 0 内核拷贝，实现千万并发线速转发</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Kernel Bypass Mastery</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">演进结论：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 业务层用 epoll 足够支撑万兆吞吐；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 极限网关/抗 D 采用 XDP/DPDK 旁路；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成网络栈终极技术演进闭环。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">C10K 轮询向就绪演进与 DPDK/XDP 内核旁路体系</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">ET 边缘触发循环排空与多队列 RSS 忙轮询核心</text>
 </svg>

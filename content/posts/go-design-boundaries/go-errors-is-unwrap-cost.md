@@ -46,10 +46,6 @@ func is(err, target error, targetComparable bool) bool {
 
 每轮循环 = 一次 `==` + 一两次类型断言 + 一次解链——当前入口实测 10 层链为 **38.05ns**，从无链 4.845ns 到 1/3/10 层呈近似线性增长。这就是为什么深链查询通常不是第一热点：遍历成本随比较次数线性增长，但真正要警惕的是另一头的构造。
 
-
-
-![Go 1.13+ 错误包装与 Unwrap 递归树：errors.Is / errors.As 匹配机理](../../../public/images/go-error-wrap-unwrap-tree-traversal.svg)
-
 ## 二、实测：查询线性、构造昂贵
 
 | 操作 | ns/op | B/op | allocs |

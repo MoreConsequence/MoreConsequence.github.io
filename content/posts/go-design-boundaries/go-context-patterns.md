@@ -248,10 +248,6 @@ func (c *cancelCtx) propagateCancel(parent Context, child canceler) {
 
 这个设计把"用 Context 传值"从风格建议变成实现约束：级联依赖的是**派生时刻的注册**——只有 `With*(parent)` 调用时，子节点才被登记进父的 children。任何不经过当前链派生的用法（比如中途用 `context.Background()` 重开、把别的 Context 塞给子任务）都绕过了 propagateCancel 的注册时机，上游的取消信号再也到不了这一支——这就是"不切断 Context 链"这条惯例的源码根据。
 
-
-
-![Context.Value 链表查找代价：O(N) 线性向上追溯与类型断言开销](../../../public/images/context-value-lookup-linear-cost.svg)
-
 ## 四、AfterFunc 与取消原因：取消的两种现代姿势
 
 第三节看的是"取消怎么传播"，这一节看两个相对新（Go 1.20/1.21）的能力：**取消时干什么** 与**取消为什么**。

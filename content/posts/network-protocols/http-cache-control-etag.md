@@ -34,10 +34,6 @@ flowchart LR
 - **协商缓存命中**：发一个只带校验头的请求，服务器回 `304 Not Modified`——**服务器不发 body**，浏览器继续用本地缓存。
 - **协商错失**：服务器回 200 + 新 body。
 
-
-
-![HTTP 缓存决策树：Cache-Control 指令集 (no-store, no-cache, must-revalidate)](../../../public/images/http-cache-control-header-flowchart.svg)
-
 ## 二、两个响应头的账本
 
 | 头 | 触发方式 | 换来什么 | 成本 |

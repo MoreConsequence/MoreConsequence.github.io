@@ -1,102 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cbo-title cbo-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="cbo-title">MySQL 优化器代价模型 (Cost Model) 与 EXPLAIN 决策树</title>
+  <desc id="cbo-desc">架构决策图展示 MySQL 8.0 CBO 代价计算公式（I/O 读页 + CPU 行评估）以及全表扫描与二级索引回表在不同命中率下的代价值比拼与选路逻辑。</desc>
+  <defs>
+    <marker id="cb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL 优化器代价模型 (Cost Model) 与 EXPLAIN 决策机理</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">IO Cost (物理页读取) + CPU Cost (行比对过滤) ──► 为什么优化器有时选择全表扫描放弃索引？</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Panes (285px each) -->
-    <!-- Col 1: Cost Formula -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 代价精算公式 (Total Cost)</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">COST-BASED OPTIMIZER · CBO COST FORMULA &amp; EXPLAIN DECISION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">MySQL 优化器代价模型与选路决策</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Total Cost = I/O 成本 (磁盘 1.0 / 内存 0.25) + CPU 成本 (行评估 0.1) ➔ 全表扫描 vs 索引回表 代价对决</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">Total Cost = IO_Cost + CPU_Cost</text>
-          <text x="10" y="36" fill="#93c5fd">• IO_Cost:</text>
-          <text x="16" y="50">页数 × 1.0 (磁盘读) 或 0.25 (内存读)</text>
-          <text x="10" y="68" fill="#93c5fd">• CPU_Cost:</text>
-          <text x="16" y="82">扫描行数 × 0.2 (行比对开销)</text>
-          <text x="10" y="104" fill="#34d399">优化器目标：穷举所有候选执行计划，</text>
-          <text x="10" y="118" fill="#34d399">挑选 Total Cost 绝对值最小的路径！</text>
-        </g>
+  <!-- Top: Cost Formula & System Tables (y=136..236, h=100) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="100" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="120" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="74" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">COST FORMULA</text>
+    <text x="144" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">MySQL 8.0 CBO 代价计算核心数学模型</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">统计信息基石：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 基数 (Cardinality, 区分度)</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 采样估计：每次 ANALYZE TABLE 随机读8页</text>
-        <text x="10" y="62" font-size="7.5" fill="#1d4ed8">• 脏统计可能导致代价计算严重失真</text>
-      </g>
-    </g>
+    <!-- Formula Columns (y=34..90) -->
+    <g transform="translate(14, 34)">
+      <!-- Box 1: IO Cost -->
+      <rect x="0" y="0" width="270" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="135" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">I/O Cost (页读开销)</text>
+      <text x="135" y="38" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Disk: 1.0 / Buffer Pool: 0.25</text>
 
-    <!-- Col 2: The 20% Rule -->
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 为什么放弃索引？(20% 临界点)</text>
+      <!-- Box 2: CPU Cost -->
+      <rect x="282" y="0" width="270" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="417" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CPU Cost (计算开销)</text>
+      <text x="417" y="38" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">row_evaluate: 0.1 / key_compare: 0.05</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">// 当匹配行数超过全表约 20%</text>
-          <text x="10" y="36" fill="#f87171">方案 A (走二级索引):</text>
-          <text x="16" y="50">需做 200,000 次随机回表 IO！</text>
-          <text x="16" y="64">回表 IO 代价 &gt;&gt; 全表扫描</text>
-          
-          <text x="10" y="86" fill="#34d399">方案 B (直接全表扫描):</text>
-          <text x="16" y="100">纯顺序 IO 批量预读连续页</text>
-          <text x="16" y="114">总代价更低！</text>
-          <text x="10" y="132" fill="#fbbf24">► 优化器理智地选择放弃索引</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">优化手段：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 使用 FORCE INDEX 强制（慎用）</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 建立联合覆盖索引消灭回表</text>
-        <text x="10" y="62" font-size="7.5" fill="#9a3412">• 优化 WHERE 条件缩小匹配基数</text>
-      </g>
-    </g>
-
-    <!-- Col 3: EXPLAIN Checklist -->
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. EXPLAIN 关键字段速查</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">• type 访问类型性能阶梯:</text>
-          <text x="16" y="32" fill="#34d399">system &gt; const &gt; eq_ref &gt; ref</text>
-          <text x="16" y="46" fill="#fbbf24">&gt; range &gt; index &gt; ALL (全表)</text>
-          
-          <text x="10" y="68" fill="#4ade80">• Extra 危险与优秀信号:</text>
-          <text x="16" y="82" fill="#34d399">✓ Using index: 覆盖索引最优</text>
-          <text x="16" y="96" fill="#f87171">❌ Using filesort: 额外文件排序</text>
-          <text x="16" y="110" fill="#f87171">❌ Using temporary: 内存临时表</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">生产准则：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 核心查询 type 至少达到 range 级</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 杜绝 Using temporary 与 filesort</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 借助 EXPLAIN FORMAT=JSON 观察 exact cost</text>
-      </g>
+      <!-- Box 3: Total Cost (Focal) -->
+      <rect x="564" y="0" width="288" height="52" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="708" y="20" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Total Cost = IO + CPU</text>
+      <text x="708" y="38" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">优化器严格挑选 Cost 最小路径！</text>
     </g>
   </g>
+
+  <!-- Bottom: 2 Competing Execution Plans (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Plan A: Table Scan (x=0..420, w=420) -->
+    <g transform="translate(0, 0)">
+      <rect width="420" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="14" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="64" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PLAN A · SCAN</text>
+      <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全表扫描 (type = ALL)</text>
+
+      <rect x="14" y="42" width="392" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="24" y="62" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Cost = M_Pages * 1.0 + Total_Rows * 0.1</text>
+      <text x="24" y="80" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">纯顺序扫描聚簇索引所有 16KB 数据页，每页仅读一次</text>
+      <text x="24" y="96" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Zero Random Lookup Overhead</text>
+
+      <text x="14" y="130" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">何时被优化器采纳：</text>
+      <text x="14" y="148" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 命中行数超过全表 ~20% - 30% 时；</text>
+      <text x="14" y="166" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 顺序读取能充分利用 OS 预读与磁盘连续带宽；</text>
+      <text x="14" y="184" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 避免了海量离散随机回表带来的 I/O 放大。</text>
+      <line x1="14" y1="196" x2="406" y2="196" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="216" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">结论：全表扫不等于慢，大选择性下是正解！</text>
+      <text x="14" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Sequential Scan Advantage</text>
+    </g>
+
+    <!-- Plan B: Secondary Index Lookup (x=440..880, w=440) - Focal -->
+    <g transform="translate(440, 0)">
+      <rect width="440" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+      <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PLAN B · INDEX</text>
+      <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">二级索引回表 (type = ref)</text>
+
+      <rect x="14" y="42" width="412" height="66" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+      <text x="24" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Cost = Index_Pages * 0.25 + N_Rows * 1.0 + N * 0.1</text>
+      <text x="24" y="80" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">先扫索引页拿到主键 ➔ 每行触发 1 次聚簇索引随机读！</text>
+      <text x="24" y="96" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">N Rows Random Page I/O</text>
+
+      <text x="14" y="130" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">为何有时放弃索引：</text>
+      <text x="14" y="148" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 命中 10 万行 ➔ 需执行 10 万次离散随机回表！</text>
+      <text x="14" y="166" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 100,000 * 1.0 = 100,000 成本，远超全表扫！</text>
+      <text x="14" y="184" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 统计信息过期时，估算 rows 偏差会误导选路。</text>
+      <line x1="14" y1="196" x2="426" y2="196" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="14" y="216" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">优化之道：使用覆盖索引 (Covering Index) 彻底消灭回表</text>
+      <text x="14" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Eliminate Back-to-Table Cost</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">全表扫描低顺序代价模型</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">二级索引随机回表代价与 CBO 决策核心</text>
 </svg>

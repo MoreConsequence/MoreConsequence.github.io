@@ -1,97 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sc-title sc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="sc-title">大模型批处理调度对比：静态批处理 vs 迭代级连续批处理</title>
+  <desc id="sc-desc">对比图展示传统静态批处理中因生成长度差异产生的严重 Padding 算力浪费与木桶效应，对比连续批处理按迭代动态释放插槽实现 GPU 满载的高效机制。</desc>
+  <defs>
+    <marker id="sc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="sc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型批处理调度对比：静态批处理（Static Batch）vs 连续批处理（Continuous Batching）</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">木桶木屑效应（早完成请求被迫等待最长请求） vs 迭代级动态插队（Iteration-level Scheduling，算力利用率 100%）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LLM INFERENCE SCHEDULING · STATIC VS CONTINUOUS BATCHING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">大模型批处理调度演进对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">静态批处理 (Padding 算力浪费 70%/首字排队饥饿) vs 连续批处理 (迭代级动态插入/槽位毫秒级复用/算力满载)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Static Batching (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="74" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATIC BATCHING</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统请求级静态批处理</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">木桶效应 (Bucket Penalty)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 批次内请求长度差异大: L1=20 词 vs L4=1000 词</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• L1 提早完成后，被迫填充 980 个 &lt;pad&gt; 字符空转！</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">系统运行缺陷：</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 算力浪费高达 70%，GPU 持续对 Padding 空白做矩阵乘法；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 新请求必须死等最长 L4 整体出队，产生头部阻塞 (HoL)；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 首字时延 (TTFT) P99 飙升至数十秒！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Rigid Batch Tensor Lifecycle &amp; GPU Starvation</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构局限</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">请求级生命周期强绑定，在大模型自回归长短差异巨大的场景下彻底瓦解。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Severe Padding Overhead (50%~80%)</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Head-of-Line Blocking Tail Latency</text>
   </g>
 
-  <!-- Main Comparison Card (900px wide) -->
-  <g transform="translate(30, 75)">
-    <!-- Left Box: Static Batching (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统静态批处理：严重的木桶填充浪费</text>
+  <!-- Col 2: Continuous Batching (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#e85d3f"/>
+    <text x="84" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CONTINUOUS BATCHING</text>
+    <text x="164" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">迭代级连续批处理 (Orca / vLLM)</text>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Request 1 (Long: 500 tokens) -->
-        <rect width="403" height="36" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-        <text x="12" y="16" fill="#1e40af" font-weight="700">Req 1 (长文本): [ 500 Tokens 生成中... ]</text>
-        <text x="12" y="28" font-size="9.5" fill="#2563eb">全程占用 GPU Slot</text>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">迭代级动态解耦 (Iteration-Level Dynamic Pool)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 调度粒度: 单次 Forward 迭代 (Step)，Batch 动态组装</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 遇 EOS 即刻出队，空闲槽位瞬间插入排队新请求！</text>
 
-        <!-- Request 2 (Short: 50 tokens finished early) -->
-        <g transform="translate(0, 42)">
-          <rect width="403" height="42" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-          <text x="12" y="16" fill="#991b1b" font-weight="700">Req 2 (短文本): [50 Tokens 结束] ──► <tspan fill="#dc2626">Padding 占位等待 450 轮！</tspan></text>
-          <text x="12" y="30" font-size="9.5" fill="#7f1d1d">💥 算力空转：已完成请求不能提前返回，未完成请求必须填充空数据！</text>
-        </g>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">颠覆性性能收益：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 彻底消灭 Padding 算力浪费 (Padding 浪费率 &lt; 5%)；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. GPU 算力利用率 100% 满载，系统吞吐暴增 2~4 倍！</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 新请求毫秒级插入参与计算，首字时延 (TTFT) 大幅下降。</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Zero In-Flight Starvation &amp; Max GPU Saturation</text>
 
-        <!-- Request 3 (New request queued outside) -->
-        <g transform="translate(0, 90)">
-          <rect width="403" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="12" y="16" fill="#0f172a" font-weight="700">Req 3 (新来请求): 外部队列盲等中 ⏳</text>
-          <text x="12" y="30" font-size="9.5" fill="#64748b">必须等待整组 Batch 全部结束，才能开始下一批！首字时延（TTFT）极高！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Right Box: Continuous Batching (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">⚡ 迭代级连续批处理：无锁动态插拔</text>
-
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 Early Finish & Evict -->
-        <rect width="403" height="36" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-        <text x="12" y="16" fill="#065f46" font-weight="700">Req 2 遇到 EOS (结束符) ──► 立即结束并释放显存</text>
-        <text x="12" y="28" font-size="9.5" fill="#047857">向客户端流式输出完毕，空出 GPU 计算槽位</text>
-
-        <!-- Step 2 Dynamic Insert -->
-        <g transform="translate(0, 42)">
-          <rect width="403" height="42" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-          <text x="12" y="16" fill="#1e40af" font-weight="700">下一迭代瞬间插入 Req 3 ──► 0 等待即刻 Prefill！</text>
-          <text x="12" y="30" font-size="9.5" fill="#2563eb">Req 1 与新进的 Req 3 在同一个 Forward 矩阵中混部并行解码！</text>
-        </g>
-
-        <!-- Output Metric -->
-        <g transform="translate(0, 90)">
-          <rect width="403" height="42" rx="4" fill="#d1fae5" stroke="#6ee7b7"/>
-          <text x="12" y="16" fill="#065f46" font-weight="700">🎯 吞吐提升奇迹：</text>
-          <text x="12" y="30" font-size="9.5" fill="#047857">GPU 算力利用率（MFU）提升 300%~500%，P99 首字延迟下降 80%！</text>
-        </g>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">现代工业标配</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">vLLM、TGI、TensorRT-LLM 核心调度基石：解绑请求边界，释放极致推理并发！</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Standard Modern LLM Inference Engine Core</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">2x~4x End-to-End Throughput Surge</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">调度核心进化：</tspan> 从“请求级粗粒度排队”跃迁至 <tspan font-weight="700" fill="#2563eb">“Token 迭代级细粒度动态调度（Orca 架构）”</tspan>，是大模型推理吞吐翻倍的基石。
-    </text>
-  </g>
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统静态批处理与 Padding 木桶浪费</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">迭代级连续批处理与动态插槽满载调度核心</text>
 </svg>

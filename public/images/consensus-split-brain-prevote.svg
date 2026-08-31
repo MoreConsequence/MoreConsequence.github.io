@@ -1,94 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="prevote-title prevote-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="prevote-title">非对称网络分区脑裂与 Pre-Vote 预投票防护机制</title>
+  <desc id="prevote-desc">对比图展示传统 Raft 孤立节点 Term 盲目递增打崩正常 Leader 的缺陷，以及 Pre-Vote 试探机制在获得多数派许可前绝不递增 Term 的防护原理。</desc>
+  <defs>
+    <marker id="pv-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    <marker id="pv-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#ea580c"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">非对称网络分区脑裂（Split-Brain）与 Pre-Vote 预投票防护机制</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">孤立节点单向丢包导致 Term 无限膨胀打崩合法 Leader vs Pre-Vote 试探性选举防御</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ASYMMETRIC PARTITION · PRE-VOTE PROTOCOL DEFENSE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">非对称网络分区脑裂与 Pre-Vote 防护机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">经典 Raft 孤立节点 Term 暴增打崩现任 Leader；Pre-Vote 试探阶段绝不递增物理任期，从根源杜绝选举震荡</text>
+
+  <!-- Left: Classic Raft Flaw (Mode A, x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE A</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">经典 Raft 规范：任期盲目膨胀与 Leader 击坠</text>
+
+    <!-- Step 1: Isolation & Inflation -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 非对称分区孤立 (Node 5)</text>
+    <text x="26" y="86" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">收不到 Leader 心跳 ➔ 频繁触发 Election Timeout</text>
+    <text x="26" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">物理 Term 持续自增: Term 1 ➔ 2 ➔ 10 ➔ 100</text>
+
+    <!-- Step 2: Healing & Attack -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 分区自愈与广播 RequestVote</text>
+    <text x="26" y="158" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Node 5 带着畸高 Term=100 广播拉票 RPC</text>
+    <text x="26" y="172" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">全网节点收到大于自身的 Term</text>
+
+    <!-- Step 3: Leader Step Down -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 现任 Leader 被迫无条件退位</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Raft 铁律：发现更高 Term 必须立即降级为 Follower</text>
+    <text x="26" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">现任 Leader (Term 1) 瞬间失效</text>
+
+    <!-- Step 4: Cluster Impact -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="286" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">经典 Raft 生产后果</text>
+    <text x="26" y="306" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">Node 5 日志落后无法当选，原 Leader 已被击退</text>
+    <text x="26" y="324" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">集群陷入无主震荡，在途读写请求全部阻塞超时</text>
+    <text x="26" y="342" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高可用 SLA 严重受损</text>
   </g>
 
-  <!-- Main Comparison Panes -->
-  <g transform="translate(30, 75)">
-    <!-- Left Pane: The Danger of Split Brain & Disrupted Leader (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 无 Pre-Vote：孤立节点打崩正常集群</text>
+  <!-- Right: Pre-Vote Protection (Mode B, x=500..920, w=420) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE B</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产级 Pre-Vote 预投票机制 (etcd / TiKV 标准)</text>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 -->
-        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#fecaca"/>
-        <text x="12" y="18" fill="#991b1b" font-weight="700">1. 网络分区：Node 5 被单向孤立</text>
-        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">收不到 Leader (Term 1) 心跳，超时触发选举，递增至 Term 2, 3, 4...</text>
+    <!-- Step 1: PreCandidate -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 进入 PreCandidate 试探阶段</text>
+    <text x="26" y="86" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">物理 currentTerm 保持不变 (严格锁定在 Term 1)</text>
+    <text x="26" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">发送 PreVote(nextTerm=2) 轻量探测包</text>
 
-        <!-- Step 2 -->
-        <rect y="48" width="403" height="52" rx="4" fill="#fee2e2" stroke="#f87171"/>
-        <text x="12" y="66" fill="#7f1d1d" font-weight="700">2. 分区恢复：Node 5 带着高任期 (Term 10) 归来</text>
-        <text x="12" y="80" font-size="9.5" fill="#991b1b">向集群广播 RequestVote(Term=10)；合法 Leader 收到更高 Term 强制降级！</text>
-        <text x="12" y="93" font-size="9.5" font-weight="700" fill="#b91c1c">💥 灾难：集群被迫中断正常读写，重新进入无主选举震荡！</text>
+    <!-- Step 2: Leader Stickiness Check -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 接收节点 Leader 租约粘性判定</text>
+    <text x="26" y="158" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Node 2/3/4 仍持续收到正常 Leader 心跳</text>
+    <text x="26" y="172" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">判定 Leader 存活 ➔ 断然拒绝 PreVote 请求！</text>
 
-        <!-- Step 3 -->
-        <rect y="108" width="403" height="42" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-        <text x="12" y="126" fill="#0f172a" font-weight="700">物理后果：</text>
-        <text x="12" y="140" fill="#64748b" font-size="10">短暂抖动可导致微服务 RPC 出现连接重置与几百毫秒 P99 毛刺</text>
-      </g>
-    </g>
+    <!-- Step 3: Quorum Denied -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 未获多数派许可，保持静默</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Node 5 无法收集多数派赞成票，无法真正发起竞选</text>
+    <text x="26" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">任期维持在 Term 1，0 状态污染</text>
 
-    <!-- Right Pane: Pre-Vote Solution (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">🛡️ 工业解法：Raft Pre-Vote（预投票机制）</text>
-
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 -->
-        <rect width="403" height="40" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="12" y="18" fill="#14532d" font-weight="700">1. 选举前先发起试探性的 Pre-Vote</text>
-        <text x="12" y="32" font-size="9.5" fill="#15803d">Node 5 发送 PreVote(Term=1)，<tspan font-weight="700" fill="#047857">暂不真正增加当前物理 Term</tspan></text>
-
-        <!-- Step 2 -->
-        <rect y="48" width="403" height="52" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-        <text x="12" y="66" fill="#065f46" font-weight="700">2. 其余健康节点直接拒绝预投票</text>
-        <text x="12" y="80" font-size="9.5" fill="#047857">健康节点仍在稳定接收 Leader 心跳，判定 Leader 存活 ──► 拒绝 Pre-Vote</text>
-        <text x="12" y="93" font-size="9.5" font-weight="700" fill="#047857">✓ 胜利：Node 5 得不到多数派支持，Term 永远停留在 1，无法干扰主集群！</text>
-
-        <!-- Step 3 -->
-        <rect y="108" width="403" height="42" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="12" y="126" fill="#1e40af" font-weight="700">工业生产事实标准：</text>
-        <text x="12" y="140" fill="#2563eb" font-size="10">etcd、TiKV、Sofa-JRaft 等生产级 Raft 引擎默认全量开启 Pre-Vote</text>
-      </g>
-    </g>
+    <!-- Step 4: Zero Impact Healing -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="26" y="286" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Pre-Vote 生产级防护收益</text>
+    <text x="26" y="306" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">分区自愈后 Term 完全一致，现任 Leader 毫发无损！</text>
+    <text x="26" y="324" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Node 5 静默重新对齐并追赶日志，0 业务停顿</text>
+    <text x="26" y="342" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">99.999% 线性一致性高可用保障</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">网络分区本质：</tspan> 在异步网络中，节点无法区分“Leader 宕机”与“自己单向断网”；<tspan font-weight="700" fill="#2563eb">Pre-Vote 将投票权判定前置</tspan>，杜绝了任期通胀破坏共识。
-    </text>
-  </g>
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">经典 Raft 漏洞缺陷</text>
+  <rect x="300" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Pre-Vote 预投票状态机防护</text>
+  <line x1="530" y1="556" x2="554" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#pv-arr-accent)"/>
+  <text x="562" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">零任期膨胀与 0 停顿自愈</text>
 </svg>

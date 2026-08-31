@@ -33,17 +33,7 @@ $$t_{prop} = \frac{15,904\text{ km}}{204.2\text{ km/ms}} \approx 77.88\text{ ms}
 ### 2. 直连源站的跨洋协议握手瀑布
 当客户端直接向远端源站发起一次 HTTPS 请求时，通信协议栈必须经历层层串行往返：
 
-```
-[客户端 (中国北京)]                                         [美东源站 (RTT = 180ms)]
-   │                                                                    │
-   ├─────── 1. TCP SYN (0ms) ──────────────────────────────────────────>│
-   │<────── 2. TCP SYN-ACK (90ms) ──────────────────────────────────────┤  (1.0 RTT, TCP 建连)
-   ├─────── 3. TCP ACK + TLS 1.3 ClientHello (180ms) ──────────────────>│
-   │<────── 4. TLS 1.3 ServerHello + Finished + Cert (270ms) ──────────┤  (2.0 RTT, 密钥协商完成)
-   ├─────── 5. HTTP/2 GET Request (360ms) ─────────────────────────────>│
-   │        [源站业务执行计算与数据库查询: T_calc = 20ms]               │
-   │<────── 6. HTTP/2 200 OK + First Body Byte (550ms) ────────────────┤  (3.0 RTT + 计算, TTFB)
-```
+![直连跨洋源站 3.0 RTT 协议握手瀑布与 550ms TTFB 物理时延拆解](../../../public/images/cdn-direct-origin-handshake-waterfall.svg)
 
 在客户端收到第一个业务响应字节（TTFB, Time To First Byte）前，已在太平洋海底往返了整整 $3.0 \sim 3.5\text{ RTT} \approx 550\text{ms} \sim 630\text{ms}$。这就是经典的**长肥管道（LFN, Long Fat Network）冷启动惩罚**。
 
@@ -104,33 +94,12 @@ Anycast 在无状态的用户数据报协议（UDP, User Datagram Protocol，如
 2. 在大文件上传或长连接数据传输中途，公网发生海缆抖动或 ISP 动态路由重收敛，客户端后续发送的数据包被公网路由器突然分流送到了上海 SHA-PoP；
 3. 上海 PoP 节点的四层负载均衡与内核在哈希表中检索不到该 4 元组（源 IP、源端口、目的 IP、目的端口）的 TCB 状态，直接向客户端回复 **TCP 重置报文（`RST`）**，导致上层长连接瞬间崩溃报错（`Connection reset by peer`）！
 
-```
-[客户端]                     [公网 BGP 路由器]               [北京 PEK-PoP]        [上海 SHA-PoP]
-   │                               │                             │                     │
-   ├─── 1. TCP SYN / Data ────────>│ (选路: PEK)                 │                     │
-   │                               ├────────────────────────────>│ (已建连 TCB 存在)   │
-   │<─── 2. ACK / Data ────────────┴─────────────────────────────┤                     │
-   │                               │                             │                     │
-   │    [突发公网 BGP 路由抖动: 路径重敛切换为 SHA-PoP]          │                     │
-   │                               │                             │                     │
-   ├─── 3. TCP Data ──────────────>│ (选路: SHA)                 │                     │
-   │                               ├──────────────────────────────────────────────────>│ (TCB 不存在!)
-   │<─── 4. TCP RST ───────────────┴───────────────────────────────────────────────────┤ (连接瞬间断裂💥)
-```
+![Anycast BGP 路由抖动导致 TCP 状态丢失与 RST 异常断连机理](../../../public/images/cdn-anycast-tcp-flapping-reset-flow.svg)
 
 ### 2. 工业级解法一：基于 eBPF/XDP 的无状态四层负载均衡与跨机房隧道（Maglev + GUE）
 Google（Maglev）与 Cloudflare（Unimog）的现代工业解法是：**在边缘机房网卡入口部署基于 eBPF/XDP（Extended Berkeley Packet Filter / eXpress Data Path）的无状态四层负载均衡器，并通过通用 UDP 封装隧道（GUE, Generic UDP Encapsulation / IP-in-IP）跨机房无缝重定向**：
 
-```
-[报文误入上海 SHA-PoP]
-        │
-[XDP L4LB (Unimog)] ──(解析 TCP 选项中注入的 PoP Token)──┐
-        │                                                │
- (本地节点无此 TCB)                               (重定向至原始机房)
-        │                                                │
-        ▼                                                ▼
-[GUE / IP-in-IP Tunnel 专网封装] ───────────────> [北京 PEK-PoP 对应节点处理]
-```
+![基于 eBPF/XDP 与 GUE 私网隧道的跨 PoP 路由漂移无感重定向架构](../../../public/images/cdn-xdp-unimog-gue-tunnel-reroute.svg)
 
 - 边缘节点在握手成功时，将 PoP 标识编码进 TCP 选项或客户端 Cookie；
 - 当报文误入上海机房时，四层负载均衡器通过 XDP 在网卡驱动层（Ring Buffer）纳秒级截获，若确认属于其他 PoP，立即通过骨干私网隧道封装转交目标机房，**业务应用与 TCP 协议栈完全无感**。
@@ -141,10 +110,6 @@ QUIC（基于 UDP 的新一代传输协议）从协议层彻底根治了该问�
 - 哪怕底层发生 Anycast 路由漂移、或者移动端用户从 Wi-Fi 切换至 5G 蜂窝网络导致 IP/Port 改变，客户端仅需携带相同的 CID，任何边缘 PoP 节点均能基于全局预共享密钥解密 CID 并无缝接管会话，实现真正意义上的 **0 掉线连接漫游（Connection Migration）**。
 
 ---
-
-
-
-![BGP Anycast 路由震荡与 TCP 连接重置 (RST) 防御拓扑](../../../public/images/bgp-anycast-route-flapping-tcp-reset-mitigation.svg)
 
 ## 四、 四层 TCP/TLS 终结代理与分段时延削减
 
@@ -206,24 +171,7 @@ Google 开发的 **BBR（Bottleneck Bandwidth and RTT）拥塞控制算法** 不
 
 $$\text{BDP} = \text{BtlBw} \times \text{RTprop}$$
 
-```
-吞吐量 (Throughput)
-   ▲                     Kleinrock 最优操作点
-   │                         (In-flight = BDP)
-   │                           ┌─────────── (吞吐饱和)
-   │                          ╱│
-   │                         ╱ │
-   │                        ╱  │
-   │                       ╱   │
-   └──────────────────────┴────┴────────────────► 飞行报文量 (In-flight)
-   时延 (RTT)                  │ (无排队)    │ (缓冲区膨胀排队，产生时延)
-   ▲                           │
-   │                           │             ┌───────────
-   │                           │            ╱
-   │                           │           ╱
-   │───────────────────────────┴──────────┘ (RTprop 纯传播时延)
-   └────────────────────────────────────────────► 飞行报文量 (In-flight)
-```
+![BBR 拥塞控制算法：Kleinrock 最优操作点 (In-flight = BDP) 物理数学模型](../../../public/images/cdn-bbr-kleinrock-optimal-operating-point.svg)
 
 ### 边缘分段代理的双算法协同
 CDN 边缘分段架构完美解耦了传输层：
@@ -266,4 +214,7 @@ CDN 边缘分段架构完美解耦了传输层：
 | **TCP 建连与握手时延** | $3.0 \sim 3.5\text{ RTT}$ 全量跨洋（$\sim 630\text{ms}$） | 本地 PoP 终结（$\sim 20\text{ms}$） | **本地 PoP 终结（$\le 10\text{ms}$）** |
 | **动态回源请求时延** | $3.5\text{ RTT} + T_{calc} \approx 650\text{ms}$ | 重新建连或单播回源（$\sim 350\text{ms}$） | **长连接池复用（$1.0\text{ RTT} + T_{calc} \approx 185\text{ms}$）** |
 | **DDoS 流量抗击能力** | 源站带宽被打满即机房黑洞 | 依赖 DNS 切换 IP，存在调度滞后 | **全球 300+ PoP Anycast 空间稀释分布式吞噬** |
+
+---
+
 作为《现代 CDN 与边缘加速架构》专栏的开篇，我们从光速的物理硬限制出发，完整论证了 Anycast BGP 路由广播、边缘吸附与四层 TCP 终结代理的底层机理，推导了 Mathis 吞吐量公式，并给出了解决 Anycast TCP 路由漂移的工业标准方案。在下一篇中，我们将深入剖析 **[《现代 CDN 核心机理与全景架构（二）：七层边缘分层缓存、Ketama 一致性哈希与回源风暴（Thundering Herd）熔断防御》](/writing/cdn-02-edge-cache-consistent-hashing)**。

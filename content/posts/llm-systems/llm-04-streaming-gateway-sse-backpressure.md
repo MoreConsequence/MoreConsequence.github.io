@@ -80,7 +80,6 @@ data: [DONE]
 
 在大模型后端工程中，最昂贵、最隐蔽的算力浪费来自于 **“幽灵推理（Ghost Inference）”**。
 
-![LLM 流式长连接网关：TCP 零窗口反压与显存级联熔断时序](../../../public/images/llm-tcp-zero-window-backpressure.svg)
 ![大模型流式反压与客户端断开取消传播机制](../../../public/images/llm-gateway-backpressure-cancellation.svg)
 
 ### 3.1 什么是幽灵推理？

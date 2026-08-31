@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-etcd-lease-fencing-token</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="fenc-title fenc-desc">
+  <title id="fenc-title">etcd 租约事务与单调递增防护令牌（Fencing Token）架构</title>
+  <desc id="fenc-desc">端到端架构图展示 etcd Raft 多数派分配单调自增 Fencing Token，客户端携带 Token 写入存储层，数据库通过原子条件判断精准拦截过期陈旧请求的防护机理。</desc>
+  <defs>
+    <marker id="fn-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="fn-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">END-TO-END MUTUAL EXCLUSION · ETCD &amp; FENCING TOKEN</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">etcd 租约事务与单调递增 Fencing Token 架构</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">锁服务分配全局单调递增 Fencing Token ➔ 客户端携带 Token 写存储 ➔ 存储层原子拦截旧 Token 请求</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: etcd Coordination Layer (x=40..280, w=240) -->
+  <g transform="translate(40, 136)">
+    <rect width="240" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ETCD RAFT</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">etcd 强共识协调层</text>
+
+    <!-- Revision Token Generator -->
+    <rect x="14" y="42" width="212" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全局单调递增版本号</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Revision: 301 ➔ 302 ➔ 303</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Raft 多数派全序日志决议</text>
+    <text x="24" y="120" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">绝无主从切换丢版本风险</text>
+
+    <!-- Lease Txn -->
+    <rect x="14" y="150" width="212" height="130" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="172" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">租约与原子事务</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Lease: Grant(10s)</text>
+    <text x="24" y="208" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Txn.If(CreateRev == 0)</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">.Then(Put key WithLease)</text>
+    <line x1="24" y1="236" x2="216" y2="236" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="254" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">向 Client 1 发放 Token=302</text>
+    <text x="24" y="270" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">向 Client 2 发放 Token=303</text>
+
+    <!-- Watch Feature -->
+    <rect x="14" y="292" width="212" height="68" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="314" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Watch 事件通知</text>
+    <text x="24" y="332" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">排队客户端挂起等待，0 轮询风暴</text>
+    <text x="24" y="348" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">毫秒级精准事件驱动唤醒</text>
+  </g>
+
+  <!-- Arrow 1 (x=280..320) -->
+  <text x="300" y="202" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Token</text>
+  <line x1="280" y1="210" x2="320" y2="210" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fn-arr-accent)"/>
+
+  <!-- Col 2: Clients Lifecycle (x=320..610, w=290) - Focal -->
+  <g transform="translate(320, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLIENTS</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">客户端携带 Token 请求</text>
+
+    <!-- Client 1 Story -->
+    <rect x="14" y="42" width="262" height="146" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Client 1 (遭遇 GC 停顿)</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">1. 获锁携带 Token = 302</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">2. 突发 15s STW GC 停顿 (锁过期)</text>
+    <text x="24" y="120" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 苏醒后向存储发起写请求：</text>
+    <rect x="24" y="132" width="242" height="24" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="145" y="148" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">Write(DB, State='A', Token=302)</text>
+    <text x="24" y="172" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">请求携带旧令牌 302 发往存储</text>
+
+    <!-- Client 2 Story -->
+    <rect x="14" y="200" width="262" height="160" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="222" fill="#e85d3f" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Client 2 (正常接力者)</text>
+    <text x="24" y="242" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">1. 获锁携带新 Token = 303</text>
+    <text x="24" y="260" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">2. Write(DB, State='B', Token=303)</text>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 抢先成功提交数据库！</text>
+    <line x1="24" y1="290" x2="266" y2="290" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="310" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">存储层已将当前 Max_Token 刷新为 303</text>
+    <text x="24" y="328" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">为拦截 Client 1 筑起钢铁防线</text>
+  </g>
+
+  <!-- Arrow 2 (x=610..650) -->
+  <text x="630" y="272" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Write</text>
+  <line x1="610" y1="280" x2="650" y2="280" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fn-arr-accent)"/>
+
+  <!-- Col 3: Storage Layer Fencing Guard (x=650..920, w=270) -->
+  <g transform="translate(650, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STORAGE</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数据库原子 Fencing 拦截</text>
+
+    <!-- Atomic SQL -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">原子乐观版本拦截 SQL</text>
+    <text x="24" y="82" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">UPDATE orders SET</text>
+    <text x="24" y="96" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">  status = 'PAID', fencing_token = T</text>
+    <text x="24" y="110" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">WHERE id = 999 AND fencing_token &lt; T;</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">仅允许严格大于当前版本的写入</text>
+
+    <!-- Execution Comparison -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理判定结果</text>
+
+    <text x="24" y="206" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. Client 2 写入 (Token=303):</text>
+    <text x="24" y="222" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">303 &gt; 301 ➔ SUCCESS ✓ (更新成功)</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Max_Token 变为 303</text>
+
+    <line x1="24" y1="250" x2="246" y2="250" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+
+    <text x="24" y="272" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. Client 1 迟到写入 (Token=302):</text>
+    <text x="24" y="290" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">302 &lt; 303 ➔ 条件不满足！</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Rows Affected = 0 ➔ 物理拦截！</text>
+    <text x="24" y="330" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">旧请求被断然拒绝，0 数据损坏！</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">etcd 强一致共识与合法客户端</text>
+  <rect x="340" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="360" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Fencing Token 存储层原子拦截核心</text>
+</svg>
+</main>
+</body>
+</html>

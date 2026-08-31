@@ -12,10 +12,6 @@ featured: true
 
 ---
 
-
-
-![边缘 Serverless 运行时演进：V8 Isolate 轻量沙箱 vs 传统 Docker 容器性能矩阵](../../../public/images/v8-isolate-vs-docker-container-startup-memory-matrix.svg)
-
 ## 一、 边缘计算演进史：为什么传统 Docker 容器在边缘彻底失效？
 
 在传统的中心化云计算（如 AWS Lambda、Kubernetes 容器集群）中，计算任务的隔离依赖于 **Linux 操作系统级虚拟化（Namespaces、Cgroups、RootFS 联合文件系统）**：
@@ -101,25 +97,6 @@ featured: true
 
 至此，《现代 CDN 与边缘加速架构》五部曲已全部完结。我们从最底层的光速物理约束出发，完整遍历了现代边缘计算体系的完整技术栈：
 
-```
-[第一篇：物理底座与四层接入]
-Anycast BGP 路由广播 ──► 最短 AS-Path 边缘吸附 ──► 四层 TCP/TLS 终结 (消除 630ms 握手瀑布) ──► eBPF/XDP 跨 PoP 隧道抗路由漂移
-         │
-         ▼
-[第二篇：七层缓存体系]
-L1 内存 (100ns) ──► L2 NVMe SSD (100μs) ──► Ketama 一致性哈希 (虚拟节点 50x 扩容) ──► Singleflight 互斥锁 (消除回源风暴)
-         │
-         ▼
-[第三篇：动态请求加速]
-预热长连接池 (0ms 建连) ──► 全球探针网格 ──► 动态加权 Dijkstra 多跳绕行 (绕开公网拥塞) ──► 骨干专网 BBR 拥塞控制
-         │
-         ▼
-[第四篇：边缘立体安全防线]
-Anycast 空间稀释 (10Tbps 化整为零) ──► eBPF/XDP 网卡线速丢包 (40Mpps) ──► JA4 指纹识别 ──► TLS 1.3 0-RTT 防重放
-         │
-         ▼
-[第五篇：边缘通用计算平台]
-V8 Isolate 轻量沙箱 (<5ms 冷启动) ──► HTMLRewriter 边缘流式微前端 ──► 边缘只读 KV (AP) + Raft 强一致 SQL (CP)
-```
+![现代 CDN 与边缘加速架构五层技术栈工程全景蓝图 (Full Stack Blueprint)](../../../public/images/cdn-five-layer-architecture-blueprint.svg)
 
 现代 CDN 的终极价值，正是通过这一整套**空间拓扑重构、分层缓存分片、覆盖网智能调度与边缘沙箱计算**，在对抗光速传播物理极限的同时，为全球用户提供毫秒级、高可用且极致安全的现代 Web 体验。

@@ -84,9 +84,7 @@ export interface BashOperations {
 
 本地默认实现是 `createLocalBashOperations` 的 spawn 后端；而下载 SSH、容器、（08 篇要讲的）Gondolin 微 VM 沙箱，全部是**换一个 `exec` 实现**：接口像 USB，谁的进程树归谁管、谁的工作目录谁校验（`fsAccess(cwd, F_OK)` 查 cwd 存在——模型指挥的路径可能压根不在磁盘上），都在这一个点上做替换。这解释了 pi.dev 官网"权限用什么做都可以"的底气：它不是没有权限系统，而是把权限边界设计成了**执行后端的可替换性**。
 
-
-
-![Tool 超长输出智能截断与压缩：避免爆 Token 与关键证据保留](../../../public/images/agent-tool-output-truncation-and-compaction.svg)
+---
 
 ## 四、edit/write：低风险部分反而讲究
 

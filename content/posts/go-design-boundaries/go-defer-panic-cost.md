@@ -28,10 +28,6 @@ Go 1.14 引入 open-coded defer：当函数尾部（编译器可证明的返回�
 
 defer 一个可内联的函数甚至和直接调用同价——这就是为什么"defer 有开销"是过时知识：**函数尾部的 defer 已经是编译期展开的代码，不是运行时注册**。日常代码里 `defer f.Close()`、`defer mu.Unlock()` 的成本可以忽略。
 
-
-
-![Go defer 三代演进：堆分配 -> 栈分配 -> Go 1.14+ 开放编码 (Open-Coded Defer 0 开销)](../../../public/images/open-coded-defer-vs-heap-defer-evolution.svg)
-
 ## 二、循环里的 defer：约 13.7 倍税的真实来源
 
 defer 一旦出现在循环体内，编译器无法 open-code（每轮迭代都是独立的动态注册），只能走运行时慢路径 `deferproc`：**每次迭代堆分配一个 `_defer` 结构 + 注册进 goroutine 的 defer 链表**，函数返回时 `deferreturn` 再逐个取出执行。实测（循环 100 次迭代，每次一个 defer）：

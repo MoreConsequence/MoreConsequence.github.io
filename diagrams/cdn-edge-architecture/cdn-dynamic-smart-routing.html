@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cdn-dynamic-smart-routing · diagram source</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f5f5f5;display:flex;justify-content:center}svg{width:100%;max-width:960px;height:auto}</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" width="100%" height="100%" role="img" aria-labelledby="rt-title rt-desc">
+<title id="rt-title">公网 BGP 单线拥塞 vs CDN 多跳智能探测覆盖网对比</title>
+<desc id="rt-desc">对比图：左侧公网 BGP 选路只看 AS-Path 跳数，北京到美东直连遇海底光缆拥塞（丢包 8%）无法绕行，TTFB 飙至 560ms~1500ms；右侧 CDN 边缘 PoP 经动态加权 Dijkstra 计算 PEK→NRT→SJC→IAD 多跳中继，毫秒级绕开公网黑洞，TTFB 稳定 187ms（−67%）。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
+  
+  
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+<!-- Header -->
+<text x="40" y="28" fill="#2d3142" font-size="16" font-weight="400" font-family="'Instrument Serif', serif">公网 BGP 单线拥塞 vs CDN 多跳智能探测覆盖网</text>
+<text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif" letter-spacing="0.02em">选路容灾对比：公网遇拥塞即雪崩（560ms~1500ms）｜ CDN 动态 Dijkstra 多跳绕行（稳定 187ms，−67%）</text>
+
+<!-- Left panel: 公网 BGP 单线 -->
+<rect x="40" y="72" width="432" height="404" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="56" y="96" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">模式 A · 公网 BGP 单线直连</text>
+<text x="56" y="112" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">AS-Path 只看跳数，遇拥塞无法绕行</text>
+<!-- Left nodes -->
+<g>
+  <rect x="176" y="120" width="160" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="256" y="152" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京客户端</text>
+</g>
+<g>
+  <rect x="176" y="232" width="160" height="72" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1"/>
+  <text x="256" y="258" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">公网 BGP 路由器</text>
+  <text x="256" y="276" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">AS-Path 僵化选路</text>
+  <rect x="300" y="284" width="60" height="14" rx="2" fill="rgba(45,49,66,0.06)"/><text x="330" y="294" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">✕ 拥塞黑洞</text>
+</g>
+<g>
+  <rect x="176" y="360" width="160" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="256" y="392" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东源站</text>
+</g>
+<!-- Left arrows -->
+<line x1="256" y1="172" x2="256" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="268" y="190" width="104" height="13" rx="2" fill="#f5f5f5"/><text x="320" y="200" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">跨洋 3×RTT ≈540ms</text>
+<line x1="256" y1="304" x2="256" y2="360" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
+<rect x="268" y="322" width="96" height="13" rx="2" fill="#f5f5f5"/><text x="316" y="332" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">丢包8%·超时重传</text>
+<!-- Left callout -->
+<rect x="56" y="432" width="400" height="32" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+<text x="68" y="453" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">公网 BGP 僵化 → 遇拥塞 TTFB 飙至 560ms~1500ms（抖动大）</text>
+
+<!-- Right panel: CDN 动态 Dijkstra -->
+<rect x="488" y="72" width="432" height="404" rx="8" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<text x="504" y="96" fill="#eb6c36" font-size="12" font-weight="600" font-family="'Geist', sans-serif">模式 C · CDN 动态智能路由</text>
+<text x="504" y="112" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">动态加权 Dijkstra 毫秒级多跳绕行</text>
+<!-- Right nodes -->
+<g>
+  <rect x="508" y="120" width="150" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="583" y="152" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">北京客户端</text>
+</g>
+<g>
+  <rect x="508" y="196" width="150" height="52" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="516" y="204" width="40" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="536" y="213" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EDGE</text>
+  <text x="600" y="228" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">边缘 PoP</text>
+</g>
+<g>
+  <rect x="676" y="196" width="116" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="734" y="224" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">东京 NRT</text>
+</g>
+<g>
+  <rect x="676" y="284" width="116" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="734" y="312" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">硅谷 SJC</text>
+</g>
+<g>
+  <rect x="676" y="372" width="116" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="684" y="380" width="44" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.22)" stroke-width="0.8"/><text x="706" y="389" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ORIGIN</text>
+  <text x="734" y="404" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">美东 IAD</text>
+</g>
+<!-- Right arrows -->
+<line x1="583" y1="172" x2="583" y2="196" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="595" y="176" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="625" y="185" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">本地 4ms</text>
+<line x1="658" y1="222" x2="676" y2="222" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="645" y="178" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="667" y="187" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">30ms</text>
+<line x1="734" y1="244" x2="734" y2="284" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="748" y="256" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="770" y="265" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">85ms</text>
+<line x1="734" y1="332" x2="734" y2="372" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="748" y="344" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="770" y="353" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">40ms</text>
+<!-- Right callout -->
+<rect x="504" y="432" width="400" height="32" rx="4" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+<text x="516" y="453" fill="#eb6c36" font-size="8.5" font-weight="600" font-family="'Geist', sans-serif">动态 Dijkstra 多跳绕行 → TTFB 稳定 187ms（较直连降 67%）</text>
+</svg>
+</body>
+</html>

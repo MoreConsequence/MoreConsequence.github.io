@@ -43,9 +43,7 @@ flowchart TD
 2. **多模型特化（Model Specialization）**：主 Agent 可以使用高智力、高成本模型（如 Claude 3.7 Sonnet）做统筹规划，而分发给 Subagent 的重复性子任务（如“给 10 个函数补齐 JSDoc 注释”）可以使用极速低成本模型（如 GLM 4 / DeepSeek V3）；
 3. **天然支持并行执行（Parallel Execution）**：多个 Subagent 在独立进程中并行跑测试或跑代码生成，耗时从串行线性累加缩短为最长子任务时间。
 
-
-
-![Pi Subagent 层级化任务委派树：Root Agent -> Specialized Leaf Agents](../../../public/images/pi-subagent-tree-hierarchical-delegation.svg)
+---
 
 ## 二、架构设计：Subagent 的生命周期与数据流
 

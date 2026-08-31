@@ -1,97 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="lin-title lin-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="lin-title">线性一致性（Linearizability）数学定义与实时执行轨迹检验模型</title>
+  <desc id="lin-desc">时序模型图展示客户端并发读写的时间调用区间 [inv, res]、生效线性化点定位，以及在写完成后读到旧值直接判定违背线性一致性的反例证明。</desc>
+  <defs>
+    <marker id="lin-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="lin-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">线性一致性（Linearizability）数学定义与实时执行轨迹检验模型</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">操作必须在其调用（Invoke）与返回（Ok）物理时间窗口内的某一点生效，且读操作永远不能读到倒退的旧版本</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">STRONG CONSISTENCY · LINEARIZABILITY TIMELINE SPECIFICATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">线性一致性数学定义与执行轨迹检验</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">每个操作在 [inv, res] 物理区间内分配瞬时线性化点；写返回后其后发起的读必须立即可见最新值</text>
+
+  <!-- Timeline Box (y=136..366, h=230) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="230" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+
+    <!-- Time Axis Line -->
+    <line x1="80" y1="200" x2="840" y2="200" stroke="#141413" stroke-width="1" marker-end="url(#lin-arr)"/>
+    <text x="850" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Physical Time t ➔</text>
+
+    <!-- Client 1: Write(x, 1) -->
+    <text x="24" y="52" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">Client 1</text>
+    <rect x="140" y="36" width="220" height="28" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="150" y="54" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">Write(x, 1) [inv=10, res=30]</text>
+    <!-- Linearization Point 1 -->
+    <circle cx="280" cy="50" r="4" fill="#e85d3f"/>
+    <line x1="280" y1="54" x2="280" y2="198" stroke="#e85d3f" stroke-width="1" stroke-dasharray="3 3"/>
+    <rect x="240" y="68" width="80" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="280" y="78" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">t_lin (x ➔ 1)</text>
+
+    <!-- Client 2: Legal Read(x) -> 1 -->
+    <text x="24" y="104" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">Client 2</text>
+    <rect x="420" y="88" width="180" height="28" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="430" y="106" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Read(x) ➔ 1 (OK ✓)</text>
+    <circle cx="500" cy="102" r="4" fill="#e85d3f"/>
+    <line x1="500" y1="106" x2="500" y2="198" stroke="#e85d3f" stroke-width="1" stroke-dasharray="3 3"/>
+    <rect x="460" y="120" width="80" height="14" rx="2" fill="#f5f4ed"/>
+    <text x="500" y="130" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">t_lin (Read=1)</text>
+
+    <!-- Client 3: Illegal Stale Read(x) -> 0 -->
+    <text x="24" y="156" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">Client 3</text>
+    <rect x="640" y="140" width="200" height="28" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+    <text x="650" y="158" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Read(x) ➔ 0 (STALE ✗)</text>
+    <rect x="640" y="172" width="200" height="18" rx="2" fill="#e85d3f"/>
+    <text x="740" y="184" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">⚡ 违背实时先后因果！</text>
   </g>
 
-  <!-- Main Content Card -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
-
-    <!-- Timeline Coordinate (Top Half) -->
-    <g transform="translate(40, 20)">
-      <!-- Client 1: Write(x=1) -->
-      <g transform="translate(0, 10)">
-        <text x="0" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#334155">客户端 1 (Write x=1):</text>
-        <line x1="160" y1="16" x2="360" y2="16" stroke="#3b82f6" stroke-width="3"/>
-        <circle cx="160" cy="16" r="4" fill="#2563eb"/>
-        <text x="160" y="34" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb" text-anchor="middle">Invoke(w1)</text>
-
-        <!-- Linearization Point -->
-        <circle cx="280" cy="16" r="6" fill="#ea580c"/>
-        <text x="280" y="6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#c2410c" text-anchor="middle">线性生效点 ★</text>
-
-        <circle cx="360" cy="16" r="4" fill="#2563eb"/>
-        <text x="360" y="34" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb" text-anchor="middle">Ok(w1)</text>
-      </g>
-
-      <!-- Client 2: Concurrent Read(x) -->
-      <g transform="translate(0, 60)">
-        <text x="0" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#334155">客户端 2 (并发 Read):</text>
-        <line x1="220" y1="16" x2="420" y2="16" stroke="#10b981" stroke-width="3"/>
-        <circle cx="220" cy="16" r="4" fill="#059669"/>
-        <text x="220" y="34" font-family="ui-monospace, monospace" font-size="9" fill="#059669" text-anchor="middle">Invoke(r)</text>
-
-        <!-- Read point can see 0 or 1 -->
-        <circle cx="330" cy="16" r="5" fill="#10b981"/>
-        <text x="330" y="6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#047857" text-anchor="middle">读点 (可读 1)</text>
-
-        <circle cx="420" cy="16" r="4" fill="#059669"/>
-        <text x="420" y="34" font-family="ui-monospace, monospace" font-size="9" fill="#059669" text-anchor="middle">Return 1 ✓</text>
-      </g>
-
-      <!-- Client 3: Stale Read Violation (Bug) -->
-      <g transform="translate(0, 110)">
-        <text x="0" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#991b1b">客户端 3 (写完成后的读):</text>
-        <line x1="450" y1="16" x2="620" y2="16" stroke="#ef4444" stroke-width="3"/>
-        <circle cx="450" cy="16" r="4" fill="#dc2626"/>
-        <text x="450" y="34" font-family="ui-monospace, monospace" font-size="9" fill="#dc2626" text-anchor="middle">Invoke(r)</text>
-
-        <circle cx="620" cy="16" r="4" fill="#dc2626"/>
-        <text x="620" y="34" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#b91c1c" text-anchor="middle">Return 0 ❌ (破坏线性一致性!)</text>
-      </g>
-    </g>
-
-    <!-- Bottom Breakdown -->
-    <g transform="translate(20, 185)">
-      <rect width="860" height="65" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <g transform="translate(16, 12)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <text x="0" y="14" font-weight="700" fill="#0f172a">🎯 线性一致性的三大铁律（Knossos 算法检验依据）：</text>
-        <text x="0" y="30" fill="#334155"><tspan font-weight="700" fill="#2563eb">1. 全序性（Total Order）：</tspan> 所有操作可以排列在一个全局单一时间轴上，且符合单机顺序规约；</text>
-        <text x="0" y="46" fill="#334155"><tspan font-weight="700" fill="#ea580c">2. 实时性（Real-time Precedence）：</tspan> 若写操作 $W_1$ 在物理时间上已经返回 Ok，其后发起的任何读操作必须读到 $W_1$ 或更新的值！</text>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">一致性层级真谛：</tspan> 顺序一致性（Sequential）只要求所有节点看到相同的操作顺序；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#2563eb" font-weight="700" text-anchor="middle">
-        线性一致性（Linearizability）则进一步强制绑定了真实的物理时间窗口，是分布式领域最高级别的一致性黄金标准。
-      </text>
-    </g>
+  <!-- 3 Invariant Summary Columns (y=380..516, h=136) -->
+  <!-- Col 1 -->
+  <g transform="translate(40, 380)">
+    <rect width="280" height="136" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="10" width="80" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">AXIOM 1</text>
+    <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">时间窗口区间约束</text>
+    <text x="12" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">inv(op) ≤ t_lin(op) ≤ res(op)</text>
+    <text x="12" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">每个操作的逻辑生效时间点，必定</text>
+    <text x="12" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">严格落在其物理请求与响应之间</text>
+    <text x="12" y="96" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">不存在超光速或预知生效</text>
   </g>
+
+  <!-- Col 2 -->
+  <g transform="translate(340, 380)">
+    <rect width="280" height="136" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="10" width="80" height="16" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="21" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">AXIOM 2</text>
+    <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">实时因果先后律</text>
+    <text x="12" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">res(op₁) &lt; inv(op₂) ⟹ op₁ &lt; op₂</text>
+    <text x="12" y="62" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">若 op₁ 已物理返回，则后续发起的</text>
+    <text x="12" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">op₂ 必须见证 op₁ 的状态变更</text>
+    <text x="12" y="96" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Client 3 读旧值直接判死刑</text>
+  </g>
+
+  <!-- Col 3 -->
+  <g transform="translate(640, 380)">
+    <rect width="280" height="136" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="10" width="80" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">AXIOM 3</text>
+    <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单机等价规约</text>
+    <text x="12" y="44" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Sequential Specification</text>
+    <text x="12" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">所有操作全序排列后的结果，必须</text>
+    <text x="12" y="78" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">完全等价于在单机单线程下的执行</text>
+    <text x="12" y="96" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Knossos / Elle 数学判定基础</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">合法操作时间区间与定序点</text>
+  <rect x="340" y="552" width="12" height="12" rx="2" fill="#e85d3f"/>
+  <text x="360" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">违背线性一致性陈旧读断言 (Stale Read)</text>
 </svg>

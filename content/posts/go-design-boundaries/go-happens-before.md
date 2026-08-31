@@ -60,10 +60,6 @@ func main() {
 
 然后文档用一句话埋了最容易被跳过的坑：把上面 `make(chan int)` 换成 `make(chan int, 1)`，保证就没了。"它可能打印空串、崩溃，或者做其他任何事。"容量从 0 变成 1，逻辑一行没改，语言却收回承诺。要讲清为什么，必须拆开"happens-before"。
 
-
-
-![Go 内存模型 Happens-Before 偏序规则：包初始化、Goroutine 启停与 Channel 通信](../../../public/images/go-memory-model-happens-before-order.svg)
-
 ## 二、没有边，就是数据竞争
 
 Go 内存模型把一次执行建模成两样东西：

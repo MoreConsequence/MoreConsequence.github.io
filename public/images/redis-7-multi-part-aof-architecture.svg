@@ -1,99 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="mp-title mp-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="mp-title">Redis 7.0 Multi-Part AOF 架构：Base AOF + Incremental AOF + Manifest</title>
+  <desc id="mp-desc">架构机制图展示 Redis 7.0 Multi-Part AOF 的 Base 基础文件、Incremental 增量文件与 Manifest 清单架构以及彻底消灭 Rewrite 双写开销的演进。</desc>
+  <defs>
+    <marker id="mp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="mp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Redis 7.0 Multi-Part AOF (MP-AOF) 现代持久化架构</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Base AOF (RDB 格式基础快照) + Incremental AOF (轻量增量命令日志) + Manifest (元数据清单文件管理)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">REDIS 7.0 PERSISTENCE ARCHITECTURE · MULTI-PART AOF &amp; MANIFEST</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Redis 7.0 Multi-Part AOF 架构演进</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Manifest 元数据清单 ➔ Base 基础快照 + Incremental 增量追加 ➔ 彻底消除 Rewrite 期间的双写与内存消耗</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Manifest (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Manifest 清单管理</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">appendonly.aof.manifest</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">file appendonly.aof.1.base.rdb seq 1 type b</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">file appendonly.aof.1.incr.aof seq 1 type i</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">file appendonly.aof.2.incr.aof seq 2 type i</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Single Source of Truth for AOF Files</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">清单职责：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 追踪管理所有当前生效的 AOF 分卷；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 记录每个分卷的序号与类型 (Base/Incr)；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 重启时严格按清单顺序流式加载。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">State Tracking &amp; Safety</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Guaranteed Atomic Sequence</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Base AOF 基础快照文件</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Split</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#mp-arr-accent)"/>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">appendonly.aof.1.base.rdb</text>
-          
-          <text x="10" y="42" fill="#86efac">文件特性：</text>
-          <text x="10" y="58" fill="#cbd5e1">• 重写 (Rewrite) 时由子进程生成</text>
-          <text x="10" y="74" fill="#cbd5e1">• 采用紧凑的 RDB 二进制格式存储</text>
-          <text x="10" y="90" fill="#34d399">• 体积相比纯文本 AOF 缩减 70%！</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 重启加载速度提升 5 倍！</text>
-        </g>
+  <!-- Col 2: Multi-Part Hierarchy (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · CORE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">三级物理文件分层</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 承载历史存量全量数据；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 不可变文件，只读加载；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造极速启动底座。</text>
-      </g>
-    </g>
+    <!-- Base Box -->
+    <rect x="14" y="42" width="262" height="60" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Base AOF (RDB 格式快照)</text>
+    <text x="24" y="78" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">appendonly.aof.1.base.rdb (全量历史)</text>
+    <text x="24" y="92" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Fast Binary Loading</text>
 
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Incremental AOF 增量日志</text>
+    <!-- Incr Box -->
+    <rect x="14" y="110" width="262" height="60" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="130" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Incremental AOF (增量命令)</text>
+    <text x="24" y="146" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">appendonly.aof.1.incr.aof (实时写操作)</text>
+    <text x="24" y="160" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">RESP Append Stream</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">appendonly.aof.1.incr.aof</text>
-          
-          <text x="10" y="42" fill="#86efac">文件特性：</text>
-          <text x="10" y="58" fill="#cbd5e1">• 主进程仅需追加写入极小的增量文件</text>
-          <text x="10" y="74" fill="#38bdf8">• AOF Rewrite 期间主进程 0 内存缓冲区开销！</text>
-          <text x="10" y="90" fill="#34d399">• 彻底告别旧版 Rewrite 导致的内存翻倍</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 极速轻量追加写入！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 消除重写期间的巨量内存拷贝与 CPU 抖动；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 写入延迟极度平稳；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 现代化架构演进。</text>
-      </g>
-    </g>
-
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Manifest 清单控制文件</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">appendonly.aof.manifest</text>
-          
-          <text x="10" y="38" fill="#fed7aa">元数据清单格式：</text>
-          <text x="10" y="54" fill="#38bdf8">file appendonly.aof.1.base.rdb seq 1 type b</text>
-          <text x="10" y="70" fill="#34d399">file appendonly.aof.1.incr.aof seq 1 type i</text>
-          
-          <text x="10" y="96" fill="#4ade80">✓ 协调多个 AOF 片段原子性切换！</text>
-          <text x="10" y="112" fill="#4ade80">✓ 0 历史冗余文件残留！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 完美解决 Redis 历史持久化遗留痛点；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• Redis 7.0 最具工程价值的技术升级；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级分布式持久化典范！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="178" width="262" height="182" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="198" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">分层解耦收益：</text>
+    <text x="24" y="218" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 历史全量与实时增量物理隔离；</text>
+    <text x="24" y="238" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 主进程只需往最新的 Incr 文件追加；</text>
+    <text x="24" y="258" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极大降低了单个 AOF 文件的运维与重构负担。</text>
+    <line x1="24" y1="270" x2="266" y2="270" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="290" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Decoupled Physical Storage</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">High Concurrency Append</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Rewrite</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#mp-arr-accent)"/>
+
+  <!-- Col 3: Rewrite Evolution (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#141413"/>
+    <text x="52" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">零双写 Rewrite 突破</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Redis 7 优雅 Rewrite 流程</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 开新 incr.2.aof 承接新写入</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 子进程重写生成新 base.2.rdb</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 原子更新 Manifest 并删旧卷！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Double-Write &amp; Zero Buffer</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">消灭历史三大痛点：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 0 内存 Buffer 膨胀开销；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 0 磁盘双写 (Double-Write) I/O；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 彻底根除 Rewrite 尾部 CPU 阻塞抖动。</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Next-Gen Persistence Standard</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Redis 7.0 Major Milestone</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Manifest 清单与优雅 Rewrite</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Base RDB 基础快照 + Incremental AOF 增量分层核心</text>
 </svg>

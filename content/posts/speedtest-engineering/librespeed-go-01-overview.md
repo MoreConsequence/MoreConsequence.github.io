@@ -13,7 +13,7 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed Go 整体全景架构：27 行 main.go 启动的核心路由、测速端点与遥测存储管线](../../../public/images/librespeed-go-architecture-overview-pipeline.svg)
+![LibreSpeed Go 单二进制架构：main.go 连接 config、web、results 与 database 的职责路径](../../../public/images/librespeed-go-architecture-overview-pipeline.svg)
 
 ## 一、为什么值得读这个项目
 
@@ -54,7 +54,7 @@ func main() {
 
 
 
-![LibreSpeed Go 架构分层：main.go 启动引导 -> config -> web/handlers -> database](../../../public/images/librespeed-go-package-dependency-graph.svg)
+![LibreSpeed Go 源码分层：main.go、config、web、results 与 database 的五层职责](../../../public/images/librespeed-go-package-dependency-graph.svg)
 
 ## 三、文件地图：2,371 行都在哪
 
@@ -80,7 +80,7 @@ database/
 
 
 
-![多形态路由挂载表：原生路径 vs 兼容路径 vs 管理面映射矩阵](../../../public/images/librespeed-go-multi-mount-routing-table.svg)
+![LibreSpeed Go 路由合同：原生、backend 前缀和 PHP 兼容路径收敛到同一份 Handler](../../../public/images/librespeed-go-multi-mount-routing-table.svg)
 
 ## 四、路由表：一套功能，三种挂载
 

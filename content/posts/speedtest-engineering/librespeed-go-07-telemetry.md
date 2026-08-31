@@ -13,7 +13,7 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed Go 遥测隐私工程：ULID 字典序唯一标识、三组脱敏正则与 XOR 盐值混淆](../../../public/images/librespeed-go-telemetry-ulid-xor-desensitization.svg)
+![遥测 Record 从 none 开关、RedactIP、ULID 到 database.DB.Insert 的路径](../../../public/images/librespeed-go-telemetry-ulid-xor-desensitization.svg)
 
 ## 一、Record：一次上报的完整旅程
 
@@ -31,7 +31,7 @@ series: "LibreSpeed Go 源码行纪"
 
 
 
-![IP 物理脱敏四步流水线：IPv4 末段抹零与 IPv6 64-bit 前缀截断](../../../public/images/librespeed-go-ip-redaction-four-step.svg)
+![RedactIP 对 IP、ispinfo 和 log 执行 IPv4、IPv6、hostname 替换](../../../public/images/librespeed-go-ip-redaction-four-step.svg)
 
 ## 二、RedactIP：四步正则流水线
 
@@ -73,7 +73,7 @@ salt = idObfuscation_salt.bin 里的 4 字节（不存在则 crypto/rand 生成�
 
 
 
-![七大存储后端适配矩阵：MySQL, PG, SQLite, Redis, BoltDB, Memory, CSV](../../../public/images/librespeed-go-database-driver-matrix.svg)
+![DataAccess 的七个实际后端与它们的存储语义](../../../public/images/librespeed-go-database-driver-matrix.svg)
 
 ## 四、存储：一个接口，七个后端
 

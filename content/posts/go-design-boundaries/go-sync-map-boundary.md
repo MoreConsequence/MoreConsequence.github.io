@@ -39,10 +39,6 @@ func (m *Map) Load(key any) (value any, ok bool) {
 
 **命中 read 表 = 一次原子指针读取**，不需要取得 `m.mu`。这是本次稳定 key 基准拉开差距的主要原因；它不是“一发 CAS”，也不是所有 `Load` 都无锁。miss（key 不在 read 表里）且 `amended` 为真时，会拿 `m.mu` 查 dirty 并累计 miss；新 key、删除后重新插入和 dirty 提升都会改变这条路径。
 
-
-
-![sync.Map 内部双表架构：read (只读无锁 atomic.Value) 与 dirty (加锁全量)](../../../public/images/sync-map-read-dirty-entry-state-machine.svg)
-
 ## 二、两组实测：把稳定命中与已有 key 写入分开
 
 统一入口跑三个相互独立的子基准（完整源码见文末，先进入 `experiments` 再执行命令）：读和写都用 8 个已经存在的 `int` key，`-cpu=8`，读基准用 `b.RunParallel`；写基准只改变已有 key，不把“持续新增 key”和“覆盖已有 key”混成一个数字。

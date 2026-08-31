@@ -55,10 +55,6 @@ $$|\mathcal{S}_W \cap \mathcal{S}_R| \ge 1$$
 
 ---
 
-
-
-![弱一致性反熵同步机制：读修复 (Read Repair)、暂存写入 (Hinted Handoff) 与 Merkle 树对比](../../../public/images/dynamo-read-repair-vs-hinted-handoff-anti-entropy.svg)
-
 ## 二、 读修复（Read Repair）与后台反熵（Anti-Entropy）
 
 即使满足 $R + W > N$，那些在写操作时未收到数据的 $N - W$ 个落后节点（Lagging Replicas）依然持有陈旧数据。分布式系统如何收敛落后节点？
@@ -71,15 +67,7 @@ $$|\mathcal{S}_W \cap \mathcal{S}_R| \ge 1$$
 3. 客户端选取时间戳最大的 `v2` 返回给上层应用；
 4. **异步触发读修复**：客户端（或负责协调的 Coordinator 节点）向 Node 3 发送异步写入，强制将 Node 3 的陈旧数据修补为 `v2`。
 
-```
-Client ──► Coordinator ──┬──► Node 1 (v2 @ t=100) ──┐
-                         ├──► Node 2 (v2 @ t=100) ──┼──► 选取 v2 响应客户端
-                         └──► Node 3 (v1 @ t=80)  ──┘
-                                   │
-                           [ 异步发起 Read Repair ]
-                                   ▼
-                             Node 3 更新为 v2
-```
+![Quorum 读取修复（Read Repair）与多版本时间戳冲突合并机制](../../../public/images/consensus-quorum-read-repair-flow.svg)
 
 ### 2.2 基于 Merkle 树的后台反熵（Anti-Entropy with Merkle Trees）
 
@@ -127,8 +115,6 @@ Client ──► Coordinator ──┬──► Node 1 (v2 @ t=100) ──┐
 
 2012 年，计算机科学家 Daniel Abadi 提出了超越 CAP 的 **PACELC 理论**：
 
-![从 CAP 到 PACELC 理论：分布式系统工程选型与物理权衡矩阵](../../../public/images/consensus-pacelc-tradeoff-matrix.svg)
-
 ### 4.1 PACELC 决策模型定义
 
 $$\mathbf{If\ Partition\ (P) \implies Choose\ [A\ vs\ C];\quad Else\ (E) \implies Choose\ [L\ vs\ C]}$$
@@ -140,23 +126,7 @@ $$\mathbf{If\ Partition\ (P) \implies Choose\ [A\ vs\ C];\quad Else\ (E) \implie
 
 ### 4.2 工业级存储系统 PACELC 分类矩阵
 
-```
-                ┌──────────────────────────────────────────────┐
-                │             PACELC 工业系统分类矩阵            │
-                ├──────────────────────┬───────────────────────┤
-                │   PC / EC (强一致优先) │   PC / EL (延迟优化型) │
-                │                      │                       │
-                │ • Google Spanner     │ • MySQL Semi-sync     │
-                │ • TiDB / CockroachDB │ • MongoDB (w:1 复制)  │
-                │ • etcd / ZooKeeper   │ • PostgreSQL 异步流复制│
-                ├──────────────────────┼───────────────────────┤
-                │   PA / EL (极致高可用) │   PA / EC (极罕见组合) │
-                │                      │                       │
-                │ • Amazon DynamoDB    │ • 理论稀有             │
-                │ • Apache Cassandra   │ • (逻辑矛盾，工业极少)  │
-                │ • Couchbase          │                       │
-                └──────────────────────┴───────────────────────┘
-```
+![PACELC 分布式数据库分类矩阵：CAP 定理的完整工程拓展模型](../../../public/images/consensus-pacelc-classification-matrix.svg)
 
 1. **PC / EC（终极强一致）**：Spanner、TiDB、etcd
    - 分区时停写保一致（PC）；常态下走 Raft/Paxos 同步落盘保一致（EC），哪怕多付出 10ms 网络 RTT。

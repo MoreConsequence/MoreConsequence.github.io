@@ -13,7 +13,7 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![一次测速的完整生命周期：握手、Ping 探测、下行多路灌水、上行黑洞推流与遥测落库时序](../../../public/images/librespeed-go-speedtest-full-lifecycle-timeline.svg)
+![一次测速从身份、下行、上行、延迟到结果读取的阶段时间线](../../../public/images/librespeed-go-speedtest-full-lifecycle-timeline.svg)
 
 ## 一、开测之前：两件预备工作
 
@@ -27,7 +27,7 @@ series: "LibreSpeed Go 源码行纪"
 
 
 
-![稳态速率提取算法：100ms 离散采样序列与 P90 截尾均值滤波](../../../public/images/librespeed-go-p90-trimmed-mean-filter.svg)
+![下行速率从 grace 重置、100ms 样本到截尾均值的处理流程](../../../public/images/librespeed-go-p90-trimmed-mean-filter.svg)
 
 ## 三、阶段 D：下行的完整演算
 
@@ -76,7 +76,7 @@ IE11/Edge/PS4 有专门的降级分支（这些浏览器 `upload.onprogress` 不
 
 
 
-![RFC 3550 抖动计算公式与一阶 IIR 低通滤波数学模型](../../../public/images/librespeed-go-latency-jitter-filter-math.svg)
+![Worker 的 ping 最小值与非对称 jitter 加权公式](../../../public/images/librespeed-go-latency-jitter-filter-math.svg)
 
 ## 五、阶段 P：延迟与抖动的手算
 

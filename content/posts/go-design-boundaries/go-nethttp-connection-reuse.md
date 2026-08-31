@@ -31,10 +31,6 @@ HTTP/1.1 的持久连接语义是：一次 TCP 连接服务多个请求，省掉
 
 这 2 条意味着什么：任何时刻，这条宿主最多 2 条连接可以被「还回来等复用」。第 3 条完成请求的连接回来时，池子放不下，**直接关闭**。下一波并发请求里，只能靠这 2 条存量去接，多出来的全部新建。复用税就是这么收起来的。
 
-
-
-![net/http.Transport 连接池拓扑：idleLRU、idleConn 与 MaxIdleConnsPerHost](../../../public/images/http-transport-connection-pool-idle-slots.svg)
-
 ## 二、Transport 的池长什么样：按 scheme+host+proxy 分桶，取连接有两条路
 
 `Transport` 内部把空闲连接存在 `map[connectMethodKey][]*persistConn`（源码 `transport.go`），key 是 `{proxy, scheme, addr, onlyH1}`——**scheme + host:port + 代理**，只 HTTP/1.1 的请求还会单独标记。所以同一台机器上 `http://api` 和 `https://api` 是两个桶，各自的 `MaxIdleConnsPerHost` 互不相欠。桶内按「最近最少用」排序，新还回的连接追加在末尾。

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uuid-vs-autoincrement-page-fragmentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="pk-title pk-desc">
+  <title id="pk-title">主键选型碎片对照：自增 ID 紧凑追加 vs 随机 UUID 空间膨胀与离散 I/O</title>
+  <desc id="pk-desc">对比图展示自增主键与时间有序键保持 99.9% 紧凑叶填充率与随机 UUID 触发中间分裂导致 69.6% 填充率、43.5% 空间膨胀及离散 I/O 的物理差异。</desc>
+  <defs>
+    <marker id="pk-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="pk-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">PRIMARY KEY DESIGN · AUTO-INCREMENT VS RANDOM UUID</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">主键选型碎片对照：自增 ID 紧凑追加 vs 随机 UUID 膨胀</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">自增/时间有序键 (叶填充 99.9%，紧凑顺序追加) vs 随机 UUID (叶填充 69.6%，总页数膨胀 +43.5%，离散随机 I/O)</text>
+
+  <!-- 2 Main Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Auto-Increment / UUIDv7 (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SEQUENTIAL</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">自增 ID / UUIDv7 (推荐)</text>
+
+    <!-- Visual Pages Pattern -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Append 极速顺序追加模式</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">新 Key 永远 &gt; 历史最大 Key ➔ 仅在最右叶页追加</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">叶页写满 100% ➔ 分配新空页，原页永久满载！</text>
+
+    <!-- Metrics -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">20 万行基准实测数据 (16KB 页)</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 叶填充率: 99.968% (几乎 100% 满载)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 叶页数: 1563 页 | 总页数: 1581 页</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 叶分裂次数: 1562 次 (每页只分裂 1 次)</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">零内存碎片 · Buffer Pool 极致缓存命中</text>
+
+    <!-- Bottom Benefit -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">磁盘与硬件收益</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">连续物理扇区顺序写入，充分利用 SSD 写入通道与预读特性；</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">High Throughput &amp; Low Latency</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Optimal B+ Tree Packing</text>
+  </g>
+
+  <!-- Col 2: Random UUIDv4 (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">RANDOM UUID</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">随机 UUIDv4 (空间杀手)</text>
+
+    <!-- Visual Pages Pattern -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">离散随机插入与中点分裂</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">新 Key 均匀散布在已有页 ➔ 频繁插入中间</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">50/50 切开 ➔ 两页各自留空 50%，大量页处于半满！</text>
+
+    <!-- Metrics -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">20 万行基准实测数据 (16KB 页)</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 叶填充率: 69.661% (暴跌 30%！)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 叶页数: 2243 页 | 总页数: 2268 页</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 总页数暴增 +43.5% (空间严重浪费)</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">叶分裂次数: 2242 次 (增加 43.5%)</text>
+
+    <!-- Bottom Penalty -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">系统级恶劣连锁反应</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 空间膨胀 43.5% ➔ Buffer Pool 能够缓存的有效数据行暴减；</text>
+    <text x="24" y="316" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 写入引发全盘离散随机 I/O ➔ 写入 TPS 呈断崖式下跌！</text>
+    <text x="24" y="338" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">生产务必选用自增 ID 或 UUIDv7 (RFC 9562)</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">自增与时间有序主键 (99.9% 填充)</text>
+  <rect x="360" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="380" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">随机 UUID 中间分裂与 +43.5% 空间膨胀</text>
+</svg>
+</main>
+</body>
+</html>

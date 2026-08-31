@@ -78,10 +78,6 @@ sequenceDiagram
 
 这套“先 prepare 再 commit 的两步写”解决的是引擎层与服务器层日志的提交协调，不等于每个数据页都在 commit 前写回。对学习者来说，记住两个动作即可：**prepare 让状态可对账，XID 让恢复知道是否完成 commit**。
 
-
-
-![两阶段提交 (2PC) 崩溃恢复判定：Redo Log Prepare 状态与 XID 比对](../../../public/images/two-phase-commit-xa-crash-recovery.svg)
-
 ## 四、崩溃恢复：把账重放
 
 崩溃恢复不是“把三本账按同一顺序重放”，而是至少包含三个相互配合的动作：

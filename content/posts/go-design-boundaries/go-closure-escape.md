@@ -37,10 +37,6 @@ callback := func() int { return value + 1 }
 
 如果把一个无捕获函数创建后立即调用且不存储，编译器可能把它折叠成与直接调用相同的指令；要把“没有闭包税”写成结论，必须在目标版本用 `go tool compile -S` 或 `go build -gcflags=-S` 检查，而不能从一次 ns/op 反推汇编。当前入口的 `BenchmarkClosureImmediate` 测量的是无捕获函数字面量；`BenchmarkClosureEscaping` 才通过返回值和全局存储保留捕获函数值。
 
-
-
-![闭包变量捕获与逃逸分析：值捕获 (栈) vs 引用捕获 (堆逃逸与 GC 压力)](../../../public/images/closure-variable-capture-stack-to-heap-escape.svg)
-
 ## 二、实测：三个场景的账
 
 | 场景 | ns/op | B/op | allocs |

@@ -24,10 +24,6 @@ series: "硬核底层原理"
 
 如果把 30ms 当真，SRTT 被压低 → RTO 被算小 → 更容易误判超时 → 更早重传 → **把正常不丢的网络搞成重传病毒**。这就是为什么 TCP 必须"不敢快"。
 
-
-
-![Jacobson / Karels RTO 动态计算数学模型：SRTT、RTTVAR 与指数加权移动平均](../../../public/images/jacobson-karels-rto-calculation-math.svg)
-
 ## 二、Karn 算法：一条"忘掉"的规则
 
 **Karn 算法**的直觉只有一条：**当任何一次重传发生时，这一轮的 RTT 采样作废，绝不进入 SRTT 计算**——因为无法区分是哪份的 ACK。同时，重传后 RTO 直接**退避翻倍**：

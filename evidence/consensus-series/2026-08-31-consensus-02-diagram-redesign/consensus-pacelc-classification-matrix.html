@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-pacelc-classification-matrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="pacelc-title pacelc-desc">
+  <title id="pacelc-title">从 CAP 到 PACELC 理论：分布式系统工程选型与物理权衡全景</title>
+  <desc id="pacelc-desc">四象限决策图展示 PACELC 理论在网络分区与正常常态下的权衡模型，归类 Spanner、Cassandra、etcd、MySQL 等工业级存储系统的物理定位。</desc>
+  <defs>
+    <marker id="plc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="plc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DISTRIBUTED TRADEOFF · PACELC THEOREM MATRIX</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">从 CAP 到 PACELC 理论：工程选型全景矩阵</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">If Partition (P) ➔ Choose [A vs C]; Else (E) ➔ Choose [Latency (L) vs Consistency (C)]</text>
+
+  <!-- 4 Quadrants Container (y=136..506, h=370) -->
+  <g transform="translate(40, 136)">
+    <!-- Quadrant 1: PC / EC (Top-Left, x=0, y=0, w=430, h=175) - Focal -->
+    <g transform="translate(0, 0)">
+      <rect width="430" height="175" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PC / EC</text>
+      <text x="100" y="26" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终极强一致体系 (Consistency First)</text>
+
+      <rect x="14" y="42" width="402" height="60" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="24" y="62" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代表系统：Google Spanner · TiDB · etcd · CockroachDB</text>
+      <text x="24" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分区时停写保一致 (PC)；常态下走 Raft/Paxos 多数派共识 (EC)</text>
+      <text x="24" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">代价：多消耗 10ms ~ 30ms 跨机房网络 RTT 延迟</text>
+
+      <text x="14" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">核心场景：金融交易账本 · 元数据注册中心 · 强一致分布式锁</text>
+      <text x="14" y="142" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">SLA: 绝对保证 100% 线性一致性 (Linearizable)</text>
+    </g>
+
+    <!-- Quadrant 2: PC / EL (Top-Right, x=450, y=0, w=430, h=175) -->
+    <g transform="translate(450, 0)">
+      <rect width="430" height="175" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PC / EL</text>
+      <text x="100" y="26" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">折中务实派 (Low Latency with Safety)</text>
+
+      <rect x="14" y="42" width="402" height="60" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="24" y="62" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代表系统：MySQL 半同步复制 · MongoDB (w:majority)</text>
+      <text x="24" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分区时停止单侧写防止脑裂 (PC)；常态下仅等 1 个从库即返回 (EL)</text>
+      <text x="24" y="94" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">兼顾超低写入时延 (≤ 2ms) 与高可靠</text>
+
+      <text x="14" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">核心场景：核心业务交易数据库 · 传统电商中台 · 用户主数据</text>
+      <text x="14" y="142" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">SLA: RPO ≈ 0, P99 时延极低</text>
+    </g>
+
+    <!-- Quadrant 3: PA / EL (Bottom-Left, x=0, y=190, w=430, h=175) -->
+    <g transform="translate(0, 190)">
+      <rect width="430" height="175" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PA / EL</text>
+      <text x="100" y="26" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">极致可用与超高吞吐 (Availability First)</text>
+
+      <rect x="14" y="42" width="402" height="60" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="24" y="62" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代表系统：Amazon DynamoDB · Apache Cassandra · Couchbase</text>
+      <text x="24" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分区时开启 Sloppy Quorum 保可用 (PA)；常态下异步写内存 (EL)</text>
+      <text x="24" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">单机读写时延 ≤ 1ms，单机 QPS 超数十万</text>
+
+      <text x="14" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">核心场景：社交点赞 · 视频播放计数 · 时序监控指标 · 购物车暂存</text>
+      <text x="14" y="142" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">SLA: 99.999% 写入可用性保证 (AP 最终一致)</text>
+    </g>
+
+    <!-- Quadrant 4: PA / EC (Bottom-Right, x=450, y=190, w=430, h=175) -->
+    <g transform="translate(450, 190)">
+      <rect width="430" height="175" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PA / EC</text>
+      <text x="100" y="26" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">特殊场景组合 (Theoretical / Custom)</text>
+
+      <rect x="14" y="42" width="402" height="60" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="24" y="62" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代表系统：VoltDB (特殊多区模式) · 自研弱分区强共识架构</text>
+      <text x="24" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分区时优先降级保可用 (PA)；无分区常态下强制执行严格全序 (EC)</text>
+      <text x="24" y="94" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">工业界极罕见（通常难以自洽）</text>
+
+      <text x="14" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">核心场景：对常态一致性有极高要求、但面临灾难时要求降级只读的业务</text>
+      <text x="14" y="142" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">SLA: 依业务降级模式动态切换</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">强一致共识选型 (PC/EC 核心)</text>
+  <rect x="360" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="380" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">务实低时延与高吞吐可用选型</text>
+</svg>
+</main>
+</body>
+</html>

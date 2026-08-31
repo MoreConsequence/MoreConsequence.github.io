@@ -1,125 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="rw-title rw-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="rw-title">OpenAI Realtime API 双向全双工长连接与打断（Barge-in）时序</title>
+  <desc id="rw-desc">时序流程图展示 Realtime API 基于全双工 WebSocket 的音频并发流、用户开口瞬间发送 truncate 与 cancel 帧以及物理时间轴精准裁剪的优雅打断机制。</desc>
+  <defs>
+    <marker id="rw-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="rw-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
-    </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">OpenAI Realtime API 双向全双工长连接与打断（Barge-in）时序</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">24kHz PCM 音频并发流送 ──► 客户端随时开嗓插话 ──► conversation.item.truncate 毫秒级刹车与记忆时间轴裁剪</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">REALTIME PROTOCOL ARCHITECTURE · FULL-DUPLEX WEBSOCKETS &amp; BARGE-IN</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Realtime 全双工长连接与打断 (Barge-in) 机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">24kHz 音频全双工流 ➔ 用户实时开口 ➔ truncate &amp; cancel 毫秒级打断 ➔ 物理时间轴精准对齐裁剪</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Full Duplex (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">FULL DUPLEX</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全双工音频流通道</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">WSS /v1/realtime (双向事件)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 上行: input_audio_buffer.append</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 下行: response.audio.delta</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• PCM16 24kHz 原始音频低时延传输</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Sub-300ms End-to-End Latency</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">突破 HTTP 局限：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别单向 SSE 半双工阻塞；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 上下行音频同时并发流动；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为自然语音拟人交互打通物理通道。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Simultaneous Bi-Directional Flow</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Native Audio Streaming Standard</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Interrupt</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#rw-arr-accent)"/>
 
-    <!-- Actors Header (Client vs Server) -->
-    <g transform="translate(60, 20)">
-      <rect width="260" height="30" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="130" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">📱 客户端 (Browser / App Audio Client)</text>
+  <!-- Col 2: Barge-in Event (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">BARGE-IN EVENT</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">用户开口打断与控制帧</text>
 
-      <rect x="520" width="260" height="30" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-      <text x="650" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">⚡ 服务端 Realtime Engine (GPU VAD &amp; Decoder)</text>
-    </g>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">conversation.item.truncate</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 用户在第 1.24 秒开口发声打断</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 立即停扬声器 + 发 response.cancel</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 发送 truncate (audio_end_ms=1240)</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Millisecond Level Interruption Control</text>
 
-    <!-- Lifelines -->
-    <line x1="190" y1="55" x2="190" y2="360" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
-    <line x1="710" y1="55" x2="710" y2="360" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
-
-    <!-- WebSocket Message Flow -->
-    <g transform="translate(190, 70)">
-      <!-- 1. Handshake & Session Update -->
-      <g>
-        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
-        <rect x="160" y="-14" width="200" height="24" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8.5" fill="#1e40af" text-anchor="middle">session.update (配置 VAD 与模型)</text>
-      </g>
-
-      <!-- 2. Stream Audio Input -->
-      <g transform="translate(0, 35)">
-        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
-        <rect x="150" y="-14" width="220" height="24" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8.5" fill="#1e40af" text-anchor="middle">input_audio_buffer.append (PCM16 24kHz)</text>
-      </g>
-
-      <!-- 3. Server Audio Output -->
-      <g transform="translate(0, 75)">
-        <line x1="520" y1="0" x2="0" y2="0" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
-        <rect x="140" y="-14" width="240" height="24" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8.5" fill="#166534" text-anchor="middle">response.audio.delta (AI 正在语音播报...)</text>
-      </g>
-
-      <!-- 4. Barge-in Event (Red Flag) -->
-      <g transform="translate(0, 120)">
-        <!-- Interrupt Action on Client -->
-        <rect x="-140" y="-10" width="130" height="40" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
-        <text x="-75" y="6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="700" fill="#991b1b" text-anchor="middle">🔴 用户突然开嗓打断！</text>
-        <text x="-75" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#7f1d1d" text-anchor="middle">扬声器播报到 1240ms</text>
-
-        <!-- Truncate Message -->
-        <line x1="0" y1="10" x2="520" y2="10" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrow-red)"/>
-        <rect x="110" y="-4" width="300" height="24" rx="3" fill="#fee2e2" stroke="#f87171"/>
-        <text x="260" y="12" font-family="ui-monospace, monospace" font-size="8.5" font-weight="700" fill="#991b1b" text-anchor="middle">conversation.item.truncate (audio_end_ms: 1240)</text>
-      </g>
-
-      <!-- 5. Response Cancel -->
-      <g transform="translate(0, 165)">
-        <line x1="0" y1="0" x2="520" y2="0" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
-        <rect x="180" y="-14" width="160" height="24" rx="3" fill="#ffffff" stroke="#fca5a5"/>
-        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8.5" fill="#991b1b" text-anchor="middle">response.cancel (刹车信号)</text>
-      </g>
-
-      <!-- 6. Server Ack and Context Truncation -->
-      <g transform="translate(0, 205)">
-        <!-- Server Truncation Box -->
-        <rect x="530" y="-12" width="170" height="42" rx="4" fill="#fff7ed" stroke="#f97316"/>
-        <text x="615" y="6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8.5" font-weight="700" fill="#9a3412" text-anchor="middle">服务端瞬间中断 GPU 解码</text>
-        <text x="615" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5" fill="#c2410c" text-anchor="middle">裁剪历史记忆至 1240ms 处</text>
-
-        <line x1="520" y1="10" x2="0" y2="10" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
-        <rect x="160" y="-4" width="200" height="24" rx="3" fill="#ffffff" stroke="#fed7aa"/>
-        <text x="260" y="12" font-family="ui-monospace, monospace" font-size="8.5" fill="#9a3412" text-anchor="middle">response.cancelled (确认停止)</text>
-      </g>
-
-      <!-- 7. New Audio Input Stream -->
-      <g transform="translate(0, 250)">
-        <line x1="0" y1="0" x2="520" y2="0" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
-        <rect x="140" y="-14" width="240" height="24" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
-        <text x="260" y="2" font-family="ui-monospace, monospace" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">input_audio_buffer.append (新用户语音输入...)</text>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 335)">
-      <rect width="860" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-      <text x="430" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">全双工协议核心精髓：</tspan> 打断不仅是“让扬声器闭嘴”，更关键是通过 <tspan font-weight="700" fill="#2563eb">`conversation.item.truncate` 精确裁剪服务端上下文记忆时间轴</tspan>，防止大模型产生认知幻觉！
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">优雅打断机理：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别粗暴断开 TCP 导致上下文丢失；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 在同一连接内优雅完成打断与新语音注入；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 交互体验与真人面对面交谈完全一致！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Seamless Human-like Turn Taking</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">实时语音智能体的灵魂机制</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Sync</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#rw-arr-accent)"/>
+
+  <!-- Col 3: Truncate Sync (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TIMELINE SYNC</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理时间轴精准裁剪</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">服务端上下文精确同步</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 立即停止 GPU TTS 生成节省算力</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 将 AI 历史精确裁为 1.24s 内文本</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 下一轮对话上下文绝对吻合！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Exact Historical Context Alignment</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">上下文保真意义：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝 AI 记忆“用户其实没听到的后半句”；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保大模型多轮记忆与物理事实绝对一致；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 构筑下一代多模态实时交互协议巅峰！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Next-Gen Realtime AI Infrastructure</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">High Fidelity Conversation State</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">全双工双向音频通道与时间轴同步</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Barge-in 打断与 truncate 物理时间轴裁剪核心</text>
 </svg>

@@ -31,10 +31,6 @@ series: "Go 的设计边界"
 
 在这组输入里，16 个 worker 的 `sync.Mutex` 是 127.8ns，而纯自旋锁是 572.8ns；**一把锁的价格不是它自己的，是“新进来的人”与“已经在等待的人”之间的竞争**。atomic 的 8 worker 点低于 4 worker，也提醒我们不要把一台机器的一次运行画成单调增长定律。要理解差异，应把 `sync.Mutex` 的 `lockSlow`、runtime semaphore 和自旋实现一起看。
 
-
-
-![Go Mutex 三级争锁状态机：Fast Path (CAS) -> Active Spin (自旋) -> Slow Path (sema 挂起)](../../../public/images/go-mutex-fast-spin-slow-sema-flow.svg)
-
 ## 二、三条路径：fast path、自旋与等待者队列
 
 Go 的 Mutex（1.20+ 起在 `internal/sync` 下）拆成 fast path 和 slow loop 两段。先看快路径：

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>speculative-decoding-acceptance-rate-speedup-curve</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ac-title ac-desc">
+  <title id="ac-title">投机采样接受率 (Acceptance Rate) 与端到端加速比理论曲线</title>
+  <desc id="ac-desc">模型对比图展示投机采样加速比理论公式、期望产出 Token 数以及不同业务场景（代码生成、结构化 JSON、开放对话）下的接受率与最佳 K 值选型矩阵。</desc>
+  <defs>
+    <marker id="ac-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ac-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SPEEDUP EQUATION &amp; BOUNDARIES · ACCEPTANCE RATE VS SPEEDUP</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">投机采样加速比模型与场景选型矩阵</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Speedup = E[Tokens]*Tt / (K*Td + Tt) ➔ 代码/JSON 高命中 (alpha=80%, 3.5x 加速) vs 开放对话 (alpha=60%, 2.0x 加速)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Mathematical Model (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SPEEDUP MODEL</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">加速比物理数学模型</text>
+
+    <!-- Formula Box -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">E[Tokens] = (1 - alpha^(K+1)) / (1 - alpha)</text>
+    <text x="24" y="84" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Speedup = (E[Tokens] * T_target) / (K * T_draft + T_target)</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">T_target=50ms (70B), T_draft=5ms (1B)</text>
+
+    <!-- Details -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">参数权衡变量：</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 接受率 alpha: 草稿模型与大模型的分布吻合度；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 推测步数 K: 单次推测生成的词数 (通常 K=3~5)；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 若 alpha &lt; 0.4，盲目增大 K 会因草稿耗时导致负收益！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Critical Trade-off Point (alpha vs K step)</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程选型法则</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">草稿模型速度必须比大模型快 10 倍以上（如 1B vs 70B），方能提供坚实的加速底座。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Draft Model Latency Ratio &lt; 0.1</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Theoretical Maximum Speedup Limit</text>
+  </g>
+
+  <!-- Col 2: Scenario Matrix (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#e85d3f"/>
+    <text x="84" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SCENARIO MATRIX</text>
+    <text x="164" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">业务场景收益与 K 值选型</text>
+
+    <!-- High Match Box -->
+    <rect x="14" y="42" width="412" height="70" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">高命中: 代码生成 / JSON (alpha = 75% ~ 90%)</text>
+    <text x="24" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 推荐 K = 5 ~ 7 ➔ 实际端到端加速比: 2.8x ~ 3.8x！</text>
+    <text x="24" y="94" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Deterministic Code &amp; Schema Patterns</text>
+
+    <!-- Medium Match Box -->
+    <rect x="14" y="120" width="412" height="70" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="140" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">中等: 对话 / 摘要 (alpha = 55% ~ 70%)</text>
+    <text x="24" y="156" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 推荐 K = 3 ~ 4 ➔ 实际端到端加速比: 1.8x ~ 2.3x</text>
+    <text x="24" y="172" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Standard Conversational NLP</text>
+
+    <!-- Low Match Box -->
+    <rect x="14" y="198" width="412" height="64" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">低命中: 创意写作 / 复杂数学 (alpha &lt; 40%)</text>
+    <text x="24" y="234" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 推荐策略: 动态降级或关闭投机采样 (避免草稿反噬)</text>
+    <text x="24" y="248" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Dynamic Fallback to Native Forward</text>
+
+    <!-- Summary -->
+    <rect x="14" y="270" width="412" height="90" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="292" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">场景决定爆发力</text>
+    <text x="24" y="312" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">在 Copilot 代码补全与 Agent 工具调用 JSON 输出中，投机采样可释放近 4 倍的吞吐暴击！</text>
+    <text x="24" y="336" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">3.8x Speedup in Structured &amp; Code Generation</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">加速比物理模型与推测步数 K</text>
+  <rect x="350" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="370" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">代码/JSON 场景 80% 命中与 3.8x 极限爆发核心</text>
+</svg>
+</main>
+</body>
+</html>

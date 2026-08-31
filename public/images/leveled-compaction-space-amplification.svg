@@ -1,100 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="lc-title lc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="lc-title">分层压缩 (Leveled Compaction) 机制：空间放大与读写放大权衡</title>
+  <desc id="lc-desc">对比图展示 Leveled Compaction 键互斥不重叠带来的极致 0.04 次读探测与低空间放大，对比 Size-Tiered 大批合并带来的低写放大与高读放大的物理权衡。</desc>
+  <defs>
+    <marker id="lc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="lc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LSM 分层压缩 (Leveled Compaction) 与三维放大权衡</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">L0 (SST 间 Key 范围重叠) ──► 归并排序下推至 L1 (10MB, Key 无重叠) ──► 10 倍放大至 L2 (100MB) ──► 权衡写放大 (WA)、读放大 (RA) 与空间放大 (SA)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LSM COMPACTION STRATEGY · LEVELED VS SIZE-TIERED</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">分层压缩 (Leveled Compaction) 机制与权衡</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Leveled (Key 域不重叠，读探测低至 0.04 次，写放大 ~5.38) vs Size-Tiered (大批合并，写放大低至 1.60，多重叠读放大高)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Leveled Compaction (x=40..460, w=420) - Focal -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">LEVELED (RECOMMENDED)</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Leveled Compaction (分层压缩)</text>
+
+    <!-- Visual Structure -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">L1+ 各层 Key 范围严格互斥不重叠</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">L1: [a..g] ➔ [h..p] ➔ [q..z] (每个 Key 仅存在于 1 个文件)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">点查命中率极高：单层只需探测最多 1 个 SSTable！</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">30 万行 Sweep 基准实测数据 (T=8)</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 读探测 (不存在键): 仅 0.04 次！(极度优秀)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 空间放大 (SA): 1.19 (磁盘空间利用率高)</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 写放大 (WA): 5.38 (下沉需与下层重写)</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">读尾延迟平稳，消灭多文件重叠查找</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">适用最佳实践</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">RocksDB 生产默认策略。适合读写混合、范围扫描频繁、对 P99 读延迟与磁盘空间成本敏感的通用场景。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Predictable Low Read Latency &amp; Space</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Standard OLTP / KV Workload Default</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 写放大 (Write Amplification - WA)</text>
+  <!-- Col 2: Size-Tiered (x=480..920, w=440) -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SIZE-TIERED</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Size-Tiered Compaction (分级压缩)</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">WA = 写入磁盘总字节 / 用户实际写入字节</text>
-          
-          <text x="10" y="42" fill="#86efac">物理代价：</text>
-          <text x="10" y="58" fill="#cbd5e1">• 数据在每层 Compaction 需重新读写</text>
-          <text x="10" y="74" fill="#cbd5e1">• Leveled Compaction 的 WA 约 10~30 倍</text>
-          <text x="10" y="90" fill="#34d399">• 但相比 B+ 树的随机写仍具压倒性吞吐优势</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 适合以写入为主的大吞吐系统！</text>
-        </g>
+    <!-- Visual Structure -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">同层积攒多个大小相近的重叠 SSTable</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Tier 1: [a..z] ⇄ [a..z] ⇄ [a..z] ⇄ [a..z] (范围重叠)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">点查必须探测全部重叠文件 ➔ 读放大严重！</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 顺序 I/O 效率远超随机 I/O；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 合理设置分层倍数（10x）平衡代价；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造超强吸星大法。</text>
-      </g>
-    </g>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">30 万行 Sweep 基准实测数据 (T=8)</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 写放大 (WA): 2.69 (极低，大批合并重写少)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 空间放大 (SA): 1.27 (合并期间峰值可达 2.0x 翻倍)</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 读探测 (无 Bloom): 高达 4.0 ~ 28.0 次！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">劣势: 点查抖动大，空间峰值翻倍风险高</text>
 
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">2. 读放大 (Read Amplification - RA)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">RA = 读取磁盘总字节 / 实际数据字节</text>
-          
-          <text x="10" y="42" fill="#fed7aa">查找链路：MemTable ──► L0 ──► L1 ──► L2...</text>
-          <text x="10" y="58" fill="#38bdf8">必须依次探查多个 SSTable</text>
-          
-          <text x="10" y="80" fill="#34d399">硬核加速利器：</text>
-          <text x="10" y="96" fill="#4ade80">布隆过滤器 (Bloom Filter) 1 次计算排除 99% SST！</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 将读放大压制在常数级别！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 利用位图哈希消除多余磁盘探查；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 点查性能接近 B+ 树；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 空间换时间的绝妙设计！</text>
-      </g>
-    </g>
-
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 空间放大 (Space Amplification - SA)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">SA = 磁盘实际占用 / 有效数据总大小</text>
-          
-          <text x="10" y="42" fill="#86efac">存储表现：</text>
-          <text x="10" y="58" fill="#cbd5e1">• 旧版本与删除标记 (Tombstone) 在 Compaction 中彻底清理</text>
-          <text x="10" y="74" fill="#cbd5e1">• Leveled 模式的 SA 仅约 1.1~1.2 倍</text>
-          <text x="10" y="90" fill="#34d399">• 远优于 B+ 树的 50% 内部碎片 (SA 1.5~2.0)</text>
-          
-          <text x="10" y="116" fill="#4ade80">✓ 磁盘空间利用率达到物理极致！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 紧凑的数据布局节省海量存储成本；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 成为现代分布式数据库（TiDB、CockroachDB）首选；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 顶级存储引擎架构典范！</text>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">适用场景</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Cassandra / ScyllaDB 默认。适合高吞吐纯日志追加写入、极少更新删除、点查要求不苛刻的大数据管道。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Ultra-High Ingestion Throughput</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Cassandra Time-Series Storage</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Size-Tiered 大批重写</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Leveled 键不重叠与 0.04 次极速点查核心</text>
 </svg>

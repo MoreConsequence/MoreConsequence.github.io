@@ -1,130 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cv-title cv-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cv-title">Context.Value 链表查找与类型安全边界</title>
+  <desc id="cv-desc">Go 运行时 Context.Value 链表拓扑图展示嵌套 valueCtx 节点、沿 parent 指针 O(N) 向上线性回溯、私有 key 类型防碰撞，以及基础设施元数据与显式业务参数边界。</desc>
+  <defs>
+    <marker id="cv-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="cv-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go Context 链式存储与向上查找机理：为什么不是全局 Hash Map</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">调用栈向下传递（Down）vs valueCtx 单向链表沿 parent 指针向上遍历（Up, $O(N)$ 复杂度）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CONTEXT METADATA · VALUE CHAIN O(N) TRAVERSAL &amp; PRIVATE KEY TYPE SAFETY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Context.Value 链表查找与类型安全</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">嵌套 valueCtx 节点 ➔ 沿 parent 指针 O(N) 向上回溯 ➔ 私有 key 防撞 ➔ 基础设施与业务隔离</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: valueCtx Structure (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">VALUECTX</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">嵌套单值节点</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Context + key + val</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每次 WithValue 包装一个新 valueCtx</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 形成不可变单向父向链表结构</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Immutable Singly-Linked Node</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">链表特性：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不是全局 Hash Map 容器；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 每次存值都是一次节点分配；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保证高并发读写的天然线程安全。</text>
   </g>
 
-  <!-- Main Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: O(N) Lookup (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">O(N) LOOKUP</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">沿链向上回溯</text>
 
-    <!-- 3 Panes Layout -->
-    <g transform="translate(20, 20)">
-      <!-- Pane 1: Call Stack (250px) -->
-      <g>
-        <rect width="250" height="215" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-        <rect width="250" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="125" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 函数调用栈（值向下传递）</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">c = c.Context Recursive Walk</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 沿 parent 指针逐层向上比对 key</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 找到第一个匹配 key 即终止并返回</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Linear Search Traversal</text>
 
-        <g transform="translate(14, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-          <rect width="222" height="32" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="12" y="20" fill="#1e40af" font-weight="700">HTTP 中间件 (Middleware)</text>
-
-          <rect y="40" width="222" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="12" y="60" fill="#334155">路由处理器 (Handler)</text>
-
-          <rect y="80" width="222" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="12" y="100" fill="#334155">业务逻辑层 (Service)</text>
-
-          <rect y="120" width="222" height="36" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-          <text x="12" y="138" fill="#166534" font-weight="700">数据库仓储 (Repository)</text>
-          <text x="12" y="150" fill="#15803d" font-size="9.5">👉 调用 ctx.Value("trace_id")</text>
-        </g>
-      </g>
-
-      <!-- Downward arrow -->
-      <path d="M 285 60 L 315 60" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
-      <text x="300" y="52" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#2563eb" text-anchor="middle">包装</text>
-
-      <!-- Pane 2: Nested valueCtx Chain (340px) -->
-      <g transform="translate(325, 0)">
-        <rect width="320" height="215" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-        <rect width="320" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="160" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">2. Context 不可变单向树结构</text>
-
-        <g transform="translate(14, 44)" font-family="ui-monospace, monospace" font-size="10.5">
-          <!-- Root -->
-          <rect width="292" height="32" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="12" y="20" fill="#64748b">context.Background() [emptyCtx 根节点]</text>
-
-          <!-- valueCtx 1 -->
-          <rect y="40" width="292" height="34" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-          <text x="12" y="58" fill="#1e40af" font-weight="700">valueCtx #1: key="trace_id", val="a1b2c3"</text>
-          <text x="12" y="70" fill="#2563eb" font-size="9.5">└── parent 指向: emptyCtx</text>
-
-          <!-- valueCtx 2 -->
-          <rect y="80" width="292" height="34" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="12" y="98" fill="#334155">valueCtx #2: key="client_ip", val="1.1.1.1"</text>
-          <text x="12" y="110" fill="#64748b" font-size="9.5">└── parent 指向: valueCtx #1</text>
-
-          <!-- valueCtx 3 -->
-          <rect y="120" width="292" height="36" rx="4" fill="#f0fdf4" stroke="#10b981"/>
-          <text x="12" y="138" fill="#047857" font-weight="700">valueCtx #3: key="span_id", val="s-9981"</text>
-          <text x="12" y="150" fill="#065f46" font-size="9.5">└── parent 指向: valueCtx #2 (当前 ctx)</text>
-        </g>
-      </g>
-
-      <!-- Upward lookup arrow -->
-      <path d="M 660 160 L 685 160 L 685 85 L 705 85" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-emerald)"/>
-      <text x="685" y="75" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#10b981" text-anchor="middle">向上回溯</text>
-
-      <!-- Pane 3: Upward Traversal Mechanics (200px) -->
-      <g transform="translate(695, 0)">
-        <rect width="185" height="215" rx="6" fill="#f0fdf4" stroke="#86efac"/>
-        <rect width="185" height="32" rx="6" fill="#dcfce7"/>
-        <text x="92" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. 溯源查找规则</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#166534">
-          <text x="0" y="14" font-weight="700">① 检查当前节点：</text>
-          <text x="0" y="28" fill="#14532d">`span_id != trace_id`</text>
-          
-          <text x="0" y="52" font-weight="700">② 沿 parent 向上：</text>
-          <text x="0" y="66" fill="#14532d">`client_ip != trace_id`</text>
-
-          <text x="0" y="90" font-weight="700">③ 命中目标返回：</text>
-          <text x="0" y="104" fill="#15803d" font-weight="700">`key == trace_id` 🎯</text>
-          <text x="0" y="118" fill="#047857">返回 "a1b2c3" (耗时 $O(N)$)</text>
-
-          <text x="0" y="142" font-size="9.5" fill="#64748b">若到根未找到，返回 nil</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Guidance Bar -->
-    <g transform="translate(20, 250)">
-      <rect width="860" height="65" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      
-      <g transform="translate(16, 14)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <text x="0" y="14" font-size="12" font-weight="700" fill="#0f172a">💡 Context 传值工程黄金法则：</text>
-        <g font-size="11" fill="#334155">
-          <text x="0" y="32"><tspan font-weight="700" fill="#2563eb">【适合放什么】</tspan> 全链路追踪元数据（TraceID、SpanID）、认证 Token、请求发起时间（跨层透传，业务无感）</text>
-          <text x="0" y="48"><tspan font-weight="700" fill="#ea580c">【严禁放什么】</tspan> 核心业务实体（如 User/Order 对象、数据库连接）—— 破坏类型安全、隐藏函数入参依赖、引发 $O(N)$ 遍历性能退化</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">查找代价：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 链深增加将成倍放大查询开销；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 伴随 interface{} 运行时类型断言；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 决定了 Value 绝不能被滥用。</text>
   </g>
+
+  <!-- Col 3: Private Key (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PRIVATE KEY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">私有 Key 防碰撞</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">type ctxKey struct{}</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须使用包级私有未导出类型作为 key</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 杜绝字符串 key 在不同三方包之间撞车</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Type-Safe Collision Prevention</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">封装最佳实践：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 对外暴露 WithTraceID/TraceID 辅助函数；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 将丑陋的类型断言封装在包内部；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 提供纯净强类型的调用体验。</text>
+  </g>
+
+  <!-- Col 4: Boundary (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">BOUNDARY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">基建与业务隔离</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Infra Meta vs Domain Params</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Context 仅传递 TraceID / Auth 等基建元数据</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 业务参数 (订单ID/分页) 必须显式签名</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Strict Architectural Decoupling</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构准则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝 Context 沦为参数大杂烩黑盒；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 保持函数依赖透明与可测试性；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 编写高内聚低耦合企业级 Go 代码。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">嵌套 valueCtx 单向链表与基建元数据严格隔离</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">O(N) 向上回溯机制与私有 Key 防碰撞安全核心</text>
 </svg>

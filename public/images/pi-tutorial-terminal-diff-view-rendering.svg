@@ -1,68 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="td-title td-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="td-title">TUI 终端差分渲染引擎与语法高亮 Diff 视图</title>
+  <desc id="td-desc">架构与流程图展示 ANSI Escape Codes 光标控制、Virtual Screen Buffer 差分重绘擦除机制，以及终端红绿语法高亮 Diff 视图渲染实现。</desc>
+  <defs>
+    <marker id="td-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="td-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi TUI 终端现代化代码 Diff 视觉渲染拓扑</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">文件标题卡片 ──► 删除行 (Soft Red 背景 + 深红文字) ──► 新增行 (Soft Green 背景 + 深绿文字) ──► 像素级对齐行号</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DIFFERENTIAL TERMINAL UI · ANSI ESCAPE CODES &amp; SYNTAX DIFF</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">TUI 差分渲染引擎与语法高亮 Diff 视图</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">ANSI 光标控制 (\x1b[1A / \x1b[2K) ➔ Virtual Buffer 差分重绘 ➔ 红绿高亮 Diff 视图出版级呈现</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: ANSI Codes (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ANSI CODES</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">光标与行擦除指令</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">原生控制序列</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• \x1b[2K: 擦除当前行整行内容</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• \x1b[1A: 光标向上移动一行</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• \x1b[?25l / \x1b[?25h: 隐藏/显示光标</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Hardware Terminal Emulation Control</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">控制原理：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别不可逆的换行打印；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 在当前视口进行像素级行重绘；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为原地动画与状态刷新奠定物理底盘。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Precise In-Place Cursor Manipulation</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">ANSI Standards Compliance</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 1 Large Terminal Card (900px) -->
-    <rect width="900" height="385" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
-    <rect width="900" height="34" rx="8" fill="#1e293b"/>
-    <circle cx="20" cy="17" r="5" fill="#ef4444"/>
-    <circle cx="36" cy="17" r="5" fill="#f59e0b"/>
-    <circle cx="52" cy="17" r="5" fill="#10b981"/>
-    <text x="450" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#94a3b8" text-anchor="middle">workspace/server.ts ── Patch Preview</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Buffer</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#td-arr-accent)"/>
 
-    <g transform="translate(20, 50)" font-family="ui-monospace, monospace" font-size="8">
-      <g transform="translate(0, 0)">
-        <rect width="860" height="24" rx="3" fill="#1e293b"/>
-        <text x="10" y="16" fill="#64748b">@@ -10,6 +10,8 @@ export function startServer() {</text>
-      </g>
+  <!-- Col 2: Differential Rendering (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DIFF RENDER</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">差分重绘与零闪烁</text>
 
-      <g transform="translate(0, 30)">
-        <rect width="860" height="24" rx="3" fill="#1e293b"/>
-        <text x="10" y="16" fill="#94a3b8"> 10 │   const app = express();</text>
-      </g>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Virtual Screen Buffer 机制</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 记录上一帧输出行数 lastHeight</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 重绘时向上回退 lastHeight 行并擦除</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 原地输出新帧，0 闪烁 0 刷屏！</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Zero-Flicker Screen Repaint Algorithm</text>
 
-      <g transform="translate(0, 60)">
-        <rect width="860" height="24" rx="3" fill="#450a0a"/>
-        <text x="10" y="16" fill="#f87171">-11 │   const port = 3000;</text>
-      </g>
-
-      <g transform="translate(0, 90)">
-        <rect width="860" height="24" rx="3" fill="#052e16"/>
-        <text x="10" y="16" fill="#4ade80">+11 │   const port = process.env.PORT || 8080;</text>
-      </g>
-
-      <g transform="translate(0, 120)">
-        <rect width="860" height="24" rx="3" fill="#052e16"/>
-        <text x="10" y="16" fill="#4ade80">+12 │   app.use(helmet()); // Added security headers</text>
-      </g>
-
-      <g transform="translate(0, 150)">
-        <rect width="860" height="24" rx="3" fill="#1e293b"/>
-        <text x="10" y="16" fill="#94a3b8"> 13 │   app.listen(port, () =&gt; {</text>
-      </g>
-
-      <g transform="translate(0, 190)">
-        <rect width="860" height="120" rx="4" fill="#090d16" stroke="#1e293b"/>
-        <text x="15" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" fill="#38bdf8">TUI Diff 渲染核心技术要点：</text>
-        <text x="15" y="46" font-size="8" fill="#cbd5e1">• 使用 ANSI 24-bit TrueColor 背景色填充整行，彻底杜绝文字末尾黑边断裂；</text>
-        <text x="15" y="66" font-size="8" fill="#cbd5e1">• 严格按最大行号宽度 (PadStart) 对齐行号列，保障代码缩进绝对平整；</text>
-        <text x="15" y="86" font-size="8" fill="#4ade80">• 优雅清晰的代码对比，赋予开发者 100% 的审阅信心与掌控力！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程收益：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 支撑耗时任务的动态转动 Spinner；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 实时展示 Token 生成速率与进度条；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保持终端整洁专业，无冗余垃圾输出。</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Professional CLI Quality Assurance</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">现代终端 Agent 的标配渲染架构</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">View</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#td-arr-accent)"/>
+
+  <!-- Col 3: Syntax Diff View (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DIFF VIEW</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">红绿 Diff 语法高亮</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Code Diff Highlighting</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• - const val = oldFn(); (删减红)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• + const val = newFn(); (新增绿)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">•   return val; (保留上下文)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">GitHub-Grade Terminal Diff Presentation</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">呈现效果：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 在终端中直观展示代码变更对比；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 行号严格对齐，支持 CJK 字符宽度计算；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 用户一目了然审批 Agent 代码修改！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Crystal Clear Code Inspection</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zero Ambiguity Patch Review</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">ANSI 光标控制与红绿 Diff 语法高亮</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Virtual Screen Buffer 差分重绘与零闪烁覆写核心</text>
 </svg>

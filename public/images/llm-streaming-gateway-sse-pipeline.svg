@@ -1,112 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sg-title sg-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="sg-title">大模型长连接流式网关（SSE）全链路物理数据管道</title>
+  <desc id="sg-desc">架构全景图展示客户端 EventSource 打字机渲染、网关层禁用 Nginx 缓冲与 TCP_NODELAY 优化以及与 GPU 推理后端流式管道的高效协作链路。</desc>
+  <defs>
+    <marker id="sg-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="sg-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型长连接流式网关（SSE）全链路物理数据管道</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Client ──► 接入网关（分块分发与 Ping 保活） ──► vLLM 推理引擎（gRPC Async Generator 迭代吐词）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">STREAMING GATEWAY PIPELINE · SSE &amp; ZERO-BUFFER PROXY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">大模型长连接流式网关 (SSE) 架构</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">客户端 (EventSource 打字机) ➔ 网关 (禁用缓冲 X-Accel-Buffering: no / 心跳保活) ➔ GPU 后端 (Token 实时流)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Client Layer (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLIENT LAYER</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">客户端与体验层</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">EventSource / SSE 消费</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 逐 Token 增量渲染 (打字机效果)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 首字时延 (TTFT) 秒开体验</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 自动接收 :ping 注释保持心跳</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Smooth Typing UI &amp; Heartbeat</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">体感革命：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 告别 30 秒全量等待白屏卡顿；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 毫秒级反馈极大地缓解用户焦虑；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 成为现代生成式 AI 应用唯一标准。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Sub-second First Token Feel</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Standard GenAI UI Paradigm</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Proxy</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sg-arr-accent)"/>
 
-    <!-- 3 Stage Columns (265px each, gap 20px) -->
-    <g transform="translate(20, 20)">
-      <!-- Stage 1: Browser / Client -->
-      <g>
-        <rect width="265" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-        <rect width="265" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">1. 客户端 (Browser / App)</text>
+  <!-- Col 2: Streaming Gateway (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STREAMING GATEWAY</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">流式网关与防坑优化</text>
 
-        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="241" height="46" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="10" y="18" fill="#0f172a" font-weight="700">标准 EventSource / Fetch</text>
-          <text x="10" y="32" font-family="ui-monospace, monospace" font-size="9.5" fill="#2563eb">Accept: text/event-stream</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">三大生产级安全规避配置</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. X-Accel-Buffering: no (禁用缓冲)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. TCP_NODELAY (禁 Nagle 算法合并)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. : ping 心跳注入 (防 60s 超时掐断)</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Zero-Buffer &amp; Anti-Timeout Defense</text>
 
-          <rect y="54" width="241" height="60" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="10" y="18" fill="#1e40af" font-weight="700">逐字打字机渲染</text>
-          <text x="10" y="32" font-size="9.5" fill="#2563eb">• 首字时延 TTFT &lt; 300ms 即响应</text>
-          <text x="10" y="46" font-size="9.5" fill="#2563eb">• 持续消费 data: {"delta":"..."}</text>
-
-          <rect y="122" width="241" height="36" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="10" y="22" font-size="9.5" fill="#64748b">物理状态：单 HTTP 连接保持 30s</text>
-        </g>
-      </g>
-
-      <!-- Stage 2: Streaming Gateway -->
-      <g transform="translate(285, 0)">
-        <rect width="265" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="265" height="32" rx="6" fill="#dcfce7"/>
-        <text x="132" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 流式代理网关 (Gateway)</text>
-
-        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="241" height="46" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="10" y="18" fill="#14532d" font-weight="700">禁用网关全量 Buffer 缓冲</text>
-          <text x="10" y="32" font-family="ui-monospace, monospace" font-size="9.5" fill="#047857">X-Accel-Buffering: no (Nginx)</text>
-
-          <rect y="54" width="241" height="60" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-          <text x="10" y="18" fill="#047857" font-weight="700">心跳保活与超时防护</text>
-          <text x="10" y="32" font-size="9.5" fill="#065f46">• 每 15s 发送 `: ping\n\n` 空包</text>
-          <text x="10" y="46" font-size="9.5" fill="#065f46">• 防止 LB/NAT 网关静默切断连接</text>
-
-          <rect y="122" width="241" height="36" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="10" y="22" font-size="9.5" fill="#64748b">流控：连接池防击穿熔断保护</text>
-        </g>
-      </g>
-
-      <!-- Stage 3: LLM Inference Engine -->
-      <g transform="translate(570, 0)">
-        <rect width="270" height="235" rx="6" fill="#f8fafc" stroke="#bfdbfe" stroke-width="1.5"/>
-        <rect width="270" height="32" rx="6" fill="#eff6ff"/>
-        <text x="135" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">3. 推理引擎 (vLLM / TGI)</text>
-
-        <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="246" height="46" rx="4" fill="#ffffff" stroke="#93c5fd"/>
-          <text x="10" y="18" fill="#1e40af" font-weight="700">gRPC 流式迭代器 (Async)</text>
-          <text x="10" y="32" font-size="9.5" fill="#2563eb">每个 Forward 迭代 yield 1 个 Token</text>
-
-          <rect y="54" width="246" height="60" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-          <text x="10" y="18" fill="#1d4ed8" font-weight="700">显存生命周期绑定</text>
-          <text x="10" y="32" font-size="9.5" fill="#2563eb">• 持续持有 KV Cache Block</text>
-          <text x="10" y="46" font-size="9.5" fill="#2563eb">• 输出 EOS 后瞬时解绑物理块</text>
-
-          <rect y="122" width="246" height="36" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="10" y="22" font-size="9.5" fill="#64748b">单卡支持 100+ 活跃长连接</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">长连接网关核心命题：</tspan> 大模型时代彻底终结了“100ms 快速短连接 RPC”的黄金假设；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#2563eb" text-anchor="middle">
-        网关必须具备处理 30~60 秒超长连接、平滑分块流式传输、防假死心跳与动态反压的全新能力。
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">资源守门人职责：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝中间件攒批导致的一大坨喷出；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维持长达 60 秒的底层连接稳定；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 挂载 AbortSignal 级联取消监听器！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">High-Concurrency Long Connection Shield</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保护 GPU 算力免遭僵尸连接拖垮</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Stream</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sg-arr-accent)"/>
+
+  <!-- Col 3: GPU Backend (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GPU BACKEND</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">GPU 推理集群</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">vLLM / gRPC 服务端</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 每 Step 产出 Token 推入 Stream</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 结合反压水位动态控制步频</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 彻底消除微服务连接池雪崩</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Stable GPU Pipeline Output</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构收益：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 承载数万并发长连接吞吐；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 避免 K8s Pod 因探针超时误杀；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 构筑现代 AI 基础设施大门！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Robust Enterprise Serving Tier</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Zero Connection Pool Exhaustion</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">客户端 EventSource 渲染与 GPU 后端输出</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">流式网关三大防坑配置与心跳防超时核心</text>
 </svg>

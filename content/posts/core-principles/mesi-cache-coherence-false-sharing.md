@@ -43,10 +43,6 @@ flowchart LR
 
 如果目标环境支持 PMU，可以额外用 `perf stat` 或平台等价工具观察事件；PMU 计数器只能帮助定位机制，仍需和同语义的端到端 benchmark 一起解释。
 
-
-
-![MESI 缓存一致性状态机：Modified, Exclusive, Shared, Invalid 四态跃迁](../../../public/images/mesi-four-state-transition-diagram.svg)
-
 ## 二、伪共享：两个变量，躺在同一条缓存行
 
 两个 goroutine，各自写“自己那份”的计数器；逻辑变量不同，不代表物理缓存行不同：

@@ -178,10 +178,6 @@ func (r *RecoverySupervisor) ReconcilePendingOutbox(ctx context.Context, runID s
 
 ---
 
-
-
-![Oract At-Least-Once 副作用派发与幂等键去重机制](../../../public/images/oract-at-least-once-idempotent-effect-deduplication.svg)
-
 ## 四、Receipt 证据链与审计防篡改
 
 在严肃业务中，简单的 JSON 返回是不具备法律审计效力的。ORACT 的 `Receipt` 结构包含了完整的密码学证据链：

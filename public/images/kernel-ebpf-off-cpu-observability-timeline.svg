@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="off-time-title off-time-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="off-time-title">进程 On-CPU 算力消耗 vs Off-CPU 锁等待阻塞全景可观测性模型</title>
+  <desc id="off-time-desc">时间线与架构对比图展示 Total Latency = Time(On-CPU) + Time(Off-CPU) 物理模型，对比传统 CPU 火焰图盲区与 eBPF Off-CPU 阻塞时间线追踪。</desc>
+  <defs>
+    <marker id="ot-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ot-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">ON-CPU VS OFF-CPU MODEL · LATENCY DISSECTION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">On-CPU 算力消耗 vs Off-CPU 阻塞时延模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">总时延 Total Latency = Time(On-CPU) + Time(Off-CPU)；传统 CPU 火焰图仅能看 On-CPU，Off-CPU 穿透锁争用与 I/O 盲区</text>
+
+  <!-- Top: Timeline Ribbon Box (y=136..276, h=140) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="140" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHYSICAL TIMELINE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单个高延迟请求生命周期时间线解剖 (Total Latency: 100ms)</text>
+
+    <!-- Visual Timeline Ribbon (y=44..100) -->
+    <g transform="translate(14, 44)">
+      <!-- 1. On-CPU (5ms) -->
+      <rect x="0" y="0" width="70" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="35" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">On-CPU</text>
+      <text x="35" y="36" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">2ms (计算)</text>
+      <text x="35" y="47" fill="#6b6a64" font-size="6.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">请求入场解析</text>
+
+      <!-- 2. Off-CPU: Futex Lock (45ms) - Focal -->
+      <rect x="76" y="0" width="340" height="52" rx="3" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="246" y="20" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Off-CPU: Futex 互斥锁争用挂起 (45ms)</text>
+      <text x="246" y="34" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">pthread_mutex_lock() ➔ do_futex() 阻塞 ➔ CPU 切换走</text>
+      <text x="246" y="46" fill="#e85d3f" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">CPU 使用率 = 0%，传统火焰图完全隐形！</text>
+
+      <!-- 3. On-CPU (1ms) -->
+      <rect x="422" y="0" width="60" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="452" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">On-CPU</text>
+      <text x="452" y="36" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">1ms (计算)</text>
+
+      <!-- 4. Off-CPU: Disk I/O (50ms) - Focal -->
+      <rect x="488" y="0" width="310" height="52" rx="3" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="643" y="20" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Off-CPU: fsync 磁盘 I/O 等待 (50ms)</text>
+      <text x="643" y="34" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">vfs_fsync() ➔ 等待 NVMe 刷盘中断唤醒</text>
+      <text x="643" y="46" fill="#e85d3f" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">进程状态变为 D (Uninterruptible Sleep)</text>
+
+      <!-- 5. On-CPU (2ms) -->
+      <rect x="804" y="0" width="48" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="828" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">On</text>
+      <text x="828" y="36" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">2ms</text>
+    </g>
+
+    <!-- Formula Subnote -->
+    <text x="24" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">核心物理事实：整个 100ms 请求中，实际 On-CPU 计算仅占 5ms（5%），其余 95ms（95%）全在 Off-CPU 阻塞！</text>
+  </g>
+
+  <!-- Bottom: 2 Contrasting Columns (y=292..506, h=214) -->
+  <!-- Left: Traditional CPU Flame Graph (x=40..460, w=420) -->
+  <g transform="translate(40, 292)">
+    <rect width="420" height="214" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ON-CPU PARADIGM</text>
+    <text x="134" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统 CPU 采样火焰图局限</text>
+
+    <!-- Limitations -->
+    <rect x="14" y="42" width="392" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">采样机理：perf record -F 99</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">仅在 CPU 时钟中断到来时，抓取正在 CPU 上运行的指令指针</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">线程挂起时 CPU = 0% ➔ 0 采样点！</text>
+
+    <rect x="14" y="124" width="392" height="76" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="146" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">线上排障致命困境</text>
+    <text x="24" y="164" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">“系统 CPU 只有 5%，但 P99 响应时间暴增到 500ms，火焰图却显示一切正常，无从下手排查！”</text>
+    <text x="24" y="184" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Blind Spot: 无法观测锁与 I/O 阻塞</text>
+  </g>
+
+  <!-- Right: eBPF Off-CPU Observability (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 292)">
+    <rect width="440" height="214" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OFF-CPU OBSERVABILITY</text>
+    <text x="154" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">eBPF Off-CPU 阻塞火焰图</text>
+
+    <!-- Mechanisms -->
+    <rect x="14" y="42" width="412" height="74" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">追踪机理：finish_task_switch</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂载内核调度器：切出记录 t_start 与调用栈，切入计算 Δt</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Δt = t_wakeup - t_sleep ➔ 累加至 Stack ID 桶</text>
+
+    <rect x="14" y="124" width="412" height="76" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="146" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">长尾毛刺一目了然</text>
+    <text x="24" y="164" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Off-CPU 火焰图宽度直接代表进程挂起阻塞的总时间：直接揪出数据库行锁争用、磁盘同步与外部 RPC 超时！</text>
+    <text x="24" y="184" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">P99 Long-Tail Latency Demystified</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">On-CPU 算力与传统采样</text>
+  <rect x="280" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="300" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Off-CPU 阻塞时间线与 eBPF 调度器追踪</text>
+</svg>

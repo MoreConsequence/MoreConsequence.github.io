@@ -1,57 +1,163 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="xsk-title xsk-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="xsk-title">AF_XDP 用户态直通：UMEM 共享内存池与四大无锁环形队列</title>
+  <desc id="xsk-desc">架构图展示 AF_XDP (XSK) 通过 UMEM 共享内存池以及 Fill、Rx、Tx、Completion 四大 SPSC 无锁环形队列实现用户态与网卡硬件直通的零拷贝数据流转。</desc>
+  <defs>
+    <marker id="xk-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="xk-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">AF_XDP (XSK) 零拷贝架构：UMEM 共享内存与四环流转模型</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Fill Ring (向驱动投递空闲块) ──► Rx Ring (驱动通知数据就绪) ──► Tx Ring (用户态投递待发包) ──► Completion Ring (硬件释放回执)</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <!-- Step 1 -->
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. Fill Ring 注册空闲内存页 (User ──► Kernel)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">用户态将预分配的 UMEM 物理页偏移量 (Chunk Offset) 写入 Fill 环形队列 ──► 供网卡 DMA 填充</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">网卡驱动直接获得用户态内存指针，从根源上消灭内核态向用户态的二次 memcpy！</text>
-      </g>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">AF_XDP (XSK) ARCHITECTURE · UMEM LOCKLESS ZERO-COPY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">AF_XDP 用户态直通：UMEM 内存与四大无锁队列</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">UMEM 共享物理内存切片 ➔ Fill / Rx / Tx / Completion 四大 SPSC 无锁环形队列实现 24M+ PPS 零拷贝直通</text>
 
-      <!-- Step 2 -->
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">2. Rx Ring 网卡线速 DMA 收包 (NIC ──► User)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">网卡接收数据包直接 DMA 写入 UMEM ──► 驱动向 Rx Ring 生产就绪描述符 (Descriptor: Addr + Len)</text>
-        <text x="15" y="62" font-size="8" fill="#047857">用户态轮询读取 Rx Ring 即可毫秒级直接解析以太网原始报文！</text>
-      </g>
+  <!-- Top: UMEM Shared Memory Pool (y=136..240, h=104) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="104" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="10" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="54" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">UMEM POOL</text>
+    <text x="100" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">UMEM 用户态与内核物理共享内存池 (mmap 2MB/1GB Hugepages)</text>
 
-      <!-- Step 3 -->
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">3. Tx Ring 用户态零拷贝线速发包 (User ──► NIC)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">用户态在 UMEM 中组装报文 ──► 投递描述符至 Tx Ring ──► 调用 sendto() 触发网卡批量 DMA 发送</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">单核发包吞吐突破 3,000 万 PPS (Packets Per Second) 物理极限！</text>
-      </g>
+    <!-- Chunk Slices -->
+    <g transform="translate(14, 34)">
+      <!-- Chunk 0 -->
+      <rect x="0" y="0" width="130" height="56" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Chunk #0 [0x0000]</text>
+      <text x="12" y="36" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Size: 2048 / 4096B</text>
+      <text x="12" y="48" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">Free in Fill Ring</text>
 
-      <!-- Step 4 -->
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Completion Ring 释放闭环与零内存泄漏 (Recycle Loop)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">网卡发包完毕后将 Chunk 地址回传至 Completion Ring ──► 用户态安全回收并重新推入 Fill Ring！</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">形成完美的纯零拷贝闭环生态，性能媲美 DPDK 却保留完整 Linux 生态！</text>
-      </g>
+      <!-- Chunk 1 (Active Rx) -->
+      <rect x="144" y="0" width="160" height="56" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="12" y="20" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Chunk #1 [0x0800]</text>
+      <text x="12" y="36" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">DMA Packet In (Rx Ring)</text>
+      <text x="12" y="48" fill="#e85d3f" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户态直接指针解引用！</text>
+
+      <!-- Chunk 2 (Active Tx) -->
+      <rect x="318" y="0" width="160" height="56" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Chunk #2 [0x1000]</text>
+      <text x="12" y="36" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Tx Data Ready (Tx Ring)</text>
+      <text x="12" y="48" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">网卡 DMA 准备发射</text>
+
+      <!-- Chunk 3 (Completion) -->
+      <rect x="492" y="0" width="170" height="56" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Chunk #3 [0x1800]</text>
+      <text x="12" y="36" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Sent Done (Completion Ring)</text>
+      <text x="12" y="48" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">发射完毕，等待回收</text>
+
+      <!-- Chunk N -->
+      <rect x="676" y="0" width="176" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Chunk #4 .. #N</text>
+      <text x="12" y="36" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Total: 4096+ Chunks</text>
+      <text x="12" y="48" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">Zero Copy Memory Pool</text>
     </g>
   </g>
+
+  <!-- Bottom: 4 SPSC Lockless Rings (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Ring 1: Fill Ring (x=0..205, w=205) -->
+    <g transform="translate(0, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">FILL RING</text>
+      <text x="96" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">填充环 (User ➔ Kernel)</text>
+
+      <rect x="10" y="36" width="185" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户态提供空闲 Chunk</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Push Chunk Addrs ➔ Ring</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">供网卡 DMA 准备接收包</text>
+
+      <text x="10" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SPSC 单生产者单消费者：</text>
+      <text x="10" y="140" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Producer: 用户态应用</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Consumer: 网卡驱动内核</text>
+      <line x1="10" y1="168" x2="195" y2="168" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="188" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">0 原子自旋锁争用</text>
+      <text x="10" y="206" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">仅移动 Head/Tail 游标</text>
+      <text x="10" y="226" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">xsk_ring_prod__submit()</text>
+    </g>
+
+    <!-- Ring 2: Rx Ring (x=225..430, w=205) - Focal -->
+    <g transform="translate(225, 0)">
+      <rect width="205" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="70" height="16" rx="2" fill="#e85d3f"/>
+      <text x="45" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">RX RING</text>
+      <text x="86" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">接收环 (Kernel ➔ User)</text>
+
+      <rect x="10" y="36" width="185" height="66" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">内核投递已收包描述符</text>
+      <text x="18" y="70" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">XDP_REDIRECT ➔ AF_XDP</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700">0 内存拷贝直达用户态！</text>
+
+      <text x="10" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SPSC 单生产者单消费者：</text>
+      <text x="10" y="140" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Producer: 网卡驱动 XDP</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Consumer: 用户态业务线程</text>
+      <line x1="10" y1="168" x2="195" y2="168" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="188" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">单核吞吐: 24M+ PPS</text>
+      <text x="10" y="206" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">支持 poll() / epoll 事件唤醒</text>
+      <text x="10" y="226" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">xsk_ring_cons__peek()</text>
+    </g>
+
+    <!-- Ring 3: Tx Ring (x=450..655, w=205) -->
+    <g transform="translate(450, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="70" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="45" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TX RING</text>
+      <text x="86" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">发送环 (User ➔ Kernel)</text>
+
+      <rect x="10" y="36" width="185" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户态准备发包数据</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">写入 UMEM ➔ 压入 Tx Ring</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">sendto(fd, ...) 触发 DMA</text>
+
+      <text x="10" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SPSC 单生产者单消费者：</text>
+      <text x="10" y="140" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Producer: 用户态发包线程</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Consumer: 网卡硬件发送队列</text>
+      <line x1="10" y1="168" x2="195" y2="168" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="188" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">极速线速发包能力</text>
+      <text x="10" y="206" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">支持批量合并发送 (Batching)</text>
+      <text x="10" y="226" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">xsk_ring_prod__reserve()</text>
+    </g>
+
+    <!-- Ring 4: Completion Ring (x=675..880, w=205) -->
+    <g transform="translate(675, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="96" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="58" y="21" fill="#141413" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">COMPLETION</text>
+      <text x="110" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">完成环 (Kernel ➔ User)</text>
+
+      <rect x="10" y="36" width="185" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">发包完毕内存回收通知</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">DMA 发射完成 ➔ 压入完成环</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Chunk 重新放回 Fill Ring</text>
+
+      <text x="10" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SPSC 单生产者单消费者：</text>
+      <text x="10" y="140" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Producer: 网卡发送完成中断</text>
+      <text x="10" y="156" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Consumer: 用户态内存回收器</text>
+      <line x1="10" y1="168" x2="195" y2="168" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="188" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">闭环内存零泄漏循环</text>
+      <text x="10" y="206" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">100% 杜绝动态 malloc/free</text>
+      <text x="10" y="226" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">xsk_ring_cons__release()</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Fill / Tx / Completion 辅助队列</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">UMEM 共享内存与 Rx 直通核心</text>
 </svg>

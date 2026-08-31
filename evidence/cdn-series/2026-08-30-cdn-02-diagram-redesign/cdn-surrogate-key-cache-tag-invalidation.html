@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-surrogate-key-cache-tag-invalidation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-surrogate-key-title cdn-surrogate-key-desc">
+  <title id="cdn-surrogate-key-title">Surrogate-Key 倒排索引与版本代数全球秒级失效拓扑</title>
+  <desc id="cdn-surrogate-key-desc">数据流与架构图展示源站 Surrogate-Key 标头注入、边缘 Tag 倒排索引、O(1) 版本代数自增与 300+ PoP 毫秒级软失效机理。</desc>
+  <defs>
+    <marker id="cdn-sk-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-sk-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SURROGATE-KEY &amp; CACHE-TAG PURGE · INVERTED INDEX</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Surrogate-Key 倒排索引与版本代数全球秒级失效拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">源站响应头注入标签、边缘内存 Tag 倒排映射、O(1) 版本代数自增与全网 300+ PoP 毫秒级软失效</text>
+
+  <!-- Section 1: Ingestion & Inverted Index (Top Row: y=136..290) -->
+  <!-- Box 1: Origin Injection (x=40..280, w=240) -->
+  <g transform="translate(40, 136)">
+    <rect width="240" height="154" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="56" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ORIGIN</text>
+    <text x="76" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">源站响应注入标签</text>
+    
+    <rect x="12" y="42" width="216" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="62" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">HTTP/1.1 200 OK</text>
+    <text x="22" y="80" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Surrogate-Key:</text>
+    <text x="22" y="96" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">  prod_9527 merchant_88</text>
+    <text x="22" y="116" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Cache-Control: max-age=86400</text>
+    <text x="22" y="132" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">ETag: "9527-v1"</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="280" y1="213" x2="316" y2="213" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-sk-arr)"/>
+
+  <!-- Box 2: Memory Inverted Index (x=320..610, w=290) -->
+  <g transform="translate(320, 136)">
+    <rect width="290" height="154" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="60" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="42" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">INDEX</text>
+    <text x="80" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Tag ➔ Keys 倒排索引表</text>
+
+    <rect x="12" y="42" width="266" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Tag: prod_9527 ➔</text>
+    <text x="36" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">['/item/9527', '/api/stock/9527']</text>
+    <text x="22" y="104" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Tag: merchant_88 ➔</text>
+    <text x="36" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">['/shop/88', '/item/9527']</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="610" y1="213" x2="646" y2="213" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-sk-arr)"/>
+
+  <!-- Box 3: Tag Generation Map (x=650..920, w=270) -->
+  <g transform="translate(650, 136)">
+    <rect width="270" height="154" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="56" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GEN MAP</text>
+    <text x="76" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Tag 版本代数表 (Generation)</text>
+
+    <rect x="12" y="42" width="246" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="66" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">prod_9527 : <tspan fill="#e85d3f" font-weight="600">Gen = 1</tspan></text>
+    <text x="22" y="88" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">merchant_88 : <tspan fill="#141413" font-weight="600">Gen = 1</tspan></text>
+    <text x="22" y="112" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">缓存项元数据绑定：</text>
+    <text x="22" y="128" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Item.Tags = {prod_9527:1, m_88:1}</text>
+  </g>
+
+  <!-- Section 2: O(1) Instant Invalidation (Bottom Row: y=310..494) - Focal Area -->
+  <g transform="translate(40, 310)">
+    <rect width="880" height="184" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="16" y="14" width="80" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="56" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.08em">O(1) PURGE</text>
+    <text x="106" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全球秒级广播与 O(1) 代数自增软失效机理</text>
+
+    <!-- Sub-step 1: Purge Broadcast (x=16, w=260) -->
+    <rect x="16" y="46" width="260" height="96" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="28" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 业务系统广播指令</text>
+    <text x="28" y="90" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">POST /purge?tag=prod_9527</text>
+    <text x="28" y="110" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">商品改价时仅需推送标签</text>
+    <text x="28" y="128" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">全网控制面延迟 ≤ 100ms</text>
+
+    <!-- Arrow Sub 1 -> 2 -->
+    <line x1="276" y1="94" x2="310" y2="94" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-sk-arr-accent)"/>
+
+    <!-- Sub-step 2: Generation Increment (x=314, w=260) -->
+    <rect x="314" y="46" width="260" height="96" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="326" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 边缘内存代数自增 (O(1))</text>
+    <text x="326" y="90" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">GenMap["prod_9527"]++ ➔ 2</text>
+    <text x="326" y="110" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">无需遍历扫描 TB 级磁盘</text>
+    <text x="326" y="128" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内存单次修改耗时 &lt; 1µs</text>
+
+    <!-- Arrow Sub 2 -> 3 -->
+    <line x1="574" y1="94" x2="608" y2="94" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-sk-arr-accent)"/>
+
+    <!-- Sub-step 3: Generation Check on Read (x=612, w=252) -->
+    <rect x="612" y="46" width="252" height="96" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="624" y="68" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 读取时代数比对软失效</text>
+    <text x="624" y="90" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Cached(1) &lt; Current(2) ➔ Miss</text>
+    <text x="624" y="110" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">后续请求自动判定为过期</text>
+    <text x="624" y="128" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">异步回收旧块，0 性能抖动</text>
+
+    <text x="16" y="166" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">
+      全球 300+ 个 PoP 节点在 100ms 内完成广播更新，兼顾微秒级响应性能与强实时性数据一致性
+    </text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">内存数据结构 / 源站协议</text>
+  <rect x="320" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="340" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">O(1) 软失效核心机制</text>
+  <line x1="510" y1="556" x2="534" y2="556" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-sk-arr-accent)"/>
+  <text x="542" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">失效广播与代数推进</text>
+</svg>
+</main>
+</body>
+</html>

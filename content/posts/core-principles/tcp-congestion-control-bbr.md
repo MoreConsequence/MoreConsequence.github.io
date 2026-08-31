@@ -91,10 +91,6 @@ BBR 的名称来自 bottleneck bandwidth 和 round-trip propagation time。它�
 
 BBR 的优势应写成条件句：在某些浅缓冲或随机丢包路径上，模型可能比单纯依赖丢包的算法更有利；在其他路径上，公平性、队列交互或实现成熟度可能更重要。没有同一链路、同一连接数、同一消息大小和重复轮次的对照，不能写“BBR 快多少倍”。
 
-
-
-![拥塞控制抗弱网横评：CUBIC (遇 1% 丢包腰斩) vs BBR (20% 丢包吞吐稳定)](../../../public/images/bbr-vs-cubic-loss-throughput-comparison.svg)
-
 ## 四、用 BDP 判断容量，用队列和窗口判断症状
 
 带宽时延积的单位是字节：

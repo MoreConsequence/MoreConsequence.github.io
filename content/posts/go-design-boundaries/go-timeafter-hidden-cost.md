@@ -50,10 +50,6 @@ go test ./go-runtime-boundary -run '^$' -bench '^(BenchmarkTimeAfterHour|Benchma
 
 248B/3 次分配——这个数字本身不大，但在高频循环里会按调用次数线性累加。**`time.After` 没有配套的 `Stop` 入口**：你拿到的是 channel，不是 `*Timer`。是否回收、何时从 runtime 队列移除由运行时版本和 timer 状态决定；文章只把当前 benchmark 的分配结果当作证据，不把它外推成固定 GC 周期。
 
-
-
-![time.After 循环内存泄漏陷阱：未触发定时器堆积与 runtime.timer 链表阻塞](../../../public/images/time-after-timer-leak-heap-accumulation.svg)
-
 ## 二、三档实测：账单到底记在哪个账户
 
 写一个非阻塞热循环（典型的生产反例：轮询/自旋逻辑里每轮都建新超时）：

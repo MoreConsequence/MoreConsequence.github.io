@@ -1,97 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="od-title od-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="od-title">InnoDB Online DDL 执行三阶段：Prepare、Execution (row_log) 与 Commit</title>
+  <desc id="od-desc">架构流程图展示 InnoDB Online DDL 的 Prepare 准入、Execution 阶段放行并发 DML 并记录 online row log 以及 Commit 阶段回放增量并原子切换的三阶段流水线。</desc>
+  <defs>
+    <marker id="od-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="od-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB Online DDL 核心三阶段与 row_log 增量应用</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. Prepare 阶段 (短暂加 MDL 锁初始化 row_log) ──► 2. Execution 阶段 (全量搬迁 + 增量 DML 写入 row_log) ──► 3. Commit 阶段 (回放 row_log 并原子切换)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INNODB ONLINE DDL · EXECUTION PHASES &amp; ROW LOG REPLAY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">InnoDB Online DDL 三阶段与 Row Log 重放流水线</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Prepare 准入 (短 MDL 锁) ➔ Execution 阶段 (放行 DML 并记录 row_log) ➔ Commit 切换 (短排他锁回放并原子切换)</text>
+
+  <!-- 3 Pipeline Columns (y=136..506, h=370) -->
+  <!-- Phase 1: Prepare (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHASE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Prepare 准备准入</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">获取初始元数据锁</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">1. 短暂获取 MDL_EXCLUSIVE</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 创建临时 frm/ibd 与 row_log</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 降级为 MDL_SHARED_UPGRADABLE</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Duration: ~5ms (微秒级)</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段特征：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确立 DDL 算法支持性 (INPLACE)；</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 建立增量日志缓存 online_alter_log；</text>
+    <line x1="24" y1="238" x2="246" y2="238" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="258" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">MDL Lock Downgrade</text>
+    <text x="24" y="278" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">迅速降级锁，允许后续 DML 并发！</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Ready for Execution</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Prepare 准备阶段 (毫秒级)</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Execute</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#od-arr-accent)"/>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#38bdf8">1. 升级获取 MDL 独占写锁 (瞬时)</text>
-          <text x="10" y="34" fill="#86efac">2. 评估变更模式: INPLACE vs COPY</text>
-          <text x="10" y="50" fill="#86efac">3. 创建临时 frm / ibd 新表字典结构</text>
-          <text x="10" y="66" fill="#38bdf8">4. 分配 row_log 内存日志缓冲区</text>
-          <text x="10" y="82" fill="#4ade80">5. 降级 MDL 锁为 SHARED (允许业务读写)</text>
-          
-          <text x="10" y="112" fill="#4ade80">✓ 耗时 &lt; 1ms，对业务几乎 0 感知！</text>
-        </g>
+  <!-- Phase 2: Execution (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="90" height="18" rx="2" fill="#e85d3f"/>
+    <text x="59" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PHASE 2 · CORE</text>
+    <text x="114" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Execution 执行阶段</text>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 建立变更基线与增量捕获机制；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 迅速释放排他锁保障并发；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造平滑接入通道。</text>
-      </g>
-    </g>
+    <!-- DML Box -->
+    <rect x="14" y="42" width="262" height="130" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">并发 DML 正常放行 + Row Log 记录</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 主线程扫描原表，构建新索引 B+Tree；</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 并发 DML (INSERT/UPDATE) 写入 row_log！</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 内存块 + 临时文件双缓冲缓存增量</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">innodb_online_alter_log_max_size = 128M</text>
+    <text x="24" y="152" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Online &amp; Non-Blocking DML</text>
 
-    <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. Execution 执行阶段 (异步搬迁)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#4ade80">// 全量数据后台按序扫描与重建</text>
-          <text x="10" y="34" fill="#86efac">InnoDB 读取原表构建新索引 B+ 树</text>
-          
-          <text x="10" y="58" fill="#38bdf8">// 前台并发业务 DML 持续发生：</text>
-          <text x="10" y="74" fill="#34d399">INSERT / UPDATE / DELETE 产生的变更</text>
-          <text x="10" y="90" fill="#34d399">实时追加写入 row_log 增量缓冲区！</text>
-          
-          <text x="10" y="114" fill="#4ade80">✓ 业务读写 100% 完全不中断！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 增量捕获与全量迁移并行推进；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 受 innodb_online_alter_log_max_size 保护；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 数据库内核最精妙的并发工程。</text>
-      </g>
-    </g>
-
-    <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="285" height="34" rx="8" fill="#fff7ed"/>
-      <text x="142" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. Commit 提交阶段 (原子切换)</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="255" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="18" fill="#fb923c">1. 再次升级获取 MDL 独占写锁 (瞬时)</text>
-          <text x="10" y="34" fill="#fed7aa">2. 重放 row_log 中最后的增量变更</text>
-          <text x="10" y="50" fill="#fed7aa">3. 原子重命名表空间文件 (rename ibd)</text>
-          <text x="10" y="66" fill="#34d399">4. 释放旧表物理空间与数据字典</text>
-          <text x="10" y="82" fill="#4ade80">5. 彻底释放 MDL 锁，DDL 宣告完成！</text>
-          
-          <text x="10" y="112" fill="#4ade80">✓ 零停机完成亿级大表平滑加字段！</text>
-        </g>
-
-        <rect y="162" width="255" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">架构价值：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 彻底终结传统加字段停机维护时代；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 支撑现代互联网 7x24 小时持续演进；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 工业级高可用基石！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="182" width="262" height="178" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="204" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段特征：</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 占用时间最长，但业务读写 100% 正常；</text>
+    <text x="24" y="242" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 若并发写入过猛导致 row_log 超限 ➔ 报错！</text>
+    <line x1="24" y1="256" x2="266" y2="256" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="276" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">LOCK=NONE 核心奥义</text>
+    <text x="24" y="294" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用 Row Log 解耦 DDL 构建与业务写入</text>
+    <text x="24" y="312" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Asynchronous Differential Accumulation</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Commit</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#od-arr-accent)"/>
+
+  <!-- Phase 3: Commit (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="#141413"/>
+    <text x="52" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PHASE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Commit 提交切换</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="130" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">升级排他锁与增量回放</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 升级获取 MDL_EXCLUSIVE</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">   (长事务在此处引发阻塞!)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 在排他保护下重放 row_log</text>
+    <text x="24" y="134" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. 原子更新数据字典与切换</text>
+    <text x="24" y="150" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Atomic RENAME &amp; Clean</text>
+
+    <!-- Details -->
+    <rect x="14" y="182" width="232" height="178" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="204" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">最终完成：</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 释放排他锁，完成 DDL；</text>
+    <text x="24" y="242" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 若无长事务阻碍，耗时仅几十毫秒；</text>
+    <line x1="24" y1="256" x2="236" y2="256" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="276" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Online DDL Contract</text>
+    <text x="24" y="294" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">只要没有长事务，全流程几乎无感</text>
+    <text x="24" y="312" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">gh-ost For High Concurrency</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Prepare 准入与 Commit 切换</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Execution 阶段并发 DML 与 Row Log 增量重放核心</text>
 </svg>

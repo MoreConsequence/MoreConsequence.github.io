@@ -31,10 +31,6 @@ EXPLAIN SELECT * FROM orders_skew WHERE status = 1;
 
 第一层认知因此是：**不走你的索引，不是军师瞎了，是军师按手头的信息算下来『走全表更便宜』。** 它下注的筹码只有统计信息，不是真实数据。它算错的往往不是『该不该用这个索引』，而是 `rows`——把某个环节的行数/页数估歪了，账单就歪了。接下来三节，把军师下注的这张账单逐项读出来。
 
-
-
-![基于成本的优化器 (CBO) 数学模型：I/O 成本 + CPU 成本量化公式](../../../public/images/cost-based-optimizer-cbo-math-model.svg)
-
 ## 二、EXPLAIN 的关键列：type、rows、filtered、Extra
 
 看 EXPLAIN 只看 `key` 是外行读法——`key=NULL` 也可能比 `key=idx_status` 快。真正要读的是四列：`type`（访问方式）、`rows`（估算扫描行数）、`filtered`（表条件过滤后剩多大比例，0–100）、`Extra`（额外动作）。官方文档给出的 `type` 语义按好到差排：

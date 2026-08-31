@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-singleflight-title cdn-singleflight-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cdn-singleflight-title">Singleflight 互斥锁与并发请求合并熔断时序</title>
+  <desc id="cdn-singleflight-desc">时序图展示 20,000 个瞬时并发请求在边缘由 Singleflight 引擎合并为 1 次回源，其余请求挂起监听 Channel 并广播分发响应。</desc>
+  <defs>
+    <marker id="cdn-sf-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-sf-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">REQUEST COALESCING · SEQUENCE &amp; MUTEX</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Singleflight 互斥锁与并发请求合并熔断时序</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">热点 Key 失效瞬间，20,000 并发请求在边缘内存 Channel 挂起，源站回源压力严格收敛为 1 条请求</text>
+
+  <!-- Actors (Top row: y=136, h=40) -->
+  <!-- Actor 1: Clients (Lifeline at x=140) -->
+  <rect x="50" y="136" width="180" height="40" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="154" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">并发客户端集群</text>
+  <text x="140" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">Clients (N = 20,000)</text>
+  <line x1="140" y1="176" x2="140" y2="504" stroke="rgba(20,20,19,0.22)" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Actor 2: Singleflight Engine (Lifeline at x=480) - Focal Actor -->
+  <rect x="370" y="136" width="220" height="40" rx="6" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+  <text x="480" y="154" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">边缘 Singleflight 引擎</text>
+  <text x="480" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">In-flight Map + Mutex + Channel</text>
+  <line x1="480" y1="176" x2="480" y2="504" stroke="#e85d3f" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Actor 3: Origin Backend (Lifeline at x=820) -->
+  <rect x="730" y="136" width="180" height="40" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="820" y="154" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">远端业务源站</text>
+  <text x="820" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">Origin DB &amp; Storage</text>
+  <line x1="820" y1="176" x2="820" y2="504" stroke="rgba(20,20,19,0.22)" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Activation bar on Singleflight Engine: x=476, y=200..470, w=8 -->
+  <rect x="476" y="200" width="8" height="270" rx="2" fill="rgba(232,93,63,0.14)" stroke="#e85d3f" stroke-width="0.8"/>
+
+  <!-- Step 1: Client 1 (Leader) -> Singleflight (y=200) -->
+  <line x1="140" y1="204" x2="472" y2="204" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-sf-arr)"/>
+  <rect x="230" y="192" width="150" height="16" rx="2" fill="#f5f4ed"/>
+  <text x="305" y="204" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" text-anchor="middle">1. GET /hot-news (Leader)</text>
+
+  <!-- Step 2: Singleflight Self-Message (y=226) -->
+  <path d="M 484 220 h 28 v 20 h -28" fill="none" stroke="#e85d3f" stroke-width="1" marker-end="url(#cdn-sf-arr-accent)"/>
+  <text x="520" y="234" fill="#e85d3f" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="600">2. Mutex.Lock() · 注册 Call · 创建 chan</text>
+
+  <!-- Step 3: Singleflight -> Origin (y=264) - Focal Action -->
+  <line x1="484" y1="264" x2="812" y2="264" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-sf-arr-accent)"/>
+  <rect x="570" y="252" width="160" height="16" rx="2" fill="#f5f4ed"/>
+  <text x="650" y="264" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">3. 唯一回源请求 (1:20,000 Fetch)</text>
+
+  <!-- Step 4: Clients #2..#20,000 -> Singleflight (y=300) -->
+  <line x1="140" y1="300" x2="472" y2="300" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#cdn-sf-arr)"/>
+  <rect x="210" y="288" width="190" height="16" rx="2" fill="#f5f4ed"/>
+  <text x="305" y="300" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">4. GET /hot-news (19,999 Followers)</text>
+
+  <!-- Step 5: Singleflight Self-Message (y=326) -->
+  <path d="M 484 320 h 28 v 20 h -28" fill="none" stroke="#6b6a64" stroke-width="1" marker-end="url(#cdn-sf-arr)"/>
+  <text x="520" y="334" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace">5. Key 命中 In-flight · 挂起在 Channel 阻塞等待</text>
+
+  <!-- Step 6: Origin -> Singleflight (y=374) -->
+  <line x1="820" y1="374" x2="488" y2="374" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#cdn-sf-arr)"/>
+  <rect x="580" y="362" width="140" height="16" rx="2" fill="#f5f4ed"/>
+  <text x="650" y="374" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">6. HTTP 200 OK + Payload</text>
+
+  <!-- Step 7: Singleflight Self-Message (y=400) -->
+  <path d="M 484 394 h 28 v 20 h -28" fill="none" stroke="#e85d3f" stroke-width="1" marker-end="url(#cdn-sf-arr-accent)"/>
+  <text x="520" y="408" fill="#e85d3f" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="600">7. 写入 L1/L2 缓存 · close(chan) 广播唤醒</text>
+
+  <!-- Step 8: Singleflight -> All Clients (y=446) - Focal Broadcast -->
+  <line x1="472" y1="446" x2="148" y2="446" stroke="#e85d3f" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#cdn-sf-arr-accent)"/>
+  <rect x="210" y="434" width="190" height="16" rx="2" fill="#f5f4ed"/>
+  <text x="305" y="446" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">8. 全量广播分发数据 (Broadcast 20,000)</text>
+
+  <!-- Bottom Annotation Bar (y=480) -->
+  <rect x="50" y="476" width="860" height="36" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+  <text x="66" y="498" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">
+    源站 CPU 与带宽负载削减 99.99%；19,999 个客户端全部在边缘节点本地内存等待，0 额外网络开销，彻底杜绝回源雪崩
+  </text>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <line x1="120" y1="556" x2="144" y2="556" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-sf-arr)"/>
+  <text x="152" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">客户端请求 / 常规调用</text>
+  <line x1="310" y1="556" x2="334" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-sf-arr-accent)"/>
+  <text x="342" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Singleflight 唯一回源 / 广播</text>
+  <line x1="530" y1="556" x2="554" y2="556" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="4 4" marker-end="url(#cdn-sf-arr)"/>
+  <text x="562" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">异步响应返回 / Follower 请求</text>
+</svg>

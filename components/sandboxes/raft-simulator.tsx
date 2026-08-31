@@ -46,11 +46,9 @@ export function RaftSimulator() {
       prev.map((n) => {
         if (n.id === 5) {
           if (preVoteEnabled) {
-            // Pre-Vote Enabled: Do NOT increment physical term!
             addLog("🛡️ [Pre-Vote 模式] Node 5 超时，进入 PreCandidate 试探阶段 (Term 仍为 1，不污染集群！)");
             return { ...n, role: "PreCandidate" };
           } else {
-            // Classic Raft: Blindly increment term!
             const newTerm = n.term + 1;
             addLog(`❌ [经典 Raft 模式] Node 5 超时，盲目递增 Term 至 ${newTerm} 并变为 Candidate！`);
             return { ...n, role: "Candidate", term: newTerm, votedFor: 5 };
@@ -68,7 +66,6 @@ export function RaftSimulator() {
       if (!node5) return prev;
 
       if (!preVoteEnabled && node5.term > 1) {
-        // Classic Raft: Node 5 with Term > 1 enters, Leader gets deposed!
         addLog(`💥 [脑裂震荡！] 分区自愈后，Node 5 (Term=${node5.term}) 发送 RPC 导致合法 Leader (Node 1) 被迫退位！集群陷入无主震荡！`);
         return prev.map((n) => {
           if (n.id === 1) return { ...n, role: "Follower", term: node5.term };
@@ -76,7 +73,6 @@ export function RaftSimulator() {
           return { ...n, isIsolated: false };
         });
       } else {
-        // Pre-Vote Enabled: Node 5 quietly rejoins
         addLog("✅ [防御成功！] 分区自愈后，Node 5 重新收到合法 Leader 心跳，静默恢复为 Follower，集群 0 震荡！");
         return prev.map((n) => (n.id === 5 ? { ...n, isIsolated: false, role: "Follower", term: 1 } : { ...n, isIsolated: false }));
       }
@@ -95,59 +91,49 @@ export function RaftSimulator() {
     addLog("🔄 集群已重置为正常状态 (Node 1 为 Leader, Term 1)");
   };
 
-  const getRoleBadge = (role: RaftRole, isIsolated: boolean) => {
+  const getRoleBadgeStyle = (role: RaftRole, isIsolated: boolean) => {
     if (isIsolated) {
-      return "bg-red-100 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800";
+      return { background: "color-mix(in srgb, #ef4444 15%, transparent)", color: "#dc2626", border: "1px solid #ef4444" };
     }
     switch (role) {
       case "Leader":
-        return "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800";
+        return { background: "color-mix(in srgb, #10b981 15%, transparent)", color: "#059669", border: "1px solid #10b981" };
       case "Candidate":
-        return "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+        return { background: "color-mix(in srgb, #f59e0b 15%, transparent)", color: "#d97706", border: "1px solid #f59e0b" };
       case "PreCandidate":
-        return "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800";
+        return { background: "color-mix(in srgb, #8b5cf6 15%, transparent)", color: "#7c3aed", border: "1px solid #8b5cf6" };
       case "Follower":
-        return "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800";
+        return { background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)", border: "1px solid var(--accent)" };
     }
   };
 
   return (
-    <div className="not-prose my-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="sandbox-card">
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-sm font-bold text-white shadow-sm">
-              🏛️
-            </span>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Raft 分布式集群与网络分区交互式模拟器
-            </h3>
+      <div className="sandbox-header">
+        <div className="sandbox-title-wrap">
+          <div className="sandbox-icon-badge" style={{ background: "#059669" }}>🏛️</div>
+          <div>
+            <h3 className="sandbox-title">Raft 分布式集群与网络分区交互式模拟器</h3>
+            <p className="sandbox-subtitle">5 节点动态集群状态机，实操检验非对称网络分区下 Pre-Vote 如何防御脑裂震荡</p>
           </div>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            5 节点动态集群状态机，实操检验非对称网络分区下 Pre-Vote 如何防御脑裂震荡
-          </p>
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex items-center gap-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="sandbox-btn-group">
           <button
+            type="button"
             onClick={() => setPreVoteEnabled(false)}
-            className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-              !preVoteEnabled
-                ? "bg-red-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-            }`}
+            className={`sandbox-btn ${!preVoteEnabled ? "active" : ""}`}
+            style={!preVoteEnabled ? { color: "#dc2626" } : {}}
           >
             ❌ 经典 Raft (易脑裂)
           </button>
           <button
+            type="button"
             onClick={() => setPreVoteEnabled(true)}
-            className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-              preVoteEnabled
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
-            }`}
+            className={`sandbox-btn ${preVoteEnabled ? "active" : ""}`}
+            style={preVoteEnabled ? { color: "#059669" } : {}}
           >
             🛡️ Pre-Vote 保护模式
           </button>
@@ -155,100 +141,96 @@ export function RaftSimulator() {
       </div>
 
       {/* 5-Node Interactive Visual Canvas */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {nodes.map((node) => (
-          <div
-            key={node.id}
-            className={`relative rounded-xl border p-4 transition-all ${
-              node.isIsolated
-                ? "border-red-300 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20 shadow-sm"
-                : node.role === "Leader"
-                ? "border-emerald-300 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20 shadow-sm"
-                : "border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/40"
-            }`}
-          >
-            {/* Top Node Header */}
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-sm font-bold text-slate-800 dark:text-slate-200">
-                Node {node.id}
-              </span>
-              <span
-                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${getRoleBadge(
-                  node.role,
-                  node.isIsolated
-                )}`}
-              >
-                {node.isIsolated ? "⚠️ 孤立分区" : node.role}
-              </span>
-            </div>
+      <div className="raft-nodes-grid">
+        {nodes.map((node) => {
+          const cardClass = node.isIsolated
+            ? "isolated"
+            : node.role === "Leader"
+            ? "leader"
+            : node.role === "Candidate"
+            ? "candidate"
+            : node.role === "PreCandidate"
+            ? "precandidate"
+            : "";
 
-            {/* Metrics */}
-            <div className="mt-3 space-y-1.5 font-mono text-xs">
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>当前 Term:</span>
-                <span className="font-bold text-slate-900 dark:text-white">{node.term}</span>
-              </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>投票给 (votedFor):</span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">
-                  {node.votedFor ? `Node ${node.votedFor}` : "None"}
+          return (
+            <div key={node.id} className={`raft-node-card ${cardClass}`}>
+              <div className="raft-node-header">
+                <span className="raft-node-id">Node {node.id}</span>
+                <span className="raft-role-badge" style={getRoleBadgeStyle(node.role, node.isIsolated)}>
+                  {node.isIsolated ? "⚠️ 孤立分区" : node.role}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                <span>Commit 日志:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  Index={node.logLength}
-                </span>
+
+              <div className="raft-node-metrics">
+                <div className="raft-metric-row">
+                  <span>Term:</span>
+                  <span className="raft-metric-val">{node.term}</span>
+                </div>
+                <div className="raft-metric-row">
+                  <span>投票给:</span>
+                  <span className="raft-metric-val" style={{ color: "var(--accent)" }}>
+                    {node.votedFor ? `Node ${node.votedFor}` : "None"}
+                  </span>
+                </div>
+                <div className="raft-metric-row">
+                  <span>Commit:</span>
+                  <span className="raft-metric-val" style={{ color: "#059669" }}>
+                    idx={node.logLength}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Action Controls */}
-      <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-slate-100 pt-5 dark:border-slate-800">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", paddingTop: "1rem", borderTop: "1px solid var(--border-soft)" }}>
         <button
+          type="button"
           onClick={isolateNode5}
-          className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
+          className="sandbox-action-btn danger"
         >
           1. 注入非对称分区 (孤立 Node 5)
         </button>
 
         <button
+          type="button"
           onClick={triggerTimeoutNode5}
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300"
+          className="sandbox-action-btn warning"
         >
           2. 触发 Node 5 选举超时 (多次点击观察 Term)
         </button>
 
         <button
+          type="button"
           onClick={healPartition}
-          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300"
+          className="sandbox-action-btn success"
         >
           3. 恢复网络分区 (观察 Leader 是否被罢免)
         </button>
 
         <button
+          type="button"
           onClick={resetCluster}
-          className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          className="sandbox-action-btn"
         >
           🔄 重置集群
         </button>
       </div>
 
       {/* Realtime Event Log Terminal */}
-      <div className="mt-5 rounded-lg bg-slate-950 p-3.5 font-mono text-xs text-slate-300 shadow-inner">
-        <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-slate-500">
+      <div className="sandbox-terminal">
+        <div className="sandbox-terminal-header">
           <span>实时状态机事件流 (EVENT STREAM)</span>
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="sandbox-pulse-dot" />
         </div>
-        <div className="space-y-1">
+        <div className="sandbox-terminal-body">
           {logs.map((log, idx) => (
-            <div key={idx} className="flex gap-2">
-              <span className="text-slate-600 select-none">&gt;</span>
-              <span className={idx === 0 ? "text-white font-semibold" : "text-slate-400"}>
-                {log}
-              </span>
+            <div key={idx} className={`sandbox-terminal-line ${idx === 0 ? "active" : ""}`}>
+              <span className="sandbox-terminal-prompt">&gt;</span>
+              <span className="sandbox-terminal-text">{log}</span>
             </div>
           ))}
         </div>

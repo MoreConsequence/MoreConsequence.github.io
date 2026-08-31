@@ -28,9 +28,7 @@ series: "Pi Agent 通才教程"
 
 结论非常明确：**生产级 Coding Agent 必须以结构化局部编辑为主，全量覆写仅用于新建文件。**
 
-
-
-![Pi 代码编辑算法：全量重写 vs 单块精确替换 (Exact Chunk Replacement)](../../../public/images/pi-tutorial-diff-edit-exact-chunk-replacement.svg)
+---
 
 ## 二、精确行匹配的三大崩溃场景
 

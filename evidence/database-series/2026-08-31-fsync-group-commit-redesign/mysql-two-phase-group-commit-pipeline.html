@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mysql-two-phase-group-commit-pipeline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="gc-title gc-desc">
+  <title id="gc-title">MySQL 两阶段组提交 (Group Commit) 流水线：Flush、Sync 与 Commit</title>
+  <desc id="gc-desc">架构流程图展示 MySQL 两阶段提交下 Binlog 与 InnoDB 的三阶段组提交流水线，通过 Leader 事务合并单次 fsync 刷盘服务整组事务以实现吞吐爆发的过程。</desc>
+  <defs>
+    <marker id="gc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="gc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TWO-PHASE GROUP COMMIT · BINLOG &amp; INNODB FLUSH PIPELINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">MySQL 两阶段组提交 (Group Commit) 流水线</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Flush 阶段 (写入 Binlog 文件缓存) ➔ Sync 阶段 (单次 fsync 刷整组) ➔ Commit 阶段 (InnoDB 并发提交)</text>
+
+  <!-- 3 Pipeline Columns (y=136..506, h=370) -->
+  <!-- Stage 1: Flush (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Flush 阶段 (写缓存)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Leader-Follower 组装入队</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 事务并发进入 Flush 队列；</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 首个事务成为 Group Leader；</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. Leader 批量写整组的 Binlog Cache</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">write() into OS Page Cache</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段特征：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅调用 OS `write()`，极快（纳秒级）；</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 暂不执行物理 fsync 刷盘；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 释放 Flush 队列互斥锁，允许下一批进队；</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Pipeline Overlapping</text>
+    <text x="24" y="296" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">流水线重叠执行，消灭锁串行等待</text>
+    <text x="24" y="316" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Followers Wait for Signal</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Batch</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#gc-arr-accent)"/>
+
+  <!-- Stage 2: Sync (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · CORE</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Sync 阶段 (单次 fsync 刷盘)</text>
+
+    <!-- fsync Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Leader 代表全组执行单次 fsync</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 获取 Sync 阶段互斥锁；</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">2. 调用单次 fsync(binlog_fd) 物理落盘！</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 整组 50 笔事务共享这一次刷盘成果！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">sync_binlog = 1 / binlog_group_commit_sync_delay</text>
+
+    <!-- Throughput Math -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">吞吐爆发的数学原理：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 无组提交: 50 事务 = 50 次 fsync = 500ms</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 组提交: 50 事务 = 1 次 fsync = 10ms！</text>
+    <line x1="24" y1="238" x2="266" y2="238" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="258" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">吞吐上限直接提升 50 倍！</text>
+    <text x="24" y="278" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用极短的攒批延迟换取数十倍系统吞吐</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Throughput: Batch_Size * (1 / fsync_latency)</text>
+    <text x="24" y="316" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Hardware Bottleneck Shattered</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Commit</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#gc-arr-accent)"/>
+
+  <!-- Stage 3: Commit (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 3</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Commit 阶段 (引擎提交)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">InnoDB 引擎层并发提交</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 事务进入 Commit 队列；</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. Leader 唤醒 Followers；</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">3. 并发调用 innodb_commit()；</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">binlog_order_commits = ON</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">最终完成响应：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 释放行锁与事务占用资源；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 修改 Undo 链表标记为已提交；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 向客户端返回 COMMIT OK！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Complete 2PC Cycle</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">全链路保证绝对的一致性与高吞吐</text>
+    <text x="24" y="316" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Data Loss &amp; High Concurrency</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Flush 写入与 Commit 引擎提交</text>
+  <rect x="340" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="360" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Sync 阶段单次 fsync 批量合并与 50x 吞吐爆发核心</text>
+</svg>
+</main>
+</body>
+</html>

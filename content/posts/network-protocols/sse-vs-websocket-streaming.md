@@ -82,10 +82,6 @@ WS 协议（RFC 6455）的复杂度分三笔。
 
 **第三笔，生命周期全得自己写。** ping/pong 控制帧定义了，但"多久发一次 ping、多久没 pong 算死连接"没有规定；浏览器 API 没有心跳、没有自动重连、没有续传游标。断线重连要应用层自己做，而"上次发到哪了"的续传状态，协议里没有任何字段——必须自己约定（本实验里是塞进重连请求的 query）。这三笔摊开在 `experiments/sse-vs-ws/ws-server.mjs` 的百来行里，是完整的、可运行的本地教学原型，不是能直接上线的实现。
 
-
-
-![WebSocket 协议底层帧结构：Mask 掩码异或算法与 101 Switching Protocols 握手](../../../public/images/websocket-frame-masking-handshake-wire.svg)
-
 ## 四、关键差异账：五条对比与各自的坑
 
 | 维度 | SSE | WebSocket |

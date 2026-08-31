@@ -43,10 +43,6 @@ type mheap struct {  // 全局唯一，页级管理
 
 size class 共 67 档，从 8B 到 32KB（8, 16, 24, 32, 48, 64, 80, ... 每档 8B 起的碎粒度），对象按向上取整落档。落到 32KB 以上的对象跳过 size class，直接向 mheap 申请整页。
 
-
-
-![Go 内存分配器三级拓扑：mcache (P 无锁) -> mcentral (跨 P 互斥) -> mheap (大堆页)](../../../public/images/go-tcmalloc-mcache-mcentral-mheap-three-tier.svg)
-
 ## 二、五档实测：成本与大小不是线性
 
 本机实测（Go 1.25.1，Darwin arm64，Apple M1 Pro，`-cpu=8`；单线程表格使用同一 benchmark 的并发参数但每次只有一个 worker）：

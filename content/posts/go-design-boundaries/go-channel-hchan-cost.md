@@ -42,10 +42,6 @@ type hchan struct {
 2. **元素可能发生值拷贝**。send 把元素拷进 buf（或直传 sudog），recv 再拷出来；元素类型和路径决定实际拷贝量。本文只测 `int`，不把未采集的“大元素 +7ns”写成当前结论。
 3. **队列里挂的是 sudog**（goroutine 的等待票据），不是数据。阻塞的 goroutine 以 sudog 形式挂在 recvq/sendq 上，等待被唤醒。
 
-
-
-![Channel 内部剖析：hchan 环形缓冲区 (buf)、锁 (lock) 与等待队列 (waitq)](../../../public/images/hchan-circular-buffer-waitq-anatomy.svg)
-
 ## 二、四档容量实测：从 34.91ns 到 139.0ns
 
 本机（Go 1.25.1、Darwin arm64、`-cpu=8`）用同一个 `testing.B` 实测，元素为 `int`。每个子基准启动一个 drain goroutine；表中 `ns/op` 是发送端每次 `ch <- i` 的耗时，不是 send+recv 往返：

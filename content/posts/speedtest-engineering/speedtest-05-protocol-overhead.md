@@ -35,32 +35,11 @@ flowchart TD
 | **服务端单核极限吞吐**| **40Gbps+** | **35Gbps+** | ~12Gbps | ~8Gbps |
 | **NAT / 防火墙穿透性**| 差（常被 80/443 策略拦截） | **极佳**（走标准 443 WSS） | **极佳**（标准 HTTPS） | 良好（部分企业路由器封禁 UDP 443） |
 
-
-
-![协议分层开销解剖：以太网 1518B 帧 -> IP 20B -> TCP 32B -> TLS 29B -> HTTP/2](../../../public/images/mtu-mss-encapsulation-layers.svg)
-
 ## 二、WebSocket 协议开销与有效载荷纯净度数学推导
 
 根据 **RFC 6455** 规范，一个二进制 WebSocket 数据帧由以下部分组成：
 
-```
- 0                   1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-------+-+-------------+-------------------------------+
-|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
-|N|V|V|V|       |S|             |   (if payload len==126/127)   |
-| |1|2|3|       |K|             |                               |
-+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-|     Extended payload length continued, if payload len == 127  |
-+ - - - - - - - - - - - - - - - +-------------------------------+
-|                               |Masking-key, if MASK set to 1  |
-+-------------------------------+-------------------------------+
-| Masking-key (continued)       |          Payload Data         |
-+-------------------------------- - - - - - - - - - - - - - - - +
-:                     Payload Data continued ...                :
-+---------------------------------------------------------------+
-```
+![RFC 6455 WebSocket 协议二进制数据帧报头（Frame Header）位域结构解析](../../../public/images/speedtest-websocket-frame-header-rfc6455.svg)
 
 ### 1. 服务端下行推流（Server $\to$ Client）
 - 服务端发往客户端的数据**禁止掩码（Mask = 0）**；
@@ -98,10 +77,6 @@ flowchart TD
 
 1. **TCP 层的队头阻塞（Head-of-Line Blocking）**：HTTP/2 的多条 Stream 物理上共享同一个底层 TCP 连接。一旦公网发生单个数据包丢包，整个 TCP 连接被内核挂起等待重传，**所有逻辑流同时被卡死**，无法体现真实并发多连接的容错能力；
 2. **HTTP/2 流控窗口（Flow Control Window）上限**：HTTP/2 规范在应用层定义了 Connection-level 与 Stream-level 窗口大小（默认通常为 64KB）。如果服务端或客户端未主动发送 `WINDOW_UPDATE` 帧将流控窗口放大到兆字节级，吞吐会被应用层流控死死锁住。
-
-
-
-![线速 (Wire Rate) 与有效吞吐 (Goodput) 转换矩阵与巨型帧 (Jumbo Frames)](../../../public/images/wire-rate-vs-goodput-conversion-chart.svg)
 
 ## 四、非对称宽带下的 ACK 饥饿（ACK Starvation）效应
 

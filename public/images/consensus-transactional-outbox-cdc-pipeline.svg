@@ -1,137 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="outbox-title outbox-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="outbox-title">本地消息表（Transactional Outbox）与 CDC 异步可靠投递全景</title>
+  <desc id="outbox-desc">数据流架构图展示单库本地事务原子写入业务表与 Outbox 表，CDC 引擎解析 Binlog 异步投递 Kafka 并由下游幂等消费的工业级全景。</desc>
+  <defs>
+    <marker id="ob-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="ob-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">本地事务消息表（Transactional Outbox）+ CDC 异步可靠投递全景架构</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">本地 ACID 双写业务表与 outbox 表 ──► CDC 引擎（Debezium/Canal）捕获 WAL 日志 ──► Kafka 投递 ──► 消费端幂等去重</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EVENT-DRIVEN ARCHITECTURE · TRANSACTIONAL OUTBOX &amp; CDC</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">本地消息表（Transactional Outbox）与 CDC 全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">单库本地事务原子写入业务表 + Outbox 表 ➔ Debezium 流式解析 Binlog ➔ 零开销投递 Kafka ➔ 下游幂等消费</text>
+
+  <!-- Left: App Service (x=40..250, w=210) -->
+  <g transform="translate(40, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">APP LAYER</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">业务应用服务</text>
+
+    <rect x="14" y="42" width="182" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 订单支付事件到达</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">handlePayment(orderId)</text>
+    <text x="24" y="102" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">开启本地单库 ACID 事务</text>
+    <text x="24" y="120" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">绝不直接在内存调用 MQ</text>
+
+    <rect x="14" y="150" width="182" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="172" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">消灭双写风险</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">传统“先写库后发消息”</text>
+    <text x="24" y="210" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">遇进程 OOM 必丢消息；</text>
+    <text x="24" y="228" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Outbox 模式让业务与消息</text>
+    <text x="24" y="246" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">同生共死 (Atomic All-in-One)</text>
+
+    <rect x="14" y="282" width="182" height="78" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="304" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">响应客户端</text>
+    <text x="24" y="324" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">单机事务提交即刻返回 200</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">端到端延迟 ≤ 2ms</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow App -> DB (x=250..290) -->
+  <text x="269" y="202" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">原子写</text>
+  <line x1="250" y1="210" x2="290" y2="210" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ob-arr-accent)"/>
 
-    <!-- 4 Pipeline Columns -->
-    <g transform="translate(20, 20)">
-      <!-- Stage 1: Local DB Transaction (210px) -->
-      <g>
-        <rect width="200" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-        <rect width="200" height="32" rx="6" fill="#dbeafe"/>
-        <text x="100" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">1. 本地数据库事务 (ACID)</text>
+  <!-- Middle: Database with Local ACID (x=290..620, w=330) - Focal -->
+  <g transform="translate(290, 136)">
+    <rect width="330" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DATABASE ACID</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">MySQL 单库本地事务边界</text>
 
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="180" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1d4ed8" font-weight="700">写业务订单表 (orders)</text>
-          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">INSERT INTO orders ...</text>
+    <!-- Table 1: Business Table -->
+    <rect x="14" y="42" width="302" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 业务表: orders</text>
+    <text x="24" y="84" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">UPDATE orders SET status='PAID' WHERE id=101;</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">本地行级锁，毫秒级就绪</text>
 
-          <rect y="48" width="180" height="48" rx="3" fill="#ffffff" stroke="#3b82f6"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">写本地消息表 (outbox)</text>
-          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">INSERT INTO outbox ...</text>
-          <text x="8" y="42" font-size="8.5" fill="#1d4ed8">(状态: PENDING)</text>
+    <!-- Table 2: Outbox Table -->
+    <rect x="14" y="124" width="302" height="96" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="146" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 本地消息表: outbox_events</text>
+    <text x="24" y="166" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">INSERT INTO outbox_events (id, topic, payload) </text>
+    <text x="24" y="182" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">VALUES (uuid(), 'order_paid', '{"order_id":101}');</text>
+    <text x="24" y="202" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">与业务操作在同一个事务内 COMMIT</text>
 
-          <rect y="102" width="180" height="42" rx="3" fill="#dbeafe"/>
-          <text x="8" y="16" font-weight="700" fill="#1e40af">同一本地事务 Commit！</text>
-          <text x="8" y="28" font-size="8.5" fill="#1e40af">保证业务与消息强原子一致</text>
-        </g>
-      </g>
-
-      <!-- Stage 2: CDC WAL Capture (200px) -->
-      <g transform="translate(220, 0)">
-        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. CDC 引擎捕获日志</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">解析 DB 底层 WAL / Binlog</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">Debezium / Canal 监听</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#166534" font-weight="700">零业务侵入与零轮询</text>
-          <text x="8" y="30" font-size="9" fill="#15803d">• 无需频繁 SELECT 扫描表</text>
-          <text x="8" y="42" font-size="9" fill="#15803d">• 顺序读取磁盘，0 数据库压力</text>
-
-          <rect y="106" width="175" height="40" rx="3" fill="#d1fae5"/>
-          <text x="8" y="16" font-weight="700" fill="#065f46">流式投递 ──►</text>
-          <text x="8" y="28" font-size="9" fill="#047857">亚毫秒级低延迟响应</text>
-        </g>
-      </g>
-
-      <!-- Stage 3: Kafka Message Broker (200px) -->
-      <g transform="translate(435, 0)">
-        <rect width="195" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
-        <rect width="195" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">3. 消息中间件 (Kafka)</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="8" y="16" fill="#0f172a" font-weight="700">持久化 Topic 队列</text>
-          <text x="8" y="28" font-size="9" fill="#64748b">Partition 按 orderId 分区保序</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">高可用多副本冗余</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">支持海量消费者并发堆积</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">削峰填谷，平滑流量尖峰</text>
-
-          <rect y="106" width="175" height="40" rx="3" fill="#f8fafc"/>
-          <text x="8" y="16" fill="#475569">广播给下游微服务群 ──►</text>
-          <text x="8" y="28" font-size="8.5" fill="#64748b">积分服务 / 仓储服务 / 通知</text>
-        </g>
-      </g>
-
-      <!-- Stage 4: Consumer Idempotency (230px) -->
-      <g transform="translate(650, 0)">
-        <rect width="210" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="210" height="32" rx="6" fill="#dcfce7"/>
-        <text x="105" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. 消费端幂等去重落地</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="190" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">幂等去重表 (dedup_key)</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">以 event_id 作为唯一主键索引</text>
-
-          <rect y="48" width="190" height="48" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">消费业务落盘</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">发货扣库存 / 发送短信通知</text>
-
-          <rect y="102" width="190" height="48" rx="3" fill="#d1fae5" stroke="#10b981"/>
-          <text x="8" y="16" fill="#065f46" font-weight="700">✓ 最终一致性达成：</text>
-          <text x="8" y="30" font-size="9" font-weight="700" fill="#047857">At-Least-Once 消息 + 幂等去重</text>
-          <text x="8" y="42" font-size="9" font-weight="700" fill="#047857">= Exactly-Once 业务语义！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">架构模式黄金法则：</tspan> Transactional Outbox 将“跨网络两阶段提交的脆弱锁”转换为 <tspan font-weight="700" fill="#2563eb">“本地单库原子写 + 异步重试”</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        用极低的实现复杂度换取了微服务间 100% 可靠的最终一致性。
-      </text>
-    </g>
+    <!-- Disk Binlog Layer -->
+    <rect x="14" y="230" width="302" height="130" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="252" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 磁盘物理二进制日志: MySQL Binlog</text>
+    <rect x="24" y="264" width="280" height="24" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="164" y="280" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">Binlog Event: [Tx#9801 Commit Event]</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">顺序写磁盘 WAL，吞吐高达 50,000+ TPS</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">为下游 CDC 引擎提供完全确定的变更流</text>
+    <text x="24" y="344" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无需任何定时轮询数据库 SQL 查表</text>
   </g>
+
+  <!-- Arrow DB -> CDC (x=620..660) -->
+  <text x="639" y="272" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Dump</text>
+  <line x1="620" y1="280" x2="660" y2="280" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ob-arr-accent)"/>
+
+  <!-- Right: CDC & Kafka (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CDC &amp; MQ</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">异步流式管道与下游</text>
+
+    <!-- Debezium CDC -->
+    <rect x="14" y="42" width="232" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Debezium / Canal CDC 引擎</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">伪装为 MySQL Slave</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">零锁竞争 · 流式监听 Binlog</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">解析 outbox_events 变更事件</text>
+
+    <!-- Kafka -->
+    <rect x="14" y="146" width="232" height="96" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="168" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Kafka 消息总线 (Topic)</text>
+    <text x="24" y="188" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Topic: order_paid_events</text>
+    <text x="24" y="206" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">At-Least-Once 可靠投递保证</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高吞吐堆积削峰填谷</text>
+
+    <!-- Downstream Consumers -->
+    <rect x="14" y="250" width="232" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="272" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">下游微服务幂等消费</text>
+    <text x="24" y="292" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 积分中心：增加会员积分</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 短信服务：发送发货通知</text>
+    <text x="24" y="324" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 搜索中心：更新 ES 索引</text>
+    <text x="24" y="342" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">基于 event_id 幂等防重</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">业务应用与下游消费端</text>
+  <rect x="300" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">单库本地事务与 CDC 解耦核心</text>
 </svg>

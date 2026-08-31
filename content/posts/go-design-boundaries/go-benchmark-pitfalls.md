@@ -24,10 +24,6 @@ series: "Go 的设计边界"
 
 检查清单：输入使用循环变量；结果通过返回值、包级 sink 或 `runtime.KeepAlive` 形成可观察使用；运行 `-gcflags=-m` 看编译器的逃逸/内联判断；再用不同输入确认数字没有只对常量路径成立。
 
-
-
-![基准测试陷阱：编译器死码消除 (DCE) 与全局逃逸槽 (Global Sink)](../../../public/images/compiler-dce-escape-sink-benchmark.svg)
-
 ## 二、逃逸干扰：同一行代码，两种 allocs
 
 同一条转换表达式，放进不同 sink，逃逸分析可能给出不同结果：局部使用可以留在栈上，存入长期存活的容器、返回接口或交给未知调用方则可能转到堆。不要把某个 map、数组或包级 sink 的 `B/op` 当成表达式本身的固定成本。

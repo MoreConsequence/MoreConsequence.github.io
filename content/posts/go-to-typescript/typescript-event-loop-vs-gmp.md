@@ -50,10 +50,6 @@ go run go-sleep.go
 
 这里的结论很窄：`time.Sleep` 让当前 goroutine 进入等待，runtime 可以运行另一个 goroutine。它没有证明 Go 的所有阻塞系统调用都相同，也没有和 Node 的 busy loop 构成同语义性能基准。
 
-
-
-![Go GMP 协作抢占调度器 vs Node.js Libuv 单线程事件循环模型对照](../../../public/images/go-gmp-vs-nodejs-libuv-scheduler-matrix.svg)
-
 ## 三、实验 B：同步 CPU 工作会推迟 Node timer
 
 Node 对照使用 `experiments/ts-event-loop/blocking2.ts`：先安排一个 10ms timer，再在 JavaScript 主线程 busy loop 约 50ms。

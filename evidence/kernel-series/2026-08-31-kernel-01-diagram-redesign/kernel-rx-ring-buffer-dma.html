@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kernel-rx-ring-buffer-dma</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="rx-title rx-desc">
+  <title id="rx-title">Linux 网络收包物理全景：网卡 DMA、Ring Buffer 与 NAPI 软中断</title>
+  <desc id="rx-desc">物理架构图展示网络光电信号经网卡 DMA 直传主机 RAM，触发硬中断后转入 NAPI 软中断批量轮询并封装 sk_buff 交付协议栈的全流程。</desc>
+  <defs>
+    <marker id="rx-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="rx-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LINUX PACKET RX PIPELINE · PHYSICAL ARCHITECTURE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux 网络收包物理全景：DMA 直传与 NAPI 轮询</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">光电信号 ➔ 网卡 DMA 直传主机主存 ➔ 硬中断拉起 ➔ NAPI 软中断批量轮询并封装 sk_buff 交付协议栈</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: NIC Hardware (x=40..240, w=200) -->
+  <g transform="translate(40, 136)">
+    <rect width="200" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡物理硬件 (NIC)</text>
+
+    <!-- PHY / MAC -->
+    <rect x="14" y="42" width="172" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">PHY 芯片与 MAC 校验</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">光电信号 ➔ 比特流转换</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">FCS 硬件校验和校验</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">存入网卡内部 RX FIFO</text>
+
+    <!-- DMA Engine -->
+    <rect x="14" y="150" width="172" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="172" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">DMA 控制器直传</text>
+    <text x="24" y="192" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">绕过 CPU 介入</text>
+    <text x="24" y="210" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">通过 PCIe 总线直写主机 RAM</text>
+    <text x="24" y="228" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">零 CPU 负载完成数据落盘</text>
+    <text x="24" y="246" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Direct Memory Access</text>
+
+    <!-- Hard IRQ -->
+    <rect x="14" y="272" width="172" height="88" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="294" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">硬中断 (Hard IRQ)</text>
+    <text x="24" y="314" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">MSI-X 信号触发中断线</text>
+    <text x="24" y="332" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">通知 CPU: 新数据包已就绪</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">仅通知 1 次即转入轮询</text>
+  </g>
+
+  <!-- Arrow 1 (x=240..270) -->
+  <text x="255" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PCIe DMA</text>
+  <line x1="240" y1="230" x2="270" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#rx-arr-accent)"/>
+
+  <!-- Col 2: RX Ring Buffer (x=270..490, w=220) - Focal -->
+  <g transform="translate(270, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 2</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">RX Ring Buffer 队列</text>
+
+    <!-- Descriptor Queue -->
+    <rect x="14" y="42" width="192" height="142" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">环形描述符数组 (4096)</text>
+    
+    <!-- 3 Descriptor Slots -->
+    <rect x="24" y="74" width="172" height="22" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="89" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">[Desc 0] Addr: 0x8800 | Ready ✓</text>
+
+    <rect x="24" y="100" width="172" height="22" rx="2" fill="rgba(232,93,63,0.12)" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="32" y="115" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">[Desc 1] Addr: 0x8840 | Writing...</text>
+
+    <rect x="24" y="126" width="172" height="22" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="141" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">[Desc 2] Addr: 0x8880 | Empty</text>
+
+    <text x="24" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">ethtool -G eth0 rx 4096</text>
+
+    <!-- Physical RAM Pages -->
+    <rect x="14" y="196" width="192" height="164" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">主机主存数据块 (Pages)</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">预分配的物理内存页池</text>
+    <text x="24" y="256" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">DMA 直接填充 Packet Frame</text>
+    <line x1="24" y1="268" x2="196" y2="268" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="288" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">防丢包第一防线：</text>
+    <text x="24" y="306" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">队列满 ➔ 网卡硬件强丢包！</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Overruns / rx_dropped 告警</text>
+    <text x="24" y="344" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">必须调大 Ring Buffer 规避抖动</text>
+  </g>
+
+  <!-- Arrow 2 (x=490..520) -->
+  <text x="505" y="202" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Poll</text>
+  <line x1="490" y1="210" x2="520" y2="210" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#rx-arr-accent)"/>
+
+  <!-- Col 3: NAPI SoftIRQ (x=520..730, w=210) - Focal -->
+  <g transform="translate(520, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">NAPI 软中断轮询</text>
+
+    <!-- NAPI Core Engine -->
+    <rect x="14" y="42" width="182" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="64" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NET_RX_ACTION</text>
+    <text x="112" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">NAPI 轮询引擎</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 立即禁用网卡硬件中断</text>
+    <text x="24" y="104" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. netdev_budget = 64 批量消费</text>
+    <text x="24" y="122" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 遍历 Poll 队列读取 Ring</text>
+    <text x="24" y="140" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">4. 彻底消除万兆中断风暴！</text>
+
+    <!-- SKB Allocator -->
+    <rect x="14" y="174" width="182" height="186" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="196" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">sk_buff 封装与传递</text>
+    <text x="24" y="216" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">从 Slab 申请 230B 控制头</text>
+    <text x="24" y="234" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">绑定 DMA 数据物理页</text>
+    <text x="24" y="252" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">napi_gro_receive(skb)</text>
+    <line x1="24" y1="264" x2="186" y2="264" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="284" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">GRO 硬件大包聚合：</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">将多个小包合并为 64KB 大包</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">大幅减少协议栈遍历开销</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Generic Receive Offload</text>
+  </g>
+
+  <!-- Arrow 3 (x=730..760) -->
+  <text x="745" y="202" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SKB</text>
+  <line x1="730" y1="210" x2="760" y2="210" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#rx-arr-accent)"/>
+
+  <!-- Col 4: Kernel Protocol Stack (x=760..920, w=160) -->
+  <g transform="translate(760, 136)">
+    <rect width="160" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 4</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">协议栈交付</text>
+
+    <!-- Layers -->
+    <rect x="14" y="42" width="132" height="66" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L3 / L4 协议层</text>
+    <text x="22" y="82" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">ip_rcv() ➔ 校验</text>
+    <text x="22" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">tcp_v4_rcv() 校验</text>
+
+    <rect x="14" y="120" width="132" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="142" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Socket 接收队列</text>
+    <text x="22" y="162" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">sk_receive_queue</text>
+    <text x="22" y="180" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">唤醒阻塞的 epoll /</text>
+    <text x="22" y="196" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">Goroutine 工作线程</text>
+    <text x="22" y="214" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">sk_data_ready()</text>
+
+    <rect x="14" y="242" width="132" height="118" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="264" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户态应用读取</text>
+    <text x="22" y="284" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">read() / recv()</text>
+    <text x="22" y="302" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">内存拷贝至用户态</text>
+    <text x="22" y="322" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">完成整个收包链路</text>
+    <text x="22" y="340" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Latency: ~5μs</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">硬件与协议栈组件</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">DMA 直传与 NAPI 软中断核心</text>
+</svg>
+</main>
+</body>
+</html>

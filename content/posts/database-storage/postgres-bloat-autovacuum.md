@@ -27,10 +27,6 @@ series: "数据库原理手记"
 
 这就是膨胀的第一性来源：**Postgres 把「旧版本留档」做进了表自己的页面里**，而不是像 InnoDB 那样写进独立的 undo 日志（对比放第六节）。同系列的 [事务隔离不是靠锁：MVCC 的版本链与快照账本](/writing/mvcc-isolation-snapshot) 讲的是快照怎么决定「看哪个版本」，本文讲的是这些被跳过、不再可见的版本怎么处置。
 
-
-
-![PostgreSQL 死亡元组 (Dead Tuples) 与表膨胀 (Bloat) 物理机理](../../../public/images/postgres-dead-tuple-page-bloat.svg)
-
 ## 二、VACUUM 在干什么：回收、可见性、冻结
 
 手动 `VACUUM t`（不带 FULL）做三件事：

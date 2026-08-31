@@ -127,10 +127,6 @@ func (s *PostgresJournal) AppendWithFencing(ctx context.Context, runID string, t
 
 ---
 
-
-
-![分布式脑裂危害与 Fencing 栅栓防御拓扑](../../../public/images/oract-split-brain-hazard-and-fencing-defense.svg)
-
 ## 四、跨语言执行协议 OEP (ORACT Execution Protocol)
 
 在企业级生产架构中，Agent 调度控制面通常由高并发的 Go 语言编写，而具体的深度学习计算、Python 代码分析或数据科学工具则运行在 Python 环境中。

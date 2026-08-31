@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="480" fill="#f8fafc"/>
+  <rect width="960" height="480" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 内核网络包收发全链路与各层挂载点拓扑 (RX/TX Packet Flow)</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">从物理光电信号、DMA Ring Buffer、NAPI 轮询、XDP 极速旁路，到 sk_buff、TC Qdisc、L3/L4 协议栈与套接字队列</text>
+  </g>
+
+  <!-- 6 Layer Stack (880px width) -->
+  <g transform="translate(40, 75)" filter="url(#card-shadow)" font-family="ui-sans-serif, system-ui, sans-serif">
+    <!-- Layer 1: App Socket -->
+    <g transform="translate(0, 0)">
+      <rect width="880" height="55" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#1e40af">6. 用户态应用层 (Socket Buffer / epoll / io_uring)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#2563eb">应用程序通过 read() / recvmsg() 消费已排序的 TCP 字节流 ──► 触发 EPOLLIN 事件唤醒</text>
+    </g>
+
+    <!-- Layer 2: L3/L4 & eBPF -->
+    <g transform="translate(0, 65)">
+      <rect width="880" height="55" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#166534">5. 传输层与网络层协议栈 (TCP / IP / BBR / eBPF Kprobe &amp; Tracepoint)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#15803d">TCP 重组与滑动窗口校验 ──► IP 路由查找 (FIB) ──► eBPF Kprobe 动态追踪 Off-CPU 与调度延迟</text>
+    </g>
+
+    <!-- Layer 3: TC Qdisc -->
+    <g transform="translate(0, 130)">
+      <rect width="880" height="55" rx="6" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#c2410c">4. 流量控制系统 (Linux TC Qdisc: fq Pacing + HTB 分层令牌桶)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#c2410c">fq (Fair Queueing) 纳秒级匀速发包 ──► 彻底消除 Bufferbloat 缓冲区膨胀排队时延</text>
+    </g>
+
+    <!-- Layer 4: sk_buff & XDP -->
+    <g transform="translate(0, 195)">
+      <rect width="880" height="55" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#991b1b">3. sk_buff 内存构建 &amp; XDP 极速旁路 (eBPF XDP_DROP / TX / REDIRECT)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#b91c1c">XDP 在分配 sk_buff 之前线速丢包 (40Mpps) ──► 正常包分配 sk_buff 进入 Linux 协议栈</text>
+    </g>
+
+    <!-- Layer 5: NAPI -->
+    <g transform="translate(0, 260)">
+      <rect width="880" height="55" rx="6" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#7e22ce">2. NAPI 软中断轮询机制 (net_rx_action &amp; Ring Buffer Ingestion)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#7e22ce">硬中断触发后关闭中断并切入 NAPI 轮询 ──► 批量收割 64 个报文 ──► 彻底避免中断风暴击穿 CPU</text>
+    </g>
+
+    <!-- Layer 6: PHY / NIC -->
+    <g transform="translate(0, 325)">
+      <rect width="880" height="55" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="25" y="22" font-size="11" font-weight="700" fill="#334155">1. 物理网卡与 DMA 传输 (PHY / MAC / PCIe DMA Controller)</text>
+      <text x="25" y="40" font-family="ui-monospace, monospace" font-size="8.5" fill="#475569">光纤光电信号转换 ──► 硬件 DMA 控制器直接将数据写入主机内存 RX Ring Buffer ──► 0 CPU 拷贝</text>
+    </g>
+  </g>
+</svg>

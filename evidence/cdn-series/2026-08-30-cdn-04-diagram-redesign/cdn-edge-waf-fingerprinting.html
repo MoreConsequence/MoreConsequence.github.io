@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-edge-waf-fingerprinting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-waf-title cdn-waf-desc">
+  <title id="cdn-waf-title">边缘 WAF 深度指纹识别（JA4）与分布式令牌桶频控拓扑</title>
+  <desc id="cdn-waf-desc">架构数据流图展示从 TLS ClientHello 提取 JA4 协议指纹识别伪装脚本，并结合滑动窗口分布式令牌桶实现边缘精准限流拦截。</desc>
+  <defs>
+    <marker id="cdn-waf-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-waf-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EDGE WAF · JA4 FINGERPRINT &amp; TOKEN BUCKET</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">边缘 WAF 深度指纹识别与分布式令牌桶拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">TLS 握手层秒级提取 JA4 密码学特征识破伪造 User-Agent，分布式令牌桶在边缘实现毫秒级质询与拦截</text>
+
+  <!-- Left Column: Ingress Traffic (x=40..250, w=210) -->
+  <g transform="translate(40, 140)">
+    <rect width="210" height="330" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">INGRESS</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">客户端握手入站</text>
+
+    <!-- Client 1: Real Chrome -->
+    <rect x="14" y="46" width="182" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">合法 Chrome 浏览器</text>
+    <text x="24" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">JA4: t13d1516h2_8daaf...</text>
+    <text x="24" y="104" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">GREASE 混淆 + 15 扩展</text>
+
+    <!-- Client 2: Python Bot -->
+    <rect x="14" y="128" width="182" height="82" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">伪装 Python 爬虫</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">JA4: t12i0500h1_00000...</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">伪造 UA 但 TLS 特征暴露</text>
+    <text x="24" y="200" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">无 GREASE · 仅 5 套件</text>
+
+    <!-- Client 3: CC Flood Script -->
+    <rect x="14" y="218" width="182" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">并发 CC 扫库攻击</text>
+    <text x="24" y="258" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">高频 POST /login</text>
+    <text x="24" y="276" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">瞬时 5000 QPS 突发</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">触发分布式频控阈值</text>
+  </g>
+
+  <!-- Arrow 1 (x=250..330) -->
+  <line x1="250" y1="305" x2="330" y2="305" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-waf-arr)"/>
+
+  <!-- Middle Column: Edge WAF & Token Bucket Engine (x=330..630, w=300) - Focal Column -->
+  <g transform="translate(330, 140)">
+    <rect width="300" height="330" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">EDGE WAF</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">边缘指纹解析与频控引擎</text>
+
+    <!-- Sub-card 1: JA4 Fingerprint Parser -->
+    <rect x="14" y="46" width="272" height="106" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. JA4 TLS/HTTP2 密码学指纹提取</text>
+    <text x="26" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">JA4 = [Proto][Ver][SNI][Ciphers]_[Hash]_[Ext]</text>
+    <text x="26" y="108" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">在握手阶段判定，无需解析 HTTP 载荷</text>
+    <text x="26" y="128" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">耗时 ≤ 0.2ms · 毫秒级识破伪装爬虫</text>
+
+    <!-- Sub-card 2: Distributed Token Bucket -->
+    <rect x="14" y="160" width="272" height="152" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="182" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 分布式滑动窗口令牌桶 (Token Bucket)</text>
+    <text x="26" y="202" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Key = Hash(IP + JA4 + URI_Path)</text>
+    
+    <!-- Token Bucket Visual Box inside -->
+    <rect x="26" y="214" width="248" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="36" y="232" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Capacity = 1000 · Refill = 100/s</text>
+    <text x="36" y="248" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Gossip 内存跨机房状态同步</text>
+
+    <text x="26" y="278" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">平滑突发放行，超额触发多级防御处置</text>
+    <text x="26" y="296" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">0 穿透回源，边缘直接结案</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..710) -->
+  <line x1="630" y1="305" x2="710" y2="305" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-waf-arr-accent)"/>
+
+  <!-- Right Column: Actions & Outcomes (x=710..920, w=210) -->
+  <g transform="translate(710, 140)">
+    <rect width="210" height="330" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="68" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="48" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ACTION</text>
+    <text x="90" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">边缘分级处置与回源</text>
+
+    <!-- Action 1: Legitimate Pass -->
+    <rect x="14" y="46" width="182" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">真人流量 ➔ 极速放行</text>
+    <text x="24" y="88" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: PASS (200 OK)</text>
+    <text x="24" y="104" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">命中 L1 缓存或 0-RTT 回源</text>
+
+    <!-- Action 2: Bot Challenge -->
+    <rect x="14" y="128" width="182" height="82" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">可疑流量 ➔ JS 质询</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">Action: JS Challenge</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无感计算难题过滤爬虫</text>
+    <text x="24" y="200" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">阻断自动化无头浏览器</text>
+
+    <!-- Action 3: Rate Limit Block -->
+    <rect x="14" y="218" width="182" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="238" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">超频流量 ➔ 边缘阻断</text>
+    <text x="24" y="258" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">Action: 429 Too Many Req</text>
+    <text x="24" y="276" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">在边缘切断恶意连接</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">源站完全免受任何冲击</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">流量入站与处置动作</text>
+  <rect x="300" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">边缘 WAF JA4 与令牌桶核心引擎</text>
+  <line x1="560" y1="556" x2="584" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-waf-arr-accent)"/>
+  <text x="592" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">边缘实时安全裁决流</text>
+</svg>
+</main>
+</body>
+</html>

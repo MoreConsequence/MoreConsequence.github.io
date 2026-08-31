@@ -1,116 +1,141 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="quorum-title quorum-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="quorum-title">Quorum 多数派重叠数学原理与鸽巢原理模型</title>
+  <desc id="quorum-desc">数学模型图展示 N=5 节点下 R=3 与 W=3 的鸽巢交集重叠，证明读写集合必定存在至少 1 个节点见证最新写入。</desc>
+  <defs>
+    <marker id="qm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="qm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Quorum 多数派重叠数学原理：从 R + W &gt; N 到 Sloppy Quorum</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">鸽巢原理保证读集与写集必有交集 vs 弱网络分区下 Sloppy Quorum 与暂存写入（Hinted Handoff）</text>
-  </g>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DISTRIBUTED QUORUM · PIGEONHOLE PRINCIPLE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Quorum 多数派重叠数学原理与鸽巢模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">只要满足 R + W &gt; N，读集合 S_R 与写集合 S_W 必定至少交叠 1 个物理节点，保证读到最新写入版本</text>
 
-  <!-- Main Content (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Central Cluster Box (y=136..336, h=200) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="200" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
 
-    <!-- Left Box: Strict Quorum Math (N=5, W=3, R=3) -->
-    <g transform="translate(20, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="420" height="32" rx="6" fill="#eff6ff"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1d4ed8" text-anchor="middle">一、 严格 Quorum 数学证明 ($R + W &gt; N$)</text>
+    <!-- Zone Write Set (x=14..530) -->
+    <rect x="14" y="14" width="516" height="172" rx="4" fill="rgba(20,20,19,0.03)" stroke="#141413" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <text x="24" y="32" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">WRITE QUORUM SET (W = 3)</text>
 
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- 5 Nodes Representation -->
-        <g transform="translate(0, 0)">
-          <!-- Node 1 (Write only) -->
-          <rect x="0" y="0" width="70" height="42" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-          <text x="35" y="18" font-weight="700" fill="#1e40af" text-anchor="middle">Node 1</text>
-          <text x="35" y="32" font-size="9" fill="#2563eb" text-anchor="middle">Write</text>
+    <!-- Zone Read Set (x=350..866) -->
+    <rect x="350" y="14" width="516" height="172" rx="4" fill="rgba(232,93,63,0.04)" stroke="#e85d3f" stroke-width="0.8" stroke-dasharray="4 4"/>
+    <text x="856" y="32" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">READ QUORUM SET (R = 3)</text>
 
-          <!-- Node 2 (Write only) -->
-          <rect x="78" y="0" width="70" height="42" rx="4" fill="#eff6ff" stroke="#3b82f6"/>
-          <text x="113" y="18" font-weight="700" fill="#1e40af" text-anchor="middle">Node 2</text>
-          <text x="113" y="32" font-size="9" fill="#2563eb" text-anchor="middle">Write</text>
-
-          <!-- Node 3 (Intersection: Read + Write!) -->
-          <rect x="156" y="0" width="76" height="42" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
-          <text x="194" y="18" font-weight="700" fill="#b45309" text-anchor="middle">Node 3 🎯</text>
-          <text x="194" y="32" font-size="9" font-weight="700" fill="#d97706" text-anchor="middle">Read &amp; Write</text>
-
-          <!-- Node 4 (Read only) -->
-          <rect x="240" y="0" width="70" height="42" rx="4" fill="#f0fdf4" stroke="#10b981"/>
-          <text x="275" y="18" font-weight="700" fill="#047857" text-anchor="middle">Node 4</text>
-          <text x="275" y="32" font-size="9" fill="#059669" text-anchor="middle">Read</text>
-
-          <!-- Node 5 (Read only) -->
-          <rect x="318" y="0" width="70" height="42" rx="4" fill="#f0fdf4" stroke="#10b981"/>
-          <text x="353" y="18" font-weight="700" fill="#047857" text-anchor="middle">Node 5</text>
-          <text x="353" y="32" font-size="9" fill="#059669" text-anchor="middle">Read</text>
-        </g>
-
-        <!-- Math explanation -->
-        <rect y="54" width="388" height="60" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="72" font-weight="700" fill="#0f172a">📐 鸽巢原理（Pigeonhole Principle）：</text>
-        <text x="12" y="88" fill="#475569">总节点 $N=5$，写确认 $W=3$，读采样 $R=3$。因为 $3 + 3 = 6 &gt; 5$，</text>
-        <text x="12" y="102" fill="#1e40af" font-weight="700">任何一次合法的 Read 集合必定包含至少一个拥有最新 Write 数据的节点！</text>
-
-        <!-- Read Repair note -->
-        <rect y="122" width="388" height="34" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="12" y="137" fill="#166534" font-weight="700">读修复（Read Repair）：</text>
-        <text x="12" y="149" fill="#15803d" font-size="9.5">客户端读到多版本时，以最大时间戳为准，并异步回写修补落后节点。</text>
-      </g>
+    <!-- 5 Replicas inside -->
+    <!-- Node 1 (Write only) -->
+    <g transform="translate(30, 48)">
+      <rect width="150" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Node 1 (写确认)</text>
+      <text x="14" y="44" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Val: v2 @ t=100</text>
+      <line x1="14" y1="56" x2="136" y2="56" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="74" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: Up to date</text>
+      <text x="14" y="92" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">成功持久化写事务</text>
     </g>
 
-    <!-- Right Box: Sloppy Quorum & Hinted Handoff (420px) -->
-    <g transform="translate(460, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#fed7aa" stroke-width="1.5"/>
-      <rect width="420" height="32" rx="6" fill="#fff7ed"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">二、 弱网络容错：Sloppy Quorum &amp; Hinted Handoff</text>
-
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Step 1 -->
-        <rect width="388" height="42" rx="4" fill="#ffffff" stroke="#fed7aa"/>
-        <text x="12" y="18" fill="#9a3412" font-weight="700">1. 节点宕机/网络分区致使严格 Quorum 失败</text>
-        <text x="12" y="32" font-size="9.5" fill="#c2410c">Node 1, 2 无法连接，常规写入因凑不齐 3 个确认本应失败报 500</text>
-
-        <!-- Step 2 -->
-        <rect y="50" width="388" height="55" rx="4" fill="#fff7ed" stroke="#f97316"/>
-        <text x="12" y="68" fill="#c2410c" font-weight="700">2. 宽松多数派（Sloppy Quorum）暂存写入</text>
-        <text x="12" y="82" font-size="9.5" fill="#7c2d12">将数据先写到健康的其他旁路节点（如 Node 6, 7），附加 Hint 元信息：</text>
-        <text x="12" y="94" font-family="ui-monospace, monospace" font-size="9.5" fill="#ea580c">`"This data is intended for Node 1"`</text>
-
-        <!-- Step 3 -->
-        <rect y="114" width="388" height="42" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="12" y="130" fill="#166534" font-weight="700">3. 节点恢复后移交数据（Hinted Handoff）</text>
-        <text x="12" y="144" fill="#15803d" font-size="9.5">一旦 Node 1 重新上线，旁路节点自动将暂存数据移交归还（Dynamo/Cassandra）</text>
-      </g>
+    <!-- Node 2 (Write only) -->
+    <g transform="translate(195, 48)">
+      <rect width="150" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Node 2 (写确认)</text>
+      <text x="14" y="44" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Val: v2 @ t=100</text>
+      <line x1="14" y1="56" x2="136" y2="56" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="74" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: Up to date</text>
+      <text x="14" y="92" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">成功持久化写事务</text>
     </g>
 
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">一致性代价本质：</tspan> 严格 Quorum 保证了 <tspan font-weight="700" fill="#2563eb">强一致性（Linearizability）但牺牲了可用性</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#ea580c" font-weight="700" text-anchor="middle">
-        Sloppy Quorum 选择极致高可用，但破坏了多数派重叠，必须接受读旧数据与异步最终一致！
-      </text>
+    <!-- Node 3 (Intersection Focal Node!) -->
+    <g transform="translate(365, 42)">
+      <rect width="160" height="132" rx="4" fill="rgba(232,93,63,0.12)" stroke="#e85d3f" stroke-width="1.5"/>
+      <rect x="14" y="10" width="132" height="16" rx="2" fill="#e85d3f"/>
+      <text x="80" y="22" fill="#ffffff" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OVERLAP NODE (交集)</text>
+      <text x="14" y="46" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Node 3 (见证节点)</text>
+      <text x="14" y="66" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Val: v2 @ t=100</text>
+      <line x1="14" y1="78" x2="146" y2="78" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="14" y="96" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">既参与写又参与读</text>
+      <text x="14" y="114" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">|S_W ∩ S_R| ≥ 1 保证！</text>
+    </g>
+
+    <!-- Node 4 (Read only - Lagging) -->
+    <g transform="translate(540, 48)">
+      <rect width="150" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Node 4 (读采样)</text>
+      <text x="14" y="44" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">Val: v1 @ t=80</text>
+      <line x1="14" y1="56" x2="136" y2="56" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="74" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: Lagging</text>
+      <text x="14" y="92" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">未收到写，持有旧值</text>
+    </g>
+
+    <!-- Node 5 (Read only - Lagging) -->
+    <g transform="translate(705, 48)">
+      <rect width="150" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Node 5 (读采样)</text>
+      <text x="14" y="44" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">Val: v1 @ t=80</text>
+      <line x1="14" y1="56" x2="136" y2="56" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="74" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Status: Lagging</text>
+      <text x="14" y="92" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">未收到写，持有旧值</text>
     </g>
   </g>
+
+  <!-- Bottom 3 Classic Config Columns (y=356..516, h=160) -->
+  <!-- Config A: Balanced -->
+  <g transform="translate(40, 356)">
+    <rect width="280" height="160" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CONFIG A</text>
+    <text x="102" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">均衡强一致 (W=3, R=3)</text>
+    <line x1="14" y1="38" x2="266" y2="38" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="14" y="58" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">标准多数派对称配置</text>
+    <text x="14" y="76" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">容忍节点故障数: F ≤ ⌊N/2⌋ = 2</text>
+    <text x="14" y="94" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">读写时延各消耗 3 节点 RTT</text>
+    <text x="14" y="114" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工业标准：Raft / Paxos / etcd</text>
+  </g>
+
+  <!-- Config B: Fast Read -->
+  <g transform="translate(340, 356)">
+    <rect width="280" height="160" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CONFIG B</text>
+    <text x="102" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">极致快读 (W=5, R=1)</text>
+    <line x1="14" y1="38" x2="266" y2="38" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="14" y="58" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">读多写极少业务模型</text>
+    <text x="14" y="76" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">读只需 1 节点响应 (0 延迟)</text>
+    <text x="14" y="94" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">写必须 100% 全员确认</text>
+    <text x="14" y="114" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">单节点故障即阻塞写入</text>
+  </g>
+
+  <!-- Config C: Fast Write -->
+  <g transform="translate(640, 356)">
+    <rect width="280" height="160" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CONFIG C</text>
+    <text x="102" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">极致快写 (W=1, R=5)</text>
+    <line x1="14" y1="38" x2="266" y2="38" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="14" y="58" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">写密集高并发模型</text>
+    <text x="14" y="76" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">写只需 1 节点确认 (超高吞吐)</text>
+    <text x="14" y="94" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">读必须全量遍历 5 节点</text>
+    <text x="14" y="114" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">读需依赖时间戳现场仲裁</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="538" x2="920" y2="538" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="566" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="554" width="12" height="12" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="566" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">普通单向读写节点</text>
+  <rect x="290" y="554" width="12" height="12" rx="2" fill="rgba(232,93,63,0.12)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="566" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">多数派交叠节点 (|S_W ∩ S_R| ≥ 1)</text>
 </svg>

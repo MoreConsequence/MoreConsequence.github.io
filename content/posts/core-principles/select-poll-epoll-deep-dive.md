@@ -183,10 +183,6 @@ Linux 上还要区分 kernel 与 libc：内核系统调用可以根据 `nfds` �
 
 需要接受的边界也很清楚：1024 的 libc 位图限制、value-result 参数、按 fd 范围扫描，以及多线程 close 行为的可移植性问题。
 
-
-
-![多路复用复杂度与吞吐悬崖对照：O(N) 线性衰减 vs epoll O(1) 绝对水平线](../../../public/images/select-poll-epoll-complexity-benchmark.svg)
-
 ## 四、`poll`：去掉位图和最大 fd 限制，却没有去掉每轮 `N` 项
 
 `poll` 把 interest 改成数组：

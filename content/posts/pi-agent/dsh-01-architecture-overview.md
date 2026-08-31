@@ -210,10 +210,6 @@ dsh --profile web --dump-config
 
 ---
 
-
-
-![DSH 内核子系统互联矩阵：Session, Router, Executor 与 Sandbox 交互边界](../../../public/images/dsh-kernel-subsystem-interconnect-matrix.svg)
-
 ## 四、核心模块全景：Context 挂载关键服务一览
 
 在 `dsh` 启动完成后，挂载在根 `Context` 上的核心服务全景如下表所示：

@@ -36,9 +36,7 @@ series: "Agent 的方方面面"
 2. **05 篇四工具极简主义**：没有臃肿的专用检索和状态查询工具，避免模型每轮调用产生大量冗余的 schema 与中间返回值；
 3. **03 篇 Compaction 严格闸门**：`16384 reserve / 20000 keep` 确定性压缩，防止无效历史轮次在上下文中无限滚雪球。
 
-
-
-![Agent 经济学与成本 ROI 预算分配模型：模型选型梯度 (Small -> Medium -> Large) 与任务路由](../../../public/images/agent-token-cost-roi-budget-allocation.svg)
+---
 
 ## 二、工业级实证：Shopify 生产环境的大规模提效
 

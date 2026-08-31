@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-raft-state-machine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="raft-fsm-title raft-fsm-desc">
+  <title id="raft-fsm-title">Raft 节点角色状态机转换与选举时序全景</title>
+  <desc id="raft-fsm-desc">状态机图展示 Follower、Candidate 与 Leader 三种角色的流转条件、Term 任期单调递增约束与多数派胜选跃迁机理。</desc>
+  <defs>
+    <marker id="raft-fsm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="raft-fsm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">RAFT CONSENSUS · THREE-STATE FINITE STATE MACHINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Raft 节点角色状态机转换与选举时序全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Follower 超时进入 Candidate 竞选，赢得多数派赞成票晋升为 Leader；发现更高 Term 无条件回退 Follower</text>
+
+  <!-- State 1: Follower (x=60, y=220, w=240, h=220) -->
+  <g transform="translate(60, 220)">
+    <rect width="240" height="220" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 1</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Follower (跟随者)</text>
+
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">运行机制与职责</text>
+    <text x="24" y="86" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">被动响应 Leader 心跳与日志追加</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">响应 Candidate 的 RequestVote 拉票</text>
+
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">选举定时器 (Timer)</text>
+    <text x="24" y="156" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Timeout: 150ms ~ 300ms (随机熵)</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">心跳到达即重置定时器</text>
+    <text x="24" y="192" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">超时未收到心跳 ➔ 触发竞选</text>
+  </g>
+
+  <!-- State 2: Candidate (x=360, y=140, w=240, h=220) - Focal State -->
+  <g transform="translate(360, 140)">
+    <rect width="240" height="220" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 2</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Candidate (候选人)</text>
+
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">竞选初始化动作</text>
+    <text x="24" y="86" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Term = Term + 1 (自增物理任期)</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">为自己投一票，向集群广播拉票</text>
+
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">胜选与流转条件</text>
+    <text x="24" y="156" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">票数 ≥ ⌊N/2⌋ + 1 ➔ 晋升 Leader</text>
+    <text x="24" y="174" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">收到合法 Leader 心跳 ➔ 降级</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">再次选举超时 ➔ 自增 Term 重选</text>
+  </g>
+
+  <!-- State 3: Leader (x=660, y=220, w=240, h=220) -->
+  <g transform="translate(660, 220)">
+    <rect width="240" height="220" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 3</text>
+    <text x="100" y="28" fill="#141413" font-size="13" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Leader (领导者)</text>
+
+    <rect x="14" y="46" width="212" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">领袖统治与权威维持</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">周期性广播空 AppendEntries 心跳</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Heartbeat: 20ms ~ 50ms 压制从节点</text>
+
+    <rect x="14" y="118" width="212" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="138" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">写请求与退位判定</text>
+    <text x="24" y="156" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">接收客户端写命令 ➔ 日志单向追加</text>
+    <text x="24" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">收到任何更大 Term ➔ 立即退位</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无条件将自己降级为 Follower</text>
+  </g>
+
+  <!-- Connectors -->
+  <!-- Follower -> Candidate (Up & Right) -->
+  <text x="270" y="162" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">选举超时 ➔ 自增 Term</text>
+  <path d="M 180,220 V 180 Q 180,170 190,170 H 360" fill="none" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+
+  <!-- Candidate -> Leader (Right & Down) -->
+  <text x="685" y="172" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">赢得多数派选票 ➔ 胜选</text>
+  <path d="M 600,180 H 770 Q 780,180 780,190 V 220" fill="none" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+
+  <!-- Candidate -> Follower (Down & Left) -->
+  <text x="350" y="382" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">收到合法 Leader</text>
+  <path d="M 400,360 V 380 Q 400,390 390,390 H 300" fill="none" stroke="#6b6a64" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#raft-fsm-arr)"/>
+
+  <!-- Leader -> Follower (Bottom Return) -->
+  <text x="480" y="482" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">发现更高 Term ➔ 立即退位</text>
+  <path d="M 780,440 V 480 Q 780,490 770,490 H 190 Q 180,490 180,480 V 440" fill="none" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#raft-fsm-arr)"/>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="540" x2="920" y2="540" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="568" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="556" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">稳定角色状态</text>
+  <rect x="270" y="556" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="290" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">竞选跃迁核心角色</text>
+  <line x1="470" y1="562" x2="494" y2="562" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#raft-fsm-arr-accent)"/>
+  <text x="502" y="568" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">正向胜选升级流</text>
+</svg>
+</main>
+</body>
+</html>

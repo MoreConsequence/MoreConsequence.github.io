@@ -63,13 +63,8 @@ Server 是轻量级的独立程序或微服务，专注暴露特定领域的外�
 MCP 在传输层设计上保持了高度灵活性，规范定义了两种主要的通信通道：
 
 ### 3.1 通道 1：Stdio 进程间通信（Local IPC）
-Host 直接通过操作系统 API（如 Node.js `child_process.spawn` 或 Go `os/exec`）启动 MCP Server 二进制程序，双方通过进程的标准输入输出进行全双工通信：
 
-```
-Client ──► [Server Stdin (fd 0)] ──► JSON-RPC 请求
-Client ◄── [Server Stdout (fd 1)] ◄── JSON-RPC 响应
-           [Server Stderr (fd 2)] ──► 仅用于调试日志（不走协议帧）
-```
+Host 直接通过操作系统 API（如 Node.js `child_process.spawn` 或 Go `os/exec`）启动 MCP Server 二进制程序，双方通过进程的标准输入输出进行全双工通信。
 
 #### Stdio 的工程优势与约束：
 - **微秒级低延迟**：直接通过内核管道（Pipe Buffer）传递数据，零 TCP/IP 网络协议栈开销；
@@ -82,12 +77,6 @@ Client ◄── [Server Stdout (fd 1)] ◄── JSON-RPC 响应
 - **服务端 $\to$ 客户端**：通过长连接 HTTP `GET /sse`（`text/event-stream`）推送异步响应帧与通知。
 
 ---
-
-![MCP JSON-RPC 2.0 握手与能力发现生命周期时序](../../../public/images/mcp-protocol-primitives-lifecycle.svg)
-
----
-
-
 
 ![MCP 多传输层协议网关与零信任安全沙箱架构](../../../public/images/mcp-multi-transport-sse-stdio-proxy-security.svg)
 
@@ -174,19 +163,7 @@ MCP 协议将大模型与外部交互的操作收敛为四大第一等原语（F
 
 MCP 严禁客户端在未协商能力的情况下盲目发送指令。每次连接建立必须经历标准的三步握手状态机：
 
-```
-Client                                                   Server
-  │                                                         │
-  │─────── 1. req: initialize (capabilities, clientInfo) ──►│
-  │                                                         │
-  │◄────── 2. res: { protocolVersion, capabilities } ───────│
-  │                                                         │
-  │─────── 3. notif: notifications/initialized ────────────►│
-  │                                                         │
-  │  ================ 握手完成，进入就绪状态 ================  │
-  │                                                         │
-  │─────── 4. req: tools/list 或 resources/read ───────────►│
-```
+![Model Context Protocol (MCP) 标准 JSON-RPC 握手与能力协商时序图](../../../public/images/llm-mcp-handshake-protocol-sequence.svg)
 
 1. **Step 1 (`initialize`)**：Client 告知 Server 自己的协议版本与支持的客户端能力（例如是否支持 roots 变更通知）；
 2. **Step 2 (Response)**：Server 返回自身协议版本与支持的服务端原语集合（`tools`、`resources`、`prompts`、`logging`）；

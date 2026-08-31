@@ -1,107 +1,122 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sf-title sf-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="sf-title">投机采样（Speculative Decoding）推理全景：草稿推测与目标并行验证</title>
+  <desc id="sf-desc">数据流全景图展示投机采样中小草稿模型极速自回归推测 K 个词、大目标模型单次前向并行矩阵验证以及接受-拒绝采样实现 2.5x~3.8x 无损加速的全流程。</desc>
+  <defs>
+    <marker id="sf-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="sf-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">投机采样（Speculative Decoding）推理全景：草稿推测与大模型并行验证</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">小模型（Draft Model 1B）极速自回归推测 K 个候选词 ──► 大模型（Target Model 70B）单次前向并行矩阵乘法校验</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SPECULATIVE DECODING PIPELINE · DRAFT SPECULATION &amp; TARGET VERIFICATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">投机采样 (Speculative Decoding) 推理全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">小草稿模型 (1B/推测 K=4 词) ➔ 大目标模型 (70B/单次前向并行验证全部概率) ➔ 接受-拒绝判定 ➔ 2.5x~3.8x 无损加速</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Draft Phase (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1 · DRAFT</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">草稿模型推测</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">LLaMA-3 1B (草稿模型)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 权重仅 2GB，显存搬运极快 (5ms)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 快速自回归生成 K=4 个候选 Tokens</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 输出分布: x1, x2, x3, x4 ~ q(x)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Fast Speculative Probing</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">机制特征：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 算力开销极小，毫秒级产出一组猜测；</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 不要求草稿模型 100% 准确；</text>
+    <text x="24" y="244" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 哪怕猜错后续也会被大模型瞬间修正。</text>
+    <line x1="24" y1="258" x2="246" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Low-Cost Forward Guessing</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Lightweight Draft Generation</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Verify</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sf-arr-accent)"/>
 
-    <!-- Step 1: Draft Speculation (Top Row) -->
-    <g transform="translate(20, 20)">
-      <rect width="860" height="95" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="860" height="28" rx="6" fill="#dbeafe"/>
-      <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">步骤一：小草稿模型快速自回归推测 (Small Draft Model, e.g. LLaMA-1B)</text>
+  <!-- Col 2: Target Verification (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · VERIFY</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">大模型单次并行验证</text>
 
-      <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <text x="0" y="16" fill="#1e40af">草稿模型体积小（显存搬运极快），连续生成 $K=4$ 个候选词：</text>
-        <g transform="translate(380, 0)" font-family="ui-monospace, monospace" font-size="11">
-          <rect x="0" y="0" width="70" height="24" rx="3" fill="#ffffff" stroke="#3b82f6"/>
-          <text x="35" y="16" fill="#1d4ed8" text-anchor="middle">"The"</text>
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">LLaMA-3 70B (单次前向)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 打包 Prompt + 4 个候选词</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 仅做 1 次前向计算！搬运 70GB 权重 1 次</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 并行输出 4 个位置真实分布 p(x)</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Single Forward Parallel Matrix Verify</text>
 
-          <rect x="78" y="0" width="80" height="24" rx="3" fill="#ffffff" stroke="#3b82f6"/>
-          <text x="118" y="16" fill="#1d4ed8" text-anchor="middle">"capital"</text>
-
-          <rect x="166" y="0" width="70" height="24" rx="3" fill="#ffffff" stroke="#3b82f6"/>
-          <text x="201" y="16" fill="#1d4ed8" text-anchor="middle">"of"</text>
-
-          <rect x="244" y="0" width="80" height="24" rx="3" fill="#ffffff" stroke="#3b82f6"/>
-          <text x="284" y="16" fill="#1d4ed8" text-anchor="middle">"France"</text>
-        </g>
-        <text x="0" y="44" font-size="9.5" fill="#2563eb">物理耗时极低：总共只需约 5ms 即可产出 4 个候选 Tokens</text>
-      </g>
-    </g>
-
-    <!-- Step 2: Target Parallel Verification (Middle Row) -->
-    <g transform="translate(20, 125)">
-      <rect width="860" height="125" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="860" height="28" rx="6" fill="#dcfce7"/>
-      <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534">步骤二：大目标模型单次前向并行矩阵校验 (Target Model, e.g. LLaMA-70B)</text>
-
-      <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <text x="0" y="16" fill="#14532d">大模型无需分 4 轮加载 70GB 权重，而是<tspan font-weight="700" fill="#047857">仅做 1 次 Forward</tspan> 同步并行计算 4 个词的概率分布：</text>
-
-        <!-- Verification Slots -->
-        <g transform="translate(0, 26)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <!-- Token 1 -->
-          <rect x="0" y="0" width="180" height="34" rx="4" fill="#ffffff" stroke="#10b981"/>
-          <text x="10" y="16" font-weight="700" fill="#065f46">Token 1: "The"</text>
-          <text x="10" y="28" font-size="9.5" fill="#10b981">✓ 概率通过 (Accept)</text>
-
-          <!-- Token 2 -->
-          <rect x="190" y="0" width="180" height="34" rx="4" fill="#ffffff" stroke="#10b981"/>
-          <text x="10" y="16" font-weight="700" fill="#065f46">Token 2: "capital"</text>
-          <text x="10" y="28" font-size="9.5" fill="#10b981">✓ 概率通过 (Accept)</text>
-
-          <!-- Token 3 -->
-          <rect x="380" y="0" width="180" height="34" rx="4" fill="#ffffff" stroke="#10b981"/>
-          <text x="10" y="16" font-weight="700" fill="#065f46">Token 3: "of"</text>
-          <text x="10" y="28" font-size="9.5" fill="#10b981">✓ 概率通过 (Accept)</text>
-
-          <!-- Token 4 -->
-          <rect x="570" y="0" width="240" height="34" rx="4" fill="#fee2e2" stroke="#f87171"/>
-          <text x="10" y="16" font-weight="700" fill="#991b1b">Token 4: "France"</text>
-          <text x="10" y="28" font-size="9.5" fill="#dc2626">✗ 拒绝并由大模型重采样纠正</text>
-        </g>
-
-        <text x="0" y="76" font-size="9.5" font-weight="700" fill="#047857">🎯 本次单轮 Forward 产出：成功接收 3 个词 + 大模型纠正 1 个词 = 单次生成 4 个 Tokens！（速度暴涨 2.8 倍）</text>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">加速本质：</tspan> 将大模型原本受限于显存带宽的低效串行生成，转换为 <tspan font-weight="700" fill="#2563eb">“算力密集型的并行验证”</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#10b981" font-weight="700" text-anchor="middle">
-        接受-拒绝采样在数学上严格保证了输出概率分布与大模型原生推理 100% 无损等价！
-      </text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">显存带宽终极破局：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 彻底免除 4 次串行搬运 70GB 权重的浪费；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 借助因果掩码实现一次性并行打分；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 将算术强度瞬间提升 4 倍！</text>
+    <line x1="24" y1="258" x2="266" y2="258" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">4x Arithmetic Intensity Boost</text>
+    <text x="24" y="296" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用并行矩阵计算换取显存总线吞吐</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Sample</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sf-arr-accent)"/>
+
+  <!-- Col 3: Accept / Reject (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 3 · DECIDE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">接受判定与加速</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">P(accept) = min(1, p/q)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 接受分支: 连续采纳命中词 (如 3 个)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 拒绝分支: 从残差分布 p'(x) 重采样</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 1 次 Forward 产出 3~4 个 Tokens！</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">2.5x~3.8x End-to-End Speedup</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">数学无损保证：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 最终输出分布严格等价于 70B 原生采样；</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 智力水平与生成质量 0 衰减；</text>
+    <text x="24" y="244" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 代码/JSON 场景推理吞吐暴增！</text>
+    <line x1="24" y1="258" x2="236" y2="258" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">100% Exact Mathematical Equivalence</text>
+    <text x="24" y="296" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">现代推理引擎核心加速黑科技</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">1B 草稿模型快速自回归推测</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">70B 大模型单次前向并行矩阵验证与 2.5x~3.8x 无损加速核心</text>
 </svg>

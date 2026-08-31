@@ -136,10 +136,6 @@ void tune_speedtest_socket(int sock_fd) {
 }
 ```
 
-
-
-![网卡中断亲和性与 CPU 绑核 (CPU Pinning)：NUMA 跨节点内存访问陷阱](../../../public/images/cpu-pinning-numa-irq-affinity.svg)
-
 ## 四、网卡中断亲和性与 CPU 绑核（CPU Pinning）
 
 在万兆甚至十万兆（25G/100G）网卡上，单纯优化代码仍然不够，必须解决硬件中断与跨 NUMA 内存访问的损耗：

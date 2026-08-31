@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>replication-lag-channel-gtid-watermark</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="gw-title gw-desc">
+  <title id="gw-title">主从复制延迟水位线：Binlog Dump 线程与 GTID 执行进度比对</title>
+  <desc id="gw-desc">进度模型图展示 GTID 全局事务序列在主库提交、从库 Retrieved 拉取与 Executed 重放三个水位线上的差集与真实延迟度量逻辑。</desc>
+  <defs>
+    <marker id="gw-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="gw-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GTID WATERMARK &amp; LAG METRICS · RETRIEVED VS EXECUTED</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">GTID 水位线差集与精准复制延迟度量</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Master (GTID 1..100) ➔ Retrieved (1..90) ➔ Executed (1..75) ➔ 差集定义真实的排队重放债务</text>
+
+  <!-- Top: 1D GTID Continuum & Watermarks (y=136..240, h=104) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="104" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="130" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="79" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GTID WATERMARK LINE</text>
+    <text x="154" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全局事务 GTID 三阶段水位线分布 (Sequence: 1 .. 100)</text>
+
+    <!-- Visual Strip (y=34..90) -->
+    <g transform="translate(14, 34)">
+      <!-- Zone 1: Executed (w=480) -->
+      <rect x="0" y="0" width="480" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="240" y="22" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Executed_Gtid_Set: 1 .. 75</text>
+      <text x="240" y="38" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">✓ 从库已物理重放完成 (完全可见)</text>
+      <text x="240" y="49" fill="#6b6a64" font-size="6.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">SQL Applier Workers 已写入引擎</text>
+
+      <!-- Boundary 1: Executed Watermark -->
+      <line x1="480" y1="0" x2="480" y2="56" stroke="#e85d3f" stroke-width="2"/>
+
+      <!-- Zone 2: Retrieved Debt (w=220) - Focal -->
+      <rect x="488" y="0" width="220" height="56" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="598" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Relay Debt: 76 .. 90</text>
+      <text x="598" y="38" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">已拉入 Relay Log，排队等待重放</text>
+      <text x="598" y="49" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">重放积压: 15 个事务</text>
+
+      <!-- Boundary 2: Retrieved Watermark -->
+      <line x1="716" y1="0" x2="716" y2="56" stroke="#e85d3f" stroke-width="2"/>
+
+      <!-- Zone 3: In-Flight Network (w=128) -->
+      <rect x="724" y="0" width="128" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="788" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">In-Flight: 91..100</text>
+      <text x="788" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">网络在途中 (10 Tx)</text>
+      <text x="788" y="49" fill="#6b6a64" font-size="6.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">Dump 传输中</text>
+    </g>
+  </g>
+
+  <!-- Bottom: 3 Metric Categories (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Col 1: Network Lag (w=270) -->
+    <g transform="translate(0, 0)">
+      <rect width="270" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">METRIC 1</text>
+      <text x="96" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">网络传输积压</text>
+
+      <rect x="10" y="36" width="250" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Master_GTID - Retrieved_GTID</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">积压事务集合: [91 .. 100]</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">网络与 Dump 缓冲区滞留</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">排查手段：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 检查跨机房网络丢包率与 RTT；</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 检查主库 binlog_dump 线程发送瓶颈；</text>
+      <line x1="10" y1="178" x2="260" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Network Transmission In-Flight</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">IO Thread Ingestion Rate</text>
+    </g>
+
+    <!-- Col 2: Replay Debt (w=290) - Focal -->
+    <g transform="translate(290, 0)">
+      <rect width="290" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="110" height="16" rx="2" fill="#e85d3f"/>
+      <text x="65" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">METRIC 2 · CORE</text>
+      <text x="126" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="700">SQL 重放排队债务</text>
+
+      <rect x="10" y="36" width="270" height="74" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+      <text x="18" y="56" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Retrieved_GTID - Executed_GTID</text>
+      <text x="18" y="74" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">积压事务集合: [76 .. 90] (15 个)</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">精确度量从库落后的物理真相！</text>
+
+      <text x="10" y="130" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">比 Seconds_Behind 优越千万倍：</text>
+      <text x="10" y="148" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 彻底消灭时钟漂移与大事务空闲误报；</text>
+      <text x="10" y="166" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">• 每一个排队未执行事务均精准可查！</text>
+      <line x1="10" y1="178" x2="280" y2="178" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700">Precise Transaction-Level Lag Debt</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Eliminate Clock Skew Artifacts</text>
+    </g>
+
+    <!-- Col 3: Total Lag (w=260) -->
+    <g transform="translate(600, 0)">
+      <rect width="260" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="80" height="16" rx="2" fill="#141413"/>
+      <text x="50" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">METRIC 3</text>
+      <text x="96" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">总可见性滞后</text>
+
+      <rect x="10" y="36" width="240" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Master_GTID - Executed_GTID</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">全链路滞后: [76 .. 100] (25 个)</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">从库读写分离可见性差值</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Failover 切换仲裁线：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 主库宕机时以此差集计算数据丢失；</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• AUTO_POSITION 自动无缝补齐！</text>
+      <line x1="10" y1="178" x2="250" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Failover Loss Assessment</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Auto-Position Re-anchor</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Executed 已完成与网络在途</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Retrieved - Executed 差集与排队重放债务核心</text>
+</svg>
+</main>
+</body>
+</html>

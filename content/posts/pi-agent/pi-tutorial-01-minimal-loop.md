@@ -42,9 +42,7 @@ flowchart LR
 
 Agent 的稳定性、成本和通过率，**80% 取决于 Harness 的工程质量，而非仅仅依赖模型尺寸**。
 
-
-
-![Pi 极简 ReAct 循环状态机：User Prompt -> LLM Reason -> Tool Execute -> Observation](../../../public/images/pi-tutorial-minimal-react-loop-state-machine.svg)
+---
 
 ## 二、从零开始：50 行实现最简 Agent Loop
 

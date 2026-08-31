@@ -1,181 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="bt-lsm-title bt-lsm-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="bt-lsm-title">B+ 树 vs LSM-Tree 存储底层 I/O 放大与读写权衡全景对比</title>
+  <desc id="bt-lsm-desc">对比图展示 B+Tree 原地更新与低读放大架构 vs LSM-Tree 内存追加与 Compaction 后台重写在写放大、读放大与空间放大上的物理权衡。</desc>
+  <defs>
+    <marker id="bl-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="bl-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">B+ 树 vs LSM-Tree 存储底层拓扑与读写放大物理权衡</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">B+ 树页分层索引（读放大仅 1~3，写放大 50x~100x） vs LSM-Tree 多层 Compaction（写放大仅 10x，读需布隆过滤器加速）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">STORAGE ENGINE TRADEOFF · BTREE VS LSM-TREE IO AMPLIFICATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">B+ 树 vs LSM-Tree 存储底层 I/O 放大权衡</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">B+Tree (页内就地更新、稳定点查、高写放大) vs LSM-Tree (内存顺序追加、后台 Compaction 重写、依赖 Bloom 过滤器)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: B+Tree (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="64" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">B+TREE ENGINE</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">B+ 树架构 (InnoDB / PostgreSQL)</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">原地页更新 (In-Place Update)</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">16KB 物理页 ➔ 修改 1 行需写回整页 (脏页落盘)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">页满载触发中点分裂 ➔ 空间碎片膨胀 43.5%</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">三维放大指标表征</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 写放大 (WA): 10x ~ 30x (较高，随机脏页刷新)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 读放大 (RA): ~1x (极低，B+Tree 树高 3 层稳定点查)</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 空间放大 (SA): ~1.4x (叶填充率 ~70%)</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">优势: 点查延迟极低、成熟事务与二级索引</text>
+
+    <!-- Suitable Scenarios -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">推荐核心场景</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">传统 OLTP 在线事务、复杂多条件 SQL、强约束外键、对读尾延迟要求极严苛的业务。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Standard Relational OLTP Workload</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Predictable P99 Read Latency</text>
   </g>
 
-  <!-- Main Comparison Panes (435px each) -->
-  <g transform="translate(30, 70)">
-    <!-- Left Pane: B+ Tree Structure (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">🌳 B+ 树：固定 16KB 页原地更新模型</text>
+  <!-- Col 2: LSM-Tree (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">LSM-TREE ENGINE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">LSM 树架构 (RocksDB / TiKV)</text>
 
-      <!-- B+ Tree Visual Nodes -->
-      <g transform="translate(20, 50)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <!-- Root Page (16KB) -->
-        <g transform="translate(130, 0)">
-          <rect width="135" height="34" rx="4" fill="#2563eb"/>
-          <text x="67" y="16" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">Root Page (16KB)</text>
-          <text x="67" y="28" font-size="7.5" fill="#dbeafe" text-anchor="middle">[Key: 100 | Key: 500]</text>
-        </g>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">内存跳表追加 + 后台 Compaction 重写</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">WAL 顺序追加 ➔ MemTable ➔ L0 SST 批量刷盘</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">将随机写全部转化为纯顺序 I/O，极大延长 SSD 寿命！</text>
 
-        <!-- Pointers Down -->
-        <path d="M 160 34 L 75 60" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
-        <path d="M 235 34 L 320 60" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">三维放大指标表征</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 写放大 (WA): 2x ~ 8x (极低，全顺序批量追加)</text>
+    <text x="24" y="186" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 读放大 (RA): 5x ~ 30x (较高，跨多层 SST 探测)</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 空间放大 (SA): 1.1x ~ 1.3x (优秀，压缩比极高)</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">Bloom Filter: 10 bits/key 将读探测降至 0.04 次！</text>
 
-        <!-- Internal Pages Layer -->
-        <g transform="translate(15, 60)">
-          <rect width="125" height="32" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-          <text x="62" y="15" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">Internal Node A</text>
-          <text x="62" y="26" font-size="7.5" fill="#2563eb" text-anchor="middle">[10, 30, 70]</text>
-        </g>
-
-        <g transform="translate(255, 60)">
-          <rect width="125" height="32" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-          <text x="62" y="15" font-size="8.5" font-weight="700" fill="#1e40af" text-anchor="middle">Internal Node B</text>
-          <text x="62" y="26" font-size="7.5" fill="#2563eb" text-anchor="middle">[600, 800, 950]</text>
-        </g>
-
-        <!-- Pointers to Leaves -->
-        <path d="M 60 92 L 35 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
-        <path d="M 95 92 L 125 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
-        <path d="M 300 92 L 270 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
-        <path d="M 335 92 L 360 115" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arrow-blue)"/>
-
-        <!-- Leaf Pages Doubly Linked Chain -->
-        <g transform="translate(0, 115)">
-          <rect width="85" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
-          <text x="42" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 1 (16KB)</text>
-          <text x="42" y="26" font-size="7" fill="#15803d" text-anchor="middle">[1..99 数据行]</text>
-
-          <line x1="85" y1="17" x2="100" y2="17" stroke="#10b981" stroke-width="1.5"/>
-
-          <g transform="translate(100, 0)">
-            <rect width="85" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
-            <text x="42" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 2 (16KB)</text>
-            <text x="42" y="26" font-size="7" fill="#15803d" text-anchor="middle">[100..499 数据行]</text>
-          </g>
-
-          <line x1="185" y1="17" x2="200" y2="17" stroke="#10b981" stroke-width="1.5"/>
-
-          <g transform="translate(200, 0)">
-            <rect width="90" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
-            <text x="45" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 3 (16KB)</text>
-            <text x="45" y="26" font-size="7" fill="#15803d" text-anchor="middle">[500..799 数据行]</text>
-          </g>
-
-          <line x1="290" y1="17" x2="305" y2="17" stroke="#10b981" stroke-width="1.5"/>
-
-          <g transform="translate(305, 0)">
-            <rect width="90" height="34" rx="3" fill="#f0fdf4" stroke="#86efac"/>
-            <text x="45" y="15" font-size="8" font-weight="700" fill="#166534" text-anchor="middle">Leaf 4 (16KB)</text>
-            <text x="45" y="26" font-size="7" fill="#15803d" text-anchor="middle">[800..1000 数据行]</text>
-          </g>
-        </g>
-
-        <!-- Evaluation Cards -->
-        <g transform="translate(0, 165)">
-          <rect width="395" height="50" rx="4" fill="#fee2e2" stroke="#f87171"/>
-          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#991b1b">❌ 致命写放大（WA = 50~100）：</text>
-          <text x="10" y="32" font-size="8.5" fill="#7f1d1d">• 修改 1 条 100B 数据 ──► 必须刷写整张 16KB 脏页！</text>
-          <text x="10" y="44" font-size="8.5" fill="#dc2626">• 随机写入触发频繁页分裂（Page Split）重构父节点</text>
-
-          <rect y="56" width="395" height="50" rx="4" fill="#dcfce7" stroke="#86efac"/>
-          <text x="10" y="18" font-size="9.5" font-weight="700" fill="#166534">✓ 极致读性能（RA = 1~3）：</text>
-          <text x="10" y="32" font-size="8.5" fill="#14532d">• 点查仅需 1~3 次内存/磁盘 I/O 直达叶子页，时延极低且稳定</text>
-          <text x="10" y="44" font-size="8.5" font-weight="700" fill="#15803d">• 经典代表：MySQL InnoDB / PostgreSQL / Oracle</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Right Pane: LSM-Tree Structure (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">⚡ LSM-Tree：分层追加与 Compaction 模型</text>
-
-      <!-- LSM Visual Pyramid -->
-      <g transform="translate(20, 50)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <!-- Top: MemTable & WAL -->
-        <g>
-          <rect width="180" height="34" rx="4" fill="#10b981"/>
-          <text x="90" y="16" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">MemTable (内存跳表)</text>
-          <text x="90" y="28" font-size="7.5" fill="#d1fae5" text-anchor="middle">读写都在内存，0 随机 I/O</text>
-
-          <rect x="200" width="195" height="34" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="297" y="16" font-size="9" font-weight="700" fill="#1e40af" text-anchor="middle">WAL (顺序写日志)</text>
-          <text x="297" y="28" font-size="7.5" fill="#2563eb" text-anchor="middle">顺序追加，跑满 SSD 线速</text>
-        </g>
-
-        <!-- Flush Arrow -->
-        <path d="M 90 34 L 90 55" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-emerald)"/>
-        <text x="100" y="48" font-size="8" fill="#166534">Flush 落盘</text>
-
-        <!-- L0 SSTables (Overlapping) -->
-        <g transform="translate(0, 55)">
-          <rect width="395" height="30" rx="4" fill="#fef3c7" stroke="#fcd34d"/>
-          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#92400e">Level 0 SSTables (Key 范围重叠)</text>
-          <text x="385" y="18" font-size="7.5" fill="#b45309" text-anchor="end">[SST 1] [SST 2] [SST 3] [SST 4]</text>
-        </g>
-
-        <!-- Compaction Arrow -->
-        <path d="M 197 85 L 197 105" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
-        <text x="205" y="98" font-size="8" fill="#ea580c">Leveled Compaction 归并</text>
-
-        <!-- L1 SSTables (Non-overlapping) -->
-        <g transform="translate(0, 105)">
-          <rect width="395" height="30" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-          <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">Level 1 (10MB, Key 无重叠)</text>
-          <text x="385" y="18" font-size="7.5" fill="#15803d" text-anchor="end">[1..100] [101..200] [201..300]</text>
-        </g>
-
-        <!-- Compaction Arrow 2 -->
-        <path d="M 197 135 L 197 150" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-
-        <!-- L2 SSTables (100MB) -->
-        <g transform="translate(0, 150)">
-          <rect width="395" height="28" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
-          <text x="10" y="17" font-size="8" font-weight="700" fill="#065f46">Level 2 (100MB) ──► Level 3 (1GB) 逐层倍增</text>
-        </g>
-
-        <!-- Evaluation Cards -->
-        <g transform="translate(0, 190)">
-          <rect width="395" height="42" rx="4" fill="#d1fae5" stroke="#86efac"/>
-          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#065f46">✓ 极低写放大与超强写入吞吐（WA = 10~20）：</text>
-          <text x="10" y="30" font-size="8.5" fill="#047857">• 纯追加写入消除随机 IO，写入性能较 B+ 树暴增 10x！</text>
-
-          <rect y="46" width="395" height="46" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-          <text x="10" y="16" font-size="9.5" font-weight="700" fill="#9a3412">读放大缓解：布隆过滤器 (Bloom Filter)</text>
-          <text x="10" y="30" font-size="8.5" fill="#c2410c">• 过滤 99% 不存在 key 的探测，点查接近 O(1)</text>
-          <text x="10" y="42" font-size="8" font-weight="700" fill="#ea580c">• 经典代表：RocksDB / TiKV / Cassandra / ClickHouse</text>
-        </g>
-      </g>
-    </g>
+    <!-- Suitable Scenarios -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">推荐核心场景</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高吞吐海量写入、日志/时序存储 (ClickHouse/Prometheus)、分布式 KV 存储 (TiKV/HBase)。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">10x+ Write QPS Throughput Over B+Tree</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Optimal Sequential SSD Endurance</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">B+Tree 原地更新与点查</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">LSM-Tree 顺序追加与 Compaction 重写核心</text>
 </svg>

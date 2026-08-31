@@ -1,101 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="oc-title oc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="oc-title">On-CPU 采样与 Off-CPU 调度器跟踪模型</title>
+  <desc id="oc-desc">性能诊断架构图展示 On-CPU 定时采样的盲区、eBPF 调度器切换事件跟踪机制、Off-CPU 阻塞耗时火焰图聚合，以及全维度性能排查闭环。</desc>
+  <defs>
+    <marker id="oc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="oc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Off-CPU 阻塞耗时度量机理：On-CPU 盲区与 eBPF 记账时序</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">为什么 CPU 利用率仅 15% 但 P99 延迟高达数秒？—— 捕获线程被换下 CPU 时的锁、I/O 与调度等待</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CPU TIME VS OFF-CPU WAIT · ON-CPU PROFILING &amp; SCHEDULER TRACING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">On-CPU 采样与 Off-CPU 调度器跟踪</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">On-CPU 盲区 ➔ 调度器上下文切换 eBPF 捕获 ➔ 阻塞时长聚合 ➔ 锁与 I/O 根因定位</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Blindspot (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">BLINDSPOT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">On-CPU 采样盲区</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Low CPU, High P99</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• CPU 利用率仅 20%，延迟高达数秒</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 进程在睡眠等待，On-CPU 采出一片空白</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Sleeping State Invisibility</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">盲区根因：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 定时中断只能抓到正在运行的线程；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 无法记录等锁、等磁盘、等网络耗时；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 必须切换至调度器事件跟踪。</text>
   </g>
 
-  <!-- Main Timeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: Sched Tracing (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SCHED TRACE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">调度器切换跟踪</text>
 
-    <!-- Section 1: Thread Execution Timeline Stream -->
-    <g transform="translate(20, 20)">
-      <text x="0" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" fill="#0f172a">1. 线程真实生命周期状态流（采样窗口时间线）</text>
-      <text x="860" y="14" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#64748b" text-anchor="end">时间流逝 t ──►</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">eBPF finish_task_switch</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 线程换下 CPU 时记录入睡时刻与栈</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 换回 CPU 时结算阻塞时长 Delta t</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Kernel Scheduler Hook</text>
 
-      <!-- Timeline Blocks -->
-      <g transform="translate(0, 26)">
-        <!-- Running 1 -->
-        <rect x="0" y="0" width="120" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
-        <text x="60" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU (12%)</text>
-        <text x="60" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">CPU 计算执行</text>
-
-        <!-- Blocked Lock -->
-        <rect x="126" y="0" width="190" height="36" rx="5" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
-        <text x="221" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">Off-CPU: 等锁 (35%)</text>
-        <text x="221" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#7f1d1d" text-anchor="middle">futex_wait / mutex</text>
-
-        <!-- Running 2 -->
-        <rect x="322" y="0" width="100" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
-        <text x="372" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU (8%)</text>
-        <text x="372" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">业务逻辑</text>
-
-        <!-- Blocked Disk -->
-        <rect x="428" y="0" width="170" height="36" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
-        <text x="513" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">Off-CPU: 等磁盘 (25%)</text>
-        <text x="513" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#9a3412" text-anchor="middle">fsync / ext4_write</text>
-
-        <!-- Running 3 -->
-        <rect x="604" y="0" width="90" height="36" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
-        <text x="649" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#047857" text-anchor="middle">On-CPU</text>
-        <text x="649" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#065f46" text-anchor="middle">封包解析</text>
-
-        <!-- Blocked Net -->
-        <rect x="700" y="0" width="160" height="36" rx="5" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
-        <text x="780" y="18" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1d4ed8" text-anchor="middle">Off-CPU: 等网络 (20%)</text>
-        <text x="780" y="30" font-family="ui-monospace, monospace" font-size="9.5" fill="#1e40af" text-anchor="middle">epoll_wait / socket recv</text>
-      </g>
-    </g>
-
-    <!-- Section 2: Two Sampling Observability Perspectives -->
-    <g transform="translate(20, 110)">
-      <!-- Left Box: Standard Perf Sampling -->
-      <rect x="0" y="0" width="420" height="100" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <text x="14" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">视角 A：传统 Linux Perf (99Hz 定时采样)</text>
-      <text x="14" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 仅在时钟中断到来时，抓取正在 CPU 上执行的代码调用栈</text>
-      <text x="14" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#475569">• 缺点：线程等锁、等磁盘时被操作系统移出运行队列，采样器</text>
-      <text x="14" y="82" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#dc2626">  👉 采样命中率为 0！在 On-CPU 火焰图上留下大片无法解释的空白</text>
-
-      <!-- Right Box: eBPF offcputime -->
-      <rect x="440" y="0" width="420" height="100" rx="6" fill="#f0fdf4" stroke="#86efac"/>
-      <text x="454" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534">视角 B：bcc / bpftrace `offcputime` (内核调度器探针)</text>
-      <text x="454" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#166534">• 挂载在 Linux 内核调度函数 `finish_task_switch()` 执行点</text>
-      <text x="454" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#166534">• 线程换下 CPU 时记录当前时间戳与用户态/内核态栈；</text>
-      <text x="454" y="82" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#15803d">  👉 重新唤醒换回 CPU 时结算 `Δt = t_wake - t_sleep`，按调用栈聚合并绘制</text>
-    </g>
-
-    <!-- Section 3: Diagnostic Decision Bar -->
-    <g transform="translate(20, 225)">
-      <rect x="0" y="0" width="860" height="85" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      
-      <g transform="translate(16, 16)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <text x="0" y="14" font-size="12" font-weight="700" fill="#0f172a">💡 生产性能排查决策定式（双视角联合分析）：</text>
-        <g font-size="11.5">
-          <text x="0" y="36" fill="#334155"><tspan font-weight="700" fill="#ea580c">【CPU 打满 100% + 延迟高】</tspan> ──► 直接抓 <tspan font-weight="700">On-CPU 火焰图</tspan>，寻找算法复杂度 $O(N^2)$、密集 JSON 解析或内存拷贝热点</text>
-          <text x="0" y="56" fill="#334155"><tspan font-weight="700" fill="#2563eb">【CPU 空闲 &lt;20% + P99 飙升】</tspan> ──► 必须抓 <tspan font-weight="700">Off-CPU 火焰图</tspan>，排查数据库行锁竞争、同步 fsync 阻塞或下游网络超时</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">跟踪优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 零遗漏捕获每一次等待唤醒生命周期；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 纳秒级精准记账；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 彻底照亮系统运行中的“暗时间”。</text>
   </g>
+
+  <!-- Col 3: Off-CPU Flamegraph (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OFF-CPU</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">阻塞耗时火焰图</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">offcputime -df -p PID</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 宽度 = 阻塞累计总时间 (微秒)</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 直观展示等锁、等磁盘与网络背压</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Blocked Duration Canvas</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阻塞归因：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 宽块在 pthread_mutex: 锁竞争严重；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 宽块在 sync_file_range: 磁盘写瓶颈；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 宽块在 sk_stream_wait: 网络反压。</text>
+  </g>
+
+  <!-- Col 4: Telemetry (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DUAL VIEW</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全维观测闭环</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">On-CPU + Off-CPU</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• On-CPU 解决“算力消耗过大”</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Off-CPU 解决“尾延迟与长尾卡顿”</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Holistic Performance Suite</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程收益：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 建立全链路系统级可观测性；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 精准识别锁瓶颈与下游慢依赖；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 实现全栈性能终极突破。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">On-CPU 采样盲区与全维性能观测体系</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">eBPF 调度器切换跟踪与 Off-CPU 阻塞耗时火焰图核心</text>
 </svg>

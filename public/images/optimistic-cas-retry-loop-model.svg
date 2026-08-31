@@ -1,49 +1,152 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cas-title cas-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="cas-title">乐观锁 CAS 自旋重试与 ABA 问题防御：version 版本号校验模型</title>
+  <desc id="cas-desc">流程状态图展示乐观锁利用版本号 version 执行原子条件更新判定影响行数并进行自旋重试与退避的全流程机制。</desc>
+  <defs>
+    <marker id="ca-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ca-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">乐观锁 CAS (Compare-And-Swap) 状态机与自旋重试</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">读取 (val, version=1) ──► 计算新值 ──► UPDATE WHERE version=1 ──► 影响行数=1 成功 ｜ 影响行数=0 冲突自旋重试</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">OPTIMISTIC CONCURRENCY · CAS RETRY LOOP &amp; ABA DEFENSE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">乐观锁 CAS 自旋重试与版本号校验模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">读取快照版本 (v=1) ➔ 本地业务计算 ➔ 原子条件更新 (WHERE version=1) ➔ affected_rows (1=成功 / 0=冲突自旋重试)</text>
+
+  <!-- 4 Columns Pipeline Grid (y=136..506, h=370) -->
+  <!-- Step 1: Read (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="70" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="47" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1</text>
+    <text x="90" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">快照版本读取</text>
+
+    <!-- Query Info -->
+    <rect x="12" y="42" width="181" height="110" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">SELECT balance, version</text>
+    <text x="20" y="78" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">FROM acc WHERE id=1;</text>
+    <text x="20" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">balance = 100, v = 1</text>
+    <text x="20" y="116" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">普通快照读，0 锁开销</text>
+    <text x="20" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Zero Blocking Overhead</text>
+
+    <!-- Details -->
+    <rect x="12" y="162" width="181" height="198" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="184" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段特征：</text>
+    <text x="20" y="204" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不阻塞任何并发读写；</text>
+    <text x="20" y="222" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 记录初始版本号 v_old=1；</text>
+    <text x="20" y="240" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为后续 CAS 校验设立基准。</text>
+    <line x1="20" y1="254" x2="185" y2="254" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="20" y="274" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Baseline Version Captured</text>
+    <text x="20" y="292" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Non-Locking Read</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 无锁快照读取 (Non-Blocking Snapshot Read)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">SELECT stock, version FROM items WHERE id = 100 ──► 获取 stock=10, version=1</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">0 数据库行锁排队，读吞吐量达到物理上限！</text>
+  <!-- Arrow 1 (x=245..265) -->
+  <text x="255" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Calc</text>
+  <line x1="245" y1="230" x2="265" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ca-arr-accent)"/>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 业务逻辑本地运算 (Local Domain Logic)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">newStock = stock - 1 = 9 ｜ newVersion = version + 1 = 2</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">纯 CPU 内存计算，不占用任何数据库连接与事务资源！</text>
-      </g>
+  <!-- Step 2: Local Compute (x=265..480, w=215) -->
+  <g transform="translate(265, 136)">
+    <rect width="215" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="70" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="47" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 2</text>
+    <text x="90" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内存业务计算</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. 原子条件更新与版本递增 (Atomic CAS Update)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">UPDATE items SET stock = 9, version = 2 WHERE id = 100 AND version = 1;</text>
-        <text x="15" y="62" font-size="8" fill="#047857">利用数据库单行写入的原子排他性进行终审裁决！</text>
-      </g>
+    <!-- Compute Info -->
+    <rect x="12" y="42" width="191" height="110" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">应用层计算新状态：</text>
+    <text x="20" y="80" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">new_bal = 100 - 10 = 90</text>
+    <text x="20" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">v_new = v_old + 1 = 2</text>
+    <text x="20" y="116" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">版本号严格单调递增</text>
+    <text x="20" y="132" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">Defend Against ABA Bug</text>
 
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. 结果裁决与指数退避重试 (Result Adjudication &amp; Retry)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">Rows Affected = 1 ──► 成功！ ｜ Rows Affected = 0 ──► 版本已被并发篡改，触发指数退避重试</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">电商商品详情与低冲突写业务的标准范式！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="162" width="191" height="198" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="184" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">ABA 防御原理：</text>
+    <text x="20" y="204" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 即使余额从 100➔50➔100；</text>
+    <text x="20" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• version 也从 1➔2➔3 永不倒退；</text>
+    <text x="20" y="240" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝虚假一致性！</text>
+    <line x1="20" y1="254" x2="195" y2="254" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="20" y="274" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Monotonic Version Counter</text>
+    <text x="20" y="292" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Zero State Confusion</text>
   </g>
+
+  <!-- Arrow 2 (x=480..500) -->
+  <text x="490" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CAS</text>
+  <line x1="480" y1="230" x2="500" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ca-arr-accent)"/>
+
+  <!-- Step 3: CAS UPDATE (x=500..725, w=225) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="225" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="76" height="18" rx="2" fill="#e85d3f"/>
+    <text x="50" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 3 · CORE</text>
+    <text x="96" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">原子条件更新</text>
+
+    <!-- SQL Info -->
+    <rect x="12" y="42" width="201" height="110" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">UPDATE acc SET</text>
+    <text x="20" y="76" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">balance=90, version=2</text>
+    <text x="20" y="92" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">WHERE id=1 AND version=1;</text>
+    <text x="20" y="112" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">InnoDB 瞬时行锁执行原子判断</text>
+    <text x="20" y="130" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Atomic Compare-And-Swap</text>
+
+    <!-- Details -->
+    <rect x="12" y="162" width="201" height="198" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="184" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">原子性物理保障：</text>
+    <text x="20" y="204" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 单条 UPDATE 自动持瞬时行锁；</text>
+    <text x="20" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 按当前物理最新值校验 version；</text>
+    <text x="20" y="240" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 任何并发写绝对无法插队！</text>
+    <line x1="20" y1="254" x2="205" y2="254" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="20" y="274" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700">Hardware-Level Atomicity</text>
+    <text x="20" y="292" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Zero Dirty Overwrite</text>
+  </g>
+
+  <!-- Arrow 3 (x=725..745) -->
+  <text x="735" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Branch</text>
+  <line x1="725" y1="230" x2="745" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#ca-arr-accent)"/>
+
+  <!-- Step 4: Branch Check (x=745..920, w=175) - Focal -->
+  <g transform="translate(745, 136)">
+    <rect width="175" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="70" height="18" rx="2" fill="#141413"/>
+    <text x="47" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 4</text>
+    <text x="90" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">结果分支判定</text>
+
+    <!-- Branch A: Success -->
+    <rect x="12" y="42" width="151" height="90" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">affected_rows == 1</text>
+    <text x="20" y="78" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">✓ 提交成功！</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">COMMIT &amp; Return OK</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Latency: ~1 DB RTT</text>
+
+    <!-- Branch B: Conflict Retry -->
+    <rect x="12" y="142" width="151" height="218" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="164" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">affected_rows == 0</text>
+    <text x="20" y="182" fill="#e85d3f" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">✗ 版本冲突！</text>
+    <text x="20" y="200" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 回滚当前局部事务；</text>
+    <text x="20" y="218" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">2. 指数退避 (Exponential Backoff)；</text>
+    <text x="20" y="236" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 重新跳转 Step 1！</text>
+    <line x1="20" y1="248" x2="155" y2="248" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="20" y="268" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="700">Max Retries: 3 ~ 5</text>
+    <text x="20" y="284" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Livelock Circuit Breaker</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">快照读取与本地计算</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">原子 CAS UPDATE 与冲突自旋退避判定核心</text>
 </svg>

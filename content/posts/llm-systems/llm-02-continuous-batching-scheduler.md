@@ -34,22 +34,7 @@ series: "大模型后端架构与推理加速"
 
 ## 二、 迭代级连续批处理（Iteration-level Scheduling）
 
-为了解决这一困境，Orca 论文提出了**迭代级连续批处理（Continuous Batching / In-flight Batching）**：
-
-```
-+-------------------------------------------------------------------------+
-|                  迭代级连续批处理 (Continuous Batching) 执行时序         |
-|                                                                         |
-| Iteration 1: [ Req A (Token 1) ] [ Req B (Token 1) ] [ Req C (Token 1) ]|
-| Iteration 2: [ Req A (Token 2) ] [ Req B (Token 2) ] [ Req C (Token 2) ]|
-| Iteration 3: [ Req A (Token 3) ] [ Req B (EOS 结束!) ] [ Req C (Token 3) ]|
-|                                         │                               |
-|                                 立即释放 Req B 槽位                      |
-|                                 动态插入新请求 Req D (Prefill)            |
-|                                         ▼                               |
-| Iteration 4: [ Req A (Token 4) ] [ Req D (Token 1) ] [ Req C (Token 4) ]|
-+-------------------------------------------------------------------------+
-```
+为了解决这一困境，Orca 论文提出了**迭代级连续批处理（Continuous Batching / In-flight Batching）**。
 
 ### 2.1 核心调度原则
 

@@ -1,79 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sb-title sb-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="sb-title">应用层黑名单安全幻觉与三大系统物理隔离沙箱</title>
+  <desc id="sb-desc">架构对比图展示应用层命令正则黑名单在 Base64 编码与两阶段逃逸下的安全幻觉，对比 BashOperations 接口对接 Gondolin、Docker 与 Bubblewrap 物理隔离沙箱的真实安全边界。</desc>
+  <defs>
+    <marker id="sb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="sb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Agent 权限边界与物理沙箱：应用层正则过滤 vs Linux Bubblewrap 隔离</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">应用层黑名单 (容易被 base64/管道绕过) ｜ Linux Namespaces + Bubblewrap (只读挂载 /、仅暴露 /workspace、禁用网络)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SECURITY BOUNDARY · ILLUSION OF REGEX VS PHYSICAL ISOLATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">应用层安全幻觉与物理隔离沙箱</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">应用层正则黑名单缺陷 (Base64/管道绕过) vs BashOperations 物理隔离沙箱 (Gondolin / Docker / Bubblewrap)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Illusion of Regex (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SECURITY ILLUSION</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">应用层正则安全幻觉</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">基于字符串/正则黑名单的拦截缺陷</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 极易被混淆绕过: echo cm0... | base64 -d | bash</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅属于"防手滑"交互辅助，绝非安全边界</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">根本性绕过路径：</text>
+    <text x="24" y="168" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 两阶段逃逸：write 写入 /tmp/run.sh，bash 执行脚本；</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 变量拆分：a=rm; b=-rf; $a $b 拼接；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 提示词注入：恶意代码诱导 curl 外发 .env 密钥。</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Trivial App-Layer Sandbox Escape</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">代价</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">带来虚假的安全感，导致生产宿主机在未知恶意仓库中面临致命 RCE 威胁。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Vulnerable Host Execution</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Unacceptable for Multi-Tenant Cloud</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: App Level Filter -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#fef2f2"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 应用层黑名单过滤：形同虚设的安全假象</text>
+  <!-- Col 2: Physical Isolation (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="150" height="18" rx="2" fill="#e85d3f"/>
+    <text x="89" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PHYSICAL ISOLATION</text>
+    <text x="174" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">BashOperations 沙箱体系</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#f87171">// 试图用正则匹配 "rm -rf" 或 "curl"</text>
-          <text y="28" fill="#fca5a5">攻击者或模型被注入攻击后的简单绕过手段：</text>
-          
-          <text y="50" fill="#ef4444">1. Base64 编码绕过: echo cm0gLXJmIC8= | base64 -d | sh</text>
-          <text y="66" fill="#ef4444">2. Python 动态反射: python -c "import os; os.system('...')"</text>
-          <text y="82" fill="#ef4444">3. 变量拼接执行: c=rm; a=-rf; $c $a /</text>
-          
-          <text y="108" fill="#ef4444">🔴 结论：应用层永远无法枚举无穷无尽的 Shell 语法变换！</text>
-        </g>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">将执行权推给系统级虚拟化与容器</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• Gondolin: 150ms 启动，KVM 微型 VM 硬件级强隔离</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Bubblewrap (bwrap): &lt;10ms 原生启动，只读命名空间</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#991b1b">致命盲区：</text>
-        <text x="10" y="34" font-size="7.5" fill="#7f1d1d">• 弹窗只会让用户产生疲劳，盲目点击确认；</text>
-        <text x="10" y="48" font-size="7.5" fill="#7f1d1d">• 恶意提示词注入 (Prompt Injection) 轻松攻破正则；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#dc2626">• 造成宿主机 SSH 密钥与云密钥泄露！</text>
-      </g>
-    </g>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理防御核心优势：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 操作系统级强制隔离：专用内核与只读根文件系统；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. 虚拟网卡隔离：拦截敏感网络外发与凭据泄露；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 宿主零风险：任务结束后容器/VM 秒级销毁！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Kernel-Level Enforcement &amp; Zero Host Risk</text>
 
-    <!-- Right: OS Level Sandbox -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">✓ 内核级物理沙箱：Bubblewrap / Docker 隔离</text>
-
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g transform="translate(10, 15)" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text y="14" fill="#4ade80">// bwrap (Bubblewrap) 物理隔离沙箱命令</text>
-          <text y="28" fill="#86efac">bwrap --ro-bind /usr /usr --ro-bind /lib /lib </text>
-          <text y="42" fill="#38bdf8">      --bind /tmp/agent_ws /workspace </text>
-          <text y="56" fill="#f87171">      --unshare-net --unshare-pid --new-session </text>
-          <text y="70" fill="#4ade80">      --die-with-parent /bin/bash -c "cmd"</text>
-          
-          <text y="94" fill="#34d399">1. 根目录与宿主全量只读，仅 /workspace 可写！</text>
-          <text y="108" fill="#34d399">2. 彻底禁用外部网络 (unshare-net)，绝无外带密钥可能！</text>
-          <text y="122" fill="#4ade80">✓ 即使执行 rm -rf /，宿主机也毫发无损！</text>
-        </g>
-
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 把安全责任下沉给 Linux 内核物理机制；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• Agent 可以放开手脚全自动执行编译测试；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 打造银行级零信任的自动化代码开发环境！</text>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工程效益</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">把策略留给用户，把隔离留给系统，达成企业级最高级别安全防护。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">True Security Boundary Architecture</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Zero Trust Runtime Environment</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">应用层黑名单安全幻觉与混淆绕过</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">BashOperations 接口与三大物理隔离沙箱核心</text>
 </svg>

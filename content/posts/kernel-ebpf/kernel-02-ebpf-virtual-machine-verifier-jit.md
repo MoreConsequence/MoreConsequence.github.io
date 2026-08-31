@@ -41,11 +41,7 @@ eBPF 是一个高度精简、与现代 64 位硬件架构（x86_64 / AArch64）1
 
 每一条 eBPF 字节码指令均严格由 8 个字节（64-bit）组成：
 
-```
-+----------------+----------------+----------------+----------------+----------------+
-|  opcode (8bit) |  dst_reg (4b)  |  src_reg (4b)  |  offset (16b)  |    imm (32b)   |
-+----------------+----------------+----------------+----------------+----------------+
-```
+![eBPF 64 位定长指令格式结构布局与寄存器字段解析](../../../public/images/kernel-ebpf-64bit-instruction-layout.svg)
 - `opcode`：操作码（如加法、内存加载 `LDX`、分支跳转 `JEQ`）；
 - `dst_reg` / `src_reg`：目标寄存器与源寄存器编号（各占 4 位，正好表示 0~10）；
 - `offset`：16 位有符号偏移量（用于栈寻址或结构体字段偏移）；
@@ -100,10 +96,6 @@ $ sudo sysctl -w net.core.bpf_jit_harden=2  # 开启 JIT 代码盲化，防御 S
 ```
 
 ---
-
-
-
-![BPF Maps 演进：传统 Perf Event 阵列 vs BPF RingBuffer 无锁内存映射](../../../public/images/ebpf-maps-bpf-ringbuf-lockless-ipc.svg)
 
 ## 五、 BPF Maps：内核态与用户态的无锁通信桥梁
 

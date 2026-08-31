@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>llm-iteration-scheduler-state-machine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sm-title sm-desc">
+  <title id="sm-title">vLLM 连续批处理三队列状态机调度模型：Waiting / Running / Swapped</title>
+  <desc id="sm-desc">状态机架构图展示 vLLM 调度器通过 Waiting 等待池、Running 活跃池与 Swapped 内存交换池管理请求全生命周期与显存抢占保护机制。</desc>
+  <defs>
+    <marker id="sm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="sm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">VLLM SCHEDULER STATE MACHINE · THREE QUEUE TRANSITIONS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">vLLM 调度器三队列状态机与抢占机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Waiting 队列 (新请求排队) ➔ Running 队列 (GPU 活跃执行) ➔ Swapped 队列 (显存告急换出至 CPU RAM)</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Waiting (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">WAITING QUEUE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">等待池 (FIFO 排队)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">新请求准入判定</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 客户端到达的新 Prompt 请求</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 检查: can_allocate_prompt(req)</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 满足条件则跃迁入 Running 队列</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Admission Control &amp; FIFO Queue</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">调度职责：</text>
+    <text x="24" y="194" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护全局请求到达时间戳；</text>
+    <text x="24" y="214" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 优先保证正在运行的 Decode 请求；</text>
+    <text x="24" y="232" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 显存富余时才吸纳新 Prefill。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">流量入口</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">缓冲突发流量，结合背压流控防止 GPU 瞬间被打垮。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Traffic Ingestion Buffer</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero GPU Overload Trap</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Admit</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sm-arr-accent)"/>
+
+  <!-- Col 2: Running (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#e85d3f"/>
+    <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">RUNNING QUEUE</text>
+    <text x="144" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">GPU 活跃执行池</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="262" height="100" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">每 Step 迭代矩阵乘运算</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 正常生成: 每步分配 1 个物理 Slot</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">2. 结束判定: 遇 EOS 释放全部物理块</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">3. 显存告急: 触发 Preemption 换出至 CPU</text>
+    <text x="24" y="132" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">GPU HBM Active Execution Core</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="262" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">抢占与保护机制：</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 当物理显存无法分配给下一个 Token；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优先挑选最晚到达的请求换出至 CPU；</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保高优先级在途请求顺畅完成。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="262" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">稳态核心</text>
+    <text x="24" y="302" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">动态维持最大 Batch Size，兼顾极高 GPU 算力利用率与零 OOM 强韧性。</text>
+    <text x="24" y="326" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Preemption Safe Execution</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Continuous Batching Heart</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Preempt</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sm-arr-accent)"/>
+
+  <!-- Col 3: Swapped (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SWAPPED QUEUE</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内存交换池 (CPU RAM)</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">主机内存暂存或重算</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• KV Cache 临时换出至主机 RAM</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 待 GPU 显存释放后 Swap-In 换入</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 或采用 Recomputation 重新预填</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Host Memory Eviction Buffer</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="232" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终极兜底价值：</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 彻底杜绝极端并发下的 OOM 宕机；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优雅降级，请求仅延迟而不丢失；</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 显存回落后无缝恢复生成。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="232" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">安全屏障</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">用极少量的 PCIe 交换开销，换取整个推理集群永不崩溃的工业高可用性。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Crash Guarantee</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Fault-Tolerant Memory Paging</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Waiting 等待入队与 Swapped 内存抢占</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Running GPU 活跃执行与每步连续调度核心</text>
+</svg>
+</main>
+</body>
+</html>

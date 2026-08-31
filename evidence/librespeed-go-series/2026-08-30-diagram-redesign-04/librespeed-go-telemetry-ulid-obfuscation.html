@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>遥测 ID：可排序主键如何变成公开 ID</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light;
+        background: #f5f5f5;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: #f5f5f5;
+      }
+      main {
+        width: min(960px, 100%);
+        margin: 0 auto;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="librespeed-go-telemetry-ulid-obfuscation-title librespeed-go-telemetry-ulid-obfuscation-desc">
+        <title id="librespeed-go-telemetry-ulid-obfuscation-title">遥测 ID：可排序主键如何变成公开 ID</title>
+        <desc id="librespeed-go-telemetry-ulid-obfuscation-desc">Architecture diagram showing telemetry fields entering the Go result handler, a raw ULID being reversibly obfuscated with a persistent salt into a base64url ID, and ResolveID reversing the mapping for JSON or PNG lookup.</desc>
+        <defs>
+          <style>
+            .sans { font-family: 'Geist', 'Noto Sans KR', sans-serif; }
+            .mono { font-family: 'Geist Mono', 'Noto Sans KR', monospace; }
+            .serif { font-family: 'Instrument Serif', 'Noto Serif KR', serif; }
+          </style>
+          <marker id="librespeed-telemetry-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+          </marker>
+          <marker id="librespeed-telemetry-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
+          </marker>
+          <marker id="librespeed-telemetry-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" />
+          </marker>
+        </defs>
+
+        <rect width="960" height="600" fill="#f5f5f5" />
+
+        <text x="40" y="40" class="mono" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#7a8399">LIBRESPEED GO · TELEMETRY</text>
+        <text x="40" y="72" class="serif" font-size="28" fill="#2d3142">遥测 ID：可排序主键如何变成公开 ID</text>
+        <text x="40" y="100" class="sans" font-size="12" fill="#4f5d75">写入时生成 ULID；公开返回值只做可逆混淆，查询时再还原。</text>
+        <text x="40" y="124" class="mono" font-size="8" fill="#7a8399">reversible obfuscation · casual privacy · not a signature or authorization token</text>
+
+        <!-- Two trust/ownership zones: browser input and Go result API. -->
+        <rect x="40" y="152" width="208" height="376" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8" />
+        <rect x="272" y="152" width="648" height="376" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8" />
+        <rect x="52" y="156" width="72" height="12" rx="2" fill="#f5f5f5" />
+        <text x="88" y="168" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.14em" fill="rgba(45,49,66,0.40)">BROWSER</text>
+        <rect x="284" y="156" width="112" height="12" rx="2" fill="#f5f5f5" />
+        <text x="340" y="168" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.14em" fill="rgba(45,49,66,0.40)">GO RESULT API</text>
+
+        <!-- Data and lookup paths are drawn before the nodes. -->
+        <path d="M 224,244 H 304" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow-link)" />
+        <path d="M 480,244 H 512" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow)" />
+        <path d="M 720,244 H 760" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow)" />
+        <path d="M 392,280 V 360" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow)" />
+        <path d="M 828,280 V 320 Q 828,328 820,328 H 672 Q 664,328 664,336 V 360" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow-link)" />
+        <path d="M 520,408 H 480" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow)" />
+        <path d="M 480,376 H 520" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#librespeed-telemetry-arrow)" />
+        <path d="M 624,432 V 472 Q 624,480 616,480 H 224" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-telemetry-arrow-link)" />
+
+        <!-- Connector labels sit in open space with opaque masks and visible gaps. -->
+        <rect x="252" y="220" width="48" height="12" rx="4" fill="#f5f5f5" />
+        <text x="276" y="228" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">POST</text>
+        <rect x="404" y="300" width="56" height="12" rx="4" fill="#f5f5f5" />
+        <text x="432" y="308" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">INSERT</text>
+        <rect x="736" y="300" width="48" height="12" rx="4" fill="#f5f5f5" />
+        <text x="760" y="308" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">GET ID</text>
+        <rect x="484" y="328" width="32" height="12" rx="4" fill="#f5f5f5" />
+        <text x="500" y="336" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">ROW</text>
+        <rect x="484" y="384" width="32" height="12" rx="4" fill="#f5f5f5" />
+        <text x="500" y="392" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">FETCH</text>
+        <rect x="400" y="452" width="48" height="12" rx="4" fill="#f5f5f5" />
+        <text x="424" y="460" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">RESULT</text>
+
+        <!-- Browser-side nodes. -->
+        <rect x="64" y="208" width="160" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="64" y="208" width="160" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1" />
+        <rect x="76" y="216" width="56" height="16" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8" />
+        <text x="104" y="228" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">INPUT</text>
+        <text x="144" y="248" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Worker</text>
+        <text x="144" y="268" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">FormData: dl / ul / ping</text>
+
+        <rect x="64" y="424" width="160" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="64" y="424" width="160" height="72" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1" />
+        <rect x="76" y="432" width="56" height="16" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8" />
+        <text x="104" y="444" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">VIEW</text>
+        <text x="144" y="464" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Result URL</text>
+        <text x="144" y="484" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">JSON / PNG</text>
+
+        <!-- Go result API nodes. -->
+        <rect x="304" y="208" width="176" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="304" y="208" width="176" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+        <rect x="316" y="216" width="40" height="16" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8" />
+        <text x="336" y="228" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">API</text>
+        <text x="392" y="248" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Record</text>
+        <text x="392" y="268" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">POST /results/telemetry.php</text>
+
+        <rect x="512" y="184" width="208" height="120" rx="6" fill="#f5f5f5" />
+        <rect x="512" y="184" width="208" height="120" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1" />
+        <rect x="524" y="192" width="56" height="16" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8" />
+        <text x="552" y="204" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#eb6c36">FOCUS</text>
+        <text x="616" y="228" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">可逆混淆</text>
+        <text x="616" y="252" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">ULID[0:4] XOR uint32 salt</text>
+        <text x="616" y="272" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">salt: idObfuscation_salt.bin</text>
+        <text x="616" y="292" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">16 bytes → raw base64url</text>
+
+        <rect x="760" y="208" width="136" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="760" y="208" width="136" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1" />
+        <rect x="772" y="216" width="40" height="16" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8" />
+        <text x="792" y="228" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">ID</text>
+        <text x="828" y="248" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">response id</text>
+        <text x="828" y="268" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">base64url · 16 bytes</text>
+
+        <rect x="304" y="360" width="176" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="304" y="360" width="176" height="72" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1" />
+        <rect x="316" y="368" width="56" height="16" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8" />
+        <text x="344" y="380" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">STATE</text>
+        <text x="392" y="400" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">TelemetryData</text>
+        <text x="392" y="420" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">UUID = raw ULID</text>
+
+        <rect x="520" y="360" width="208" height="72" rx="6" fill="#f5f5f5" />
+        <rect x="520" y="360" width="208" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+        <rect x="532" y="368" width="64" height="16" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8" />
+        <text x="564" y="380" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">LOOKUP</text>
+        <text x="624" y="400" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">ResolveID</text>
+        <text x="624" y="420" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">raw ULID → FetchByUUID</text>
+
+        <line x1="40" y1="556" x2="920" y2="556" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
+        <text x="40" y="576" class="mono" font-size="8" letter-spacing="0.14em" fill="#4f5d75">LEGEND</text>
+        <line x1="128" y1="572" x2="160" y2="572" stroke="#2e5aa8" stroke-width="1.2" />
+        <text x="172" y="576" class="mono" font-size="8" fill="#4f5d75">request / result</text>
+        <line x1="312" y1="572" x2="344" y2="572" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" />
+        <text x="356" y="576" class="mono" font-size="8" fill="#4f5d75">return</text>
+        <rect x="456" y="564" width="8" height="16" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="0.8" />
+        <text x="476" y="576" class="mono" font-size="8" fill="#4f5d75">transform focus</text>
+        <text x="656" y="576" class="mono" font-size="8" fill="#4f5d75">same salt makes lookup reversible</text>
+      </svg>
+    </main>
+  </body>
+</html>

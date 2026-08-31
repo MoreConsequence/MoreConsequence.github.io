@@ -44,10 +44,6 @@ type iface struct {
 1. **data 槽位直接存标量**：对 int、指针等 ≤ 指针大小的类型，装箱时值直接放进 `data`（无需堆分配）；只有大对象才需要 data 指向堆。
 2. **itab 按 (类型, 接口) 对缓存**：第一次把 `Square` 装进 `Shape` 时构造 itab，之后全局复用；方法调用是 `tab.Fun[i]` 的一次间接跳转。
 
-
-
-![Go 接口底层结构体：eface (空接口) vs iface (带方法接口与 itab 虚表)](../../../public/images/iface-eface-type-descriptor-boxing-layout.svg)
-
 ## 二、实测：本次短方法对照接近直接调用
 
 | 场景 | ns/op | B/op | allocs |

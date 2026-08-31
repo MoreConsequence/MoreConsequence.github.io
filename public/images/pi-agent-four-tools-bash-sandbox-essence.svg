@@ -1,120 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ft-title ft-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="ft-title">Pi 4 大内建工具分工与 Bash 50KB 滚动缓冲</title>
+  <desc id="ft-desc">流程架构图展示 Pi 的 4 大极简内建工具分工、Bash 执行中的 ANSI 与二进制清洗、50KB 内存有界滚动缓冲、临时文件溢出落盘机制，以及进程树级联清理。</desc>
+  <defs>
+    <marker id="ft-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ft-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Pi 四大核心工具矩阵：极简设计原则与 Bash 沙箱的万能延伸</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">read (只读探查) ｜ write (全量覆盖新建) ｜ edit (精准行级差分替换) ｜ bash (在安全沙箱中执行一切编译器与脚本)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">MINIMAL TOOLSET · 4 TOOLS &amp; 50KB BOUNDED BUFFER ARCHITECTURE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">4 大内建工具分工与 50KB 滚动缓冲</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">read/bash/edit/write 极简分工 ➔ ANSI 清洗 ➔ 50KB 滚动缓冲 ➔ 溢出写临时文件 ➔ 进程树治理</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: 4 Tools (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">4 CORE TOOLS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4 大极简工具</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">read / bash / edit / write</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• bash 是任意执行万能缺口</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免专用工具膨胀上下文</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">1600 LOC Minimal Surface</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">设计取舍：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 任何专用工具都是 bash 语法糖；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝工具嗅探引起的 Token 爆炸；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 集中力量做好生命周期管治。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Columns (210px each) -->
-    <!-- Col 1 -->
-    <g>
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">1. read (代码探查)</text>
+  <!-- Col 2: 50KB Buffer (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">50KB BUFFER</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">50KB 滚动缓冲</text>
 
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
-          <text x="8" y="16" fill="#38bdf8">read(path, offset, limit)</text>
-          <text x="8" y="32" fill="#93c5fd">• 按行精准分页加载</text>
-          <text x="8" y="48" fill="#34d399">• 附带全局行号标记</text>
-          <text x="8" y="66" fill="#4ade80">• 自动过滤二进制乱码</text>
-          <text x="8" y="84" fill="#cbd5e1">• 保护模型上下文预算</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">DEFAULT_MAX_BYTES</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 剥除 ANSI 转义符与二进制清洗</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 内存仅留最近 50KB 滚动窗口</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Strict Memory Token Boundary</text>
 
-        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="8" y="18" font-size="8" font-weight="700" fill="#1e40af">工具职责：</text>
-        <text x="8" y="34" font-size="7" fill="#1d4ed8">• 建立代码空间认知；</text>
-        <text x="8" y="48" font-size="7.5" fill="#1d4ed8">• 获取行号用于后续差分；</text>
-        <text x="8" y="62" font-size="7" fill="#047857">• 纯只读无副作用。</text>
-      </g>
-    </g>
-
-    <!-- Col 2 -->
-    <g transform="translate(230, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">2. write (全新创建)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
-          <text x="8" y="16" fill="#4ade80">write(path, content)</text>
-          <text x="8" y="32" fill="#86efac">• 自动递归创建父目录</text>
-          <text x="8" y="48" fill="#34d399">• 全量新建配置文件/代码</text>
-          <text x="8" y="66" fill="#4ade80">• 覆盖前自动校验文件锁</text>
-          <text x="8" y="84" fill="#38bdf8">• 保证写入原子性落盘</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="8" y="18" font-size="8" font-weight="700" fill="#166534">工具职责：</text>
-        <text x="8" y="34" font-size="7" fill="#15803d">• 创建全新模块与文件；</text>
-        <text x="8" y="48" font-size="7.5" fill="#15803d">• 生成构建脚手架；</text>
-        <text x="8" y="62" font-size="7" fill="#047857">• 简单直接，0 歧义。</text>
-      </g>
-    </g>
-
-    <!-- Col 3 -->
-    <g transform="translate(460, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">3. edit (行级差分)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
-          <text x="8" y="16" fill="#fb923c">edit(path, oldStr, newStr)</text>
-          <text x="8" y="32" fill="#fed7aa">• 精准字符串模糊锚点匹配</text>
-          <text x="8" y="48" fill="#34d399">• 仅替换局部 5 行代码</text>
-          <text x="8" y="66" fill="#4ade80">• 节约 98% 输出 Token 消耗</text>
-          <text x="8" y="84" fill="#fb923c">• 杜绝大文件重写时丢代码</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="8" y="18" font-size="8" font-weight="700" fill="#c2410c">工具职责：</text>
-        <text x="8" y="34" font-size="7" fill="#9a3412">• 精准 Bug 修复与重构；</text>
-        <text x="8" y="48" font-size="7.5" fill="#9a3412">• 保持未修改部分绝对干净；</text>
-        <text x="8" y="62" font-size="7" fill="#ea580c">• 代码重构的核心利刃。</text>
-      </g>
-    </g>
-
-    <!-- Col 4 -->
-    <g transform="translate(690, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#7e22ce" text-anchor="middle">4. bash (沙箱执行)</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7" fill="#f8fafc">
-          <text x="8" y="16" fill="#d8b4fe">bash(command)</text>
-          <text x="8" y="32" fill="#e9d5ff">• 运行 pytest / go test</text>
-          <text x="8" y="48" fill="#34d399">• git 状态检查与 commit</text>
-          <text x="8" y="66" fill="#4ade80">• 覆盖任意编译与调试动作</text>
-          <text x="8" y="84" fill="#38bdf8">• 替代数十个专用小工具！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
-        <text x="8" y="18" font-size="8" font-weight="700" fill="#7e22ce">工具职责：</text>
-        <text x="8" y="34" font-size="7" fill="#6b21a8">• 赋予 Agent 执行能力；</text>
-        <text x="8" y="48" font-size="7.5" fill="#6b21a8">• 自动化验证与闭环反馈；</text>
-        <text x="8" y="62" font-size="7" fill="#6b21a8">• 真正的万能通用扩展口！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缓冲价值：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 防止海量构建日志打爆上下文；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 保持模型每轮仅接收关键摘要；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成 3x 上下文瘦身的核心利器。</text>
   </g>
+
+  <!-- Col 3: Spooling (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SPOOLING</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">溢出临时文件</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">/tmp/pi-bash-*.log</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 突破 50KB 自动溢出写盘</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 返回 fullOutputPath 完整路径</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">On-Demand Log Retrieval</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">落盘优势：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 巨量输出绕开上下文水管；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 模型需要详情时可通过 read 读取；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 兼顾极简上下文与完整证据链。</text>
+  </g>
+
+  <!-- Col 4: Process Tree (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">KILL TREE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">进程树治理</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">killProcessTree()</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 超时或 AbortSignal 级联清理</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 清理 npm 等拉起的所有孤儿 worker</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Orphan Process Leak</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">治理铁律：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 绝不只杀根 PID 留下子孙进程；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• trackDetachedChildPid 全量跟踪；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 会话结束时自动收网零泄漏。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">4 大极简工具分工与孤儿进程树级联清理机制</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">50KB 内存滚动缓冲与临时文件溢出落盘核心</text>
 </svg>

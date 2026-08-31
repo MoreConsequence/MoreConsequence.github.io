@@ -1,111 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cs-title cs-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cs-title">时钟语义差异与 NTP 步进平滑纪律</title>
+  <desc id="cs-desc">分布式时钟架构图展示墙上时钟与单调时钟语义差异、RFC 5905 NTP 协议时钟纪律阈值与状态机，以及 Chrony 生产环境平滑校准最佳实践。</desc>
+  <defs>
+    <marker id="cs-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="cs-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">NTP 步进校准（Step）物理机理：时钟回跳与单调时钟行为对比</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Wall Clock (CLOCK_REALTIME) 回拨陷阱 vs Monotonic Clock (CLOCK_MONOTONIC) 严格单调递增保证</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CLOCK SKEW &amp; NTP DISCIPLINE · WALL VS MONOTONIC &amp; STEP VS SLEW</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">时钟语义差异与 NTP 步进平滑纪律</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">墙上时钟 (可跳变) vs 单调时钟 (只前进) ➔ RFC 5905 阈值 (125ms) ➔ 先 Slew 后 Step 防抖</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Wall Clock (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">REALTIME</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">墙上时钟 (跳变)</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">CLOCK_REALTIME</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 对齐现实世界绝对 UTC 日历时间</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• NTP 校准会引发向前前跳或向后回拨</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Prone to Discontinuous Jumps</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">语义适用：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅用于日志落盘与人类业务展示；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 严禁用于计算单机运行耗时；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无法提供单调因果保证。</text>
   </g>
 
-  <!-- Left Main Chart: Timeline & Clocks (580px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="570" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
-    
-    <!-- Chart Header -->
-    <rect width="570" height="34" rx="8" fill="#f1f5f9"/>
-    <text x="16" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155">时钟读数物理轨迹对比（X: 物理流逝时间 / Y: 时钟读取值）</text>
+  <!-- Col 2: Monotonic Clock (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">MONOTONIC</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">单调时钟 (只进)</text>
 
-    <!-- Axes -->
-    <line x1="55" y1="285" x2="540" y2="285" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-    <line x1="55" y1="285" x2="55" y2="55" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-slate)"/>
-    <text x="535" y="302" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b" text-anchor="end">真实物理时间 (t)</text>
-    <text x="45" y="48" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#64748b">系统时钟读数</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">CLOCK_MONOTONIC</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 记录自系统开机以来的物理经过时间</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 严格单调递增，100% 免疫 NTP 步进</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Strictly Increasing Reading</text>
 
-    <!-- Grid lines -->
-    <line x1="55" y1="220" x2="520" y2="220" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
-    <line x1="55" y1="150" x2="520" y2="150" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3 3"/>
-
-    <!-- Danger Zone Highlight -->
-    <rect x="235" y="55" width="115" height="230" fill="#fee2e2" opacity="0.45"/>
-    <line x1="235" y1="55" x2="235" y2="285" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
-    <line x1="350" y1="55" x2="350" y2="285" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
-    <text x="292" y="74" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#b91c1c" text-anchor="middle">时钟回拨区间</text>
-    <text x="292" y="90" font-family="ui-monospace, monospace" font-size="10" fill="#dc2626" text-anchor="middle">Δt &lt; 0 (逆序产生)</text>
-
-    <!-- Monotonic Line (Green) -->
-    <path d="M 55 245 L 235 170 L 350 120 L 515 55" fill="none" stroke="#10b981" stroke-width="3"/>
-    <circle cx="235" cy="170" r="4" fill="#10b981"/>
-    <circle cx="350" cy="120" r="4" fill="#10b981"/>
-
-    <!-- Wall Clock Line (Red Stepped) -->
-    <path d="M 55 255 L 235 150 L 235 240 L 350 190 L 515 115" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 4"/>
-    <circle cx="235" cy="150" r="4" fill="#dc2626"/>
-    <circle cx="235" cy="240" r="4" fill="#dc2626"/>
-
-    <!-- NTP Step Action Marker -->
-    <path d="M 245 155 L 245 230" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-red)"/>
-    <rect x="252" y="180" width="85" height="24" rx="4" fill="#fff7ed" stroke="#fdba74"/>
-    <text x="294" y="196" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#c2410c" text-anchor="middle">NTP Step 强制回退</text>
-
-    <!-- Legend & Labels -->
-    <g transform="translate(70, 298)">
-      <line x1="0" y1="8" x2="20" y2="8" stroke="#10b981" stroke-width="3"/>
-      <text x="26" y="12" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#047857">CLOCK_MONOTONIC（物理绝对递增，不受 NTP 调节）</text>
-
-      <line x1="280" y1="8" x2="300" y2="8" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 4"/>
-      <text x="306" y="12" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="#b91c1c">CLOCK_REALTIME（墙上时钟，随时可能阶跃跳变）</text>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">测量基准：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 进程内超时、采样与性能度量基石；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• Go `time.Since` 内部默认单调读数；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不可跨进程或持久化落盘比较。</text>
   </g>
 
-  <!-- Right Cards: Pitfalls & Solutions (310px wide) -->
-  <g transform="translate(615, 75)">
-    <!-- Pitfalls Card -->
-    <g filter="url(#card-shadow)">
-      <rect width="315" height="160" rx="8" fill="#ffffff" stroke="#fecaca" stroke-width="1"/>
-      <rect width="315" height="28" rx="8" fill="#fef2f2"/>
-      <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#991b1b">⚠️ 墙上时钟回拨带来的系统级灾难</text>
-      
-      <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#334155">
-        <text x="0" y="14"><tspan font-weight="700" fill="#b91c1c">1. Snowflake 雪花 ID 冲突：</tspan> 时间戳逆序致主键重复</text>
-        <text x="0" y="38"><tspan font-weight="700" fill="#b91c1c">2. 分布式租约瞬时失效：</tspan> Lease 提早释放引发脑裂</text>
-        <text x="0" y="62"><tspan font-weight="700" fill="#b91c1c">3. 耗时度量负数异常：</tspan> `t2 - t1 &lt; 0` 破坏 Prometheus 桶</text>
-        <text x="0" y="86"><tspan font-weight="700" fill="#b91c1c">4. 超时定时器失效：</tspan> 线程 Sleep 周期被异常拉长或提前唤醒</text>
-      </g>
-    </g>
+  <!-- Col 3: RFC 5905 (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">RFC 5905</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">NTP 时钟纪律</text>
 
-    <!-- Solutions Card -->
-    <g transform="translate(0, 175)" filter="url(#card-shadow)">
-      <rect width="315" height="160" rx="8" fill="#ffffff" stroke="#bfdbfe" stroke-width="1"/>
-      <rect width="315" height="28" rx="8" fill="#eff6ff"/>
-      <text x="14" y="19" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">🛡️ 工业生产环境标准解法</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">Slew vs Step State Machine</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 偏差 &lt; 125ms 走 Slew 平滑微调</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 持续超 125ms 且过 900s 才 Step 跳变</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Anti-Flapping Thresholds</text>
 
-      <g transform="translate(14, 38)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#334155">
-        <text x="0" y="14"><tspan font-weight="700" fill="#1d4ed8">1. 耗时计算严格用单调钟：</tspan> Go `time.Since()` 自带单调位</text>
-        <text x="0" y="38"><tspan font-weight="700" fill="#1d4ed8">2. 强制 NTP Slew 平滑校准：</tspan> 最大 500ppm 调速微调，禁用 step</text>
-        <text x="0" y="62"><tspan font-weight="700" fill="#1d4ed8">3. Snowflake 容忍回拨自旋：</tspan> 回拨 &lt;5ms 自旋等待，大回拨切机器号</text>
-        <text x="0" y="86"><tspan font-weight="700" fill="#1d4ed8">4. 云原生 PTP 高精同步：</tspan> AWS Time Sync / Chrony 微秒级收敛</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">纪律原则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 先 Slew 后 Step，严控直接跳变；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 900s 防抖窗口防止瞬时拥塞误判；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 偏差超 1000s 触发 Panic 拒绝服务。</text>
   </g>
+
+  <!-- Col 4: Chrony Config (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CHRONY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产防回拨工程</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">makestep 0.1 3 &amp; Fencing</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅允许启动前 3 次更新进行 Step</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 生产运行期强制 Slew，杜绝运行回拨</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Production Hardening</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程防线：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 永远不把物理 NTP 视作单调发生器；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 租约与事务引入单调 Fencing Token；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构筑稳健分布式因果防线。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">墙上时钟语义缺陷与 Chrony 生产配置工程实践</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">单调时钟度量基石与 RFC 5905 NTP 协议时钟纪律核心</text>
 </svg>

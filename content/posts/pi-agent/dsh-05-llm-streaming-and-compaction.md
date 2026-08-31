@@ -181,10 +181,6 @@ sequenceDiagram
 
 ---
 
-
-
-![DSH 上下文动态压缩与滑动窗口策略：基于重要度的衰减与关键事实保留](../../../public/images/dsh-dynamic-compaction-sliding-window-strategy.svg)
-
 ## 四、Token 计量与成本控制 (TokenMeter)
 
 在企业级部署中，每一次大模型调用的成本必须清晰透明。`packages/telemetry` 模块在每次 Step 完成时，精准汇总物理 Usage：

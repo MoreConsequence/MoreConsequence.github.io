@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sqlite-wal-index-shm-ring-buffer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="shm-title shm-desc">
+  <title id="shm-title">SQLite WAL 共享内存 (.shm / WAL-Index) 与多读一写并发隔离</title>
+  <desc id="shm-desc">数据流架构图展示 SQLite WAL-Index 共享内存哈希表如何加速读者页面定位、解耦主库与 WAL 文件以及 Checkpoint 检查点归并机制。</desc>
+  <defs>
+    <marker id="sh-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="sh-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SQLITE MEMORY INTERNALS · WAL-INDEX (.SHM) &amp; CONCURRENT ISOLATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">SQLite WAL 共享内存 (.shm) 与页面路由架构</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">.shm 共享内存哈希表 ➔ 读者 O(1) 路由判定 (读 -wal 或读主库) ➔ Checkpoint 归并落盘</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: WAL-Index SHM (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="64" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">WAL-INDEX (.SHM)</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">共享内存哈希表</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">database.db-shm (mmap)</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 页号 ➔ WAL 帧号哈希映射表</text>
+    <text x="24" y="100" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 追踪当前活动最大写帧 (mxFrame)</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• 读者在内存中 O(1) 极速查询</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Fast In-Memory Hash Lookup</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心性能加速价值：</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 彻底消灭遍历 -wal 文件的磁盘开销；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 允许多进程通过 mmap 极速并发共享；</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读者瞬间获知该页最新位置。</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">临时文件特性</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">.shm 仅为易失共享内存加速，崩溃后可直接从 -wal 重建，无需落盘持久化。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Volatile Memory-Mapped Cache</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero File Persistence Cost</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Route</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sh-arr-accent)"/>
+
+  <!-- Col 2: Read Routing (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ROUTING LOGIC</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">页面读路由判定</text>
+
+    <!-- Branch A: WAL Hit -->
+    <rect x="14" y="42" width="262" height="60" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="62" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Branch A: 命中 WAL (.shm 中存在)</text>
+    <text x="24" y="78" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">➔ 直读 database.db-wal 文件对应帧</text>
+    <text x="24" y="92" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Read Uncommitted / Latest WAL Page</text>
+
+    <!-- Branch B: Main DB Hit -->
+    <rect x="14" y="110" width="262" height="60" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="130" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Branch B: 未命中 WAL (.shm 中无记录)</text>
+    <text x="24" y="146" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">➔ 直读主库 database.db 文件基线物理页</text>
+    <text x="24" y="160" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Read Base Database File</text>
+
+    <!-- Details -->
+    <rect x="14" y="178" width="262" height="182" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="198" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">隔离性物理保证：</text>
+    <text x="24" y="218" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读者进入时记录当前 mxFrame 标记；</text>
+    <text x="24" y="238" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 哪怕写者后续追加了新帧，读者也绝不读取；</text>
+    <text x="24" y="258" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 完美实现 MVCC 快照隔离与 0 锁阻塞！</text>
+    <line x1="24" y1="270" x2="266" y2="270" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="290" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Deterministic Snapshot Isolation</text>
+    <text x="24" y="308" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Hardware-Level Multi-Version Read</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Merge</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sh-arr-accent)"/>
+
+  <!-- Col 3: Checkpoint (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="90" height="18" rx="2" fill="#141413"/>
+    <text x="59" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CHECKPOINT</text>
+    <text x="114" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">检查点收敛落盘</text>
+
+    <!-- Content Box -->
+    <rect x="14" y="42" width="232" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">wal_autocheckpoint = 1000</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. WAL 积压达到 1000 帧时触发</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 将 WAL 脏页顺序刷回 database.db</text>
+    <text x="24" y="118" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">3. 重置 .shm 索引与写指针</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Periodic Sync &amp; Truncate</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="232" height="100" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">长事务阻塞风险：</text>
+    <text x="24" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 若有长查询读者卡住旧快照；</text>
+    <text x="24" y="214" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• Checkpoint 无法完成全部页覆盖；</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 导致 -wal 文件持续无限膨胀！</text>
+
+    <!-- Summary -->
+    <rect x="14" y="262" width="232" height="98" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">收敛闭环</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">及时关闭只读游标，确保 Checkpoint 顺畅收敛，维持最小磁盘体积。</text>
+    <text x="24" y="326" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Clean WAL Truncation</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero File Growth Trap</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">.shm 共享内存哈希表与检查点收敛</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">O(1) 页面路由判定与快照隔离核心</text>
+</svg>
+</main>
+</body>
+</html>

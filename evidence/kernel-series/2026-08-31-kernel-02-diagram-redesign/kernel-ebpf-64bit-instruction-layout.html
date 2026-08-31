@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kernel-ebpf-64bit-instruction-layout</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="ins-title ins-desc">
+  <title id="ins-title">eBPF 64 位定长指令格式结构布局与专用寄存器模型</title>
+  <desc id="ins-desc">指令结构图展示 eBPF 8 字节（64 位）定长指令编码字段划分，以及 11 个专用寄存器 R0 至 R10 的调用约定与物理语义。</desc>
+  <defs>
+    <marker id="in-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="in-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INSTRUCTION ENCODING &amp; REGISTERS · RISC 64-BIT ANATOMY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">eBPF 64 位定长指令格式与专用寄存器模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">8 字节定长指令布局 (opcode, dst, src, off, imm) 与 11 个专用寄存器 (R0 ~ R10) 物理语义约定</text>
+
+  <!-- Top Section: 64-bit Instruction Format Box (y=136..286, h=150) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="150" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ENCODING</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">64 位（8 字节）定长指令物理布局</text>
+
+    <!-- Visual Bit Strip (y=44..100) -->
+    <g transform="translate(14, 44)">
+      <!-- opcode: 8 bits (w=130) -->
+      <rect x="0" y="0" width="130" height="56" rx="3" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="65" y="22" fill="#e85d3f" font-size="10" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">opcode (8-bit)</text>
+      <text x="65" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">bits [0 .. 7]</text>
+      <text x="65" y="49" fill="#141413" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">操作码 (ALU/JMP/LDX)</text>
+
+      <!-- dst_reg: 4 bits (w=90) -->
+      <rect x="136" y="0" width="90" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="181" y="22" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">dst_reg (4b)</text>
+      <text x="181" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">bits [8 .. 11]</text>
+      <text x="181" y="49" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">目标寄存器 R0~10</text>
+
+      <!-- src_reg: 4 bits (w=90) -->
+      <rect x="232" y="0" width="90" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="277" y="22" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">src_reg (4b)</text>
+      <text x="277" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">bits [12 .. 15]</text>
+      <text x="277" y="49" fill="#141413" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">源寄存器 R0~10</text>
+
+      <!-- offset: 16 bits (w=180) -->
+      <rect x="328" y="0" width="180" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="418" y="22" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">offset (16-bit)</text>
+      <text x="418" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">bits [16 .. 31]</text>
+      <text x="418" y="49" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">有符号栈/结构体偏移 (Signed)</text>
+
+      <!-- imm: 32 bits (w=338) -->
+      <rect x="514" y="0" width="338" height="56" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="683" y="22" fill="#e85d3f" font-size="10" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">imm (32-bit Immediate Value)</text>
+      <text x="683" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">bits [32 .. 63]</text>
+      <text x="683" y="49" fill="#141413" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">32 位常数立即数 (或 64 位宽立即数的第一部分)</text>
+    </g>
+
+    <!-- Sub-note -->
+    <text x="24" y="128" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">struct bpf_insn { __u8 code; __u8 dst_reg:4, src_reg:4; __s16 off; __s32 imm; }; 严格对齐 8 字节，利于 CPU 快速取指解码</text>
+  </g>
+
+  <!-- Bottom Section: 11 Dedicated Registers Matrix (y=306..506, h=200) -->
+  <g transform="translate(40, 306)">
+    <!-- Reg Group 1: R0 Return (x=0..200, w=200) -->
+    <g transform="translate(0, 0)">
+      <rect width="200" height="200" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="60" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="42" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">R0</text>
+      <text x="80" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">函数返回值 / 动作</text>
+
+      <rect x="12" y="36" width="176" height="54" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">BPF Program Verdict</text>
+      <text x="20" y="70" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">XDP_PASS / XDP_DROP</text>
+      <text x="20" y="84" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">TC_ACT_OK / TC_ACT_SHOT</text>
+
+      <text x="12" y="112" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理映射：x86_64 %rax</text>
+      <text x="12" y="130" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">调用内核 Helper 函数后的返回值也存放在 R0 中</text>
+      <text x="12" y="152" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">bpf_map_lookup_elem()</text>
+      <text x="12" y="170" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">指针非空校验必须针对 R0</text>
+    </g>
+
+    <!-- Reg Group 2: R1 ~ R5 Arguments (x=214..454, w=240) -->
+    <g transform="translate(214, 0)">
+      <rect width="240" height="200" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="12" y="10" width="76" height="16" rx="2" fill="#e85d3f"/>
+      <text x="50" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">R1 ~ R5</text>
+      <text x="96" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">函数调用入参 (Args)</text>
+
+      <rect x="12" y="36" width="216" height="66" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">R1: Context Pointer (上下文)</text>
+      <text x="20" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">入场时指向 struct xdp_md / sk_buff</text>
+      <text x="20" y="88" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">R2 ~ R5: Helper Function Args</text>
+
+      <text x="12" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理映射 (x86_64 Calling Conv)：</text>
+      <text x="12" y="140" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">R1 ➔ %rdi | R2 ➔ %rsi | R3 ➔ %rdx</text>
+      <text x="12" y="156" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">R4 ➔ %rcx | R5 ➔ %r8</text>
+      <line x1="12" y1="168" x2="228" y2="168" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="12" y="186" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">与标准 C ABI 100% 吻合，零转译开销！</text>
+    </g>
+
+    <!-- Reg Group 3: R6 ~ R9 Callee-saved (x=468..678, w=210) -->
+    <g transform="translate(468, 0)">
+      <rect width="210" height="200" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="76" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="50" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">R6 ~ R9</text>
+      <text x="96" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">被调用者保存寄存器</text>
+
+      <rect x="12" y="36" width="186" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="54" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Callee-Saved Semantics</text>
+      <text x="20" y="70" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">调用外部 BPF Helper 函数时</text>
+      <text x="20" y="86" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">寄存器数值在调用前后保持不变</text>
+
+      <text x="12" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理映射：</text>
+      <text x="12" y="140" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">R6 ➔ %rbx | R7 ➔ %r13</text>
+      <text x="12" y="156" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">R8 ➔ %r14 | R9 ➔ %r15</text>
+      <text x="12" y="178" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">适合存放贯穿长生命周期的局部指针</text>
+    </g>
+
+    <!-- Reg Group 4: R10 Stack Pointer (x=692..880, w=188) -->
+    <g transform="translate(692, 0)">
+      <rect width="188" height="200" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="60" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="42" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">R10</text>
+      <text x="80" y="22" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">只读栈帧指针 (Frame)</text>
+
+      <rect x="12" y="36" width="164" height="66" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">READ-ONLY STACK</text>
+      <text x="20" y="70" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Stack Size: 512 Bytes</text>
+      <text x="20" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">严禁直接修改 R10 指针！</text>
+
+      <text x="12" y="122" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理映射：x86_64 %rbp</text>
+      <text x="12" y="140" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">仅允许基于 R10 + offset 寻址</text>
+      <text x="12" y="158" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">*(R10 - 8) = key;</text>
+      <text x="12" y="178" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Verifier 严格校验栈防溢出</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">通用指令字段与寄存器</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">核心操作码与入参核心 (R1~R5)</text>
+</svg>
+</main>
+</body>
+</html>

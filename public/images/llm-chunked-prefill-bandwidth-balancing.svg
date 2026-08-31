@@ -1,90 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cp-title cp-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cp-title">Chunked Prefill 算力带宽配平与解码时延防抖架构</title>
+  <desc id="cp-desc">架构机制对比图展示长 Prompt 独占 GPU 引发解码停滞的预填气泡，对比 Chunked Prefill 将预填充切块与在途解码请求混部实现算力满载与零卡顿流式输出的机制。</desc>
+  <defs>
+    <marker id="cp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="cp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Chunked Prefill 算力带宽配平与解码时延防抖架构</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">长 Prompt 切片分块（如 512 Tokens/Chunk） ──► 与现有 Decode 批次混部共批 ──► 消除首字延迟（TTFT）与逐字抖动（ITL）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CHUNKED PREFILL ARCHITECTURE · COMPUTE &amp; BANDWIDTH CO-OPTIMIZATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Chunked Prefill 算力带宽配平与防抖架构</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">未切片长 Prompt (800ms 独占/在途打字卡顿) vs Chunked 混部 (512-Token 预填块 + 40 Decode 顺风车/25ms 极稳)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Prefill Bubble (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PREFILL BUBBLE</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">预填气泡 (在途解码卡顿)</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">32K 超长 Prompt 突发到达</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 正在服务 50 个在线用户的流畅 Decode 逐字输出 (15ms/步)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 32K Prefill 瞬间独占 GPU 长达整整 800ms！</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户体感灾难：</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 800ms 内所有 50 个用户的流式打字输出完全冻结停滞；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 逐字时延 (ITL) 出现极端毛刺断崖 (P99 飙升数十倍)；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 导致极为恶劣的交互卡顿体验。</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">ITL Severe Jitter &amp; Pipeline Stalls</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">痛点根源</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">超长 Prefill 与在途 Decode 的粒度失衡，导致计算密集型请求霸占硬件资源。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Monolithic Prefill Monopoly</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Decode Latency Spike Trap</text>
   </g>
 
-  <!-- Main Comparison Panes (435px each) -->
-  <g transform="translate(30, 75)">
-    <!-- Pane 1: Traditional Big Prefill Block (435px) -->
-    <g filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#fca5a5" stroke-width="1.2"/>
-      <rect width="435" height="36" rx="8" fill="#fef2f2"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#991b1b" text-anchor="middle">❌ 传统整块 Prefill：Decode 被长时间饿死</text>
+  <!-- Col 2: Chunked Prefill (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CHUNKED MIXED</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">分块预填混部 (算力带宽配平)</text>
 
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Giant Prefill -->
-        <rect width="403" height="46" rx="4" fill="#fee2e2" stroke="#f87171"/>
-        <text x="12" y="18" fill="#991b1b" font-weight="700">新来 4K Token 超长 Prompt</text>
-        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">独占 GPU 计算核心，执行时长高达 280ms！</text>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">混合批次: Batch = [1x 512 Chunk] + [40x 1-Token Decode]</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 将 32K Prompt 均匀拆分为 512-Token 的连续切片</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 每步耗时绝对稳定在 25ms 以内，流式打字 0 卡顿！</text>
 
-        <!-- Starved Decode Requests -->
-        <rect y="54" width="403" height="60" rx="4" fill="#ffffff" stroke="#fecaca"/>
-        <text x="12" y="18" fill="#991b1b" font-weight="700">在途 Decode 请求被完全挂起：</text>
-        <text x="12" y="32" font-size="9.5" fill="#7f1d1d">• 用户 A 正在看打字机输出，文字突然卡顿 300ms</text>
-        <text x="12" y="46" font-size="9.5" fill="#7f1d1d">• 逐字延迟（ITL - Inter-Token Latency）产生剧烈毛刺</text>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理双赢机理：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 512 Prompt Tokens 刚好填满 Tensor Core 矩阵乘算力 (Compute-bound)；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. 40 个 Decode 请求顺风车 (Piggyback) 同步完成解码；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 算力与显存带宽达到完美动态平衡！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Optimal Arithmetic Intensity &amp; Zero Decoding Freezes</text>
 
-        <rect y="122" width="403" height="42" rx="4" fill="#fee2e2"/>
-        <text x="12" y="18" fill="#b91c1c" font-weight="700">物理缺陷：</text>
-        <text x="12" y="32" font-size="9.5" fill="#991b1b">计算密集型与带宽密集型两极分化，硬件利用率严重失衡</text>
-      </g>
-    </g>
-
-    <!-- Pane 2: Chunked Prefill (435px) -->
-    <g transform="translate(465, 0)" filter="url(#card-shadow)">
-      <rect width="435" height="280" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="36" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#166534" text-anchor="middle">⚡ Chunked Prefill：切片分块与 Decode 完美混部</text>
-
-      <g transform="translate(16, 48)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Chunks -->
-        <rect width="403" height="46" rx="4" fill="#ffffff" stroke="#a7f3d0"/>
-        <text x="12" y="18" fill="#14532d" font-weight="700">Prompt 均匀切片 (如 512 Tokens/Chunk)</text>
-        <text x="12" y="32" font-size="9.5" fill="#15803d">每轮迭代只计算 1 个 Chunk（耗时严格限制在 20ms）</text>
-
-        <!-- Co-batching with Decode -->
-        <rect y="54" width="403" height="60" rx="4" fill="#ecfdf5" stroke="#10b981"/>
-        <text x="12" y="18" fill="#047857" font-weight="700">每轮 Iteration 混合打包：</text>
-        <text x="12" y="32" font-size="9.5" fill="#065f46">• [ 1 个 Prefill Chunk (512T) ] + [ 32 个在途 Decode (32T) ]</text>
-        <text x="12" y="46" font-size="9.5" font-weight="700" fill="#047857">✓ 在途 Decode 绝不受阻，打字机流式输出丝般顺滑！</text>
-
-        <rect y="122" width="403" height="42" rx="4" fill="#d1fae5"/>
-        <text x="12" y="18" fill="#065f46" font-weight="700">算力带宽完美配平：</text>
-        <text x="12" y="32" font-size="9.5" font-weight="700" fill="#047857">Prefill 吃满 Tensor Core 算力，Decode 吃满显存带宽！</text>
-      </g>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">终极工业成效</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">Sarathi-Serve 与 vLLM 标配技术：超长文档 RAG 与高并发打字输出平稳共存，消除 P99 时延毛刺！</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">P99 ITL Latency &lt; 10ms Smooth SLA</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Next-Gen Production Serving Standard</text>
   </g>
 
-  <!-- Bottom Insight Bar -->
-  <g transform="translate(30, 375)">
-    <rect width="900" height="42" rx="6" fill="#ffffff" stroke="#cbd5e1" filter="url(#card-shadow)"/>
-    <text x="450" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-      💡 <tspan font-weight="700" fill="#0f172a">推理引擎调度精髓：</tspan> Chunked Prefill（Sarathi-Serve 架构）通过 <tspan font-weight="700" fill="#2563eb">“时间切片混部”</tspan>，
-      彻底解决了长 Prompt 对在线 Decode 实时流式体验的毁灭性阻塞。
-    </text>
-  </g>
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">未切片长 Prompt 与 800ms 预填气泡</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Chunked 512 预填块 + 40 Decode 算力带宽配平核心</text>
 </svg>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-xdp-title cdn-xdp-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cdn-xdp-title">Linux 内核协议栈 sk_buff 软中断瓶颈 vs eBPF/XDP 网卡线速丢包架构对比</title>
+  <desc id="cdn-xdp-desc">架构对比图展示传统 Linux 内核协议栈分配 sk_buff 导致软中断 CPU 打满，以及 eBPF/XDP 在网卡驱动层实现 4000万 PPS 零内存分配丢包机理。</desc>
+  <defs>
+    <marker id="cdn-xdp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-xdp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">KERNEL DATA PATH · XDP_DROP VS KERNEL STACK</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">内核 sk_buff 软中断瓶颈 vs eBPF/XDP 线速丢包对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">传统内核栈为每个垃圾包分配 sk_buff 导致软中断锁死；XDP 在网卡驱动层 0 内存分配实现 4000万 PPS 丢包</text>
+
+  <!-- Left Column: Traditional Linux Kernel Path (Mode A, x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE A</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统 Linux 内核协议栈路径 (iptables / nftables)</text>
+
+    <!-- Step 1: NIC RX -->
+    <rect x="14" y="46" width="392" height="46" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="66" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 网卡收包与 DMA 写入</text>
+    <text x="26" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">NIC RX ➔ 触发硬件中断 ➔ 调度 ksoftirqd</text>
+
+    <!-- Step 2: sk_buff Allocation -->
+    <rect x="14" y="98" width="392" height="52" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="118" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 内核重度结构体分配 (瓶颈)</text>
+    <text x="26" y="136" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">kmem_cache_alloc 分配 struct sk_buff (240 字节)</text>
+
+    <!-- Step 3: Protocol Traversal -->
+    <rect x="14" y="156" width="392" height="52" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="176" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. Netfilter / iptables 规则链顺序比对</text>
+    <text x="26" y="194" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">遍历数百条防火墙规则，Conntrack 连接表锁竞争</text>
+
+    <!-- Step 4: Final Drop -->
+    <rect x="14" y="214" width="392" height="46" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="234" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4. 协议栈判定丢弃并释放内存</text>
+    <text x="26" y="250" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">kfree_skb() 释放内存，上下文切换损耗巨大</text>
+
+    <!-- Total Metric -->
+    <rect x="14" y="268" width="392" height="92" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="292" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统内核栈极限吞吐指标</text>
+    <text x="26" y="314" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">Max Throughput: ~1.2 Mpps (每秒仅处理 120 万包)</text>
+    <text x="26" y="334" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">CPU 软中断使用率 100% 打满，系统假死瘫痪</text>
+  </g>
+
+  <!-- Right Column: eBPF/XDP Line-rate Drop (Mode B, x=500..920, w=420) - Focal Column -->
+  <g transform="translate(500, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE B</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">现代 eBPF/XDP 快速数据路径 (Line-Rate Drop)</text>
+
+    <!-- Step 1: NIC Driver Hook -->
+    <rect x="14" y="46" width="392" height="46" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="66" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. NIC 驱动层 XDP 挂载点拦截</text>
+    <text x="26" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">在 DMA 刚刚完成、尚未分配 sk_buff 时直接执行 BPF</text>
+
+    <!-- Step 2: Zero-Copy Nano-sec Rule Lookup -->
+    <rect x="14" y="98" width="392" height="52" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="118" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 纳秒级 BPF Map 无锁哈希查找</text>
+    <text x="26" y="136" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">单包安全判定 ≤ 10ns，直接读取原始数据包字节</text>
+
+    <!-- Step 3: Immediate XDP_DROP Action -->
+    <rect x="14" y="156" width="392" height="52" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="176" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. XDP_DROP 原路丢弃指令</text>
+    <text x="26" y="194" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">0 内存分配 · 0 软中断 · 直接重置 Ring Buffer 描述符</text>
+
+    <!-- Step 4: Clean Packet Forwarding -->
+    <rect x="14" y="214" width="392" height="46" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="234" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4. 仅放行合法报文 (XDP_PASS)</text>
+    <text x="26" y="250" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">仅纯净业务流进入内核协议栈与应用层反代</text>
+
+    <!-- Total Metric -->
+    <rect x="14" y="268" width="392" height="92" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="26" y="292" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">eBPF/XDP 生产级清洗吞吐指标</text>
+    <text x="26" y="314" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">Max Throughput: ≥ 40.0 Mpps (单机线速丢弃)</text>
+    <text x="26" y="334" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">吞吐提升超 33 倍，CPU 开销维持在 5% 以下！</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统内核协议栈处理</text>
+  <rect x="300" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">eBPF/XDP 网卡线速旁路</text>
+  <line x1="510" y1="556" x2="534" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-xdp-arr-accent)"/>
+  <text x="542" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">吞吐暴涨 33 倍</text>
+</svg>

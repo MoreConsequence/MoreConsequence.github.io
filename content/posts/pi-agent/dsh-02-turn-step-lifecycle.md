@@ -152,10 +152,6 @@ ctx.on('agent/pre-step', async (args, next) => {
 
 ---
 
-
-
-![DSH 步骤递归安全护栏：最大深度、死循环模式识别与主动干预](../../../public/images/dsh-step-recursion-limit-guard.svg)
-
 ## 四、工具并发流水线：Exclusive 屏障与 Rolling Pool
 
 当大模型单次输出了多个工具调用时（如同时调用 `read_file("a.ts")`, `read_file("b.ts")`, `execute_bash("npm test")`），调度器如何确保并发性能与执行安全？

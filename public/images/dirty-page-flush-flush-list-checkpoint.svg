@@ -1,49 +1,127 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="fl-title fl-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="fl-title">脏页刷盘与 Flush 链表：LSN 序号推进与 Sharp vs Fuzzy Checkpoint</title>
+  <desc id="fl-desc">架构流程图展示 InnoDB Flush 链表按 oldest_modification_lsn 组织脏页，Page Cleaner 异步执行 Fuzzy Checkpoint 推进 LSN 与 75% Redo 日志满载时触发 Sharp Checkpoint 同步刷盘的全过程。</desc>
+  <defs>
+    <marker id="fl-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="fl-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">脏页刷盘与 Checkpoint 推进模型 (Flush List &amp; Fuzzy Checkpoint)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Flush List 按 oldest_modification LSN 严格升序排序 ──► Page Cleaner 后台线程异步刷盘 ──► 推进 Checkpoint LSN 释放 Redo Log 空间</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DIRTY PAGE FLUSHING · FLUSH LIST &amp; CHECKPOINT ARCHITECTURE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">脏页刷盘与 Flush 链表推进机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Flush 链表按 oldest_modification_lsn 单调组织 ➔ Page Cleaner 推进 Checkpoint ➔ Fuzzy 平滑落盘 vs 75% Redo Sharp 警戒</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Flush List Organization (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Flush List 脏页组织</text>
+
+    <!-- Visual Box -->
+    <rect x="14" y="42" width="242" height="110" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">oldest_modification_lsn</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">页第一次被修改时打标 LSN_0</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">按 LSN 从大到小插入链表头部</text>
+    <text x="24" y="118" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Tail 始终是最早未刷盘脏页 (LSN_min)</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Monotonic LSN Ordering</text>
+
+    <!-- Details -->
+    <rect x="14" y="162" width="242" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">写账的核心属性：</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 读账 LRU 决定淘汰谁；</text>
+    <text x="24" y="222" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 写账 Flush List 决定刷盘谁；</text>
+    <text x="24" y="240" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 两个链表包含相同的脏页指针，但依据完全解耦！</text>
+    <line x1="24" y1="254" x2="246" y2="254" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="274" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Dirty Watermark Trigger:</text>
+    <text x="24" y="292" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">max_dirty_pages_pct_lwm=10%</text>
+    <text x="24" y="310" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">max_dirty_pages_pct=90%</text>
+    <text x="24" y="330" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">后台自适应调节刷盘强度</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 内存修改与首次变脏 (Buffer Pool Page Mutated: oldest_modification LSN)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">事务更新数据页 ──► 先写 Redo Log (WAL) ──► 内存页标记为脏页并插入 Flush List 尾部</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">oldest_modification LSN 记录了该页第一次变脏时的日志位置！</text>
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Flush</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fl-arr-accent)"/>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Flush List 有序队列维护 (Strictly Ordered by LSN)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">Flush List 头部永远是全库最早变脏的页 ──► 保证刷盘顺序与 Redo Log 日志顺序完全单调一致</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">为崩溃恢复提供不可逆转的确定性边界！</text>
-      </g>
+  <!-- Col 2: Checkpoint Engine (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 2 · CORE</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Checkpoint 推进与持久化</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Page Cleaner 异步平滑刷盘 (Adaptive Flusher: Fuzzy Checkpoint)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">根据脏页比例与 Redo Log 消耗速度动态调整 I/O 速率 ──► 异步写回 ibd 表空间文件</text>
-        <text x="15" y="62" font-size="8" fill="#047857">彻底避免系统瞬间 I/O 卡死（Sharp Checkpoint 抖动）！</text>
-      </g>
+    <!-- Page Cleaner Action -->
+    <rect x="14" y="42" width="262" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Page Cleaner 后台线程调度</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">根据 io_capacity 预算批量落盘</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">从 Flush List 尾部依次写回磁盘</text>
+    <text x="24" y="118" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Checkpoint LSN 推进至已落盘点</text>
+    <text x="24" y="136" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">innodb_io_capacity = 10000</text>
 
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. Checkpoint LSN 推进与日志循环覆盖 (Checkpoint Advancement)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">头部脏页刷盘成功 ──► Checkpoint LSN 向前推进 ──► 释放该 LSN 之前的 Redo Log 循环复用！</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">保证固定大小的 ib_logfile 可以永久循环写入！</text>
-      </g>
-    </g>
+    <!-- Recovery Principle -->
+    <rect x="14" y="162" width="262" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">崩溃恢复的第一性原理：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Checkpoint LSN 之前的 Redo 全部作废！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">因为对应的脏数据已经物理刷入磁盘；</text>
+    <text x="24" y="242" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">系统断电重启时，只需从 Checkpoint LSN 开始向后重放 Redo 日志！</text>
+    <line x1="24" y1="256" x2="266" y2="256" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="276" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Checkpoint 推进越快 ➔ 崩溃恢复越快！</text>
+    <text x="24" y="294" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Redo Log Space Recycling</text>
+    <text x="24" y="312" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">循环写入日志文件的安全屏障</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Modes</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fl-arr-accent)"/>
+
+  <!-- Col 3: Sharp vs Fuzzy (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODES</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">两种刷盘形态</text>
+
+    <!-- Fuzzy Mode -->
+    <rect x="14" y="42" width="232" height="130" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Fuzzy Checkpoint (日常)</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 异步分批温和落盘；</text>
+    <text x="24" y="102" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 前台业务 0 停顿 0 阻塞；</text>
+    <text x="24" y="120" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 脏页水位维持在 10%~90%；</text>
+    <text x="24" y="138" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Smooth I/O Throttling</text>
+    <text x="24" y="154" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Normal Background Operation</text>
+
+    <!-- Sharp Mode -->
+    <rect x="14" y="182" width="232" height="178" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="204" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Sharp Checkpoint (风暴)</text>
+    <text x="24" y="224" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 触发条件 1: Redo 达 75% 警戒线</text>
+    <text x="24" y="242" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 触发条件 2: MySQL 正常停机</text>
+    <text x="24" y="260" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 强制挂起全部业务写入！</text>
+    <text x="24" y="278" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 同步倾泻刷盘直到日志缓解</text>
+    <line x1="24" y1="290" x2="236" y2="290" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="310" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">引发 P99 秒级卡顿尖刺！</text>
+    <text x="24" y="328" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Avoid Sharp by IO Tuning</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Flush 组织与 Fuzzy 平滑落盘</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Checkpoint 推进与 75% Redo 刷盘风暴警戒</text>
 </svg>

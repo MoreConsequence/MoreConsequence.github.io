@@ -1,136 +1,174 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="mq-title mq-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="mq-title">网卡硬件多队列与 RSS / RPS / RFS 多核负载均衡架构</title>
+  <desc id="mq-desc">多核网络架构图展示网卡通过硬件 RSS 四元组哈希分发至多个 RX 队列，通过 MSI-X 中断绑定多 CPU 核心，并结合 RPS/RFS 消除单核软中断瓶颈。</desc>
+  <defs>
+    <marker id="mq-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="mq-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">网卡硬件多队列与 RSS / RPS / RFS 多核负载均衡架构</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Toeplitz 4元组哈希 ──► 硬件 RX 多队列 ──► MSI-X 独立中断绑核（SMP Affinity） ──► 多核并行 SoftIRQ 消除单核热点</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">MULTI-QUEUE RSS &amp; RPS · SMP IRQ AFFINITY MAP</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">网卡多队列与 RSS / RPS / RFS 多核负载均衡</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">四元组硬件哈希 (RSS) ➔ 独立 RX 队列 ➔ MSI-X 中断绑核 (SMP IRQ Affinity) ➔ 软件流加速 (RPS/RFS)</text>
+
+  <!-- 4 Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Ingress Traffic (x=40..210, w=170) -->
+  <g transform="translate(40, 136)">
+    <rect width="170" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">INGRESS</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">并发网络流</text>
+
+    <!-- Flows -->
+    <rect x="14" y="42" width="142" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">海量并发 TCP/UDP</text>
+    <text x="22" y="82" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Flow 1: 10.0.1.2:80</text>
+    <text x="22" y="98" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Flow 2: 10.0.1.3:443</text>
+
+    <rect x="14" y="126" width="142" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="148" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">四元组特征 (Tuple)</text>
+    <text x="22" y="168" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• Source IP</text>
+    <text x="22" y="184" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• Destination IP</text>
+    <text x="22" y="200" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• Source Port</text>
+    <text x="22" y="216" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• Dest Port</text>
+
+    <rect x="14" y="246" width="142" height="114" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="268" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">单核致命缺陷</text>
+    <text x="22" y="288" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">若所有包打在 CPU 0</text>
+    <text x="22" y="306" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">CPU 0 si 100% 满载！</text>
+    <text x="22" y="324" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">其余 63 核围观闲置</text>
+    <text x="22" y="342" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">严重丢包与时延飙升</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=210..240) -->
+  <text x="225" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Feed</text>
+  <line x1="210" y1="230" x2="240" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#mq-arr-accent)"/>
 
-    <!-- 4 Pipeline Columns -->
-    <g transform="translate(20, 20)">
-      <!-- Stage 1: Packet Stream & Toeplitz Hash (200px) -->
-      <g>
-        <rect width="190" height="235" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-        <rect width="190" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="95" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">1. 4元组哈希 (Toeplitz)</text>
+  <!-- Col 2: NIC Hardware RSS (x=240..460, w=220) - Focal -->
+  <g transform="translate(240, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RSS ENGINE</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡硬件 RSS 引擎</text>
 
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="170" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="8" y="16" fill="#0f172a" font-weight="700">提取网络流特征</text>
-          <text x="8" y="28" font-size="9" fill="#64748b">源IP/端口 + 目的IP/端口</text>
+    <!-- Toeplitz Hash -->
+    <rect x="14" y="42" width="192" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Toeplitz 硬件哈希算法</text>
+    <text x="24" y="82" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">Hash = Toeplitz(4-tuple)</text>
+    <text x="24" y="98" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">硬件线速计算，0 CPU 消耗</text>
 
-          <rect y="48" width="170" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">硬件 RSS 散列算法</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">• 同一 TCP 流 Hash 恒定</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">• 保证单流数据包严格保序</text>
+    <!-- Multi-Queues (4 Queues) -->
+    <rect x="14" y="126" width="192" height="234" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">独立硬件 RX 队列分发</text>
 
-          <rect y="106" width="170" height="42" rx="3" fill="#f8fafc"/>
-          <text x="8" y="16" fill="#64748b">查 Indirection Table ──►</text>
-          <text x="8" y="28" font-size="9" fill="#64748b">映射至对应物理队列</text>
-        </g>
-      </g>
+    <!-- Queue 0 -->
+    <rect x="24" y="158" width="172" height="38" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="174" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RX Queue 0 (eth0-TxRx-0)</text>
+    <text x="32" y="188" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">IRQ 125 ➔ CPU 0 绑核</text>
 
-      <!-- Stage 2: Hardware RX Queues (200px) -->
-      <g transform="translate(210, 0)">
-        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. 硬件独立 RX 队列池</text>
+    <!-- Queue 1 -->
+    <rect x="24" y="202" width="172" height="38" rx="2" fill="rgba(232,93,63,0.1)" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="32" y="218" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RX Queue 1 (eth0-TxRx-1)</text>
+    <text x="32" y="232" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">IRQ 126 ➔ CPU 1 绑核</text>
 
-        <g transform="translate(10, 44)" font-family="ui-monospace, monospace" font-size="9.5">
-          <rect width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="20" fill="#14532d">RX Queue 0 (IRQ 125)</text>
+    <!-- Queue 2 -->
+    <rect x="24" y="246" width="172" height="38" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="262" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RX Queue 2 (eth0-TxRx-2)</text>
+    <text x="32" y="276" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">IRQ 127 ➔ CPU 2 绑核</text>
 
-          <rect y="38" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="20" fill="#14532d">RX Queue 1 (IRQ 126)</text>
+    <!-- Queue 3 -->
+    <rect x="24" y="290" width="172" height="38" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="32" y="306" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">RX Queue 3 (eth0-TxRx-3)</text>
+    <text x="32" y="320" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">IRQ 128 ➔ CPU 3 绑核</text>
 
-          <rect y="76" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="20" fill="#14532d">RX Queue 2 (IRQ 127)</text>
-
-          <rect y="114" width="175" height="32" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="20" fill="#14532d">RX Queue 3 (IRQ 128)</text>
-        </g>
-      </g>
-
-      <!-- Stage 3: IRQ Affinity Mapping (200px) -->
-      <g transform="translate(425, 0)">
-        <rect width="195" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dbeafe"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">3. CPU 亲和性绑定 (SMP)</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1d4ed8" font-weight="700">smp_affinity 配置</text>
-          <text x="8" y="30" font-family="ui-monospace, monospace" font-size="9" fill="#2563eb">echo 1 > /proc/irq/125/smp</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">独占核心中断响应</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">• IRQ 125 ──► CPU 0</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">• IRQ 126 ──► CPU 1</text>
-
-          <rect y="106" width="175" height="42" rx="3" fill="#eff6ff"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">消灭跨核上下文切换</text>
-          <text x="8" y="28" font-size="9" fill="#2563eb">L1/L2 Cache 命中率提升 40%</text>
-        </g>
-      </g>
-
-      <!-- Stage 4: Multi-Core SoftIRQ (230px) -->
-      <g transform="translate(640, 0)">
-        <rect width="220" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="220" height="32" rx="6" fill="#dcfce7"/>
-        <text x="110" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. 多核并行 SoftIRQ 消费</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="200" height="38" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">CPU 0: ksoftirqd/0 (25% 负载)</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">处理 RX-0 队列数据包</text>
-
-          <rect y="44" width="200" height="38" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">CPU 1: ksoftirqd/1 (25% 负载)</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">处理 RX-1 队列数据包</text>
-
-          <rect y="88" width="200" height="58" rx="3" fill="#d1fae5" stroke="#10b981"/>
-          <text x="8" y="18" fill="#065f46" font-weight="700">✓ 性能飞跃成果：</text>
-          <text x="8" y="32" font-size="9.5" fill="#047857">• 彻底消除 CPU 0 单核 100% 跑满</text>
-          <text x="8" y="46" font-size="9.5" font-weight="700" fill="#047857">• 万兆吞吐线性分摊至 32/64 核！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">多核网络核心法则：</tspan> 硬件 RSS + 绑定 CPU 亲和性（IRQ Affinity）实现了 <tspan font-weight="700" fill="#2563eb">“单流保序、多流横向并行”</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        若网卡不支持硬件多队列，也可通过软件 RPS（Receive Packet Steering）在内核层模拟多核分发。
-      </text>
-    </g>
+    <text x="24" y="348" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Indirection Table: 128 Entries</text>
   </g>
+
+  <!-- Arrow 2 (x=460..490) -->
+  <text x="475" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MSI-X</text>
+  <line x1="460" y1="230" x2="490" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#mq-arr-accent)"/>
+
+  <!-- Col 3: CPU SMP IRQ Affinity (x=490..700, w=210) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">AFFINITY</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SMP IRQ 绑核并行</text>
+
+    <!-- Affinity Configuration -->
+    <rect x="14" y="42" width="182" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">smp_affinity 绑定配置</text>
+    <text x="24" y="84" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">/proc/irq/125/smp_affinity ➔ 1 (CPU 0)</text>
+    <text x="24" y="100" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">/proc/irq/126/smp_affinity ➔ 2 (CPU 1)</text>
+    <text x="24" y="116" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">/proc/irq/127/smp_affinity ➔ 4 (CPU 2)</text>
+    <text x="24" y="132" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">/proc/irq/128/smp_affinity ➔ 8 (CPU 3)</text>
+
+    <!-- Parallel SoftIRQ Processing -->
+    <rect x="14" y="162" width="182" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4 核心全并发软中断</text>
+    <text x="24" y="204" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• CPU 0: ksoftirqd/0 (25% si)</text>
+    <text x="24" y="222" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• CPU 1: ksoftirqd/1 (25% si)</text>
+    <text x="24" y="240" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• CPU 2: ksoftirqd/2 (25% si)</text>
+    <text x="24" y="258" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• CPU 3: ksoftirqd/3 (25% si)</text>
+    <line x1="24" y1="270" x2="186" y2="270" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="290" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">软中断负载绝对均匀摊平！</text>
+    <text x="24" y="308" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">整机网络吞吐提升 4x ~ 32x</text>
+    <text x="24" y="328" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">消除单核软中断毛刺与掉包</text>
+    <text x="24" y="346" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">万兆/十万兆网卡标配生产实践</text>
+  </g>
+
+  <!-- Arrow 3 (x=700..730) -->
+  <text x="715" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RFS</text>
+  <line x1="700" y1="230" x2="730" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#mq-arr-accent)"/>
+
+  <!-- Col 4: Software RPS / RFS (x=730..920, w=190) -->
+  <g transform="translate(730, 136)">
+    <rect width="190" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SOFTWARE</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">RPS / RFS 软件扩展</text>
+
+    <!-- RPS -->
+    <rect x="14" y="42" width="162" height="142" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">RPS (Packet Steering)</text>
+    <text x="24" y="84" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">当单队列旧网卡不支持 RSS</text>
+    <text x="24" y="102" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">内核软件模拟 Toeplitz 哈希</text>
+    <text x="24" y="120" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">/sys/class/net/eth0/queues/</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">rx-0/rps_cpus ➔ 0xf</text>
+    <text x="24" y="156" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">跨核 IPI 中断分发数据包</text>
+    <text x="24" y="172" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Software Multi-Core</text>
+
+    <!-- RFS -->
+    <rect x="14" y="196" width="162" height="164" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="218" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">RFS (Flow Steering)</text>
+    <text x="24" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">应用 Socket 亲和加速：</text>
+    <text x="24" y="256" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">感知哪个 CPU 正在运行用户态</text>
+    <text x="24" y="274" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">recv() / read() 线程</text>
+    <text x="24" y="292" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">就近在该 CPU 软中断处理！</text>
+    <text x="24" y="310" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">L1 / L2 / L3 Cache 命中率提升</text>
+    <text x="24" y="328" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">消除跨 CPU 核心缓存颠簸</text>
+    <text x="24" y="346" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">rps_sock_flow_entries</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">输入流与软件扩展</text>
+  <rect x="280" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="300" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">硬件 RSS 队列与 SMP 绑核核心</text>
 </svg>

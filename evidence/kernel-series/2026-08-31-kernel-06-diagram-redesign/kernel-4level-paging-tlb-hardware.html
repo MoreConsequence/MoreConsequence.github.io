@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kernel-4level-paging-tlb-hardware</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="page-title page-desc">
+  <title id="page-title">x86-64 虚拟内存转换与四级页表 (4-Level Paging) 硬件流</title>
+  <desc id="page-desc">架构流程图展示 x86-64 48 位虚拟地址 9+9+9+9+12 切片结构，以及从 CR3 寄存器出发经过 PGD、PUD、PMD、PTE 四级页表逐级硬件遍历并合成物理地址的全过程。</desc>
+  <defs>
+    <marker id="pg-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="pg-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">VIRTUAL MEMORY TRANSLATION · 4-LEVEL PAGING ARCHITECTURE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">x86-64 虚拟内存转换与四级页表硬件流</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">48 位虚拟地址切片 (9+9+9+9+12) ➔ CR3 根基址 ➔ PGD ➔ PUD ➔ PMD ➔ PTE 逐级硬件遍历与物理合成</text>
+
+  <!-- Top: 48-bit Virtual Address Slicing (y=136..240, h=104) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="104" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="130" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="79" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">48-BIT CANONICAL VA</text>
+    <text x="154" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">48 位规范虚拟地址切片 (Virtual Address: 9 + 9 + 9 + 9 + 12)</text>
+
+    <!-- Slicing Strip -->
+    <g transform="translate(14, 34)">
+      <!-- PGD 9 bits (w=160) -->
+      <rect x="0" y="0" width="160" height="56" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="80" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PGD [47:39] (9b)</text>
+      <text x="80" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">512 Entries (4KB)</text>
+      <text x="80" y="49" fill="#141413" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">一级页全局目录索引</text>
+
+      <!-- PUD 9 bits (w=160) -->
+      <rect x="168" y="0" width="160" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="248" y="22" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PUD [38:30] (9b)</text>
+      <text x="248" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">512 Entries (4KB)</text>
+      <text x="248" y="49" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">二级页上级目录索引</text>
+
+      <!-- PMD 9 bits (w=160) -->
+      <rect x="336" y="0" width="160" height="56" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="416" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PMD [29:21] (9b)</text>
+      <text x="416" y="38" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">2MB 大页截断点！</text>
+      <text x="416" y="49" fill="#141413" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">三级页中间目录索引</text>
+
+      <!-- PTE 9 bits (w=160) -->
+      <rect x="504" y="0" width="160" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="584" y="22" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PTE [20:12] (9b)</text>
+      <text x="584" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">512 Entries (4KB)</text>
+      <text x="584" y="49" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">四级页表项物理索引</text>
+
+      <!-- Offset 12 bits (w=180) -->
+      <rect x="672" y="0" width="180" height="56" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="762" y="22" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Offset [11:0] (12-bit)</text>
+      <text x="762" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">0 ~ 4095 Bytes (4KB)</text>
+      <text x="762" y="49" fill="#141413" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">页内物理偏移量拼接</text>
+    </g>
+  </g>
+
+  <!-- Bottom: 5 Page Table Traversal Stages (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Stage 1: CR3 -> PGD (w=165) -->
+    <g transform="translate(0, 0)">
+      <rect width="165" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="60" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="40" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 1</text>
+      <text x="78" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">CR3 ➔ PGD</text>
+
+      <rect x="10" y="36" width="145" height="70" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CR3 控制寄存器</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">存放 PGD 物理基址</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">进程切换时更新 CR3</text>
+
+      <text x="10" y="124" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">索引 PGD Entry：</text>
+      <text x="10" y="142" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">PGD_Base + VA[47:39]*8</text>
+      <text x="10" y="160" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">读取 PGD 条目获取：</text>
+      <text x="10" y="178" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">PUD 物理页基址</text>
+      <line x1="10" y1="190" x2="155" y2="190" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="210" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Memory Read #1</text>
+      <text x="10" y="228" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">时钟开销: ~50ns</text>
+    </g>
+
+    <!-- Arrow 1 (x=165..178) -->
+    <line x1="165" y1="125" x2="178" y2="125" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#pg-arr)"/>
+
+    <!-- Stage 2: PUD (w=165) -->
+    <g transform="translate(178, 0)">
+      <rect width="165" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="60" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="40" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 2</text>
+      <text x="78" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">PUD 遍历</text>
+
+      <rect x="10" y="36" width="145" height="70" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">PUD 页上级目录</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">512 个 64 位条目</text>
+      <text x="18" y="86" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">支持 1GB 巨页截断</text>
+
+      <text x="10" y="124" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">索引 PUD Entry：</text>
+      <text x="10" y="142" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">PUD_Base + VA[38:30]*8</text>
+      <text x="10" y="160" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">读取 PUD 条目获取：</text>
+      <text x="10" y="178" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">PMD 物理页基址</text>
+      <line x1="10" y1="190" x2="155" y2="190" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="210" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Memory Read #2</text>
+      <text x="10" y="228" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">时钟开销: ~50ns</text>
+    </g>
+
+    <!-- Arrow 2 (x=343..356) -->
+    <line x1="343" y1="125" x2="356" y2="125" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#pg-arr-accent)"/>
+
+    <!-- Stage 3: PMD (w=170) - Focal -->
+    <g transform="translate(356, 0)">
+      <rect width="170" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="60" height="16" rx="2" fill="#e85d3f"/>
+      <text x="40" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP 3</text>
+      <text x="78" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="700">PMD (大页)</text>
+
+      <rect x="10" y="36" width="150" height="70" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2MB 大页截断分水岭</text>
+      <text x="18" y="70" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">若设置 _PAGE_PSE=1</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700">直接命中 2MB 物理页！</text>
+
+      <text x="10" y="124" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">常规 4KB 寻址：</text>
+      <text x="10" y="142" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">PMD_Base + VA[29:21]*8</text>
+      <text x="10" y="160" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">读取 PMD 条目获取：</text>
+      <text x="10" y="178" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">PTE 物理页基址</text>
+      <line x1="10" y1="190" x2="160" y2="190" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="210" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Memory Read #3</text>
+      <text x="10" y="228" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">大页模式直接完成寻址！</text>
+    </g>
+
+    <!-- Arrow 3 (x=526..539) -->
+    <line x1="526" y1="125" x2="539" y2="125" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#pg-arr)"/>
+
+    <!-- Stage 4: PTE (w=165) -->
+    <g transform="translate(539, 0)">
+      <rect width="165" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="60" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="40" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STEP 4</text>
+      <text x="78" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">PTE 页表项</text>
+
+      <rect x="10" y="36" width="145" height="70" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">PTE 页表项</text>
+      <text x="18" y="70" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">底层 4KB 页映射</text>
+      <text x="18" y="86" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">RWX 权限 / Present 位</text>
+
+      <text x="10" y="124" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">索引 PTE Entry：</text>
+      <text x="10" y="142" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">PTE_Base + VA[20:12]*8</text>
+      <text x="10" y="160" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">读取 PTE 条目获取：</text>
+      <text x="10" y="178" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">物理数据页框 (PFN)</text>
+      <line x1="10" y1="190" x2="155" y2="190" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="210" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Memory Read #4</text>
+      <text x="10" y="228" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">累计 4 次物理内存交互</text>
+    </g>
+
+    <!-- Arrow 4 (x=704..717) -->
+    <line x1="704" y1="125" x2="717" y2="125" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#pg-arr-accent)"/>
+
+    <!-- Stage 5: Physical Address (w=163) - Focal -->
+    <g transform="translate(717, 0)">
+      <rect width="163" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="60" height="16" rx="2" fill="#e85d3f"/>
+      <text x="40" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OUTPUT</text>
+      <text x="78" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="700">物理合成</text>
+
+      <rect x="10" y="36" width="143" height="70" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="54" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">目标物理数据页</text>
+      <text x="18" y="70" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">PA = PFN | Offset</text>
+      <text x="18" y="86" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Direct Bus Access</text>
+
+      <text x="10" y="124" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">TLB 硬件快表加速：</text>
+      <text x="10" y="142" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">TLB Hit: 0.5 ~ 1 Cycle</text>
+      <text x="10" y="160" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">TLB Miss: 100-200 Cycles</text>
+      <line x1="10" y1="172" x2="153" y2="172" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="192" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">大页显著提升 TLB 命中率</text>
+      <text x="10" y="210" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">HugePages 512x Coverage</text>
+      <text x="10" y="228" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">MMU Hardware Walker</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">常规四级页表层级</text>
+  <rect x="280" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="300" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">PMD 大页截断点与物理合成核心</text>
+</svg>
+</main>
+</body>
+</html>

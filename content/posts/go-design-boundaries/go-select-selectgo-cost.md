@@ -38,10 +38,6 @@ BenchmarkSelect8CaseDefault-8   193.2  ns/op   0 B/op   0 allocs/op
 
 而 ≥2 个 case 的 select 才需要更完整的仲裁准备：编译期生成 case 描述，运行时构造 pollorder/lockorder 并扫描 channel 状态。本文基准只覆盖“全部 channel 未 ready + default”这一条路径，因此不把这些数字外推到阻塞等待或 ready case。
 
-
-
-![selectgo 核心算法：pollorder (洗牌随机) 与 lockorder (地址升序防死锁加锁)](../../../public/images/selectgo-pollorder-lockorder-scramble-lock.svg)
-
 ## 二、selectgo 解剖：随机化管公平，排序管不死锁
 
 selectgo 的核心只有两步准备（runtime/select.go）：

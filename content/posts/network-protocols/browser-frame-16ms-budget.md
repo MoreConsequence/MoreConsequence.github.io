@@ -25,10 +25,6 @@ series: "浏览器原理"
 1. 浏览器还有调度、输入、光栅化和提交成本，**开发者可用的主线程时间通常少于刷新周期**；“10ms”可以作为团队的实验目标，但不是浏览器合同。
 2. 高刷新率屏幕把截止时间缩短到 8.3ms 或更少。判断性能时应记录设备刷新率、录制方式和 dropped frame，而不是在所有设备上套用 16.7ms。
 
-
-
-![浏览器单帧渲染流水线：JavaScript -> Style -> Layout (重排) -> Paint (重绘) -> Composite (合成)](../../../public/images/browser-render-pipeline-reflow-repaint-composite.svg)
-
 ## 二、管线四段：每段的账本不一样
 
 渲染管线可以压缩成四段，各自的工作与成本模型：

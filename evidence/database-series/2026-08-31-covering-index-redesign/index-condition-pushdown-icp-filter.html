@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>index-condition-pushdown-icp-filter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="icp-title icp-desc">
+  <title id="icp-title">索引下推 (ICP) 机制：存储引擎层过滤减少 90% 回表次数</title>
+  <desc id="icp-desc">架构流程图对比无 ICP 模式下全部候选行无脑回表与开启 ICP 后在 InnoDB 存储引擎层利用索引提前过滤无效行、将回表 I/O 减少 90% 以上的物理过程。</desc>
+  <defs>
+    <marker id="ic-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="ic-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INDEX CONDITION PUSHDOWN · STORAGE ENGINE FILTERING</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">索引下推 (ICP) 机制与回表削减模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Server 层 WHERE 谓词下推至 InnoDB 引擎 ➔ 在索引内提前过滤无效候选 ➔ 减少 90%+ 无效回表</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Without ICP (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="69" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">WITHOUT ICP</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统无 ICP：盲目全量回表</text>
+
+    <!-- Query Info -->
+    <rect x="14" y="42" width="392" height="34" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="24" y="62" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">WHERE zipcode='00001' AND address LIKE '%海淀%';</text>
+
+    <!-- Step 1 Box -->
+    <rect x="14" y="86" width="392" height="80" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="108" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Step 1: 引擎仅根据 zipcode 检索</text>
+    <text x="24" y="126" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">在二级索引命中 10,000 条候选行 (包含 address)</text>
+    <text x="24" y="144" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">因为无法下推，引擎无法在索引内过滤 address</text>
+    <text x="24" y="158" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Candidates: 10,000 Rows</text>
+
+    <!-- Step 2 Box (Disaster) -->
+    <rect x="14" y="176" width="392" height="96" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="198" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Step 2: 10,000 次聚簇索引回表！</text>
+    <text x="24" y="216" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">无脑回表取回 10,000 整行 ➔ 传给 Server 层</text>
+    <text x="24" y="234" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Server 过滤后丢弃 9,900 行，仅保留 100 行！</text>
+    <text x="24" y="252" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">9,900 次回表纯属浪费，极高磁盘 I/O 损耗！</text>
+    <text x="24" y="266" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">EXPLAIN Extra: Using where</text>
+
+    <!-- Penalty Summary -->
+    <rect x="14" y="282" width="392" height="78" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="304" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">资源浪费账单</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">回表次数: 10,000 次 | 传输数据量: 10,000 整行</text>
+    <text x="24" y="342" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Waste: 99% I/O Wasted on Dropped Rows</text>
+  </g>
+
+  <!-- Col 2: With ICP (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#e85d3f"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">WITH ICP (5.6+)</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">开启 ICP：存储引擎层前置过滤</text>
+
+    <!-- Query Info -->
+    <rect x="14" y="42" width="412" height="34" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="62" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">WHERE zipcode='00001' AND address LIKE '%海淀%'; (Pushdown)</text>
+
+    <!-- Step 1 Box (Focal) -->
+    <rect x="14" y="86" width="412" height="170" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="108" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Step 1: InnoDB 引擎遍历索引并就地过滤</text>
+    <text x="24" y="128" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">匹配 zipcode='00001' 时，直接读取索引中的 address 列！</text>
+    <text x="24" y="146" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">✓ 在引擎层就地执行 address LIKE '%海淀%' 过滤！</text>
+    <line x1="24" y1="158" x2="396" y2="158" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="178" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">不符合条件的 9,900 条直接在索引层就地抛弃：</text>
+    <text x="24" y="196" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">仅对命中成功的 100 条发起聚簇索引回表！</text>
+    <text x="24" y="214" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">EXPLAIN Extra: Using index condition (ICP 生效)</text>
+    <text x="24" y="232" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">极大减轻引擎与 Server 间的数据搬运</text>
+    <text x="24" y="248" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">99% Row Lookups Eliminated</text>
+
+    <!-- Benefit Summary -->
+    <rect x="14" y="266" width="412" height="94" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="288" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">颠覆性 I/O 收益</text>
+    <text x="24" y="306" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 回表次数从 10,000 次暴跌至 100 次 (减少 99%)；</text>
+    <text x="24" y="324" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 消除 9,900 次磁盘随机寻道与 Buffer Pool 争用；</text>
+    <text x="24" y="344" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Execution Time: 从 350ms 骤降至 3.2ms (100x+ 加速)</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统无 ICP 盲目回表</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">开启 ICP 存储引擎前置过滤与 99% 回表消除核心</text>
+</svg>
+</main>
+</body>
+</html>

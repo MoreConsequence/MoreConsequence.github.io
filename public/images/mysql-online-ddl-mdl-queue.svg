@@ -1,70 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="mdl-title mdl-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-red" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="mdl-title">MySQL Online DDL 的 MDL 元数据锁排队与阻塞雪崩模型</title>
+  <desc id="mdl-desc">架构流程图展示长事务持有 MDL 共享锁导致 ALTER TABLE 请求 EXCLUSIVE 排他锁阻塞挂起，进而将后续所有普通 DML 读写全部堵在队列末端引发全表雪崩的物理过程。</desc>
+  <defs>
+    <marker id="md-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="md-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">MySQL Online DDL 元数据锁 (MDL) 排队与连接池打满雪崩机制</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">长事务持有 MDL Read 锁 ──► ALTER 申请 MDL X 锁排队 ──► 阻塞后续所有普通 SELECT，瞬间击垮数据库</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">METADATA LOCK STARVATION · MDL QUEUE AVALANCHE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">MySQL MDL 元数据锁排队与阻塞雪崩模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">长事务持有 MDL_SHARED ➔ ALTER 请求 EXCLUSIVE 阻塞挂起 ➔ 后续所有 DML 读写被全量挡在门外 ➔ 全表瘫痪</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Session 1 (x=40..300, w=260) -->
+  <g transform="translate(40, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="90" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="59" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SESSION 1</text>
+    <text x="114" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">空闲长事务 (元凶)</text>
+
+    <!-- Query Info -->
+    <rect x="14" y="42" width="232" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="600">BEGIN; SELECT * FROM t;</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">持有: MDL_SHARED_READ</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">做外部 RPC 调用，事务一直开着不提交</text>
+    <text x="24" y="118" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Status: Sleep / Idle in Trx</text>
+    <text x="24" y="132" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">Lock Held Until COMMIT</text>
+
+    <!-- Details -->
+    <rect x="14" y="152" width="232" height="208" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">反直觉的物理真相：</text>
+    <text x="24" y="194" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 哪怕是一条 2ms 的普通 SELECT；</text>
+    <text x="24" y="214" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 只要被显式事务包裹且未提交；</text>
+    <text x="24" y="234" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• MDL 共享锁就一直被强行占有！</text>
+    <line x1="24" y1="248" x2="236" y2="248" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="268" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">占着茅坑不拉屎</text>
+    <text x="24" y="288" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">它本身不阻塞普通读写，却成为挡住 DDL 排他锁的绝命死栓！</text>
+    <text x="24" y="310" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Root Cause of Avalanche</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=300..330) -->
+  <text x="315" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Blocks</text>
+  <line x1="300" y1="233" x2="330" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#md-arr-accent)"/>
 
-    <!-- Queue Conveyor (860px) -->
-    <g transform="translate(20, 20)">
-      <rect width="860" height="175" rx="6" fill="#0f172a"/>
-      <text x="15" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#38bdf8">
-        MySQL MDL 锁队列状态机 (MDL Lock Queue):
-      </text>
+  <!-- Col 2: Session 2 ALTER (x=330..630, w=300) - Focal -->
+  <g transform="translate(330, 136)">
+    <rect width="300" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SESSION 2 (DDL)</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">ALTER TABLE 排队阻塞</text>
 
-      <!-- 4 Stages -->
-      <g transform="translate(15, 45)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <!-- Stage 1: Active Slow Query -->
-        <rect width="190" height="105" rx="4" fill="#1e293b" stroke="#3b82f6"/>
-        <text x="10" y="20" font-size="9" font-weight="700" fill="#60a5fa">① 未提交慢查询 (Session 1)</text>
-        <text x="10" y="38" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">SELECT * FROM orders ...</text>
-        <text x="10" y="56" font-size="7.5" fill="#93c5fd">状态：执行中 / 未提交</text>
-        <text x="10" y="74" font-size="7.5" font-weight="700" fill="#34d399">持有：MDL 共享读锁 (SHARED_READ)</text>
+    <!-- Query Info -->
+    <rect x="14" y="42" width="272" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">ALTER TABLE t ADD INDEX idx(val);</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">请求锁: MDL_EXCLUSIVE (排他锁)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">State: Waiting for table metadata lock</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">因 Session 1 未释放共享锁，挂起等待！</text>
+    <text x="24" y="136" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">lock_wait_timeout = 31536000s (默认等1年!)</text>
 
-        <!-- Stage 2: ALTER Waiting -->
-        <g transform="translate(205, 0)">
-          <rect width="200" height="105" rx="4" fill="#3b0764" stroke="#f43f5e"/>
-          <text x="10" y="20" font-size="9" font-weight="700" fill="#fb7185">② ALTER TABLE (Session 2)</text>
-          <text x="10" y="38" font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">ALTER TABLE orders ADD col...</text>
-          <text x="10" y="56" font-size="7.5" fill="#fca5a5">申请：MDL 排他锁 (EXCLUSIVE)</text>
-          <text x="10" y="74" font-size="7.5" font-weight="700" fill="#ef4444">状态：Blocked (等待 Session 1 释放)</text>
-        </g>
-
-        <!-- Stage 3: Subsequent Queries Blocked -->
-        <g transform="translate(420, 0)">
-          <rect width="405" height="105" rx="4" fill="#450a0a" stroke="#ef4444"/>
-          <text x="10" y="20" font-size="9.5" font-weight="700" fill="#f87171">③ 后续所有线上普通查询 (Session 3 ~ 1000)</text>
-          <text x="10" y="38" font-family="ui-monospace, monospace" font-size="7.5" fill="#fca5a5">SELECT * FROM orders WHERE id = 123;</text>
-          <text x="10" y="56" font-size="7.5" fill="#fca5a5">MDL 规则：写锁优先级高于读锁！</text>
-          <text x="10" y="74" font-size="8" font-weight="700" fill="#ef4444">全部被挂起在 MDL 队列后面，连接数瞬间从 50 飙升到 2000+！</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Guidance (860px) -->
-    <g transform="translate(20, 210)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="100" rx="6" fill="#f0fdf4" stroke="#86efac"/>
-      <text x="15" y="22" font-size="10.5" font-weight="700" fill="#166534">🛠️ 生产环境 Online DDL 防死锁与安全三定律：</text>
-      <text x="15" y="42" font-size="8.5" fill="#15803d">1. <tspan font-weight="700">显式设置锁超时</tspan>：执行 DDL 前设置 lock_wait_timeout = 5（超时自动失败，绝不排队挂死全表）；</text>
-      <text x="15" y="60" font-size="8.5" fill="#15803d">2. <tspan font-weight="700">前置检查长事务</tspan>：在 information_schema.innodb_trx 中确认当前没有任何正在执行超过 10 秒的长事务；</text>
-      <text x="15" y="78" font-size="8.5" fill="#15803d">3. <tspan font-weight="700">大表采用第三方工具</tspan>：超过 1000 万行核心大表使用 gh-ost 或 pt-online-schema-change 异步影子表搬运。</text>
-    </g>
+    <!-- Details -->
+    <rect x="14" y="162" width="272" height="198" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">排他请求挂起的恐怖后果：</text>
+    <text x="24" y="204" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">MySQL MDL 队列严格按 FIFO 排队！</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">排他锁一旦在队列中挂起：</text>
+    <text x="24" y="242" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">后续新来的任何读写请求全部不得插队！</text>
+    <line x1="24" y1="256" x2="276" y2="256" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="276" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Gatekeeper Deadlock</text>
+    <text x="24" y="294" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">ALTER 变成了一堵不可逾越的死墙</text>
+    <text x="24" y="312" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Pending Exclusive Gate</text>
   </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Starves</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#md-arr-accent)"/>
+
+  <!-- Col 3: Session 3..N DML (x=660..920, w=260) - Focal -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="110" height="18" rx="2" fill="#141413"/>
+    <text x="69" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SESSION 3..N (DML)</text>
+    <text x="134" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">全表业务读写雪崩</text>
+
+    <!-- Query Info -->
+    <rect x="14" y="42" width="232" height="110" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">SELECT / INSERT / UPDATE ...</text>
+    <text x="24" y="82" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">请求: MDL_SHARED_READ / WRITE</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">全量被迫排入队尾！</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Waiting for metadata lock</text>
+    <text x="24" y="134" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Connection Pool Exhausted</text>
+
+    <!-- Disaster Summary -->
+    <rect x="14" y="162" width="232" height="198" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="184" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">生产级灾难连锁反应：</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 业务接口大面积超时告警；</text>
+    <text x="24" y="222" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 应用连接池数秒内被打满 (Max Conn)；</text>
+    <text x="24" y="242" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">3. 整个 MySQL 实例拒绝新连接！</text>
+    <line x1="24" y1="256" x2="236" y2="256" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="276" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">治理法则：</text>
+    <text x="24" y="294" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• DDL 前先查并 kill 长事务</text>
+    <text x="24" y="310" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 大表 DDL 采用 gh-ost 影子表切换</text>
+    <text x="24" y="328" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">gh-ost Cut-Over Solution</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">长事务持有共享锁</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">MDL 排他阻塞与全表读写雪崩核心</text>
 </svg>

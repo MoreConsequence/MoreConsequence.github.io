@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="100%" height="100%">
+  <defs>
+    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
+    </pattern>
+    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+  </defs>
+  <rect width="960" height="400" fill="#f8fafc"/>
+  <rect width="960" height="400" fill="url(#dot-grid)"/>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Quorum 鸽巢原理数学重叠证明：W + R &gt; N 强一致充要模型</text>
+    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">集群节点 N=5 ｜ 写入法定人数 W=3 ｜ 读取法定人数 R=3 ｜ 必存在至少 1 个交集节点持有最新版本数据</text>
+  </g>
+
+  <!-- 3 Stage Overlap Visual -->
+  <g transform="translate(40, 80)" filter="url(#card-shadow)">
+    <!-- 5 Nodes Display (Top) -->
+    <g transform="translate(0, 0)">
+      <rect width="880" height="80" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="20" y="24" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af">集群 5 节点视图 (N = 5)</text>
+
+      <!-- 5 Node badges -->
+      <g transform="translate(180, 20)">
+        <rect x="0" y="0" width="100" height="42" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="50" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Node 1</text>
+
+        <rect x="130" y="0" width="100" height="42" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+        <text x="180" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Node 2</text>
+
+        <rect x="260" y="0" width="120" height="42" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <text x="320" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="800" fill="#b45309" text-anchor="middle">Node 3 (交集!)</text>
+
+        <rect x="410" y="0" width="100" height="42" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="460" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">Node 4</text>
+
+        <rect x="540" y="0" width="100" height="42" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="590" y="26" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">Node 5</text>
+      </g>
+    </g>
+
+    <!-- Quorum Sets (Bottom) -->
+    <g transform="translate(0, 100)">
+      <!-- Left: Write Quorum -->
+      <g>
+        <rect width="425" height="170" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+        <rect width="425" height="32" rx="8" fill="#eff6ff"/>
+        <text x="212" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">写入集合 Write Quorum (W = 3)</text>
+
+        <g transform="translate(15, 45)" font-family="ui-monospace, monospace" font-size="8.5">
+          <rect width="395" height="110" rx="4" fill="#0f172a"/>
+          <text x="10" y="24" fill="#38bdf8">覆盖节点: { Node 1, Node 2, Node 3 }</text>
+          <text x="10" y="48" fill="#cbd5e1">成功写入版本: v2 (当前最新数据)</text>
+          <text x="10" y="74" fill="#86efac">只要 3 个节点写入确认即宣告成功</text>
+          <text x="10" y="98" fill="#4ade80">✓ 满足容错 F = (N-1)/2 = 2 节点故障</text>
+        </g>
+      </g>
+
+      <!-- Right: Read Quorum -->
+      <g transform="translate(455, 0)">
+        <rect width="425" height="170" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
+        <rect width="425" height="32" rx="8" fill="#f0fdf4"/>
+        <text x="212" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">读取集合 Read Quorum (R = 3)</text>
+
+        <g transform="translate(15, 45)" font-family="ui-monospace, monospace" font-size="8.5">
+          <rect width="395" height="110" rx="4" fill="#0f172a"/>
+          <text x="10" y="24" fill="#86efac">覆盖节点: { Node 3, Node 4, Node 5 }</text>
+          <text x="10" y="48" fill="#fb923c">交集命中: Node 3 拥有最新 v2 数据！</text>
+          <text x="10" y="74" fill="#cbd5e1">比对时间戳版本号取 max(v1, v2) = v2</text>
+          <text x="10" y="98" fill="#4ade80">✓ 100% 绝对读到最新数据，强一致达成！</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

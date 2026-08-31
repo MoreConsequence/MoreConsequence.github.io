@@ -183,10 +183,6 @@ sequenceDiagram
 
 ---
 
-
-
-![Oract 状态机可重入性与幂等恢复数学证明](../../../public/images/oract-kernel-reentrancy-crash-recovery-proof.svg)
-
 ## 四、为什么选用 Go？系统级并发与内存掌控
 
 与 Python 和 Node.js 相比，Go 语言在构建工业级 Agent 运行时上展现出无与伦比的工程优势：

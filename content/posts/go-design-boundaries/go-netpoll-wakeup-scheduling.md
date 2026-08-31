@@ -28,10 +28,6 @@ series: "Go 的设计边界"
 
 答案在 [GMP 那篇](/writing/go-scheduler-gmp-preemption)没答完的地方：goroutine 阻塞时 M 可以"换乘客"，前提是**这个等待能被运行时观察和解除**。epoll 只负责告诉内核"哪个 fd 就绪了"（内核侧见[epoll 的一生](/writing/epoll-c10k-c10m)）；把"fd 就绪"翻译回"某个 G 该醒了"的，是 netpoller。
 
-
-
-![netpoll 网络轮询器全景架构：epoll/kqueue 抽象、pollDesc 与 gopark 协作](../../../public/images/netpoll-epoll-kqueue-scheduler-bridge.svg)
-
 ## 二、netpoller 的位置：pollDesc 与四次交接
 
 netpoller 的主体在 `runtime/netpoll.go`（平台无关：`pollDesc`、`pollCache`、`netpollblock`/`netpollunblock`/`netpollgoready`）和 `runtime/netpoll_epoll.go`（Linux 的 epoll 实现；macOS 对应 `netpoll_kqueue.go`）。每个登记进 netpoller 的 fd 挂一个 `pollDesc`，从 `pollCache` 池子里批量分配；`netpollopen` 把 fd `EPOLL_CTL_ADD` 进全局 epfd，注册 `EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET`——**边缘触发**，内核只在状态变化时通知一次，读的人要把缓冲读空。

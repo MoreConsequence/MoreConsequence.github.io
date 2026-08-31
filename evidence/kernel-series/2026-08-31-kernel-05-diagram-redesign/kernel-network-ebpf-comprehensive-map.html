@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kernel-network-ebpf-comprehensive-map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="100%" height="100%" role="img" aria-labelledby="map-all-title map-all-desc">
+  <title id="map-all-title">Linux 内核网络与 eBPF 全景架构图谱：从驱动层到 L7 应用协议栈</title>
+  <desc id="map-all-desc">全景技术图谱展示 Linux 网络工程全栈：物理网卡 DMA、NAPI 与 XDP 旁路、内核 SKB 协议栈与 TC 流量控制，以及 eBPF 虚拟机沙箱与用户态无锁交互的宏伟拼图。</desc>
+  <defs>
+    <marker id="km-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="km-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="640" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="44" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LINUX NETWORK &amp; EBPF · FULL-STACK ARCHITECTURAL BLUEPRINT</text>
+  <text x="40" y="78" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux 内核网络与 eBPF 全景技术图谱</text>
+  <text x="40" y="104" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">从网卡 DMA、XDP 极速旁路、协议栈与 TC 调度，到 eBPF 虚拟机、BPF Maps 与用户态控制面的全景拼图</text>
+
+  <!-- 5 Layer Stacks (y=124..554, h=430) -->
+
+  <!-- Layer 5: User Space (y=124..176, h=52) -->
+  <g transform="translate(40, 124)">
+    <rect width="880" height="52" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="8" width="80" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="52" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">L5 · USER</text>
+    <text x="100" y="20" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户空间应用与控制面 (User Space Applications &amp; Control Planes)</text>
+    <text x="12" y="42" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Nginx / Envoy / gRPC · Cilium CNI Control Plane · BCC / bpftrace · AF_XDP Zero-Copy Apps · Prometheus Exporters</text>
+  </g>
+
+  <!-- Layer 4: eBPF Micro-Kernel Sandbox (y=184..276, h=92) - Focal -->
+  <g transform="translate(40, 184)">
+    <rect width="880" height="92" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="8" width="96" height="16" rx="2" fill="#e85d3f"/>
+    <text x="60" y="19" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">L4 · EBPF CORE</text>
+    <text x="116" y="20" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">eBPF 虚拟机微型沙箱体系 (Virtual Machine, Safety Verifier &amp; Shared Maps)</text>
+    
+    <!-- 4 Sub-blocks -->
+    <g transform="translate(12, 30)">
+      <rect x="0" y="0" width="205" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">RISC 64-bit Registers</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">R0(Ret) R1..R5(Args) R10(Stack)</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">1:1 直译 x86_64 物理寄存器</text>
+
+      <rect x="215" y="0" width="205" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Verifier 形式化安全证明</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">DAG 路径遍历 · 边界越界防御</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">100% 杜绝内核 Crash 崩溃</text>
+
+      <rect x="430" y="0" width="210" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">BPF Maps 共享内存体系</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Hash · Per-CPU (锁消除) · RingBuf</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">内核与用户态零拷贝无锁通信</text>
+
+      <rect x="650" y="0" width="206" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">全方位系统可观测性</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Kprobe 0xCC 断点 · Tracepoint NOP</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="600">Off-CPU 阻塞时延深度溯源</text>
+    </g>
+  </g>
+
+  <!-- Layer 3: Kernel Protocol Stack & TC (y=284..376, h=92) -->
+  <g transform="translate(40, 284)">
+    <rect width="880" height="92" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="8" width="96" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="60" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">L3 · STACK &amp; TC</text>
+    <text x="116" y="20" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内核网络协议栈与流量控制调度 (Kernel Protocol Stack, Netfilter &amp; TC)</text>
+
+    <!-- 4 Sub-blocks -->
+    <g transform="translate(12, 30)">
+      <rect x="0" y="0" width="205" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">struct sk_buff 内存体系</text>
+      <text x="10" y="32" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">head / data / tail / end 四指针</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">skb_push / pull / put 零拷贝滑动</text>
+
+      <rect x="215" y="0" width="205" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L3 / L4 协议传输与过滤</text>
+      <text x="10" y="32" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">ip_rcv() · tcp_v4_rcv() · Socket 队列</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">Netfilter iptables / conntrack 规则链</text>
+
+      <rect x="430" y="0" width="210" height="52" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">TC 流量控制与 HTB 整形</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">qdisc 根排队 · HTB rate/ceil 借调</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">多租户带宽隔离与毫秒级弹性收回</text>
+
+      <rect x="650" y="0" width="206" height="52" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">BBR + fq 纳秒级 Pacing</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">BDP 测算 · EDT 发送时间戳打标</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="700">根除 Bufferbloat 消除排队延迟</text>
+    </g>
+  </g>
+
+  <!-- Layer 2: Driver & XDP Bypass (y=384..476, h=92) - Focal -->
+  <g transform="translate(40, 384)">
+    <rect width="880" height="92" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="8" width="96" height="16" rx="2" fill="#e85d3f"/>
+    <text x="60" y="19" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">L2 · XDP BYPASS</text>
+    <text x="116" y="20" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">网卡驱动层与 XDP 极速旁路 (Driver Layer, NAPI &amp; XDP Line-Rate Bypass)</text>
+
+    <!-- 4 Sub-blocks -->
+    <g transform="translate(12, 30)">
+      <rect x="0" y="0" width="205" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">NAPI 软中断轮询引擎</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">net_rx_action · budget=64</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif">自适应关中断，化解中断风暴</text>
+
+      <rect x="215" y="0" width="205" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">XDP 驱动层极速旁路</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">struct xdp_md 裸内存指针</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" font-weight="700">24M+ PPS 线速吞吐 (0 SKB 开销)</text>
+
+      <rect x="430" y="0" width="210" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">XDP 四大动作原语</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">XDP_DROP (抗DDoS) · XDP_TX (L4 LB)</text>
+      <text x="10" y="45" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">XDP_REDIRECT (直通) · XDP_PASS</text>
+
+      <rect x="650" y="0" width="206" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">AF_XDP (XSK) 用户态直通</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">UMEM 共享内存 · 4 SPSC 无锁队列</text>
+      <text x="10" y="45" fill="#e85d3f" font-size="7" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终结 DPDK 垄断，兼容 Linux 生态</text>
+    </g>
+  </g>
+
+  <!-- Layer 1: Hardware NIC & PHY (y=484..564, h=80) -->
+  <g transform="translate(40, 484)">
+    <rect width="880" height="80" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="8" width="96" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="60" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">L1 · HARDWARE</text>
+    <text x="116" y="20" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡物理硬件与 PCIe 总线 (Physical NIC, DMA Engine, Multi-Queue &amp; PHY)</text>
+
+    <!-- 4 Sub-blocks -->
+    <g transform="translate(12, 28)">
+      <rect x="0" y="0" width="205" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="16" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">PHY &amp; MAC 硬件层</text>
+      <text x="10" y="30" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">光电信号 ➔ 比特流 ➔ FCS 校验</text>
+
+      <rect x="215" y="0" width="205" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="16" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">PCIe DMA 直传控制器</text>
+      <text x="10" y="30" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">0 CPU 介入，直写主机主存</text>
+
+      <rect x="430" y="0" width="210" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="16" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">RX / TX Ring Buffer (4096)</text>
+      <text x="10" y="30" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">环形描述符队列 · Overruns 防线</text>
+
+      <rect x="650" y="0" width="206" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="10" y="16" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">多队列 RSS &amp; MSI-X 绑核</text>
+      <text x="10" y="30" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Toeplitz 哈希 ➔ SMP CPU 负载摊平</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="578" x2="920" y2="578" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="606" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="594" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="606" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">硬件、协议栈与用户空间层级</text>
+  <rect x="330" y="594" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="606" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">eBPF 虚拟机沙箱、XDP 旁路与 BBR/fq 调度核心</text>
+</svg>
+</main>
+</body>
+</html>

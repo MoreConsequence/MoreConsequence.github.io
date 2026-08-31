@@ -36,10 +36,6 @@ flowchart TD
     Edge1 -.->|"上报实时带宽水位与健康度"| Master["全局调度中心 (Global Scheduler)"]
 ```
 
-
-
-![Haversine 大圆距离公式与三维球体经纬度三角测距模型](../../../public/images/haversine-great-circle-distance-formula.svg)
-
 ## 二、BGP Anycast 边缘路由与路由漂移陷阱
 
 ### 1. BGP Anycast（任播）的物理优势

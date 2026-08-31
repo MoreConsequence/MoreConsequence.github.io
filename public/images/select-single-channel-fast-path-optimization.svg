@@ -1,125 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="sf-title sf-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="sf-title">select 编译器优化与公平性验证</title>
+  <desc id="sf-desc">Go select 编译器快速通道与公平性架构图展示单通道编译器重写降级、100 万次双就绪通道 50:50 均匀选择验证、阻塞等待 sudog 注册以及生产架构选型。</desc>
+  <defs>
+    <marker id="sf-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="sf-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">编译器对 select 的四大特化降级优化 (Compiler Specialization)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">1. 空 select {} (降级为 block()) ｜ 2. 单 case select (直接降级为裸通道操作) ｜ 3. 单 case + default (降级为 selectnbsend/recv) ｜ 4. 多 case 才走完整 selectgo</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">COMPILER FAST-PATH &amp; FAIRNESS · SINGLE-CASE DEGRADE, 1M FAIR SMOKE &amp; BEST PRACTICES</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">select 编译器优化与公平性验证</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">单通道静态降级 ➔ 100 万次双就绪 49.97%/50.03% 均匀实测 ➔ 阻塞等待 ➔ 生产决策</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Degrade (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DEGRADE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">静态编译降级</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">AST Transformation</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 0 case ➔ runtime.block()</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 1 case ➔ direct chansend / chanrecv</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Compiler Inlining Optimization</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">优化精髓：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 消除不必要的多路复用结构体开销；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 将复杂仲裁退化为单指令函数调用；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 带来极致汇编执行效率。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Columns (210px each) -->
-    <g>
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#eff6ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 空 select {}</text>
+  <!-- Col 2: Fairness Smoke (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">FAIRNESS</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">100 万次公平验证</text>
 
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#38bdf8">select {} // 永久挂起</text>
-          
-          <text x="8" y="42" fill="#86efac">编译优化：</text>
-          <text x="8" y="58" fill="#34d399">• 直接替换为: runtime.block()</text>
-          <text x="8" y="74" fill="#34d399">• 0 分配、0 排序、0 锁</text>
-          <text x="8" y="90" fill="#cbd5e1">• 协程进入永久沉睡状态</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 极简主协程常驻原语！</text>
-        </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">49.969% vs 50.031%</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 双通道同时就绪，循环 100 万次</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 偏差仅 0.062%，无任何书写偏置</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Empirical Fairness Verification</text>
 
-        <rect y="162" width="186" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制特性：</text>
-        <text x="8" y="34" font-size="7.5" fill="#1d4ed8">• 守护进程最常用的保活语法；</text>
-        <text x="8" y="48" font-size="7.5" fill="#1d4ed8">• 0 CPU 算力浪费；</text>
-        <text x="8" y="62" font-size="7.5" fill="#047857">• 编译器直接特化。</text>
-      </g>
-    </g>
-
-    <g transform="translate(225, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 单一 case</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#4ade80">select { case &lt;-ch: ... }</text>
-          
-          <text x="8" y="42" fill="#86efac">编译优化：</text>
-          <text x="8" y="58" fill="#38bdf8">• 编译器直接降级为: &lt;-ch</text>
-          <text x="8" y="74" fill="#34d399">• 彻底抹去 select 包装！</text>
-          <text x="8" y="90" fill="#34d399">• 转化为普通 chanrecv 调用</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 耗时降至 ~10ns！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="8" y="18" font-size="8.5" font-weight="700" fill="#166534">机制特性：</text>
-        <text x="8" y="34" font-size="7.5" fill="#15803d">• 消除无意义的多路复用开销；</text>
-        <text x="8" y="48" font-size="7.5" fill="#15803d">• 0 排序、0 数组分配；</text>
-        <text x="8" y="62" font-size="7.5" fill="#047857">• 纯原生通道速度。</text>
-      </g>
-    </g>
-
-    <g transform="translate(450, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#fff7ed"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">3. 单 case + default</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#fb923c">select { case &lt;-ch: default: }</text>
-          
-          <text x="8" y="42" fill="#fed7aa">非阻塞优化：</text>
-          <text x="8" y="58" fill="#38bdf8">• 降级为: selectnbrecv()</text>
-          <text x="8" y="74" fill="#34d399">• 仅执行一次快速非阻塞检查</text>
-          <text x="8" y="90" fill="#34d399">• 成功取值，失败立即进 default</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 极速非阻塞探测！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#c2410c">适用场景：</text>
-        <text x="10" y="34" font-size="7.5" fill="#9a3412">• 限流尝试获取令牌 (TryLock)；</text>
-        <text x="10" y="48" font-size="7.5" fill="#9a3412">• 队列满时丢弃日志；</text>
-        <text x="10" y="62" font-size="7.5" fill="#ea580c">• 打造 0 阻塞通道探测。</text>
-      </g>
-    </g>
-
-    <g transform="translate(675, 0)">
-      <rect width="210" height="385" rx="8" fill="#ffffff" stroke="#c084fc" stroke-width="1.5"/>
-      <rect width="210" height="34" rx="8" fill="#faf5ff"/>
-      <text x="105" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#7e22ce" text-anchor="middle">4. 多 case 完整路径</text>
-
-      <g transform="translate(12, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="186" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="8" y="18" fill="#c084fc">select { case &lt;-c1: case c2&lt;-x: }</text>
-          
-          <text x="8" y="42" fill="#e9d5ff">完整通用执行：</text>
-          <text x="8" y="58" fill="#38bdf8">• 栈上分配 scases, poll, lock</text>
-          <text x="8" y="74" fill="#34d399">• 调用完整 runtime.selectgo</text>
-          <text x="8" y="90" fill="#4ade80">• 经历双排序与加锁扫描</text>
-          
-          <text x="8" y="116" fill="#4ade80">✓ 耗时约 40 ~ 60ns！</text>
-        </g>
-
-        <rect y="162" width="186" height="96" rx="4" fill="#faf5ff" stroke="#e9d5ff"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#7e22ce">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#6b21a8">• 复杂事件多路复用的坚实保障；</text>
-        <text x="10" y="48" font-size="7.5" fill="#6b21a8">• 兼顾极简场景特化与通用多路调度；</text>
-        <text x="10" y="62" font-size="7.5" fill="#6b21a8">• Go 编译器与运行时协同典范！</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">实测结论：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 证实 cheaprandn 洗牌算法高度随机；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝主观经验主义“先写先选”误区；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保多数据源消费均衡。</text>
   </g>
+
+  <!-- Col 3: Blocking (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">BLOCKING</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">阻塞等待挂起</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">sudog Multi-EnQueue</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全未就绪时向所有 channel 挂 sudog</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 触发 gopark 挂起协程，任一就绪唤醒</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Multi-Queue Wait Suspension</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">唤醒流程：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 被唤醒后立即将自身从其余通道摘除；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 释放全部 channel 锁；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 完成多等待状态原子结算。</text>
+  </g>
+
+  <!-- Col 4: Production (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DECISION</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产架构决策</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Best Practice Guidelines</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 循环检测采用 1 case + default (4ns)</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免超大 case 列表，精简仲裁逻辑</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Optimal Concurrency Design</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 充分利用编译器静态降级红利；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 依据延迟特征划分阻塞与轮询；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构筑极速且公平的高并发系统。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">静态编译降级与生产架构选型决策</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">100 万次公平性实测与阻塞等待 sudog 注册核心</text>
 </svg>

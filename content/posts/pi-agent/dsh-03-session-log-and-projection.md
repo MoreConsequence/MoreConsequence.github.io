@@ -169,10 +169,6 @@ export function deriveMessages(events: readonly SessionEvent[]): Message[] {
 
 ---
 
-
-
-![DSH 读写分离与 CQRS 投影：写模型 (Append-Only Event) -> 读模型 (Session View)](../../../public/images/dsh-cqrs-read-write-projection-pipeline.svg)
-
 ## 四、高级能力：会话分叉 (Fork) 与时间旅行 (Time-Travel)
 
 得益于 Append-Only 的设计，`dsh` 轻松实现了在复杂 Agent 研发中极具价值的**会话分叉（Session Fork）**能力：

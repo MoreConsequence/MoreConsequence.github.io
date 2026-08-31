@@ -16,14 +16,6 @@ series: "Go 的设计边界"
 
 优雅停机（graceful shutdown）解决的就是这三件事。它的正式定义是：**在有限时间内，停止接收新工作、完成已有工作、干净地释放资源，然后退出。** 关键限定词是"有限时间"——停机不能无限期等慢请求，K8s 默认只给你 30 秒，超时直接 SIGKILL。所以优雅停机的本质是一道预算题：30 秒怎么分给"排空请求"、"收尾任务"、"关资源"三件事。
 
-先看信号到达之后的完整时间线：
-
-![优雅停机 30 秒窗口时间线示意图:SIGTERM 到达后关闸、排空、收尾、兜底四步](../../../public/images/graceful-shutdown-timeline.svg)
-
-*图注：SIGTERM 到达即开始倒计时——关闸在前，排空与收尾并行，资源关闭最后；任何一步超预算，进程被 SIGKILL，之前的工作全部作废。*
-
-
-
 ![Go 服务优雅关闭四步闭环时序：信号捕获 -> 摘除流量 -> 等待存量 (Server.Shutdown) -> 资源收尾](../../../public/images/graceful-shutdown-four-step-pipeline.svg)
 
 ## 二、信号链：SIGTERM 从内核到你的代码

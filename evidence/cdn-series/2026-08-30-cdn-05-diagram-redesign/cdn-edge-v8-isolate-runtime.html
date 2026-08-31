@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-edge-v8-isolate-runtime</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-v8-title cdn-v8-desc">
+  <title id="cdn-v8-title">边缘计算架构演进：传统容器架构 vs V8 Isolate 轻量沙箱体系对比</title>
+  <desc id="cdn-v8-desc">架构对比图展示传统 Docker 容器高内存开销与慢速冷启动，以及 Google V8 Isolate 在边缘单进程维持数万独立轻量沙箱的机理。</desc>
+  <defs>
+    <marker id="cdn-v8-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-v8-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EDGE SERVERLESS · V8 ISOLATE VS DOCKER</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">传统 Docker 容器 vs V8 Isolate 边缘沙箱对比</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Docker 容器数百 MB 内存与 200ms 冷启动在边缘彻底失效；V8 Isolate 单进程维持万级租户微秒级冷启动</text>
+
+  <!-- Left Column: Docker / Container (Mode A, x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE A</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统容器体系 (Docker / K8s / Lambda)</text>
+
+    <!-- Sub Container 1 -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">容器实例 #1 (Tenant A)</text>
+    <text x="26" y="86" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Guest OS Libs + Node.js Runtime + App Code</text>
+    <text x="394" y="86" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">内存: 120MB</text>
+    <text x="26" y="100" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">冷启动: ~250ms (Namespaces/Cgroups 挂载)</text>
+
+    <!-- Sub Container 2 -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">容器实例 #2 (Tenant B)</text>
+    <text x="26" y="158" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Guest OS Libs + Python Runtime + App Code</text>
+    <text x="394" y="158" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">内存: 180MB</text>
+    <text x="26" y="172" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">冷启动: ~450ms (进程与虚拟文件系统)</text>
+
+    <!-- OS Layer -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">底层宿主 Linux OS 内核</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">大量进程上下文切换与 TLB 缓存刷新，开销剧烈</text>
+    <text x="26" y="244" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">单机并发上限: ~100 个实例</text>
+
+    <!-- Total Metric -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="286" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统容器边缘硬伤总结</text>
+    <text x="26" y="306" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">冷启动时延: 200ms ~ 1000ms</text>
+    <text x="26" y="324" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">单实例内存基础 &gt; 50MB，无法承载边缘海量租户</text>
+    <text x="26" y="342" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">城域请求 5ms 无法承受 200ms 冷启动</text>
+  </g>
+
+  <!-- Right Column: V8 Isolate (Mode B, x=500..920, w=420) - Focal Column -->
+  <g transform="translate(500, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="14" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MODE B</text>
+    <text x="100" y="28" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">现代 V8 Isolate 边缘沙箱 (Cloudflare Workers)</text>
+
+    <!-- Isolate 1 -->
+    <rect x="14" y="46" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="68" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">V8 Isolate #1 (Tenant A 沙箱)</text>
+    <text x="26" y="86" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">独立 JS 堆栈 · 独立垃圾回收 (GC) · 共享 V8 运行时</text>
+    <text x="394" y="86" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">内存: 2.1MB</text>
+    <text x="26" y="100" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">冷启动: ≤ 0.5ms (微秒级创建)</text>
+
+    <!-- Isolate 2 -->
+    <rect x="14" y="118" width="392" height="64" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="26" y="140" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">V8 Isolate #2 (Tenant B 沙箱)</text>
+    <text x="26" y="158" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">WebAssembly / W3C 标准 API · 内存绝对安全隔离</text>
+    <text x="394" y="158" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">内存: 2.8MB</text>
+    <text x="26" y="172" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">冷启动: ≤ 0.5ms (0 操作系统调用)</text>
+
+    <!-- Host Daemon Layer -->
+    <rect x="14" y="190" width="392" height="64" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="26" y="212" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">统一宿主守护进程 (Rust / C++ Host Engine)</text>
+    <text x="26" y="230" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">单进程多租户，0 Linux 进程切换，0 TLB 刷新</text>
+    <text x="26" y="244" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">单机并发承载: ≥ 10,000 个独立沙箱</text>
+
+    <!-- Total Metric -->
+    <rect x="14" y="262" width="392" height="98" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="26" y="286" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">V8 Isolate 边缘革命性收益</text>
+    <text x="26" y="306" fill="#e85d3f" font-size="9.5" font-family="'Geist Mono', monospace" font-weight="700">冷启动时延: ≤ 1ms (近乎归零)</text>
+    <text x="26" y="324" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单实例内存 ≤ 3MB，并发密度提升超 100 倍！</text>
+    <text x="26" y="342" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">完美适配城域 5ms 边缘极速处理需求</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统容器隔离开销</text>
+  <rect x="300" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">现代 V8 Isolate 轻量沙箱体系</text>
+  <line x1="530" y1="556" x2="554" y2="556" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-v8-arr-accent)"/>
+  <text x="562" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">微秒级启动与 100 倍并发密度</text>
+</svg>
+</main>
+</body>
+</html>

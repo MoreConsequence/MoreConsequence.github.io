@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-spanner-truetime-window</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tt-title tt-desc">
+  <title id="tt-title">Google Spanner TrueTime 物理不确定性与 Commit Wait 提交等待模型</title>
+  <desc id="tt-desc">时序模型图展示 Google TrueTime GPS 与原子钟时间区间 [earliest, latest]，以及事务提交时强制休眠 2ε（Commit Wait）以保障绝对外部因果全序的物理机理。</desc>
+  <defs>
+    <marker id="tt-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="tt-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">HARDWARE TIMING · TRUETIME &amp; COMMIT WAIT MODEL</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Google Spanner TrueTime 与 Commit Wait 模型</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">显式暴露物理不确定性区间 [earliest, latest] (ε ≤ 7ms)；事务提交强制休眠 2ε，换取全球分布式绝对因果全序</text>
+
+  <!-- Top Strip: TrueTime API Definition (y=136..236, h=100) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="100" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="23" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TRUETIME API</text>
+    <text x="120" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">双冗余时间基准源：GPS 卫星接收器 + 铷原子钟 (Rubidium Atomic Clock)</text>
+
+    <!-- Formula Box -->
+    <rect x="14" y="38" width="410" height="50" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="58" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">TT.now() ➔ [t_earliest, t_latest]</text>
+    <text x="24" y="76" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保证真实物理绝对时间 t_abs 严格满足：t_earliest ≤ t_abs ≤ t_latest</text>
+
+    <rect x="438" y="38" width="428" height="50" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="448" y="58" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">误差上界: ε = (t_latest - t_earliest) / 2 ≤ 7ms</text>
+    <text x="448" y="76" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">全球数据中心原子钟漂移极小，常态下 ε 维持在 1ms ~ 4ms</text>
+  </g>
+
+  <!-- Lower Timeline: Commit Wait Mechanism (y=250..506, h=256) - Focal -->
+  <g transform="translate(40, 250)">
+    <rect width="880" height="256" rx="6" fill="rgba(232,93,63,0.04)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="10" width="96" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="62" y="23" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">COMMIT WAIT</text>
+    <text x="120" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">事务 T₁ 与 T₂ 的绝对因果定序物理时序</text>
+
+    <!-- Stage 1: Tx 1 Commit -->
+    <g transform="translate(14, 40)">
+      <rect width="250" height="196" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. 事务 T₁ 准备提交</text>
+      <text x="14" y="44" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">调用 TT.now() ➔ [t_e1, t_l1]</text>
+      <text x="14" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">选取提交时间戳: s₁ = t_l1</text>
+      <text x="14" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">选定最晚可能物理时间点</text>
+      <line x1="14" y1="92" x2="236" y2="92" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="112" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理意义</text>
+      <text x="14" y="130" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">s₁ 必定在 T₁ 实际开始之后</text>
+      <text x="14" y="148" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">但可能略微超前当前真实时间</text>
+      <text x="14" y="170" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">此时禁止释放锁对外部可见！</text>
+    </g>
+
+    <!-- Arrow 1 (x=264..300) -->
+    <line x1="264" y1="138" x2="300" y2="138" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#tt-arr-accent)"/>
+
+    <!-- Stage 2: Commit Wait Sleep (Focal Center) -->
+    <g transform="translate(300, 40)">
+      <rect width="280" height="196" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.5"/>
+      <rect x="14" y="10" width="130" height="16" rx="2" fill="#e85d3f"/>
+      <text x="79" y="22" fill="#ffffff" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">COMMIT WAIT SLEEP</text>
+      <text x="14" y="46" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. 强制休眠等待 (≥ 2ε)</text>
+      <text x="14" y="68" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">Sleep until TT.now().earliest &gt; s₁</text>
+      <line x1="14" y1="80" x2="266" y2="80" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="14" y="100" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">休眠目的</text>
+      <text x="14" y="118" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">等待真实世界物理时间流逝，</text>
+      <text x="14" y="136" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">直到绝对物理时间必定已越过 s₁</text>
+      <text x="14" y="158" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">等待结束 ➔ 提交生效并释放锁</text>
+      <text x="14" y="178" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">T₁ 正式对全球外部用户可见！</text>
+    </g>
+
+    <!-- Arrow 2 (x=580..616) -->
+    <line x1="580" y1="138" x2="616" y2="138" stroke="#e85d3f" stroke-width="1.4" marker-end="url(#tt-arr-accent)"/>
+
+    <!-- Stage 3: Tx 2 Order Guaranteed -->
+    <g transform="translate(616, 40)">
+      <rect width="250" height="196" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="14" y="24" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. 外部事务 T₂ 启动</text>
+      <text x="14" y="44" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">外部观察到 T₁ ➔ 发起 T₂</text>
+      <text x="14" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">T₂.now().earliest &gt; s₁ 100% 成立！</text>
+      <text x="14" y="80" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">因此 T₂ 的提交戳必定满足：</text>
+      <line x1="14" y1="92" x2="236" y2="92" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="14" y="112" fill="#e85d3f" font-size="11" font-family="'Geist Mono', monospace" font-weight="700">s₂ &gt; s₁ (绝对因果全序)</text>
+      <text x="14" y="134" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">彻底消解外部因果倒挂悖论</text>
+      <text x="14" y="152" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全球只读事务实现 0 锁快照读</text>
+      <text x="14" y="170" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">External Consistency 完美达成</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">TrueTime 事务时间点</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Commit Wait 强制休眠等待 (≥ 2ε)</text>
+  <line x1="560" y1="558" x2="584" y2="558" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#tt-arr-accent)"/>
+  <text x="592" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">绝对物理因果传递流</text>
+</svg>
+</main>
+</body>
+</html>

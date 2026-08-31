@@ -142,10 +142,6 @@ sequenceDiagram
 
 ---
 
-
-
-![Oract CI 自动化混沌质量门禁：1,000 次随机故障注入与 100% 恢复率断言](../../../public/images/oract-automated-chaos-pipeline-ci-gate.svg)
-
 ## 四、自动化可靠性证据报告 (Reliability Evidence)
 
 在 ORACT 仓库的 `reliabilitylab/` 目录下，每次代码变更都会自动生成不可篡改的基准测试证据报告：

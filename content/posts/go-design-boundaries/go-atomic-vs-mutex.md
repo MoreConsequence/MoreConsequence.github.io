@@ -31,10 +31,6 @@ Lock 的完整路径：CAS 抢锁快路径 → 失败后按 runtime 条件短暂
 
 `atomic` 则不同：`AddInt64` 由编译器针对目标架构生成原子读改写序列，具体是单条指令还是 LL/SC 等实现细节不能从这篇 Darwin 基准外推。它通常不创建锁对象或等待队列，但卖的是“单个值的原子性”，买不到“多个变量的组合一致性”——atomic 一次只能保护一个字，Mutex 可以保护任意多的状态。
 
-
-
-![原子操作硬件实现：LOCK 汇编前缀、总线锁 (Bus Lock) 与缓存行锁 (Cache Lock)](../../../public/images/atomic-cas-hardware-lock-bus.svg)
-
 ## 二、单线程基线：2 倍差距从哪来
 
 本机实测（Go 1.25.1，arm64 8 核，无竞争）：

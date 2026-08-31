@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function TCPacingPage() {
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12">
+    <div className="playground-page">
       <div className="mb-6">
-        <Link href="/playground" className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+        <Link href="/playground" className="playground-section-sublink">
           ← 返回实验室总览
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="playground-title" style={{ marginTop: '0.5rem' }}>
           🎛️ Linux TC 流量控制与 BBR/fq Pacing 模拟器
         </h1>
       </div>

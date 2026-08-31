@@ -27,10 +27,6 @@ series: "从 Go 到 TypeScript"
 
 把两类错误都塞进 `throw`，调用方就很难从类型上看出哪些失败可以恢复；把所有东西都包成 `Result`，又会把真正的 bug 当成普通业务分支，继续运行在不可信状态上。选择不是“哪个语法更优雅”，而是错误的恢复责任归谁。
 
-
-
-![铁路导向编程 (Railway-Oriented Programming)：Result<T, E> 单子链式流转](../../../public/images/railway-oriented-programming-result-monad.svg)
-
 ## 二、throw 沿调用栈走，catch 是运行时约定
 
 `throw` 的调用方不需要在函数签名中声明可能抛出的错误集合：

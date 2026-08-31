@@ -13,11 +13,11 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed Go 核心测速端点实现：garbage 下行灌水 (1GiB 截断) 与 empty 上行黑洞丢弃](../../../public/images/librespeed-go-endpoints-garbage-empty-backend.svg)
+![三个测速端点：garbage 下行载荷、empty 上行接收与 getIP 身份查询](../../../public/images/librespeed-go-endpoints-garbage-empty-backend.svg)
 
 
 
-![下行推流零内存分配流水线：1MB 预热随机块循环复用与 io.CopyBuffer](../../../public/images/garbage-chunk-writer-zero-alloc-pipeline.svg)
+![garbage 的启动预热、ckSize 边界和循环写出路径](../../../public/images/garbage-chunk-writer-zero-alloc-pipeline.svg)
 
 ## 一、下行端点 garbage：随机、预热、钳制
 
@@ -80,7 +80,7 @@ for i := 0; i < chunks; i++ {
 
 
 
-![Empty 端点双重职责：GET 延迟探测 (Ping) 与 POST 上行黑洞 (Sink)](../../../public/images/empty-endpoint-dual-purpose-sink.svg)
+![empty Handler 如何同时服务小 GET 延迟和大 POST 上行](../../../public/images/empty-endpoint-dual-purpose-sink.svg)
 
 ## 二、empty 端点：上行与延迟共用的"黑洞"
 

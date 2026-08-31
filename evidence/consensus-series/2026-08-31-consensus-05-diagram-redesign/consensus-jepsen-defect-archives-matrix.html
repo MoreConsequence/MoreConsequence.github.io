@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>consensus-jepsen-defect-archives-matrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="def-title def-desc">
+  <title id="def-title">Jepsen 经典历史缺陷检验档案：网络分区与脑裂测试矩阵</title>
+  <desc id="def-desc">分类矩阵图展示 MongoDB、Kafka、etcd 和 Elasticsearch 在 Jepsen 混沌故障注入下暴露的经典脑裂、写丢失缺陷与工业级修复方案。</desc>
+  <defs>
+    <marker id="df-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="df-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">POST-MORTEM CASE ARCHIVES · JEPSEN BATTLE-TESTED LESSONS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Jepsen 历史经典缺陷档案：分区与脑裂测试</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">在真实物理故障拷打下，揭露分布式系统在网络分区、时钟跳变和非受控选举中的隐蔽一致性破产</text>
+
+  <!-- 4 Defect Cards Grid (y=136..506, h=370) -->
+  <g transform="translate(40, 136)">
+    <!-- Card 1: MongoDB -->
+    <g transform="translate(0, 0)">
+      <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="80" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="23" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CASE 1</text>
+      <text x="100" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">MongoDB</text>
+
+      <rect x="12" y="38" width="186" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="56" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">故障场景 (Nemesis)</text>
+      <text x="20" y="72" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">网络分区 + 默认写关注 (w:1)</text>
+
+      <rect x="12" y="102" width="186" height="110" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="122" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缺陷暴露 (Bug)</text>
+      <text x="20" y="140" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">孤立主库盲目接受写请求</text>
+      <text x="20" y="156" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">分区恢复后旧主被降级</text>
+      <text x="20" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">在途数据被静默丢弃！</text>
+      <text x="20" y="192" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Silent Lost Writes 灾难</text>
+
+      <rect x="12" y="220" width="186" height="142" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="240" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工业级修复方案</text>
+      <text x="20" y="258" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">强制启用 w:majority</text>
+      <text x="20" y="276" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">引入类似 Raft 的选举机制</text>
+      <text x="20" y="294" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">未达多数派落盘不给客户端</text>
+      <text x="20" y="312" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">返回成功 ACK 确认</text>
+    </g>
+
+    <!-- Card 2: Kafka -->
+    <g transform="translate(224, 0)">
+      <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="80" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="23" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CASE 2</text>
+      <text x="100" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Apache Kafka</text>
+
+      <rect x="12" y="38" width="186" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="56" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">故障场景 (Nemesis)</text>
+      <text x="20" y="72" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">unclean.leader.election=true</text>
+
+      <rect x="12" y="102" width="186" height="110" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="122" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缺陷暴露 (Bug)</text>
+      <text x="20" y="140" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">落后副本被推举为 Leader</text>
+      <text x="20" y="156" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">高水位截断已提交日志</text>
+      <text x="20" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">已提交消息永久丢失！</text>
+      <text x="20" y="192" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">日志回退引发消费端乱序</text>
+
+      <rect x="12" y="220" width="186" height="142" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="240" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工业级修复方案</text>
+      <text x="20" y="258" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">禁用非同步副本竞选</text>
+      <text x="20" y="276" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">min.insync.replicas ≥ 2</text>
+      <text x="20" y="294" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">acks=all 确保严格多数派落盘</text>
+      <text x="20" y="312" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">KRaft 模式彻底统一元数据</text>
+    </g>
+
+    <!-- Card 3: etcd (Focal) -->
+    <g transform="translate(448, 0)">
+      <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="12" y="10" width="80" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="52" y="23" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CASE 3</text>
+      <text x="100" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">etcd (Raft)</text>
+
+      <rect x="12" y="38" width="186" height="56" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="56" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">故障场景 (Nemesis)</text>
+      <text x="20" y="72" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">非对称单向丢包网络分区</text>
+
+      <rect x="12" y="102" width="186" height="110" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+      <text x="20" y="122" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缺陷暴露 (Bug)</text>
+      <text x="20" y="140" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">孤立节点 Term 盲目递增</text>
+      <text x="20" y="156" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">自愈后以超高任期打崩正常</text>
+      <text x="20" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Leader 造成集群无主震荡！</text>
+      <text x="20" y="192" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">所有请求阻塞超时</text>
+
+      <rect x="12" y="220" width="186" height="142" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="20" y="240" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工业级修复方案</text>
+      <text x="20" y="258" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">引入 Pre-Vote 预投票</text>
+      <text x="20" y="276" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">增设 CheckQuorum 租约检查</text>
+      <text x="20" y="294" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">现任 Leader 租约内绝不退位</text>
+      <text x="20" y="312" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">99.999% 高可用彻底稳固</text>
+    </g>
+
+    <!-- Card 4: Elasticsearch -->
+    <g transform="translate(670, 0)">
+      <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="12" y="10" width="80" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+      <text x="52" y="23" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CASE 4</text>
+      <text x="100" y="24" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Elasticsearch</text>
+
+      <rect x="12" y="38" width="186" height="56" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="56" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">故障场景 (Nemesis)</text>
+      <text x="20" y="72" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Zen Discovery 选主配置缺陷</text>
+
+      <rect x="12" y="102" width="186" height="110" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="20" y="122" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">缺陷暴露 (Bug)</text>
+      <text x="20" y="140" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">minimum_master_nodes 未设</text>
+      <text x="20" y="156" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">分区两侧分别推选出 Master</text>
+      <text x="20" y="174" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">出现双主脑裂写入分叉！</text>
+      <text x="20" y="192" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">索引元数据无法自动合并</text>
+
+      <rect x="12" y="220" width="186" height="142" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="20" y="240" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工业级修复方案</text>
+      <text x="20" y="258" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">7.x 全面弃用 Zen Discovery</text>
+      <text x="20" y="276" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">重构为基于 Raft 的新选主引擎</text>
+      <text x="20" y="294" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">自动计算法定多数派 Quorum</text>
+      <text x="20" y="312" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">彻底消除脑裂隐患</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">经典分布式缺陷案例</text>
+  <rect x="300" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="320" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Raft / Pre-Vote 核心演进修复</text>
+</svg>
+</main>
+</body>
+</html>

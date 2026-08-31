@@ -26,9 +26,7 @@ series: "Agent 的方方面面"
 
 Pi 的答案就在 `packages/coding-agent/docs/sessions.md` 和 `docs/session-format.md`（438 行）里：会话存为 `~/.pi/agent/sessions/` 下的 JSONL 文件，一个文件就是一棵树。
 
-
-
-![Agent 会话持久化与事件溯源：Append-Only JSONL 日志与内存状态投影 (Projection)](../../../public/images/agent-session-append-only-jsonl-journal-projection.svg)
+---
 
 ## 二、JSONL + 树：文件格式的两次关键决策
 

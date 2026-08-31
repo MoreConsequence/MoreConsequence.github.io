@@ -1,80 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="pm-title pm-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="pm-title">Go 后端转 TypeScript 核心避坑全景</title>
+  <desc id="pm-desc">Go 后端转 TypeScript 核心避坑架构图展示类型擦除真相、结构化类型字段残留、const 浅不可变性以及 undefined 与 null 语义边界全景。</desc>
+  <defs>
+    <marker id="pm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="pm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Go 后端转 TypeScript 四大心智陷阱与对照表</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">结构化类型系统 (Duck Typing) ｜ 类型擦除 (Type Erasure) ｜ 异步非阻塞事件循环 ｜ 浮点数 Number 精度</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GO TO TYPESCRIPT · TYPE ERASURE, STRUCTURAL TYPING, MUTABILITY &amp; NULLABILITY</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Go 后端转 TypeScript 核心避坑全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">类型擦除与 unknown 守卫 ➔ 结构类型不裁剪字段 ➔ const 仅绑引用 ➔ undefined 边界</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Erasure (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ERASURE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">类型擦除真相</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">raw as User (No Check)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• interface / type 在 JS 运行时不存在</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• as 只是强行压制编译器，不做任何校验</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Compile-Time Only Abstraction</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">最佳实践：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 外部不可信数据统一标记为 unknown；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 用类型谓词或 Schema 库做运行时校验；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确立严谨的类型入口防线。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Matrix Quadrants (435px x 185px each) -->
-    <!-- Q1: Type System -->
-    <g>
-      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="435" height="30" rx="8" fill="#eff6ff"/>
-      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af">1. 类型系统：名义类型 (Nominal) vs 结构类型 (Structural)</text>
-      
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
-        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：type UserId string 与 type OrderId string 互不兼容，编译器拦截；</text>
-        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：type UserId = string 只是别名，传错变量 TS 编译完全不报错！</text>
-        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：使用 Brand 品牌类型标记：type UserId = string &amp; { readonly __brand: unique symbol };</text>
-        <text y="68" fill="#64748b">彻底在编译期杜绝 ID 串用事故！</text>
-      </g>
-    </g>
+  <!-- Col 2: Structural (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STRUCT</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">结构类型与残留</text>
 
-    <!-- Q2: Type Erasure -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="435" height="30" rx="8" fill="#fff7ed"/>
-      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c2410c">2. 运行时真相：反射实体 vs 纯类型擦除 (Erasure)</text>
-      
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
-        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：runtime reflect 可动态检查 struct 标签与字段类型；</text>
-        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：编译成 JS 后所有 interface / type 灰飞烟灭，零运行时痕迹！</text>
-        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：外部 I/O 输入输出严禁直接 as 强转，坚决使用 Zod 运行时解析！</text>
-        <text y="68" fill="#64748b">确保生产运行时数据 100% 合规安全。</text>
-      </g>
-    </g>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">const u: User = dbRow</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 结构满足即合法，额外属性依然保留</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 赋值不会裁剪 passwordHash 等敏感字段</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Non-Pruning Object Reference</text>
 
-    <!-- Q3: Concurrency -->
-    <g transform="translate(0, 195)">
-      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="30" rx="8" fill="#f0fdf4"/>
-      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534">3. 并发模型：多线程抢占 vs 单线程事件循环 (Event Loop)</text>
-      
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
-        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：密集计算直接开 goroutine，调度器自动多核分发；</text>
-        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：主线程写死循环或大 JSON.parse 直接卡死所有用户连接！</text>
-        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：密集计算拆分子进程 (Worker Threads) 或下沉到 Rust/Go 扩展！</text>
-        <text y="68" fill="#64748b">主线程只负责纯 I/O 事件调度。</text>
-      </g>
-    </g>
-
-    <!-- Q4: Numbers -->
-    <g transform="translate(465, 195)">
-      <rect width="435" height="185" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
-      <rect width="435" height="30" rx="8" fill="#faf5ff"/>
-      <text x="15" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#7e22ce">4. 数值模型：int64 整数 vs IEEE 754 双精度浮点</text>
-      
-      <g transform="translate(15, 42)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">
-        <text y="14" fill="#334155"><tspan font-weight="700" fill="#1e40af">Go 习惯</tspan>：分布式雪花算法 Snowflake ID (int64) 原样传递；</text>
-        <text y="32" fill="#334155"><tspan font-weight="700" fill="#c2410c">TS 陷阱</tspan>：JS Number 超过 2^53-1 (9007199254740991) 发生精度截断！</text>
-        <text y="50" fill="#166534" font-weight="700">✓ 正确解法：分布式 ID 在 JSON 中一律序列化为 string 传输，TS 使用 bigint！</text>
-        <text y="68" fill="#64748b">彻底消灭末两位被吃掉的诡异 Bug。</text>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">出口陷阱：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• JSON.stringify 仍会原样序列化全部字段；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 必须显式构造 DTO 进行物理字段裁剪；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 杜绝敏感数据意外逃逸。</text>
   </g>
+
+  <!-- Col 3: Immutability (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">MUTABILITY</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">const 浅不可变性</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">const cfg = { port: 80 }</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• const 仅锁定指针，内部属性完全可改</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• cfg.port = 90 是完全合法的运行时突变</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Shallow Pointer Binding Only</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">防御方案：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 使用 as const 锁定编译期字面量与只读；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 运行时调用 Object.freeze 冻结物理对象；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保全局配置绝对不可篡改。</text>
+  </g>
+
+  <!-- Col 4: Nullability (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NULLABLE</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">undefined vs null</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">undefined vs null</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• undefined: 属性未传/缺失（不更新）</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• null: 显式清空置空字段（设为 NULL）</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Dual Null Semantics Disambiguation</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 数据库更新接口必须严谨区分二者；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免空指针与字段误抹除事故；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 建立清晰的领域模型语义。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">类型擦除真相与 undefined vs null 语义边界</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">结构类型字段残留与 const 浅不可变性核心</text>
 </svg>

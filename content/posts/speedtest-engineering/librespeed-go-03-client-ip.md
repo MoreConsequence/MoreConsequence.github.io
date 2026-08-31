@@ -13,11 +13,11 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed Go 客户端 IP 探测：五级代理头解析、CGNAT 私网过滤与真实源站回退](../../../public/images/librespeed-go-client-ip-proxy-cgnat-lookup.svg)
+![LibreSpeed Go /getIP 请求处理：客户端候选 IP、特殊地址短路与 ISP 查询回退](../../../public/images/librespeed-go-client-ip-proxy-cgnat-lookup.svg)
 
 
 
-![五级代理头穿透解析链：CF-Connecting-IP -> X-Real-IP -> X-Forwarded-For -> RemoteAddr](../../../public/images/client-ip-five-level-proxy-chain.svg)
+![getClientIP 五级候选读取顺序：代理头逐级校验，RemoteAddr 最后兜底](../../../public/images/client-ip-five-level-proxy-chain.svg)
 
 ## 一、你是谁：五级代理头链
 
@@ -39,7 +39,7 @@ series: "LibreSpeed Go 源码行纪"
 
 
 
-![特殊 IP 地址段分类决策表：RFC 1918 私网、CGNAT (100.64.0.0/10) 与运营商判定](../../../public/images/special-ip-subnet-classification-matrix.svg)
+![classifyPrivateIP 的特殊地址匹配顺序：localhost、link-local、私网、ULA 与 CGNAT](../../../public/images/special-ip-subnet-classification-matrix.svg)
 
 ## 二、它在哪个网：一张特殊地址分类表
 

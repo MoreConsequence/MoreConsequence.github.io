@@ -130,10 +130,6 @@ setTimeout(() => console.log("最终顺序:", order.join(" -> ")), 0);
 
 `after-await` 排在 `sync-end` 之后——**await 一个同步值也不会在当前同步段原地继续**；"await 一个同步值会原地继续"是错误直觉。`after-await` 又排在 `microtask` 之前，是因为这次运行中 await 的恢复回调先进入了队列，FIFO 决定了观察到的顺序。
 
-
-
-![Promise 并发组合原语对照：Promise.all vs allSettled vs race vs any](../../../public/images/promise-all-race-allsettled-state-matrix.svg)
-
 ## 四、错误时序：throw 就是 reject，不接 catch 会崩
 
 谜题 5（Node smoke）：async 函数里 `throw` 等价于 `return rejected promise`，且 catch 之后的链会恢复。

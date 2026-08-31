@@ -52,9 +52,7 @@ flowchart TD
 
 Harness 必须在接入层将这些异构流抹平为统一的**内部增量事件流**。
 
-
-
-![Pi 流式 TUI 打字机与光标定位控制：ANSI Escape Codes 终端渲染原理](../../../public/images/pi-tutorial-streaming-tui-typewriter-render.svg)
+---
 
 ## 二、核心实现：流式分流器与增量 JSON 聚合器
 

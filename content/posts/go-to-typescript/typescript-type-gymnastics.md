@@ -51,10 +51,6 @@ const callTool = <N extends ToolName>(name: N, args: ArgsOf<N>) => {
 
 实验用 TypeScript 5.9.3 执行 `tsc -p experiments/ts-type-gymnastics/tsconfig.json --noEmit`，错误调用由 `@ts-expect-error` 消费；删除错误注释后，编译器会报 `number` 不能赋给 `string`。运行时 demo 则打印两个合法调用，说明编译期合同和运行时行为分别被验证。
 
-
-
-![条件类型分发律 (Distributive Conditional Types) 与元组非分发方括号包裹](../../../public/images/conditional-types-distributive-law.svg)
-
 ## 二、satisfies、类型注解和 as 断言不是一回事
 
 三种写法的风险不同：

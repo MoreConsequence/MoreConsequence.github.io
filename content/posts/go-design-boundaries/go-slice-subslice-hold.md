@@ -22,10 +22,6 @@ series: "Go 的设计边界"
 
 这就是"窗 vs 房"模型：`s[:10]` 是把窗户开小，房子（底层数组）一砖不少。
 
-
-
-![三索引切片截取：s[low:high:max] 限制 cap 边界与隔离安全](../../../public/images/three-index-slice-capacity-bound.svg)
-
 ## 二、实测：同一份输入，65.6MiB 与 148KiB 的滞留差别
 
 完整可运行代码（文末），核心是两种写法的对照：

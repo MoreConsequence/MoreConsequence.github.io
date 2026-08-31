@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mysql-deadlock-wait-for-graph</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="dl-title dl-desc">
+  <title id="dl-title">InnoDB 死锁等待图 (Wait-for Graph) 有向环路检测与破环裁决</title>
+  <desc id="dl-desc">架构流程图展示事务交叉争用锁导致 Wait-for Graph 出现有向闭环，以及 InnoDB 检测器通过 DFS 算法发现死锁并回滚代价最小的事务以打破死锁的全过程。</desc>
+  <defs>
+    <marker id="dl-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="dl-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DEADLOCK DETECTION · WAIT-FOR GRAPH &amp; VICTIM ARBITRATION</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">InnoDB 死锁等待图成环检测与破环裁决</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">事务交叉抢锁 ➔ Wait-for Graph 闭环形成 ➔ InnoDB 检测器毫秒级发现成环 ➔ 回滚代价最小事务破环</text>
+
+  <!-- 3 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Lock Contention (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">交叉抢锁与等待</text>
+
+    <!-- Trx A Box -->
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">事务 A (Trx_A)</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">1. 持有: Lock_X(Row 1)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 请求: Lock_X(Row 2) (阻塞!)</text>
+    <text x="24" y="118" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Status: LOCK_WAIT on Trx_B</text>
+
+    <!-- Trx B Box -->
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="174" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">事务 B (Trx_B)</text>
+    <text x="24" y="192" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">1. 持有: Lock_X(Row 2)</text>
+    <text x="24" y="210" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. 请求: Lock_X(Row 1) (阻塞!)</text>
+    <text x="24" y="228" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Status: LOCK_WAIT on Trx_A</text>
+
+    <!-- Deadlock Nature -->
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="284" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">死锁的物理确定性</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">不是概率事件，而是锁获取顺序不一致导致的必然物理死锁！</text>
+    <text x="24" y="324" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Deterministic Lock Wait</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Progress Possible</text>
+  </g>
+
+  <!-- Arrow 1 (x=310..340) -->
+  <text x="325" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Graph</text>
+  <line x1="310" y1="233" x2="340" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#fl-arr-accent)"/>
+
+  <!-- Col 2: Wait-for Graph Cycle (x=340..630, w=290) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="290" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · CYCLE</text>
+    <text x="124" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">等待图成环 (Cycle Detected)</text>
+
+    <!-- Cycle Diagram Box -->
+    <rect x="14" y="42" width="262" height="150" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    
+    <!-- Node A -->
+    <rect x="24" y="56" width="90" height="42" rx="3" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="69" y="74" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">Trx_A (Node)</text>
+    <text x="69" y="88" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">Rows Modified: 1</text>
+
+    <!-- Node B -->
+    <rect x="160" y="56" width="90" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="1"/>
+    <text x="205" y="74" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Trx_B (Node)</text>
+    <text x="205" y="88" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">Rows Modified: 5</text>
+
+    <!-- Edges -->
+    <text x="137" y="66" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Waits For</text>
+    <line x1="114" y1="72" x2="160" y2="72" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#dl-arr-accent)"/>
+    <text x="137" y="96" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Waits For</text>
+    <line x1="160" y1="86" x2="114" y2="86" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#dl-arr-accent)"/>
+
+    <text x="145" y="124" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700" text-anchor="middle">有向等待环路 (Cycle) 判定成立！</text>
+    <text x="145" y="142" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">Trx_A ➔ Trx_B ➔ Trx_A</text>
+    <text x="145" y="158" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">任何一方都无法在没有外部干预下推进</text>
+    <text x="145" y="174" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DFS Cycle Detection: O(V+E)</text>
+
+    <!-- Detector Box -->
+    <rect x="14" y="202" width="262" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="224" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">InnoDB 死锁检测器工作流</text>
+    <text x="24" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 每次发生锁等待，将边加入 Wait-for Graph；</text>
+    <text x="24" y="262" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 立即启动深度优先搜索 (DFS) 探查环路；</text>
+    <text x="24" y="280" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 发现环路 ➔ 毫秒级触发仲裁破环！</text>
+    <line x1="24" y1="292" x2="266" y2="292" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="312" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">innodb_deadlock_detect = ON</text>
+    <text x="24" y="330" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Microsecond Detection Latency</text>
+    <text x="24" y="346" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">绝不依赖 50s 超时死等！</text>
+  </g>
+
+  <!-- Arrow 2 (x=630..660) -->
+  <text x="645" y="225" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Rollback</text>
+  <line x1="630" y1="233" x2="660" y2="233" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#dl-arr-accent)"/>
+
+  <!-- Col 3: Victim Selection (x=660..920, w=260) -->
+  <g transform="translate(660, 136)">
+    <rect width="260" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="80" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="54" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 3</text>
+    <text x="104" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">受害者仲裁与破环</text>
+
+    <!-- Victim Box -->
+    <rect x="14" y="42" width="232" height="140" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Victim 选择策略 (最小代价)</text>
+    <text x="24" y="84" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• Trx_A: 已改 1 行 (Undo 极小)</text>
+    <text x="24" y="102" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• Trx_B: 已改 5 行 (Undo 较大)</text>
+    <text x="24" y="120" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">➔ 仲裁选择 Trx_A 作为牺牲品！</text>
+    <line x1="24" y1="132" x2="236" y2="132" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="24" y="152" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">回滚 Trx_A 释放 Lock_X(Row 1)</text>
+    <text x="24" y="168" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Return ER_LOCK_DEADLOCK (1213)</text>
+
+    <!-- Resolution Box -->
+    <rect x="14" y="192" width="232" height="168" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="214" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">最终破环解套结果</text>
+    <text x="24" y="234" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 事务 B 成功拿到锁，提交完成；</text>
+    <text x="24" y="252" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 事务 A 捕获 1213 错误发起重试；</text>
+    <line x1="24" y1="264" x2="236" y2="264" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="284" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程黄金防御法则：</text>
+    <text x="24" y="302" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全局固定加锁顺序 (按 ID 升序)</text>
+    <text x="24" y="320" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 短事务 + 幂等重试机制</text>
+    <text x="24" y="338" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">No Cycles = No Deadlocks</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">事务抢锁与破环解套</text>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="330" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Wait-for Graph 闭环检测与 Victim 回滚核心</text>
+</svg>
+</main>
+</body>
+</html>

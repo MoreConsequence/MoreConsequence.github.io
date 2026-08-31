@@ -1,49 +1,170 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="vc-title vc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="vc-title">Undo Log 版本链与行隐式字段：DB_TRX_ID 与 DB_ROLL_PTR 拓扑</title>
+  <desc id="vc-desc">架构拓扑图展示聚簇索引物理行隐式字段 DB_TRX_ID 与 DB_ROLL_PTR 指针如何链接 Undo 段中多个历史快照版本构成版本链以支持一致性读。</desc>
+  <defs>
+    <marker id="vc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="vc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">InnoDB MVCC 行级版本链拓扑 (Undo Log Version Chain)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">聚簇索引最新物理行 (DB_TRX_ID: 120, DB_ROLL_PTR) ──► 指向 Undo Log 历史镜像 (Trx 110) ──► 递归串联成单向链表</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 聚簇索引最新记录 (Clustered Index: Current Row)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">id: 1 | name: 'David' | DB_TRX_ID: 120 (最近修改它的事务) | DB_ROLL_PTR: 指向 Undo Page #402</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">表中只存最新的数据副本，历史版本全在 Undo Log 内存/磁盘中！</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INNODB MVCC ARCHITECTURE · UNDO LOG VERSION CHAIN</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Undo Log 版本链与隐式字段物理拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">聚簇索引物理行 ➔ DB_ROLL_PTR 回溯 Undo 日志历史快照 ➔ 构成单向递减版本链 ➔ 0 锁一致性快照读</text>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. Undo Log 一级历史版本 (Undo Record V2: Trx 110)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">name: 'Charlie' | DB_TRX_ID: 110 | DB_ROLL_PTR: 指向 Undo Page #318</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">当 Trx 120 未提交或对当前读不可见时，沿回滚指针向前回溯！</text>
-      </g>
+  <!-- Top: Clustered Index Latest Physical Row (y=136..236, h=100) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="100" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="130" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="79" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLUSTERED RECORD</text>
+    <text x="154" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">聚簇索引当前物理行 (Latest In-Place Record in Buffer Pool)</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">3. Undo Log 二级历史版本 (Undo Record V1: Trx 100)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">name: 'Bob' | DB_TRX_ID: 100 | DB_ROLL_PTR: 指向 Undo Page #105 (最初 INSERT 版本)</text>
-        <text x="15" y="62" font-size="8" fill="#047857">多版本并发控制的核心精髓：写不阻塞读，读不阻塞写！</text>
-      </g>
+    <!-- Visual Fields Strip -->
+    <g transform="translate(14, 34)">
+      <!-- User Col: ID -->
+      <rect x="0" y="0" width="120" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="60" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">id = 1 (PK)</text>
+      <text x="60" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">主键字段</text>
 
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#faf5ff" stroke="#d8b4fe"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#7e22ce">4. ReadView 可见性过滤裁决 (ReadView Visibility Evaluation)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#6b21a8">比对 m_ids 活跃事务数组 ──► 瞬间截取属于当前事务可见的合法快照 ──► 0 锁并发极速返回！</text>
-        <text x="15" y="62" font-size="8" fill="#6b21a8">现代关系型数据库事务隔离机制的基石！</text>
-      </g>
+      <!-- User Col: balance -->
+      <rect x="128" y="0" width="160" height="52" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="208" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">balance = 300</text>
+      <text x="208" y="38" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">当前物理最新值</text>
+
+      <!-- Implicit: DB_ROW_ID -->
+      <rect x="296" y="0" width="150" height="52" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="371" y="22" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DB_ROW_ID (6B)</text>
+      <text x="371" y="38" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">无显式主键时隐式生成</text>
+
+      <!-- Implicit: DB_TRX_ID (Focal) -->
+      <rect x="454" y="0" width="180" height="52" rx="3" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="544" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DB_TRX_ID = 100 (6B)</text>
+      <text x="544" y="38" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">最后修改本行的事务 ID</text>
+
+      <!-- Implicit: DB_ROLL_PTR (Focal Pointer) -->
+      <rect x="642" y="0" width="210" height="52" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="747" y="22" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DB_ROLL_PTR (7B) ➔</text>
+      <text x="747" y="38" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">指向 Undo Log 段偏移</text>
     </g>
   </g>
+
+  <!-- Downward Pointer Label -->
+  <text x="761" y="248" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Rollback Ptr</text>
+
+  <!-- Bottom: 4 Historical Versions Chain (y=256..506, h=250) -->
+  <g transform="translate(40, 256)">
+    <!-- Version 3 (Trx=100, Latest In-Place, w=205) -->
+    <g transform="translate(0, 0)">
+      <rect width="205" height="250" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="10" width="76" height="16" rx="2" fill="#e85d3f"/>
+      <text x="48" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">VERSION 3</text>
+      <text x="94" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="700">TRX_ID = 100</text>
+
+      <rect x="10" y="36" width="185" height="74" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">balance = 300</text>
+      <text x="18" y="74" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">DB_TRX_ID: 100 (活跃中)</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">DB_ROLL_PTR ➔ V2</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">当前读读取位置：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• UPDATE / DELETE / FOR UPDATE</text>
+      <text x="10" y="166" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 必须读最新值并加锁！</text>
+      <line x1="10" y1="178" x2="195" y2="178" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">快照读若不可见该版本</text>
+      <text x="10" y="216" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">➔ 顺着指针向后回溯！</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Latest Physical Version</text>
+    </g>
+
+    <!-- Arrow 1 (x=205..225) -->
+    <line x1="205" y1="125" x2="225" y2="125" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#vc-arr-accent)"/>
+
+    <!-- Version 2 (Trx=80, w=205) -->
+    <g transform="translate(225, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="76" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="48" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">VERSION 2</text>
+      <text x="94" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">TRX_ID = 80</text>
+
+      <rect x="10" y="36" width="185" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">balance = 200</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">DB_TRX_ID: 80 (已提交)</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">DB_ROLL_PTR ➔ V1</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Undo Log 记录段：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 存放于 Undo Tablespace</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅记录修改前的旧值差量</text>
+      <line x1="10" y1="178" x2="195" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">ReadView 判定可见时</text>
+      <text x="10" y="216" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">直接从 Undo 重建返回此值！</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Update Undo Segment</text>
+    </g>
+
+    <!-- Arrow 2 (x=430..450) -->
+    <line x1="430" y1="125" x2="450" y2="125" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#vc-arr)"/>
+
+    <!-- Version 1 (Trx=50, w=205) -->
+    <g transform="translate(450, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="76" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="48" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">VERSION 1</text>
+      <text x="94" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">TRX_ID = 50</text>
+
+      <rect x="10" y="36" width="185" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">balance = 100</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">DB_TRX_ID: 50 (已提交)</text>
+      <text x="18" y="92" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">DB_ROLL_PTR ➔ V0</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">快照读一致性保障：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 即使当前行被反复修改 10 次</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 旧事务仍能稳定读取 100！</text>
+      <line x1="10" y1="178" x2="195" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">实现「时间静止」的错觉</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Repeatable Read Isolation</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Purge Thread Protection</text>
+    </g>
+
+    <!-- Arrow 3 (x=655..675) -->
+    <line x1="655" y1="125" x2="675" y2="125" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#vc-arr)"/>
+
+    <!-- Version 0 (Trx=20, Insert Root, w=205) -->
+    <g transform="translate(675, 0)">
+      <rect width="205" height="250" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="10" width="76" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="48" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">VERSION 0</text>
+      <text x="94" y="22" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">TRX_ID = 20</text>
+
+      <rect x="10" y="36" width="185" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="18" y="56" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">balance = 0 (INSERT)</text>
+      <text x="18" y="74" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">DB_TRX_ID: 20 (初始插入)</text>
+      <text x="18" y="92" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">DB_ROLL_PTR: NULL</text>
+
+      <text x="10" y="130" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">版本链末端与垃圾清理：</text>
+      <text x="10" y="148" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 初始插入产生的 Insert Undo</text>
+      <text x="10" y="166" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 事务提交后可立即物理释放</text>
+      <line x1="10" y1="178" x2="195" y2="178" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+      <text x="10" y="198" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Purge Master Thread</text>
+      <text x="10" y="216" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">当无活跃快照引用时回收</text>
+      <text x="10" y="232" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Zero Memory Leaks</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Undo 历史版本与 Insert 根节点</text>
+  <rect x="330" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">当前物理行与 DB_ROLL_PTR 回溯指针核心</text>
 </svg>

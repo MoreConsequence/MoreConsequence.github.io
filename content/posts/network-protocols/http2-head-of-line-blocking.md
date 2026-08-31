@@ -58,10 +58,6 @@ RFC 9113 规定：每个新流和整个连接的接收窗口初值**都是 65,53
 
 > 细节：只有 DATA 帧吃窗口（RFC 9113 §5.2.1 第 5 条），HEADERS/SETTINGS 等控制帧不占用——所以"头部被挡"很少，真正被挡的是大块 body 数据。
 
-
-
-![HPACK 头部压缩机理：静态字典、动态哈希表 (Dynamic Table) 与霍夫曼编码](../../../public/images/hpack-dynamic-table-deflate-compression.svg)
-
 ## 四、什么时候 HOL 真的痛：三种现实
 
 | 场景 | 需要观察的变量 | 症状 | 迁移问题 |

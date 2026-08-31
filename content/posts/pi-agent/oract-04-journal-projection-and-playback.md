@@ -172,10 +172,6 @@ func ProjectConversation(events []core.Event) []ConversationMessage {
 
 ---
 
-
-
-![事件溯源 (Event Sourcing) vs 传统全量状态快照 (CRUD Snapshot) 权衡对比](../../../public/images/oract-event-sourcing-vs-state-snapshot-tradeoff.svg)
-
 ## 四、时间旅行与会话分叉 (Session Fork)
 
 当开发者在 Playback 中发现第 5 步时大模型理解有偏差，可以一键触发 **Session Fork**：

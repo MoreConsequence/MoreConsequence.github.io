@@ -28,10 +28,6 @@ series: "Go 的设计边界"
 
 因此有两种常见误判：RSS 涨了就判定堆泄漏，或者 HeapAlloc 没明显变化就忽略不断增加的 goroutine。正确的问题不是“哪个数字大”，而是“哪个资源在同一时间窗口内持续增长、由谁持有、能否释放”。
 
-
-
-![pprof 堆内存四大指标：inuse_space (当前存活) vs alloc_space (历史累计)](../../../public/images/pprof-heap-alloc-space-vs-inuse-space.svg)
-
 ## 二、用受控输入建立两帧基线
 
 仓库内的 `experiments/go-memory-leak-pprof/main.go` 把“仍被引用的缓冲”和“卡住的 goroutine”放在同一个进程里，先取基线，再创建固定数量的资源并取第二帧：

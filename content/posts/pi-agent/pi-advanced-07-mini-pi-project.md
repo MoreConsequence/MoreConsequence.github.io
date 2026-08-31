@@ -46,9 +46,7 @@ flowchart TD
     Gateway -.-> Telemetry
 ```
 
-
-
-![Mini Pi 微型 Agent 全栈架构蓝图：300 行代码实现工业级全闭环](../../../public/images/mini-pi-end-to-end-architecture-blueprint.svg)
+---
 
 ## 二、Mini-Pi 核心源码实现
 

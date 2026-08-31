@@ -1,71 +1,124 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tc-title tc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="tc-title">TypeScript 工程工具链分工全景</title>
+  <desc id="tc-desc">TypeScript 工具链架构图展示 Semver 范围与 lockfile 锁定、tsc 类型检查、esbuild/SWC 快速转译以及 @types 分发机制全景。</desc>
+  <defs>
+    <marker id="tc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="tc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">TypeScript 工程生态分工：包管理器 ──► 类型检查器 ──► 极速转译/打包器</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">pnpm (硬链接依赖拓扑) ｜ tsc (官方唯一真实类型检查) ｜ SWC / ESBuild (Go/Rust 编写 100x 极速转译) ｜ Vite (开发实时热更)</text>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TOOLCHAIN RESPONSIBILITY MATRIX · SEMVER RANGES, LOCKFILES, COMPILERS &amp; BUNDLERS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">TypeScript 工程工具链分工全景</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">package.json 声明范围 vs lockfile 锁定 ➔ tsc 纯类型检查 vs esbuild 快速转译</text>
+
+  <!-- 4 Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Semver (x=40..245, w=205) -->
+  <g transform="translate(40, 136)">
+    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SEMVER</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">声明范围与锁定</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">package.json vs lockfile</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• package.json: 声明允许范围 (^1.4.0)</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• lockfile: 记录单次解析的唯一真实版本</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Deterministic Dependency Lock</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">CI 规则：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 生产与 CI 环境必须使用 npm ci；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝构建时重新解析引入未经验证的包；</text>
+    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保证环境 100% 可复现。</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <rect width="900" height="385" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: tsc (x=260..475, w=215) - Focal -->
+  <g transform="translate(260, 136)">
+    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TSC</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">tsc 类型检查引擎</text>
 
-    <!-- 3 Horizontal Columns (270px each) -->
-    <g transform="translate(20, 20)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <!-- Col 1 -->
-      <rect width="270" height="345" rx="6" fill="#f0fdf4" stroke="#86efac"/>
-      <rect width="270" height="30" rx="6" fill="#dcfce7"/>
-      <text x="135" y="20" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">1. 依赖管理层 (Package Manager)</text>
+    <!-- Box -->
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">tsc --noEmit</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 按 tsconfig 全量扫描 include 文件</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 深度执行跨模块类型校验与穷尽检查</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Authoritative Type Checker</text>
 
-      <g transform="translate(12, 42)" font-size="8">
-        <text y="14" font-weight="700" fill="#166534">• pnpm / npm / yarn</text>
-        <text y="30" fill="#334155">职责：解析 semver 版本号，下载 npm 依赖，生成 lockfile 锁定文件；</text>
-        <text y="50" font-weight="700" fill="#15803d">pnpm 核心优势：</text>
-        <text y="68" fill="#334155">• 全局内容寻址存储 (CAS)，硬链接节约 70% 磁盘；</text>
-        <text y="86" fill="#334155">• 严格非扁平 node_modules，根治幽灵依赖 (Phantom Dependency)！</text>
-      </g>
-
-      <!-- Col 2 -->
-      <g transform="translate(290, 0)">
-        <rect width="270" height="345" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
-        <rect width="270" height="30" rx="6" fill="#dbeafe"/>
-        <text x="135" y="20" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">2. 类型校验层 (Type Checker)</text>
-
-        <g transform="translate(12, 42)" font-size="8">
-          <text y="14" font-weight="700" fill="#1e40af">• tsc --noEmit</text>
-          <text y="30" fill="#334155">职责：全量 AST 语法分析，推导泛型与类型体操，生成 .d.ts 类型声明；</text>
-          <text y="50" font-weight="700" fill="#1d4ed8">权威定位：</text>
-          <text y="68" fill="#334155">• 目前全球唯一完整的 TS 类型检查器；</text>
-          <text y="86" fill="#334155">• 在 CI/CD 流水线中作为质量守门员，保证类型 100% 零错误！</text>
-        </g>
-      </g>
-
-      <!-- Col 3 -->
-      <g transform="translate(580, 0)">
-        <rect width="280" height="345" rx="6" fill="#fff7ed" stroke="#fed7aa"/>
-        <rect width="280" height="30" rx="6" fill="#ffedd5"/>
-        <text x="140" y="20" font-size="11" font-weight="700" fill="#c2410c" text-anchor="middle">3. 转译与打包层 (Bundler &amp; Transpiler)</text>
-
-        <g transform="translate(12, 42)" font-size="8">
-          <text y="14" font-weight="700" fill="#c2410c">• Vite / ESBuild / SWC / Turbopack</text>
-          <text y="30" fill="#334155">职责：直接抹除类型注解 (Type Strip)，转译 JSX/TS 为纯 JS，Tree Shaking 摇树并打包；</text>
-          <text y="50" font-weight="700" fill="#9a3412">极速构建：</text>
-          <text y="68" fill="#334155">• 用 Go / Rust 编写，构建速度比 tsc 快 20 ~ 100 倍；</text>
-          <text y="86" fill="#334155">• 开发时毫秒级热更新 (HMR)，打造丝滑开发体验！</text>
-        </g>
-      </g>
-    </g>
+    <!-- Details -->
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">唯一真理：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 只有 tsc 能执行真正的静态类型检验；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 拦截拼写错误与非法方法调用；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 捍卫代码类型安全性。</text>
   </g>
+
+  <!-- Col 3: esbuild (x=490..695, w=205) - Focal -->
+  <g transform="translate(490, 136)">
+    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ESBUILD</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">esbuild / SWC 快速转译</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Transpile Only (No Check)</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅转译依赖图可达代码，擦除类型</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 极速构建打包，但完全不报错类型问题</text>
+    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">High-Speed AST Stripper</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">协同矩阵：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 开发与打包靠 esbuild 获得极致速度；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• CI 流程通过 tsc --noEmit 补全类型防线；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 兼顾效率与严谨。</text>
+  </g>
+
+  <!-- Col 4: DefinitelyTyped (x=710..920, w=210) -->
+  <g transform="translate(710, 136)">
+    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">@TYPES</text>
+    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">@types 类型包分发</text>
+
+    <!-- Box -->
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">.d.ts &amp; DefinitelyTyped</text>
+    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 优先使用包内原生自带类型</text>
+    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• @types/node 需与运行时 Node 版本对齐</text>
+    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Type Declaration Registry</text>
+
+    <!-- Details -->
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
+    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 厘清工具链每一层的职责范围；</text>
+    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝把转译通过误认为类型安全；</text>
+    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 构筑工业级 TypeScript 基础设施。</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Semver 声明锁定与 @types 分发机制</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">tsc 权威类型检查与 esbuild 极速转译协同核心</text>
 </svg>

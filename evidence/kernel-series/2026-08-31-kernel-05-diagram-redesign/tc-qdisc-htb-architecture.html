@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tc-qdisc-htb-architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tc-htb-title tc-htb-desc">
+  <title id="tc-htb-title">Linux 流量控制（TC）体系：qdisc 排队规则、HTB 分层令牌桶与带宽借调</title>
+  <desc id="tc-htb-desc">分层架构图展示 Linux 流量控制 TC 体系中根 qdisc 排队规则、Filter 精准分流与 HTB 分层令牌桶 rate 保底与 ceil 突发带宽弹性借调机制。</desc>
+  <defs>
+    <marker id="tc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="tc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">TRAFFIC CONTROL · HTB HIERARCHICAL TOKEN BUCKET</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux 流量控制体系：HTB 分层令牌桶与带宽借调</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">qdisc 根排队规则 ➔ Filter 精准分流 ➔ Root Class (10G) ➔ 核心在线 (保底7G/突发10G) 与离线备份 (保底1G/突发3G) 弹性借调</text>
+
+  <!-- 4 Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Root qdisc (x=40..220, w=180) -->
+  <g transform="translate(40, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ROOT</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">根排队规则</text>
+
+    <!-- Ingress Packets -->
+    <rect x="14" y="42" width="152" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">TCP 协议栈出包</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">skb 经路由抉择</text>
+    <text x="22" y="100" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">dev_queue_xmit()</text>
+    <text x="22" y="118" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">打入 eth0 出向排队</text>
+
+    <!-- Handle 1: htb -->
+    <rect x="14" y="150" width="152" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="172" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">挂载 HTB qdisc</text>
+    <text x="22" y="192" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">handle 1: htb</text>
+    <text x="22" y="208" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">default 20 (默认类)</text>
+    <text x="22" y="226" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Hierarchical Token Bucket</text>
+    <text x="22" y="244" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">有类排队分层引擎</text>
+
+    <!-- Root Feature -->
+    <rect x="14" y="272" width="152" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="294" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">物理带宽上限</text>
+    <text x="22" y="314" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">eth0: 10Gbps 物理网卡</text>
+    <text x="22" y="332" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">统一接管全机出口流量</text>
+    <text x="22" y="348" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Traffic Shaping Hook</text>
+  </g>
+
+  <!-- Arrow 1 (x=220..250) -->
+  <text x="235" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Filter</text>
+  <line x1="220" y1="230" x2="250" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tc-arr-accent)"/>
+
+  <!-- Col 2: Filter & Classifier (x=250..470, w=220) - Focal -->
+  <g transform="translate(250, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">FILTER</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">过滤器精准分流</text>
+
+    <!-- Classifier Box -->
+    <rect x="14" y="42" width="192" height="150" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="64" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">U32 / EBPF</text>
+    <text x="112" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">分流匹配规则</text>
+    
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Rule 1 (Prio 1):</text>
+    <text x="24" y="102" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">match ip dport 443 / 80</text>
+    <text x="24" y="118" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">➔ flowid 1:10 (核心业务)</text>
+
+    <line x1="24" y1="128" x2="196" y2="128" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+
+    <text x="24" y="146" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Rule 2 (Default):</text>
+    <text x="24" y="162" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">未匹配常规流量</text>
+    <text x="24" y="178" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">➔ flowid 1:20 (离线备份)</text>
+
+    <!-- Filter Feature -->
+    <rect x="14" y="202" width="192" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="224" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">现代 eBPF TC Filter 扩展</text>
+    <text x="24" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">传统 u32 规则繁琐低效；</text>
+    <text x="24" y="262" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">现代采用 eBPF direct-action：</text>
+    <text x="24" y="280" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">SEC("tc") int cls_main() {</text>
+    <text x="24" y="296" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">  skb->tc_classid = 0x10010;</text>
+    <text x="24" y="312" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">  return TC_ACT_OK;</text>
+    <text x="24" y="328" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">}</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Nanosecond Flow Steering</text>
+  </g>
+
+  <!-- Arrow 2 (x=470..500) -->
+  <text x="485" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Enq</text>
+  <line x1="470" y1="230" x2="500" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tc-arr-accent)"/>
+
+  <!-- Col 3: Hierarchical HTB Classes (x=500..710, w=210) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CLASSES</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">HTB 分层令牌桶</text>
+
+    <!-- Root Class 1:1 -->
+    <rect x="14" y="42" width="182" height="54" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="62" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600">Root Class 1:1</text>
+    <text x="24" y="78" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">rate 10Gbit | ceil 10Gbit</text>
+
+    <!-- Child Class 1:10 (Online) -->
+    <rect x="14" y="104" width="182" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="124" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Class 1:10 (核心在线业务)</text>
+    <text x="24" y="142" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• rate 7gbit (保底不被抢)</text>
+    <text x="24" y="158" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• ceil 10gbit (空闲可跑满)</text>
+    <text x="24" y="174" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• prio 1 (高借调优先级)</text>
+    <text x="24" y="190" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">qdisc: fq / fq_codel 挂载</text>
+    <text x="24" y="210" fill="#e85d3f" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">保障微秒级响应与充足带宽</text>
+
+    <!-- Child Class 1:20 (Offline) -->
+    <rect x="14" y="232" width="182" height="128" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="252" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Class 1:20 (离线日志备份)</text>
+    <text x="24" y="270" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• rate 1gbit (保底带宽)</text>
+    <text x="24" y="286" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• ceil 3gbit (硬上限死锁)</text>
+    <text x="24" y="302" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">• prio 2 (低优先级借调)</text>
+    <line x1="24" y1="312" x2="186" y2="312" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="330" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">核心业务爆发时：</text>
+    <text x="24" y="346" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">毫秒级收回离线借调带宽！</text>
+  </g>
+
+  <!-- Arrow 3 (x=710..740) -->
+  <text x="725" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TX</text>
+  <line x1="710" y1="230" x2="740" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#tc-arr-accent)"/>
+
+  <!-- Col 4: Hardware TX Ring (x=740..920, w=180) -->
+  <g transform="translate(740, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">NIC TX</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡硬件发包</text>
+
+    <!-- TX Ring -->
+    <rect x="14" y="42" width="152" height="142" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">TX Ring Buffer</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">平滑整形后的出向包</text>
+    <text x="22" y="102" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">严格按 Token 速率推入</text>
+    <text x="22" y="120" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">无突发丢包溢出</text>
+    <text x="22" y="138" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Doorbell Register</text>
+    <text x="22" y="156" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Zero Bufferbloat</text>
+
+    <!-- DMA & PHY -->
+    <rect x="14" y="196" width="152" height="164" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="218" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">DMA 直传与光纤发射</text>
+    <text x="22" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">DMA 引擎拉取数据帧：</text>
+    <text x="22" y="256" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• PCIe 总线极速读取</text>
+    <text x="22" y="272" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• MAC 校验与封装</text>
+    <text x="22" y="288" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">• PHY 转化为光电信号</text>
+    <line x1="22" y1="300" x2="156" y2="300" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="22" y="320" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">多租户带宽 100% 隔离！</text>
+    <text x="22" y="338" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">10Gbps Smooth Egress</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">根 qdisc 与硬件发射</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Filter 规则与 HTB 核心业务类</text>
+</svg>
+</main>
+</body>
+</html>

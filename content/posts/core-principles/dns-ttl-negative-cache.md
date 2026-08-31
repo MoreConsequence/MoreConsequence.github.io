@@ -29,10 +29,6 @@ example.com.  300  IN  A  203.0.113.10
 
 `300` 是这次响应允许缓存的时间上限；递归 resolver、客户端或中间服务可能有额外策略，不能从这个数字单独推出全网最后一个旧答案的时间。TTL 越大通常意味着已缓存答案的最长新鲜窗口越长，但 serve-stale、预取、负缓存和不同查询路径都要单独核对。
 
-
-
-![DNS 解析树状拓扑：Local DNS 递归 -> 根域名 -> TLD -> 权威 DNS](../../../public/images/dns-resolution-iterative-recursion-hierarchy.svg)
-
 ## 二、TTL 归谁管：权威画押，解析器倒计时
 
 DNS 记录在**权威服务器**上带一条 TTL，定义响应允许被缓存的新鲜窗口。递归 resolver 从上游收到响应后保存过期时间，并在转发给下游时通常返回剩余 TTL；它不是每经过一跳就把 TTL 重新加满。客户端 stub resolver、OS、企业 DNS、CDN 和应用自己的缓存还可能拥有独立策略。

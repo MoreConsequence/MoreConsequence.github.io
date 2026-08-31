@@ -1,104 +1,174 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="skb-title skb-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="skb-title">Linux sk_buff 内存架构：控制元数据与连续数据区四指针零拷贝</title>
+  <desc id="skb-desc">内存架构图展示 Linux 内核 struct sk_buff 控制头与物理数据区分离设计，通过 head、data、tail、end 四指针滑动实现跨协议栈零拷贝流转。</desc>
+  <defs>
+    <marker id="sk-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="sk-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 内核 sk_buff 内存布局：控制元数据与真实数据区分离架构</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">`struct sk_buff` 元数据控制头（约 230B） ──► 四大游标指针（head/data/tail/end） ──► 连续数据缓存区与零拷贝克隆（skb_clone）</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">KERNEL MEMORY ANATOMY · SK_BUFF ZERO-COPY ARCHITECTURE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux sk_buff 内存架构：控制元数据与四指针零拷贝</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Slab 缓存控制头 (~230B) 与物理数据区分离：head / data / tail / end 指针滑动实现跨协议层穿梭零内存拷贝</text>
+
+  <!-- Top Section: SKB Header + Data Buffer (y=136..360, h=224) -->
+  <!-- Left: struct sk_buff Header (x=40..310, w=270) -->
+  <g transform="translate(40, 136)">
+    <rect width="270" height="224" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CONTROL</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">struct sk_buff 控制头</text>
+
+    <!-- Slab Cache Info -->
+    <rect x="14" y="40" width="242" height="42" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="58" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Slab 专用高速缓存 (~230B)</text>
+    <text x="24" y="72" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">kmem_cache: skbuff_head_cache</text>
+
+    <!-- 4 Pointers Core (Focal) -->
+    <rect x="14" y="90" width="242" height="120" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="110" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">核心四游标指针 (Cursors)</text>
+
+    <text x="24" y="130" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">unsigned char *head ──► 缓冲区物理起始</text>
+    <text x="24" y="148" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">unsigned char *data ──► 有效协议载荷起始</text>
+    <text x="24" y="166" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">unsigned char *tail ──► 有效协议载荷结束</text>
+    <text x="24" y="184" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">unsigned char *end  ──► 缓冲区物理边界</text>
+    <text x="24" y="200" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">dev / sk / len / data_len / transport_header</text>
   </g>
 
-  <!-- Main Comparison Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow Control -> Data Buffer (x=310..340) -->
+  <text x="325" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Point</text>
+  <line x1="310" y1="230" x2="340" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#sk-arr-accent)"/>
 
-    <!-- Left: struct sk_buff control block (350px) -->
-    <g transform="translate(20, 20)">
-      <rect width="350" height="230" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="350" height="32" rx="6" fill="#dbeafe"/>
-      <text x="175" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. 控制头：`struct sk_buff` (元数据)</text>
+  <!-- Right: Continuous Data Buffer (x=340..920, w=580) - Focal -->
+  <g transform="translate(340, 136)">
+    <rect width="580" height="224" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">BUFFER</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">连续物理数据缓冲区 (Continuous Data Buffer)</text>
 
-      <g transform="translate(14, 44)" font-family="ui-monospace, monospace" font-size="10.5">
-        <rect width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="17" fill="#1d4ed8">struct sk_buff *next, *prev;</text>
+    <!-- Visual Memory Layout Strip (y=46..126) -->
+    <g transform="translate(14, 46)">
+      <!-- Headroom -->
+      <rect x="0" y="0" width="100" height="80" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="50" y="26" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">Headroom 预留区</text>
+      <text x="50" y="46" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle">head ➔ data (64B)</text>
+      <text x="50" y="64" fill="#e85d3f" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">skb_push() 扩展头</text>
 
-        <rect y="32" width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="49" fill="#1d4ed8">struct net_device *dev; (网卡设备)</text>
+      <!-- Valid Payload (Focal) -->
+      <rect x="108" y="0" width="280" height="80" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="248" y="24" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700" text-anchor="middle">Valid Payload 有效网络数据帧 (data ➔ tail)</text>
 
-        <rect y="64" width="322" height="26" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-        <text x="10" y="81" fill="#1d4ed8">struct sock *sk; (关联 Socket)</text>
+      <!-- Sub-headers inside payload -->
+      <rect x="116" y="36" width="55" height="34" rx="2" fill="rgba(232,93,63,0.1)" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="143" y="52" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">MAC (14B)</text>
+      <text x="143" y="64" fill="#6b6a64" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Layer 2</text>
 
-        <rect y="96" width="322" height="74" rx="3" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
-        <text x="10" y="114" fill="#0f172a" font-weight="700">四大游标指针：</text>
-        <text x="10" y="130" fill="#2563eb">unsigned char *head;  // 内存起点</text>
-        <text x="10" y="144" fill="#2563eb">unsigned char *data;  // 有效载荷起点</text>
-        <text x="10" y="158" fill="#2563eb">sk_buff_data_t tail, end;</text>
-      </g>
+      <rect x="175" y="36" width="55" height="34" rx="2" fill="rgba(232,93,63,0.1)" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="202" y="52" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">IP (20B)</text>
+      <text x="202" y="64" fill="#6b6a64" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Layer 3</text>
+
+      <rect x="234" y="36" width="55" height="34" rx="2" fill="rgba(232,93,63,0.1)" stroke="#e85d3f" stroke-width="0.6"/>
+      <text x="261" y="52" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TCP (20B)</text>
+      <text x="261" y="64" fill="#6b6a64" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Layer 4</text>
+
+      <rect x="293" y="36" width="87" height="34" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="336" y="52" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Payload Data</text>
+      <text x="336" y="64" fill="#6b6a64" font-size="6.5" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">应用层数据</text>
+
+      <!-- Tailroom -->
+      <rect x="396" y="0" width="70" height="80" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="431" y="26" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="middle">Tailroom</text>
+      <text x="431" y="46" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">tail ➔ end</text>
+      <text x="431" y="64" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">skb_put()</text>
+
+      <!-- skb_shared_info -->
+      <rect x="474" y="0" width="78" height="80" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="513" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">shared_info</text>
+      <text x="513" y="44" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">dataref=1</text>
+      <text x="513" y="62" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle">frags[16] 页</text>
     </g>
 
-    <!-- Right: Data Buffer Layout (490px) -->
-    <g transform="translate(390, 20)">
-      <rect width="490" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="490" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="245" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">2. 实际数据物理缓冲区 (Packet Data Buffer)</text>
+    <!-- Explanations bottom -->
+    <rect x="14" y="140" width="552" height="70" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="162" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">零拷贝物理实现精髓</text>
+    <text x="24" y="180" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">协议栈向上解包时仅需移动 `data += len` 剥除外层头；向下封装时 `data -= len` 在 Headroom 预留区填充报头。</text>
+    <text x="24" y="198" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">全程数据区内存物理不动，彻底消除百万级 PPS 内存拷贝开销！</text>
+  </g>
 
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-        <!-- Visual Buffer Bar -->
-        <g transform="translate(0, 0)">
-          <!-- Headroom (Reserved) -->
-          <rect x="0" y="0" width="100" height="50" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
-          <text x="50" y="22" font-weight="700" fill="#64748b" text-anchor="middle">Headroom</text>
-          <text x="50" y="38" font-size="9" fill="#94a3b8" text-anchor="middle">(预留协议头空间)</text>
+  <!-- Bottom Section: 4 Operations Table (y=380..506, h=126) -->
+  <g transform="translate(40, 380)">
+    <!-- Op 1: skb_push -->
+    <g transform="translate(0, 0)">
+      <rect width="210" height="126" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="8" width="70" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="45" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PUSH</text>
+      <text x="88" y="20" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">skb_push(len)</text>
 
-          <!-- Payload (Headers + User Data) -->
-          <rect x="105" y="0" width="240" height="50" rx="3" fill="#f0fdf4" stroke="#10b981" stroke-width="2"/>
-          <text x="225" y="22" font-weight="700" fill="#047857" text-anchor="middle">有效载荷数据 (Payload Area)</text>
-          <text x="225" y="38" font-size="9" fill="#059669" text-anchor="middle">[ Ethernet 14B | IP 20B | TCP 20B | Data ]</text>
-
-          <!-- Tailroom -->
-          <rect x="350" y="0" width="105" height="50" rx="3" fill="#f1f5f9" stroke="#cbd5e1"/>
-          <text x="402" y="22" font-weight="700" fill="#64748b" text-anchor="middle">Tailroom</text>
-          <text x="402" y="38" font-size="9" fill="#94a3b8" text-anchor="middle">(尾部预留)</text>
-        </g>
-
-        <!-- Zero-copy Protocol Header Manipulation -->
-        <g transform="translate(0, 62)">
-          <rect width="455" height="110" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="12" y="18" font-weight="700" fill="#0f172a">📐 零拷贝协议封装与解封装机理：</text>
-          <text x="12" y="36" fill="#334155"><tspan font-weight="700" fill="#2563eb">• skb_push()</tspan>：`data` 指针向低地址前移，在预留 Headroom 零内存拷贝写入协议头；</text>
-          <text x="12" y="54" fill="#334155"><tspan font-weight="700" fill="#2563eb">• skb_pull()</tspan>：`data` 指针向高地址后移，剥离协议头直达上层载荷；</text>
-          <text x="12" y="72" fill="#334155"><tspan font-weight="700" fill="#ea580c">• skb_clone()</tspan>：仅复制元数据结构体（230B），共享底层物理数据区，引用计数加 1！</text>
-          <text x="12" y="90" font-size="9.5" fill="#166534" font-weight="700">✓ 收益：网络包在 L2/L3/L4 协议栈间穿梭完全零内存搬运与零重分配！</text>
-        </g>
-      </g>
+      <text x="10" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">data -= len (向低地址扩展)</text>
+      <text x="10" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">在头部预留区填充新报头</text>
+      <text x="10" y="80" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">用于协议栈发送时的封包</text>
+      <text x="10" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Copy Overhead: 0</text>
     </g>
 
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">内核数据结构之美：</tspan> `sk_buff` 用极其精巧的“四指针移动法”彻底消除了协议层级间的内存拷贝；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        但单个 SKB 依然包含大量的元数据指针与自旋锁，这也是为什么在万兆/十万兆高吞吐下催生了 XDP 极速旁路的原因。
-      </text>
+    <!-- Op 2: skb_pull -->
+    <g transform="translate(224, 0)">
+      <rect width="210" height="126" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="8" width="70" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="45" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PULL</text>
+      <text x="88" y="20" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">skb_pull(len)</text>
+
+      <text x="10" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">data += len (向高地址剥除)</text>
+      <text x="10" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">剥离外层 IP / TCP 报头</text>
+      <text x="10" y="80" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">用于协议栈接收时的解包</text>
+      <text x="10" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Copy Overhead: 0</text>
+    </g>
+
+    <!-- Op 3: skb_put -->
+    <g transform="translate(448, 0)">
+      <rect width="210" height="126" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+      <rect x="10" y="8" width="70" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+      <text x="45" y="19" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PUT</text>
+      <text x="88" y="20" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">skb_put(len)</text>
+
+      <text x="10" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">tail += len (向高地址追加)</text>
+      <text x="10" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">在尾部追加应用数据载荷</text>
+      <text x="10" y="80" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">len += len 同步递增有效长度</text>
+      <text x="10" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Copy Overhead: 0</text>
+    </g>
+
+    <!-- Op 4: skb_clone -->
+    <g transform="translate(670, 0)">
+      <rect width="210" height="126" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <rect x="10" y="8" width="70" height="16" rx="2" fill="#e85d3f"/>
+      <text x="45" y="19" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CLONE</text>
+      <text x="88" y="20" fill="#141413" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">skb_clone()</text>
+
+      <text x="10" y="44" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">dataref++ (数据区共享)</text>
+      <text x="10" y="62" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">仅新建 230B 控制头副本</text>
+      <text x="10" y="80" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">底层连续物理数据区完全共享</text>
+      <text x="10" y="98" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="700">TCP 重传队列极速缓存</text>
     </g>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">SKB 元数据控制结构</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">连续数据缓冲区与四指针滑动</text>
 </svg>

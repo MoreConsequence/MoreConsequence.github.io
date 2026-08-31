@@ -21,17 +21,7 @@ series: "分布式共识与高可用容错"
 
 为了在拜占庭容错之外的崩溃容错模型（Crash Fault Tolerance, CFT）下对外提供**线性一致性（Linearizability）**，学术界提出了复制状态机模型（Replicated State Machine, RSM）：
 
-```
-+-------------------------------------------------------------------+
-|                        复制状态机架构模型 (RSM)                     |
-|                                                                   |
-|   客户端请求 ──► [ 共识模块 (Raft) ] ──► [ 顺序日志 (WAL Log) ]    |
-|                          │                         │              |
-|                     多数派复制                顺序重放            |
-|                          ▼                         ▼              |
-|                  其他节点共识模块          [ 确定性状态机 (KV) ]  |
-+-------------------------------------------------------------------+
-```
+![复制状态机（RSM, Replicated State Machine）分层架构与共识日志驱动模型](../../../public/images/consensus-replicated-state-machine-model.svg)
 
 只要所有分布式节点以**完全相同的顺序执行完全相同的确定性操作日志序列**，各节点状态机计算出的最终内存状态就必定严格一致。而 Raft 的核心职责，就是确保这条由 Leader 驱动的分布式追加日志（Append-only Log）绝对不发生分叉与覆盖。
 
@@ -89,10 +79,6 @@ Leader 在发送 `AppendEntries` RPC 时，会携带当前新日志条目前一�
 - Leader 收到拒绝后，递减该 Follower 的 `nextIndex` 并重新发送，直到找到双方一致的最大历史位点，然后从该位点起强制用 Leader 的日志覆盖 Follower 的冲突日志。
 
 ---
-
-
-
-![Pre-Vote 预投票协议：网络分区节点重连防 Term 暴增打崩现任 Leader 机制](../../../public/images/raft-pre-vote-protocol-disrupted-leader-mitigation.svg)
 
 ## 四、 非对称网络分区脑裂与 Pre-Vote 预投票防御
 

@@ -34,7 +34,7 @@ flowchart LR
     Server --> Goodput["端到端测速结果<br/>严格等于全链路最短板！"]
 ```
 
-![端到端物理链路木桶最短板模型](../../../public/images/speedtest-pipeline-model.svg)
+![端到端物理链路木桶最短板模型与 BDP 约束](../../../public/images/speedtest-physical-essence-bandwidth-delay-product.svg)
 
 测速结果严格受限于整条链路上的“木桶最短板”。任何脱离端到端链路上下文的单点指标（例如“服务器网卡是 40G”，或“客户端签约了千兆宽带”），都不能直接代表实际测速结果。
 
@@ -72,7 +72,7 @@ flowchart LR
     end
 ```
 
-![测速系统核心架构：控制面与数据面解耦拓扑](../../../public/images/speedtest-architecture.svg)
+![测速系统核心架构：控制面与数据面解耦拓扑](../../../public/images/librespeed-go-architecture-overview-pipeline.svg)
 
 - **控制面（Control Plane）**：轻量级、高可靠。负责识别客户端公网 IP、协商测试参数与 Token、交换最终的双侧计量数据；
 - **数据面（Data Plane）**：纯内存、高吞吐。专门用于在测试窗口内以最大负荷充满物理管道，并在内存中完成实时抽样计量。
@@ -116,7 +116,7 @@ sequenceDiagram
     C->>S: POST /results (提交测速报告并固化)
 ```
 
-![测速服务全流程五阶段交互时序](../../../public/images/speedtest-sequence-phases.svg)
+![测速服务全流程五阶段交互时序](../../../public/images/librespeed-go-speedtest-full-lifecycle-timeline.svg)
 
 为了更清晰地理解每个阶段的工程细节，下表列出了完整的交互规格：
 
@@ -150,7 +150,7 @@ flowchart LR
     end
 ```
 
-![运营商硬件透明压缩欺骗 vs 静态高随机内存池对比](../../../public/images/speedtest-compression-defense.svg)
+![运营商硬件透明压缩欺骗 vs 静态高随机内存池对比](../../../public/images/speedtest-physical-essence-bandwidth-delay-product.svg)
 
 #### （2）下行数据源三种工程方案对比
 
@@ -180,7 +180,7 @@ flowchart LR
     end
 ```
 
-![TCP 零窗口反压机制 vs 64KB 栈内存极速黑洞](../../../public/images/speedtest-zero-window-sink.svg)
+![TCP 零窗口反压机制 vs 64KB 栈内存极速黑洞](../../../public/images/speedtest-tcp-zero-window-backpressure-flow.svg)
 
 #### （2）上行数据消费模型 Trade-off 对比
 
@@ -213,7 +213,7 @@ flowchart LR
     end
 ```
 
-![单调时钟 vs 墙上日历时间对比](../../../public/images/speedtest-monotonic-clock.svg)
+![单调时钟 vs 墙上日历时间对比](../../../public/images/clock-skew-npt.svg)
 
 | 时钟类型 | 代表 API | 时间源 | 特性与缺陷 | 测速适用性 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -224,7 +224,7 @@ flowchart LR
 
 ### 2.4 时延与抖动度量：空闲时延、抖动与满载缓冲膨胀
 
-![时延、抖动与满载缓冲膨胀三维立体度量体系](../../../public/images/speedtest-latency-dimensions.svg)
+![时延、抖动与满载缓冲膨胀三维立体度量体系](../../../public/images/speedtest-jitter-rfc3550-bufferbloat-measurement.svg)
 
 | 度量维度 | 采样方法与标准算法 | 工业界健康门限 | 诊断意义与业务影响 |
 | :--- | :--- | :--- | :--- |
@@ -245,7 +245,7 @@ flowchart LR
     C --> D["取 P90 次序统计量<br/>(稳健抗毛刺带宽结果)"]
 ```
 
-![100ms 离散采样与 P90 稳态滤波流程](../../../public/images/speedtest-sampling-p90.svg)
+![100ms 离散采样与 P90 稳态滤波流程](../../../public/images/speedtest-trimmed-mean-sampling-window.svg)
 
 | 统计指标 | 算法定义 | 核心优势 | 致命缺陷 | 选型结论 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -433,7 +433,7 @@ flowchart LR
     SLB --> Node["Go Speed-Node<br/>(安全优先级提取)"]
 ```
 
-![五级代理链穿透与真实客户端公网 IP 安全提取管线](../../../public/images/speedtest-proxy-ip-pipeline.svg)
+![五级代理链穿透与真实客户端公网 IP 安全提取管线](../../../public/images/librespeed-go-client-ip-proxy-cgnat-lookup.svg)
 
 ```go
 // 源码位置: web/getip_util.go - 代理标头安全穿透
@@ -478,7 +478,7 @@ func ExtractRealClientIP(r *http.Request) string {
 
 在需要进一步控制网络传输行为时，可以通过 Go 的 `syscall.RawConn` 直接操作底层 socket：
 
-![从物理网卡、Linux 内核到 Go 运行时的软硬件分层数据栈](../../../public/images/speedtest-network-layer-stack.svg)
+![从物理网卡、Linux 内核到 Go 运行时的软硬件分层数据栈](../../../public/images/speedtest-10g-cost-architecture-kernel-tuning.svg)
 
 ```go
 // 生产级网络调优示例: socket_options.go
@@ -512,7 +512,7 @@ func ConfigureSocket(conn net.Conn) error {
 
 ## 四、 关键工程规范总结
 
-![测速服务核心协议与架构选型多维决策雷达矩阵](../../../public/images/speedtest-protocol-radar-matrix.svg)
+![测速服务核心协议与架构选型多维决策雷达矩阵](../../../public/images/speedtest-protocol-overhead-tcp-ws-h2-quic-matrix.svg)
 
 | 维度 | 必须遵循的工程规范 | 违背规范的物理后果 |
 | --- | --- | --- |

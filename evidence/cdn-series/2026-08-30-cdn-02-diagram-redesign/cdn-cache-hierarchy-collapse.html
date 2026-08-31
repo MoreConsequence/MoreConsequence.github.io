@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-cache-hierarchy-collapse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-cache-hierarchy-title cdn-cache-hierarchy-desc">
+  <title id="cdn-cache-hierarchy-title">七层边缘分层存储金字塔与穿透收敛拓扑</title>
+  <desc id="cdn-cache-hierarchy-desc">分层架构图展示 L1 内存、L2 磁盘、L3 区域中心与源站的时延阶梯、容量规格与流量收敛模型。</desc>
+  <defs>
+    <marker id="cdn-cache-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-cache-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header Block -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">STORAGE HIERARCHY · LAYER STACK</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">七层边缘分层存储金字塔与穿透收敛拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">L1 内存极速拦截高频热点，L2/L3 吸收长尾内容，将远端源站回源率严格压制在 0.5% 以下</text>
+
+  <!-- Left Dimension Indicator: Latency Ladder -->
+  <line x1="72" y1="170" x2="72" y2="474" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cdn-cache-arr)"/>
+  <text x="64" y="322" fill="#6b6a64" font-size="9" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" text-anchor="middle" transform="rotate(-90 64 322)">LATENCY INCREASING · 时延递增</text>
+
+  <!-- Right Dimension Indicator: Traffic Funnel -->
+  <line x1="888" y1="170" x2="888" y2="474" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-cache-arr-accent)"/>
+  <text x="898" y="322" fill="#e85d3f" font-size="9" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" text-anchor="middle" transform="rotate(90 898 322)">TRAFFIC COMPRESSION · 穿透压缩</text>
+
+  <!-- Layer 1: L1 DRAM (Focal Layer) -->
+  <g transform="translate(108, 152)">
+    <rect width="744" height="72" rx="6" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="16" y="14" width="48" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="40" y="27" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TIER 1</text>
+    <text x="76" y="28" fill="#141413" font-size="14" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L1 内存热点层 (DRAM Off-Heap)</text>
+    <text x="76" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif">自适应替换（ARC / 2Q）· 仅存前 5% 超热点元数据与微小文件（≤64KB）</text>
+    <text x="728" y="28" fill="#e85d3f" font-size="11" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="end">≤ 100 ns · 32GB~128GB</text>
+    <text x="728" y="52" fill="#e85d3f" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600" text-anchor="end">吸收 60% 极高频请求</text>
+  </g>
+
+  <!-- Layer 2: L2 NVMe SSD -->
+  <g transform="translate(108, 236)">
+    <rect width="744" height="72" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="16" y="14" width="48" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TIER 2</text>
+    <text x="76" y="28" fill="#141413" font-size="14" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L2 本地磁盘层 (NVMe SSD)</text>
+    <text x="76" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif">Direct I/O + 零拷贝（sendfile）大块写入 · 消除文件系统碎片与内存拷贝</text>
+    <text x="728" y="28" fill="#141413" font-size="11" font-family="'Geist Mono', monospace" font-weight="500" text-anchor="end">50~100 µs · 8TB~32TB</text>
+    <text x="728" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="500" text-anchor="end">承载 35% 长尾静态内容</text>
+  </g>
+
+  <!-- Layer 3: L3 Regional Shield -->
+  <g transform="translate(108, 320)">
+    <rect width="744" height="72" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="16" y="14" width="48" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TIER 3</text>
+    <text x="76" y="28" fill="#141413" font-size="14" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">L3 区域汇聚中心 (Regional Shield PoP)</text>
+    <text x="76" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif">骨干网独立大容量分布式存储 · 跨周边边缘 PoP 共享，汇聚收敛 Miss 流量</text>
+    <text x="728" y="28" fill="#141413" font-size="11" font-family="'Geist Mono', monospace" font-weight="500" text-anchor="end">5~15 ms · 数十 PB 级分布式</text>
+    <text x="728" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="500" text-anchor="end">再压缩 80% 回源流量</text>
+  </g>
+
+  <!-- Layer 4: Origin Backend -->
+  <g transform="translate(108, 404)">
+    <rect width="744" height="72" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="16" y="14" width="48" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="27" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.08em">TIER 4</text>
+    <text x="76" y="28" fill="#141413" font-size="14" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">远端业务源站 (Origin Infrastructure)</text>
+    <text x="76" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif">全量持久化数据库与动态计算集群 · 最终兜底数据源</text>
+    <text x="728" y="28" fill="#141413" font-size="11" font-family="'Geist Mono', monospace" font-weight="500" text-anchor="end">150~180 ms · 全量持久化</text>
+    <text x="728" y="52" fill="#6b6a64" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="500" text-anchor="end">最终穿透率 ≤ 0.5%</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">边缘首跳极速层</text>
+  <rect x="270" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="290" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">分层缓冲与兜底源站</text>
+  <line x1="440" y1="556" x2="464" y2="556" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cdn-cache-arr-accent)"/>
+  <text x="472" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">流量递减漏斗 (100% → 0.5%)</text>
+</svg>
+</main>
+</body>
+</html>

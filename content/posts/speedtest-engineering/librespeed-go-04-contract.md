@@ -13,7 +13,7 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed 测速协议合同：Web Worker 调度剧本、端点交互时序与不对称计量权](../../../public/images/librespeed-go-contract-worker-lifecycle-script.svg)
+![LibreSpeed Worker 合同：start、端点交互与完成或中止状态](../../../public/images/librespeed-go-contract-worker-lifecycle-script.svg)
 
 ## 一、总剧本：一个字符串就是一台状态机
 
@@ -30,7 +30,7 @@ test_order: "IP_D_U",
 
 
 
-![遥测上报与 ID 混淆：ULID 可排序主键与伪随机字符串映射](../../../public/images/librespeed-go-telemetry-ulid-obfuscation.svg)
+![遥测 ID 混淆：ULID 与 base64url 公开 ID 的可逆映射及查找边界](../../../public/images/librespeed-go-telemetry-ulid-obfuscation.svg)
 
 ## 二、完整交互时序
 
@@ -87,7 +87,7 @@ xhr[i].open("GET", url_dl + sep + (mpot?"cors=true&":"") + "r=" + Math.random() 
 
 
 
-![非对称计量权模型：下行客户端计量 vs 上行服务端计量权威性对照](../../../public/images/asymmetric-measurement-authority-flow.svg)
+![非对称计量权：下行客户端接收计量、上行客户端进度与服务端接收边界](../../../public/images/asymmetric-measurement-authority-flow.svg)
 
 ## 四、上行合同：Blob、identity 与一条 IE11 血泪分支
 

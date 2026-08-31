@@ -1,49 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cas-title cas-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
   </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <title id="cas-title">B+ Tree 页分裂与级联向上传播：空间开销与父节点分裂</title>
+  <desc id="cas-desc">树状架构图展示 B+ 树叶节点满载分裂时向上推入路由 Key，若内部非叶节点满载则引发级联向上分裂直至根节点分裂、增加树高的全过程。</desc>
+  <defs>
+    <marker id="cs-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cs-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">B+ 树页分裂与级联传播 (B-Tree Page Split &amp; Cascade)</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">16KB 页满 ──► 申请新页 ──► 50% 数据搬迁 ──► 父节点插入新索引 Key ──► 根节点分裂导致树增高一层</text>
-  </g>
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 4 Pipeline Stages (860px) -->
-    <g transform="translate(20, 15)" font-family="ui-sans-serif, system-ui, sans-serif">
-      <rect width="860" height="75" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-      <text x="15" y="24" font-size="10" font-weight="700" fill="#1e40af">1. 叶子节点填满与插入冲突 (Page Full: Free Space &lt; Record Size)</text>
-      <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#2563eb">16KB 叶子页已存满 500 条记录 ──► 随机 UUID 插入命中该页中段 ──► 空间不足触发分裂！</text>
-      <text x="15" y="62" font-size="8" fill="#1d4ed8">随机主键插入是导致 B+ 树频繁分裂的元凶！</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">BTREE CASCADE PROPAGATION · NON-LEAF SPLIT &amp; HEIGHT INCREASE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">B+ Tree 页分裂与级联向上传播机制</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">叶页满载分裂 ➔ 向父节点插入路由 Key ➔ 父节点满载触发非叶页分裂 ➔ 级联传播至根节点 ➔ B+ 树层高增加</text>
 
-      <g transform="translate(0, 83)">
-        <rect width="860" height="75" rx="4" fill="#fff7ed" stroke="#fed7aa"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#c2410c">2. 申请全新 16KB 页并搬迁 50% 记录 (Page Allocation &amp; 50/50 Split)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#9a3412">从表空间申请 Page N+1 ──► 拷贝原页后半部分 250 条记录 ──► 修改双向链表 Prev/Next 指针</text>
-        <text x="15" y="62" font-size="8" fill="#ea580c">单条小数据写入触发 32KB 的巨大磁盘 I/O 放大！</text>
-      </g>
+  <!-- Level 1: Root Node (y=136..236, h=100) -->
+  <g transform="translate(40, 136)">
+    <rect width="880" height="100" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="90" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="59" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">LEVEL 1 · ROOT</text>
+    <text x="114" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">根节点分裂 (Root Page #1) ➔ B+ 树层高从 3 增至 4</text>
 
-      <g transform="translate(0, 166)">
-        <rect width="860" height="75" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#991b1b">3. 父节点级联更新与悲观分裂 (Parent Split Cascade)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#dc2626">向父节点插入新页的起始 Key ──► 若父节点也满，继续向上递归分裂 ──► 直至根节点！</text>
-        <text x="15" y="62" font-size="8" fill="#7f1d1d">需要持有全局索引写锁 (SX/X Lock)，严重堵塞并发读写！</text>
-      </g>
+    <!-- Root Split Details -->
+    <g transform="translate(14, 34)">
+      <rect x="0" y="0" width="410" height="54" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="12" y="20" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Root Node 满载触发分裂条件：</text>
+      <text x="12" y="34" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">当下层内部节点全部满载、上推的新 Key 无处可塞时，根节点被迫切开。</text>
+      <text x="12" y="46" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">唯一会导致整棵 B+ 树增高（Height++）的物理操作！</text>
 
-      <g transform="translate(0, 249)">
-        <rect width="860" height="75" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="15" y="24" font-size="10" font-weight="700" fill="#166534">4. 优化解法：自增 ID 与页填充因子 (Sequential ID &amp; Fill Factor)</text>
-        <text x="15" y="44" font-family="ui-monospace, monospace" font-size="8" fill="#15803d">严格按主键自增顺序追加 ──► 每次只在末尾页追加，0 历史页分裂 ──► 页填充率稳定在 93% 以上！</text>
-        <text x="15" y="62" font-size="8" fill="#047857">关系型数据库最核心的表设计铁律！</text>
-      </g>
+      <rect x="424" y="0" width="428" height="54" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+      <text x="12" y="20" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">新根节点分配与指针拓扑：</text>
+      <text x="12" y="34" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">新建新根节点 Page #100，原根节点切为两个子节点，新根节点仅包含 2 个路由指针。</text>
+      <text x="12" y="46" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Fan-out: 1200+ ➔ 4 层 B+ Tree 可容纳百亿行！</text>
     </g>
   </g>
+
+  <!-- Upward Arrow 1 (y=236..256) -->
+  <text x="480" y="248" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Cascade Split</text>
+
+  <!-- Level 2: Internal Non-Leaf Pages (y=256..366, h=110) - Focal -->
+  <g transform="translate(40, 256)">
+    <rect width="880" height="110" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="10" width="110" height="16" rx="2" fill="#e85d3f"/>
+    <text x="69" y="21" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">LEVEL 2 · INTERNAL</text>
+    <text x="134" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内部非叶节点层 (Internal Pages: 只存 Key + Child Page Ptr)</text>
+
+    <!-- 3 Internal Blocks -->
+    <g transform="translate(14, 32)">
+      <!-- Internal Page A -->
+      <rect x="0" y="0" width="270" height="66" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Internal Page #2</text>
+      <text x="10" y="32" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">[K:100 ➔ P#4] [K:200 ➔ P#5]</text>
+      <text x="10" y="46" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">有空闲空间 ➔ 正常容纳</text>
+      <text x="10" y="58" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">No Split Needed ✓</text>
+
+      <!-- Internal Page B (Focal Splitting) -->
+      <rect x="284" y="0" width="280" height="66" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Internal Page #3 (满载分裂!)</text>
+      <text x="10" y="32" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">接收下层上推的 Key=452 ➔ 满载！</text>
+      <text x="10" y="46" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">50/50 分裂为 Page #3 与 Page #8</text>
+      <text x="10" y="58" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">➔ 继续向 Root 上推中间 Key</text>
+
+      <!-- Internal Page C -->
+      <rect x="578" y="0" width="274" height="66" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Internal Page #8 (分裂新生)</text>
+      <text x="10" y="32" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">[K:452 ➔ P#11] [K:600 ➔ P#12]</text>
+      <text x="10" y="46" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">承接后半部分子节点路由</text>
+      <text x="10" y="58" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Half-full Internal Page</text>
+    </g>
+  </g>
+
+  <!-- Upward Arrow 2 (y=366..386) -->
+  <text x="480" y="378" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Push Key=452</text>
+
+  <!-- Level 3: Leaf Level (y=386..506, h=120) - Focal -->
+  <g transform="translate(40, 386)">
+    <rect width="880" height="120" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="10" width="90" height="16" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.6"/>
+    <text x="59" y="21" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">LEVEL 3 · LEAF</text>
+    <text x="114" y="22" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">叶子节点层 (Leaf Pages: 存放真实 128B 数据行 + 双向链表有序贯通)</text>
+
+    <!-- 4 Leaf Pages Chain -->
+    <g transform="translate(14, 32)">
+      <!-- Leaf 1 -->
+      <rect x="0" y="0" width="195" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Leaf Page #9</text>
+      <text x="10" y="34" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Keys: [1 .. 128]</text>
+      <text x="10" y="50" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">100% 满载，正常读取</text>
+      <text x="10" y="64" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Next ➔ Page #10</text>
+
+      <line x1="195" y1="37" x2="215" y2="37" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cs-arr)"/>
+
+      <!-- Leaf 2 (Split Origin) -->
+      <rect x="215" y="0" width="205" height="74" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Leaf Page #10 (分裂前半)</text>
+      <text x="10" y="34" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Keys: [129 .. 451] (64行)</text>
+      <text x="10" y="50" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">50% 填充率 (8KB 空闲)</text>
+      <text x="10" y="64" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">Next ➔ Page #11</text>
+
+      <line x1="420" y1="37" x2="440" y2="37" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#cs-arr-accent)"/>
+
+      <!-- Leaf 3 (Split New) -->
+      <rect x="440" y="0" width="205" height="74" rx="3" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+      <text x="10" y="18" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Leaf Page #11 (分裂后半)</text>
+      <text x="10" y="34" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">Keys: [452 .. 512] (65行)</text>
+      <text x="10" y="50" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">50% 填充率 (8KB 空闲)</text>
+      <text x="10" y="64" fill="#e85d3f" font-size="7" font-family="'Geist Mono', monospace">Next ➔ Page #12</text>
+
+      <line x1="645" y1="37" x2="665" y2="37" stroke="#6b6a64" stroke-width="1.2" marker-end="url(#cs-arr)"/>
+
+      <!-- Leaf 4 -->
+      <rect x="665" y="0" width="187" height="74" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+      <text x="10" y="18" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Leaf Page #12</text>
+      <text x="10" y="34" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Keys: [513 .. 640]</text>
+      <text x="10" y="50" fill="#141413" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">100% 满载，正常读取</text>
+      <text x="10" y="64" fill="#6b6a64" font-size="7" font-family="'Geist Mono', monospace">Double-Linked Chain</text>
+    </g>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">常规根节点与未分裂叶页</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">叶节点分裂、Key 上推与内部非叶级联分裂核心</text>
 </svg>

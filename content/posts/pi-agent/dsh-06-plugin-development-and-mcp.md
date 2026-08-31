@@ -187,10 +187,6 @@ flowchart LR
 
 ---
 
-
-
-![DSH 插件声明清单与沙箱隔离执行生命周期](../../../public/images/dsh-plugin-manifest-sandboxed-execution.svg)
-
 ## 四、多 Agent 协作体系：Subagent 拓扑与递归深度防线
 
 单体大 Agent 面对庞大任务时极易发生注意力分散和上下文污染。`dsh` 在 `packages/subagent` 中实现了原生的 **Subagent（子智能体）** 调度框架。

@@ -141,10 +141,6 @@ const acceptResult = (run: Run, event: ResultEvent): Run => {
 
 这里有一个容易被忽略的取舍：过期结果可以被记录后丢弃，也可以把运行标成需要人工检查。不能默认“谁最后到谁赢”。在本地闭包里，丢弃通常足够；如果状态已经持久化或请求会跨进程重试，则应把 `runId`、`requestId`、`attempt` 一起写入事件或数据库，并让消费者按身份去重。
 
-
-
-![Actor 模型邮箱队列：单信道串行化与重入 (Re-entrancy) 竞态防御](../../../public/images/actor-model-mailbox-reentrant-protection.svg)
-
 ## 四、重试、取消和持久化是守卫，不是更多布尔变量
 
 一个可执行的状态机至少要把以下三类决策分开：

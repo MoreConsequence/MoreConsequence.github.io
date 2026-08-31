@@ -42,9 +42,7 @@ flowchart TD
 2. **全流程测试执行**：不只比对代码文本 Diff，必须在隔离沙箱中真实执行 `npm test` 或 `go test` 并以测试全绿作为 Pass@1 判定标准；
 3. **成本与步数硬约束**：设置单任务 Token 消耗上限与耗时阈值，超过预算即使测试通过也标记为失败（Timeout / Cost Budget Exceeded）。
 
-
-
-![Pi OpenTelemetry 遥测链路与 Span 性能追踪体系：Turn -> Step -> LLM -> Tool](../../../public/images/pi-tutorial-telemetry-otel-trace-collector.svg)
+---
 
 ## 二、确定性回归测试：如何给 Agent 写单测？
 

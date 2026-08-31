@@ -29,9 +29,7 @@ QUIC + HTTP/3:     [ 流1 数据 ] [ 流2 数据 ] [ 流3 数据 ]  ← 丢流2�
 - QUIC 的逻辑**跑在用户态**（库里，如 quiche/ngtcp2），升级协议版本不升级内核。
 - 每包都要带**连接 ID + 流 ID + 偏移 + 确认号**，包头比 TCP 段大，小请求的协议开销占比升高。
 
-
-
-![QUIC 连接迁移时序：Connection ID (CID) 与四元组动态切换](../../../public/images/quic-connection-id-cid-migration-flow.svg)
+![HTTP/3 QUIC 传输架构与 0-RTT 握手](../../../public/images/quic-http3-connection-migration.svg)
 
 ## 二、握手账：1-RTT 建立连接，0-RTT 重建连接
 
@@ -60,7 +58,7 @@ sequenceDiagram
 
 ## 三、迁移账：Connection ID 让连接不认识网络
 
-![HTTP/3 QUIC 连接迁移与 UDP 零 RTT 漫游全景架构](../../../public/images/quic-http3-connection-migration.svg)
+![QUIC Connection ID 连接迁移与路径验证](../../../public/images/quic-connection-id-cid-migration-flow.svg)
 
 TCP 的连接身份是**四元组**（srcIP:port, dstIP:port）——换 Wi-Fi，IP 变了，连接立刻断裂，应用必须重连重握。QUIC 的连接身份是 **Connection ID**（客户端随机生成，写在每个包里），四元组只是"当前投递地址"：
 
@@ -71,10 +69,6 @@ TCP 的换网    →  四元组失效   →  必须重连, 重新握手, 至少�
 ```
 
 这为移动场景的路径变化提供了协议支持，但不是“换网免费不断连”：端点要维护一组可轮换的 Connection ID，服务器要对新路径做验证，拥塞控制和 NAT/LB 状态也可能重新收敛。CID 在适用的 QUIC 包头中可被中间设备读取，但长度、是否轮换和路由编码由连接协商/实现决定，不是固定 8 字节；负载均衡器若需要无状态转发，必须理解部署方的 CID 路由合同，或者把连接固定到同一后端。
-
-
-
-![QUIC 路径验证与防放大攻击：PATH_CHALLENGE 与 3 倍流量限制](../../../public/images/quic-path-validation-anti-amplification.svg)
 
 ## 四、复现：先证明协议可用，再分别测 0-RTT 与迁移
 

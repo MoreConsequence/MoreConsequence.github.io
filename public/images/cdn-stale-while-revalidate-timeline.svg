@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-swr-timeline-title cdn-swr-timeline-desc">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="cdn-swr-timeline-title">RFC 5861 Stale-While-Revalidate 异步重校验状态机与时间轴</title>
+  <desc id="cdn-swr-timeline-desc">时间轴与状态机图展示 max-age 绝对新鲜期、SWR 宽限期 0ms 旧值直出加后台异步 304 协商，以及 stale-if-error 熔断保底机制。</desc>
+  <defs>
+    <marker id="cdn-swr-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-swr-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">RFC 5861 CACHE-CONTROL · TIMELINE &amp; STATE MACHINE</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">RFC 5861 Stale-While-Revalidate 异步重校验状态机与时间轴</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Cache-Control: max-age=60, stale-while-revalidate=300, stale-if-error=86400 全生命周期三阶段模型</text>
+
+  <!-- Time Axis (y=150) -->
+  <line x1="60" y1="150" x2="900" y2="150" stroke="#141413" stroke-width="1.5" marker-end="url(#cdn-swr-arr)"/>
+
+  <!-- Axis Ticks & Time Labels -->
+  <!-- T=0s -->
+  <line x1="80" y1="142" x2="80" y2="158" stroke="#141413" stroke-width="1.5"/>
+  <text x="80" y="136" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">T = 0s</text>
+
+  <!-- T=60s (max-age) -->
+  <line x1="340" y1="142" x2="340" y2="158" stroke="#e85d3f" stroke-width="2"/>
+  <text x="340" y="136" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">T = 60s (max-age)</text>
+
+  <!-- T=360s (max-age + SWR) -->
+  <line x1="640" y1="142" x2="640" y2="158" stroke="#141413" stroke-width="1.5"/>
+  <text x="640" y="136" fill="#141413" font-size="9" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">T = 360s (SWR 截止)</text>
+
+  <!-- T=24h (stale-if-error) -->
+  <line x1="880" y1="142" x2="880" y2="158" stroke="#6b6a64" stroke-width="1.2"/>
+  <text x="880" y="136" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace" font-weight="500" text-anchor="middle">T = 24h (Error 保底)</text>
+
+  <!-- 3 Lifecycle Stage Cards -->
+  <!-- Stage 1: Fresh Window (0 ~ 60s) -->
+  <g transform="translate(60, 172)">
+    <rect width="260" height="152" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="56" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHASE 1</text>
+    <text x="76" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">绝对新鲜期 (Fresh)</text>
+    <text x="12" y="52" fill="#141413" font-size="10" font-family="'Geist Mono', monospace">0s ~ 60s (TTL 有效期)</text>
+    <text x="12" y="74" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">直接从 L1/L2 本地缓存返回</text>
+    <text x="12" y="94" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">首包时延 TTFB ≤ 100ns</text>
+    <text x="12" y="114" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">0 次网络开销，100% 极速命中</text>
+    <text x="12" y="136" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">HTTP 200 OK (from disk cache)</text>
+  </g>
+
+  <!-- Stage 2: SWR Grace Window (60s ~ 360s) - Focal Stage -->
+  <g transform="translate(340, 172)">
+    <rect width="280" height="152" rx="6" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1.5"/>
+    <rect x="12" y="12" width="56" height="16" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="40" y="24" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHASE 2</text>
+    <text x="76" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SWR 宽限重校验期 (Grace)</text>
+    <text x="12" y="52" fill="#e85d3f" font-size="10" font-family="'Geist Mono', monospace" font-weight="600">60s ~ 360s (stale-while-revalidate)</text>
+    <text x="12" y="74" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="500">① 客户端 0ms 秒级直出旧数据</text>
+    <text x="12" y="94" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">② 后台异步派发 Worker 向源站重校验</text>
+    <text x="12" y="114" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">If-None-Match ETag 探测 · 消除延迟毛刺</text>
+    <text x="12" y="136" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace">源站 304 刷新 TTL / 200 替换缓存</text>
+  </g>
+
+  <!-- Stage 3: stale-if-error Fallback (360s ~ 24h) -->
+  <g transform="translate(640, 172)">
+    <rect width="260" height="152" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="12" y="12" width="56" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="40" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PHASE 3</text>
+    <text x="76" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">故障熔断保底 (Fallback)</text>
+    <text x="12" y="52" fill="#141413" font-size="10" font-family="'Geist Mono', monospace">360s ~ 24h (stale-if-error)</text>
+    <text x="12" y="74" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">源站突发宕机（500/502/超时）时</text>
+    <text x="12" y="94" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">自动将过期的陈旧缓存兜底返回</text>
+    <text x="12" y="114" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">对终端用户维持 100% 高可用 SLA</text>
+    <text x="12" y="136" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">降级保护，阻止前端全量报错</text>
+  </g>
+
+  <!-- Bottom Interaction Trace Block (y=348..490) -->
+  <rect x="60" y="348" width="840" height="148" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="76" y="372" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">SWR 宽限期内并发请求处理流程与异步协商时序</text>
+
+  <!-- Step A: Client Request in SWR window -->
+  <rect x="76" y="388" width="230" height="92" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+  <text x="88" y="408" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">A. 客户端在 T=120s 发起请求</text>
+  <text x="88" y="428" fill="#6b6a64" font-size="9" font-family="'Geist Mono', monospace">GET /article/news</text>
+  <text x="88" y="448" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">边缘 0ms 立即返回 Stale 数据</text>
+  <text x="88" y="468" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">TTFB ≤ 5ms · 用户体验零等待</text>
+
+  <!-- Step B: Edge Async Revalidation Worker -->
+  <rect x="330" y="388" width="280" height="92" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="342" y="408" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">B. 边缘在后台派发异步 Worker 协程</text>
+  <text x="342" y="428" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace">If-None-Match: "01928374a"</text>
+  <text x="342" y="448" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">向远端源站发起轻量 304 探测</text>
+  <text x="342" y="468" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">仅消耗几百字节协议包，不阻塞用户</text>
+
+  <!-- Step C: Origin 304 Not Modified -->
+  <rect x="634" y="388" width="250" height="92" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+  <text x="646" y="408" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">C. 源站返回 304 Not Modified</text>
+  <text x="646" y="428" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">HTTP/1.1 304 Not Modified</text>
+  <text x="646" y="448" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">边缘重置 TTL 为 60s</text>
+  <text x="646" y="468" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">下一个请求无缝命中新鲜缓存</text>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="550" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">常规缓存窗口 / 兜底保护</text>
+  <rect x="330" y="550" width="12" height="12" rx="2" fill="rgba(232,93,63,0.08)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="350" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">SWR 异步后台重校验核心区间</text>
+  <line x1="570" y1="556" x2="594" y2="556" stroke="#141413" stroke-width="1.5" marker-end="url(#cdn-swr-arr)"/>
+  <text x="602" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">生命周期时间轴推进</text>
+</svg>

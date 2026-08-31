@@ -1,91 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="mw-title mw-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="mw-title">大模型推理显存墙：自回归两阶段与 KV Cache 物理内存开销</title>
+  <desc id="mw-desc">架构对比图展示大模型自回归推理在 Prefill 预填充阶段的计算密集特征与 Decode 逐字解码阶段遭遇的显存带宽瓶颈及算术强度雪崩。</desc>
+  <defs>
+    <marker id="mw-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="mw-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">大模型推理显存墙：自回归两阶段与 KV Cache 物理内存开销</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">Prefill（首字计算密集型）vs Decode（逐字显存带宽受限型）与静态显存碎片暴涨物理根因</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">LLM INFERENCE MEMORY WALL · PREFILL VS DECODE BOTTLENECKS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">大模型推理显存墙与两阶段物理特征</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">Prefill (计算密集/GEMM/跑满算力) vs Decode (显存带宽瓶颈/搬运70GB权重算1个Token/MFU&lt;5%)</text>
+
+  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
+  <!-- Col 1: Prefill (x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="79" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1 · PREFILL</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">预填充阶段 (Compute-Bound)</text>
+
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">输入与硬件计算特征</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 输入规模: 一次性处理 N 个 Prompt Tokens (如 2048 词)</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 算子形态: 大尺寸 GEMM 矩阵乘法，Tensor Core 跑满</text>
+
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">算力与状态沉淀：</text>
+    <text x="24" y="168" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 算术强度极高 (FLOPs/Byte &gt;&gt; 100)，充分释放 GPU 峰值性能；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 计算全部 Prompt 的 Key/Value 向量并写入 GPU HBM；</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 沉淀生成初始的 KV Cache 记忆状态。</text>
+    <text x="24" y="224" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">High Compute Utilization &amp; KV Cache Materialization</text>
+
+    <!-- Summary -->
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">关键性能指标 (SLA)</text>
+    <text x="24" y="298" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">首字时延 (TTFT - Time To First Token)：决定用户从点击发送到看到第一个字蹦出的等待响应速度。</text>
+    <text x="24" y="322" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">TTFT Latency Dominator</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Heavy Batch GEMM Pipeline</text>
   </g>
 
-  <!-- Main Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Col 2: Decode (x=480..920, w=440) - Focal -->
+  <g transform="translate(480, 136)">
+    <rect width="440" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#e85d3f"/>
+    <text x="79" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · DECODE</text>
+    <text x="154" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">逐字解码阶段 (Memory-Bound)</text>
 
-    <!-- Left Box: 2-Phase Inference (420px) -->
-    <g transform="translate(20, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="420" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">一、 自回归推理的两阶段物理特征</text>
+    <!-- Metrics Matrix -->
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">算术强度雪崩 (Arithmetic Intensity Collapse)</text>
+    <text x="24" y="82" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">• 输入规模: 每次仅输入刚生成的 单 1 个 Token</text>
+    <text x="24" y="100" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 硬件悲剧: 搬运 70GB 全量权重 + 全部 KV Cache 仅算 1 词！</text>
 
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Phase 1: Prefill -->
-        <rect width="388" height="52" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-        <text x="12" y="18" fill="#1e40af" font-weight="700">阶段 1：预填充（Prefill / Prompt Phase）── 计算受限 (Compute-Bound)</text>
-        <text x="12" y="32" font-size="9.5" fill="#2563eb">• 一次性并行输入 $N$ 个 Prompt Tokens，跑满 GPU Tensor Core 矩阵乘算力</text>
-        <text x="12" y="44" font-size="9.5" fill="#2563eb">• 生成全量历史的 Key-Value 向量并写入 GPU HBM 显存</text>
+    <!-- Visual Mechanism -->
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="148" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">带宽受限真相：</text>
+    <text x="24" y="168" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 算术强度跌至 ~1 FLOPs/Byte (仅 GEMV 向量乘法)；</text>
+    <text x="24" y="186" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2. GPU 算力利用率 (MFU) 暴跌至 5% 以下！</text>
+    <text x="24" y="204" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">3. 硬件执行单元 95% 以上的时间都在“干等显存数据搬运”！</text>
+    <text x="24" y="224" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Memory Bandwidth Bound (HBM ➔ SRAM Bottleneck)</text>
 
-        <!-- Phase 2: Decode -->
-        <rect y="60" width="388" height="62" rx="4" fill="#fff7ed" stroke="#fdba74"/>
-        <text x="12" y="18" fill="#c2410c" font-weight="700">阶段 2：自回归解码（Decode Phase）── 显存带宽受限 (Memory-Bound)</text>
-        <text x="12" y="32" font-size="9.5" fill="#9a3412">• 每轮仅输入 1 个 Token，但必须将整整几十 GB 的全量模型权重与历史 KV Cache</text>
-        <text x="12" y="44" font-size="9.5" fill="#9a3412">  从 HBM 重新搬运至 SRAM 寄存器！算力利用率（MFU）暴跌至 &lt; 5%！</text>
-        <text x="12" y="56" font-size="9.5" font-weight="700" fill="#ea580c">👉 瓶颈所在：显存读写带宽（GB/s）决定了 Token 生成极速！</text>
-      </g>
-    </g>
-
-    <!-- Right Box: KV Cache Memory Formula (420px) -->
-    <g transform="translate(460, 20)">
-      <rect width="420" height="230" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
-      <rect width="420" height="32" rx="6" fill="#f1f5f9"/>
-      <text x="210" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#334155" text-anchor="middle">二、 KV Cache 显存爆炸容量精确推导</text>
-
-      <g transform="translate(16, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">
-        <!-- Formula Box -->
-        <rect width="388" height="46" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
-        <text x="12" y="18" font-weight="700" fill="#0f172a">📐 单 Token 显存公式：</text>
-        <text x="12" y="34" font-family="ui-monospace, monospace" font-size="10.5" fill="#1e40af">Memory = 2 × 2(FP16) × n_layers × n_heads × d_head (Bytes)</text>
-
-        <!-- Real Example (LLaMA-3 70B) -->
-        <g transform="translate(0, 54)">
-          <rect width="388" height="85" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
-          <text x="12" y="18" font-weight="700" fill="#991b1b">实测案例：LLaMA-3 70B (80层, GQA 8组Key-Value)</text>
-          <text x="12" y="34" font-size="9.5" fill="#7f1d1d">• 单 Token 的 KV Cache 显存消耗 $\approx 320\text{ KB}$</text>
-          <text x="12" y="48" font-size="9.5" fill="#7f1d1d">• 单并发 8K 上下文消耗 $\approx 2.56\text{ GB}$</text>
-          <text x="12" y="62" font-size="9.5" font-weight="700" fill="#b91c1c">💥 32 并发 8K 窗口：仅 KV Cache 就要吃掉 82 GB 显存！（远超权重本身）</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">大模型后端的物理矛盾：</tspan> 模型权重是固定不动的，而 <tspan font-weight="700" fill="#ea580c">KV Cache 随着并发数与生成长度呈平方级爆炸膨胀</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#2563eb" text-anchor="middle">
-        显存容量与 HBM 带宽壁垒（Memory Wall）才是制约大模型高吞吐生产落地的终极紧箍咒。
-      </text>
-    </g>
+    <!-- Summary -->
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="24" y="278" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">关键性能指标 (SLA)</text>
+    <text x="24" y="298" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">逐字时延 (ITL - Inter-Token Latency) 与系统总吞吐：决定流式输出的流畅度与单卡承载并发量。</text>
+    <text x="24" y="322" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">ITL Latency &amp; System Throughput Bottleneck</text>
+    <text x="24" y="340" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">PagedAttention &amp; Continuous Batching Target</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Prefill 计算密集阶段与 GEMM 满载</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Decode 显存带宽受限与 95% 时间等数据搬运核心瓶颈</text>
 </svg>

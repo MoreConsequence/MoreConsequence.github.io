@@ -13,11 +13,11 @@ series: "LibreSpeed Go 源码行纪"
 
 ---
 
-![LibreSpeed Go 配置与部署面：三块历史配置兼容、环境变量优先级与平滑降级矩阵](../../../public/images/librespeed-go-config-deploy-graceful-downgrade.svg)
+![LibreSpeed Go 配置兼容分支：资产目录回退与 HTTP/2/TLS 监听边界](../../../public/images/librespeed-go-config-deploy-graceful-downgrade.svg)
 
 
 
-![Viper 配置加载优先级：CLI 参数 -> 环境变量 -> 配置文件 -> 编译默认值](../../../public/images/viper-config-hierarchy-precedence.svg)
+![Viper 实际接入的配置优先级：环境变量 -> 配置文件 -> 编译默认值；CLI 只选择文件路径](../../../public/images/viper-config-hierarchy-precedence.svg)
 
 ## 一、配置加载：viper 的默认值优先级
 
@@ -34,7 +34,7 @@ series: "LibreSpeed Go 源码行纪"
 
 
 
-![云原生生产部署拓扑：Docker 轻量镜像、K8s 无状态 Deployment 与 CDN 接入](../../../public/images/librespeed-go-cloud-native-deploy-topology.svg)
+![LibreSpeed Go 部署证据边界：仓库发布工件、Darwin/arm64 本地运行与未验证的外部拓扑](../../../public/images/librespeed-go-cloud-native-deploy-topology.svg)
 
 ## 二、监听面：一份逻辑，三种平台形态
 

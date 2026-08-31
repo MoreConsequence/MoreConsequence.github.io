@@ -1,127 +1,96 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="vc-title vc-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="vc-title">分布式逻辑时序：Lamport 标量时钟 vs 向量时钟因果与并发分支判定</title>
+  <desc id="vc-desc">对比图展示 Lamport 标量时钟的单向因果缺陷，以及向量时钟通过多维数组精准判定因果先后（V_A &lt; V_B）与并发分支冲突（V_A || V_B）的数学算法。</desc>
+  <defs>
+    <marker id="vc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="vc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <marker id="arrow-orange" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ea580c"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">向量时钟（Vector Clock）时空流转与并发分叉判定全景</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">三节点时空生命线：本地事件递增自自分量 ──► 跨节点消息携带全局向量 ──► 并发无序分支 ($V_A \parallel V_B$) 精准捕获</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DISTRIBUTED CAUSALITY · VECTOR CLOCK COMPARISON</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Lamport 标量时钟 vs 向量时钟因果与并发分支</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">标量时钟只能单向推导 a ➔ b ⟹ L(a) &lt; L(b)；向量时钟以 O(N) 空间实现双向因果判定与并发分叉检测</text>
+
+  <!-- Left: Lamport Scalar Clock (Mode A, x=40..460, w=420) -->
+  <g transform="translate(40, 136)">
+    <rect width="420" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SCALAR CLOCK</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Lamport 标量逻辑时钟 (1978)</text>
+
+    <!-- Rule -->
+    <rect x="14" y="42" width="392" height="70" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">算法规则：单一递增整数 L</text>
+    <text x="24" y="82" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">本地事件: L = L + 1</text>
+    <text x="24" y="98" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">接收消息: L_local = max(L_local, L_msg) + 1</text>
+
+    <!-- Timeline Example -->
+    <rect x="14" y="120" width="392" height="120" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="142" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">时序推导示例</text>
+    <text x="24" y="162" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Node 1: e₁ (L=1) ➔ e₂ (L=2, Send)</text>
+    <text x="24" y="180" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">Node 2: e₃ (L=3, Recv from Node 1)</text>
+    <text x="24" y="198" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Node 3: e₄ (L=2, 本地独立事件)</text>
+    <text x="24" y="222" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">L(e₂) = 2 与 L(e₄) = 2 完全相等！</text>
+
+    <!-- Limitation (Critical) -->
+    <rect x="14" y="248" width="392" height="114" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="272" fill="#141413" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单向因果致命缺陷</text>
+    <text x="24" y="292" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">a ➔ b ⟹ L(a) &lt; L(b) (成立)</text>
+    <text x="24" y="310" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">L(a) &lt; L(b) ⇏ a ➔ b (绝对不成立！)</text>
+    <text x="24" y="332" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">无法判断两个事件是先后因果还是并发独立！</text>
+    <text x="24" y="350" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">一维标量强制压缩导致并发信息永久丢失</text>
   </g>
 
-  <!-- Main Timeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Right: Vector Clock (Mode B, x=500..920, w=420) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="420" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="96" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="62" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">VECTOR CLOCK</text>
+    <text x="120" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">向量时钟：全双向因果与并发判定</text>
 
-    <!-- Left Spacetime Timeline Area (560px) -->
-    <g transform="translate(20, 20)">
-      <!-- 3 Node Lifelines -->
-      <!-- Node A -->
-      <g transform="translate(0, 30)">
-        <rect x="0" y="-12" width="70" height="24" rx="4" fill="#eff6ff" stroke="#93c5fd"/>
-        <text x="35" y="4" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">节点 A</text>
-        <line x1="80" y1="0" x2="520" y2="0" stroke="#cbd5e1" stroke-width="2"/>
+    <!-- Rule -->
+    <rect x="14" y="42" width="392" height="70" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">算法规则：N 维向量 V = [v₁, v₂, ..., vₙ]</text>
+    <text x="24" y="82" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">本地递增: V_i[i] = V_i[i] + 1</text>
+    <text x="24" y="98" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">消息合并: V_i[k] = max(V_i[k], V_msg[k]), V_i[i]++</text>
 
-        <!-- Event a1: [1, 0, 0] -->
-        <circle cx="130" cy="0" r="5" fill="#2563eb"/>
-        <rect x="105" y="-30" width="50" height="18" rx="3" fill="#2563eb"/>
-        <text x="130" y="-18" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">[1, 0, 0]</text>
+    <!-- Comparison Cases -->
+    <rect x="14" y="120" width="392" height="120" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="142" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">因果与并发分支判定算法</text>
+    <text x="24" y="162" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">1. 因果先后: V_A=[1,0,0] &lt; V_B=[2,1,0] ➔ A 必定先于 B</text>
+    <text x="24" y="180" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 并发分叉: V_C=[2,1,0] || V_D=[1,2,0] ➔ 并发冲突！</text>
+    <line x1="24" y1="192" x2="394" y2="192" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="210" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">既非 V_C ≤ V_D 也非 V_D ≤ V_C ➔ 判定两事件并行独立</text>
+    <text x="24" y="228" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">自动生成 Siblings 分支供应用层合并</text>
 
-        <!-- Event a2: [2, 0, 0] -->
-        <circle cx="340" cy="0" r="5" fill="#ea580c"/>
-        <rect x="315" y="-30" width="50" height="18" rx="3" fill="#ea580c"/>
-        <text x="340" y="-18" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">[2, 0, 0]</text>
-      </g>
-
-      <!-- Node B -->
-      <g transform="translate(0, 105)">
-        <rect x="0" y="-12" width="70" height="24" rx="4" fill="#f0fdf4" stroke="#86efac"/>
-        <text x="35" y="4" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">节点 B</text>
-        <line x1="80" y1="0" x2="520" y2="0" stroke="#cbd5e1" stroke-width="2"/>
-
-        <!-- Event b1: Receive from A -> [1, 1, 0] -->
-        <circle cx="230" cy="0" r="5" fill="#10b981"/>
-        <rect x="205" y="-30" width="50" height="18" rx="3" fill="#10b981"/>
-        <text x="230" y="-18" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">[1, 1, 0]</text>
-
-        <!-- Event b2: Local event -> [1, 2, 0] -->
-        <circle cx="440" cy="0" r="5" fill="#ea580c"/>
-        <rect x="415" y="-30" width="50" height="18" rx="3" fill="#ea580c"/>
-        <text x="440" y="-18" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">[1, 2, 0]</text>
-      </g>
-
-      <!-- Node C -->
-      <g transform="translate(0, 180)">
-        <rect x="0" y="-12" width="70" height="24" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
-        <text x="35" y="4" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">节点 C</text>
-        <line x1="80" y1="0" x2="520" y2="0" stroke="#cbd5e1" stroke-width="2"/>
-
-        <!-- Event c1: [0, 0, 1] -->
-        <circle cx="160" cy="0" r="5" fill="#64748b"/>
-        <rect x="135" y="10" width="50" height="18" rx="3" fill="#64748b"/>
-        <text x="160" y="22" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">[0, 0, 1]</text>
-      </g>
-
-      <!-- Message Arrow: a1 -> b1 -->
-      <line x1="130" y1="30" x2="225" y2="100" stroke="#2563eb" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-blue)"/>
-      <rect x="155" y="55" width="60" height="16" rx="2" fill="#dbeafe"/>
-      <text x="185" y="66" font-family="ui-monospace, monospace" font-size="8.5" fill="#1e40af" text-anchor="middle">msg: [1,0,0]</text>
-    </g>
-
-    <!-- Right Side: Conflict Analysis Panel (320px) -->
-    <g transform="translate(560, 20)">
-      <rect width="320" height="230" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
-      <rect width="320" height="32" rx="6" fill="#ffedd5"/>
-      <text x="160" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#c2410c" text-anchor="middle">⚡ 并发冲突判定算法 ($V_A \parallel V_B$)</text>
-
-      <g transform="translate(12, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-        <rect width="296" height="46" rx="4" fill="#ffffff" stroke="#fed7aa"/>
-        <text x="10" y="16" font-weight="700" fill="#9a3412">1. 观察事件 a2 与 b2 的向量值：</text>
-        <text x="10" y="32" font-family="ui-monospace, monospace" font-size="10" fill="#c2410c">$V_{a2} = [2, 0, 0]$  vs  $V_{b2} = [1, 2, 0]$</text>
-
-        <rect y="54" width="296" height="52" rx="4" fill="#ffffff" stroke="#fed7aa"/>
-        <text x="10" y="16" font-weight="700" fill="#9a3412">2. 偏序关系数学比对：</text>
-        <text x="10" y="30" font-size="9.5" fill="#475569">• 维度 1: $2 > 1$ ($V_{a2}$ 占优)</text>
-        <text x="10" y="44" font-size="9.5" fill="#475569">• 维度 2: $0 &lt; 2$ ($V_{b2}$ 占优)</text>
-
-        <rect y="114" width="296" height="56" rx="4" fill="#ffedd5"/>
-        <text x="10" y="18" font-weight="700" fill="#c2410c">判定结果：$V_{a2} \parallel V_{b2}$（无绝对因果先后！）</text>
-        <text x="10" y="32" font-size="9" fill="#9a3412">系统发生并行分叉，不执行粗暴 LWW 覆盖，</text>
-        <text x="10" y="44" font-size="9" font-weight="700" fill="#ea580c">保留两份兄弟版本（Siblings）交由应用层合并！</text>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">向量时钟本质：</tspan> 它用 $O(N)$ 空间开销完整记录了 <tspan font-weight="700" fill="#2563eb">“每个节点见证过的因果历史”</tspan>；
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        既能 100% 识别 $A \to B$ 因果依赖，又能精准捕获 $A \parallel B$ 并发冲突，是 DynamoDB 等无中心存储的物理基石。
-      </text>
-    </g>
+    <!-- Production App -->
+    <rect x="14" y="248" width="392" height="114" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <text x="24" y="272" fill="#e85d3f" font-size="10.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">工业生产应用场景</text>
+    <text x="24" y="292" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 离线协同编辑与多端购物车同步 (Dynamo / Riak)</text>
+    <text x="24" y="310" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无冲突复制数据类型 (CRDTs) 核心状态底座</text>
+    <text x="24" y="328" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">彻底根除 NTP 时钟回拨导致的数据丢失</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保证最终一致性（Eventual Consistency）数据无损收敛</text>
   </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Lamport 标量时钟</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">向量时钟多维因果判定</text>
 </svg>

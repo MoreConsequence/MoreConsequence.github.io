@@ -1,78 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
-  <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
-    </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
-  </defs>
-  <rect width="960" height="480" fill="#f8fafc"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-labelledby="librespeed-go-contract-worker-lifecycle-script-title librespeed-go-contract-worker-lifecycle-script-desc">
+        <title id="librespeed-go-contract-worker-lifecycle-script-title">Worker 合同：端点交互与终态</title>
+        <desc id="librespeed-go-contract-worker-lifecycle-script-desc">Sequence diagram showing the main thread starting a Web Worker, the worker calling the Go endpoints in default order, optional telemetry, and the distinct normal-finish and abort states.</desc>
+        <defs><style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;display=swap');</style>
+          <style>
+            .sans { font-family: 'Geist', 'Noto Sans KR', sans-serif; }
+            .mono { font-family: 'Geist Mono', 'Noto Sans KR', monospace; }
+            .serif { font-family: 'Instrument Serif', 'Noto Serif KR', serif; }
+          </style>
+          <marker id="librespeed-contract-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+          </marker>
+          <marker id="librespeed-contract-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
+          </marker>
+          <marker id="librespeed-contract-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" />
+          </marker>
+        </defs>
 
-  <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#0f172a">LibreSpeed 测速合同：Worker 状态机与客户端主权计量</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">INIT (0) ──► IP/PING (1) ──► DOWNLOAD (2) ──► UPLOAD (3) ──► TELEMETRY (4) ──► DONE (5)</text>
-  </g>
+        <rect width="960" height="600" fill="#f5f5f5" />
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Worker State Machine -->
-    <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Web Worker 独立线程状态流转</text>
+        <text x="40" y="40" class="mono" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#7a8399">LIBRESPEED GO · CONTRACT</text>
+        <text x="40" y="72" class="serif" font-size="28" fill="#2d3142">Worker 合同：端点交互与终态</text>
+        <text x="40" y="100" class="sans" font-size="12" fill="#4f5d75">Ready = 主线程 state 2（测速点已选）；Done = Worker state 4；HTTP 200 不是完成信号。</text>
+        <text x="40" y="124" class="mono" font-size="8" fill="#7a8399">default test_order=IP_D_U · P is opt-in · abort clears requests → state=5</text>
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="16" fill="#38bdf8">// speedtest_worker.js 独立线程</text>
-          <text x="10" y="30" fill="#93c5fd">1. state=1: GET /getIP.php &amp; 并发 10 次 /empty.php 测 RTT</text>
-          <text x="10" y="46" fill="#4ade80">2. state=2: 开 4 路 XHR 并发 GET /garbage.php 灌水 15 秒</text>
-          <text x="10" y="62" fill="#fb923c">3. state=3: 开 4 路 XHR 并发 POST /empty.php 推流 15 秒</text>
-          <text x="10" y="78" fill="#d8b4fe">4. state=4: POST /results/ 上报最终聚合度量数据</text>
-          
-          <text x="10" y="104" fill="#34d399">✓ 每 200ms 向 UI 主线程 postMessage 刷新仪表盘实时速率！</text>
-          <text x="10" y="120" fill="#38bdf8">✓ 测速与 UI 渲染完全隔离，零掉帧卡顿！</text>
-        </g>
+        <!-- Optional telemetry is the only combined sequence fragment. -->
+        <rect x="352" y="376" width="520" height="112" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.22)" stroke-width="1" />
+        <rect x="352" y="376" width="40" height="16" rx="2" fill="#f5f5f5" stroke="rgba(45,49,66,0.22)" stroke-width="1" />
+        <text x="372" y="388" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.12em" fill="#4f5d75">OPT</text>
+        <text x="364" y="412" class="mono" font-size="8" letter-spacing="0.04em" fill="#4f5d75">[telemetry_level ≥ 1]</text>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">多连接并发设计：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 默认 4 个并发 HTTP 管道，快速填满 BDP 带宽时延积；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 避免单 TCP 连接慢启动阶段过长导致的测速失真；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 智能自适应动态调节并发连接数！</text>
-      </g>
-    </g>
+        <!-- Lifelines and activation bars are behind every message and actor. -->
+        <line x1="160" y1="200" x2="160" y2="536" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3" />
+        <line x1="480" y1="200" x2="480" y2="536" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3" />
+        <line x1="800" y1="200" x2="800" y2="536" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="3,3" />
 
-    <!-- Right: Client Sovereignty -->
-    <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.5"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 不对称计量权：客户端权威度量</text>
+        <rect x="476" y="208" width="8" height="320" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8" />
+        <rect x="796" y="240" width="8" height="48" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8" />
+        <rect x="796" y="304" width="8" height="80" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8" />
+        <rect x="796" y="416" width="8" height="64" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8" />
 
-      <g transform="translate(15, 46)" font-family="ui-sans-serif, system-ui, sans-serif">
-        <rect width="405" height="150" rx="4" fill="#0f172a"/>
-        <g font-family="ui-monospace, monospace" font-size="7.5" fill="#f8fafc">
-          <text x="10" y="16" fill="#4ade80">// 客户端自主统计算法</text>
-          <text x="10" y="30" fill="#86efac">speed = (loadedBytes * 8) / (durationSec * 1024 * 1024) [Mbps]</text>
-          
-          <text x="10" y="54" fill="#38bdf8">🔴 为什么服务端不能代替客户端计算？</text>
-          <text x="10" y="70" fill="#cbd5e1">1. 服务端无法感知客户端 TCP 接收窗口与渲染排队</text>
-          <text x="10" y="86" fill="#cbd5e1">2. 服务端发送完成 != 客户端完整接收确认</text>
-          <text x="10" y="102" fill="#34d399">3. 客户端体验到的真实吞吐才是唯一真实指标！</text>
-          <text x="10" y="122" fill="#4ade80">✓ 服务端退化为纯粹的哑流量发生器与黑洞！</text>
-        </g>
+        <!-- Messages: time flows from top to bottom. -->
+        <path d="M 160,224 H 480" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow-link)" />
+        <path d="M 480,256 H 800" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow-link)" />
+        <path d="M 800,288 H 480" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#librespeed-contract-arrow)" />
+        <path d="M 480,320 H 800" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow-link)" />
+        <path d="M 480,352 H 800" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow-link)" />
+        <path d="M 480,444 H 800" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow-link)" />
+        <path d="M 800,472 H 480" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#librespeed-contract-arrow)" />
+        <path d="M 160,508 H 480" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#librespeed-contract-arrow)" />
+        <path d="M 480,536 H 160" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#librespeed-contract-arrow)" />
 
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">架构收益：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 服务端无需维护复杂的单连接计时与统计状态；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• 极大节省服务端 CPU 与内存消耗；</text>
-        <text x="10" y="62" font-size="7.5" font-weight="700" fill="#047857">• 支撑极小节点支撑数十万用户同时在线测速！</text>
-      </g>
-    </g>
-  </g>
-</svg>
+        <!-- Opaque masks keep labels off their connector strokes. -->
+        <rect x="276" y="204" width="88" height="12" rx="4" fill="#f5f5f5" />
+        <text x="320" y="212" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">START</text>
+        <rect x="608" y="236" width="64" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="244" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">GET IP</text>
+        <rect x="600" y="268" width="80" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="276" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">200 + IP</text>
+        <rect x="592" y="300" width="96" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="308" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">D / garbage</text>
+        <rect x="596" y="332" width="88" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="340" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">U / empty</text>
+        <rect x="572" y="420" width="136" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="428" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">POST TELEMETRY</text>
+        <rect x="588" y="448" width="104" height="12" rx="4" fill="#f5f5f5" />
+        <text x="640" y="456" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">ID RESPONSE</text>
+        <rect x="288" y="484" width="64" height="12" rx="4" fill="#f5f5f5" />
+        <text x="320" y="492" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">STATUS</text>
+        <rect x="244" y="512" width="152" height="12" rx="4" fill="#f5f5f5" />
+        <text x="320" y="520" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.06em" fill="#4f5d75">STATE=4 / ONEND</text>
+
+        <!-- Actors are painted last so their opaque faces protect lifelines. -->
+        <rect x="80" y="152" width="160" height="48" rx="6" fill="#f5f5f5" />
+        <rect x="80" y="152" width="160" height="48" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1" />
+        <rect x="92" y="160" width="40" height="16" rx="2" fill="transparent" stroke="rgba(122,131,153,0.40)" stroke-width="0.8" />
+        <text x="112" y="172" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">APP</text>
+        <text x="160" y="184" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Main thread</text>
+        <text x="160" y="196" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">speedtest.js</text>
+
+        <rect x="400" y="152" width="160" height="48" rx="6" fill="#f5f5f5" />
+        <rect x="400" y="152" width="160" height="48" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1" />
+        <rect x="412" y="160" width="56" height="16" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8" />
+        <text x="440" y="172" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#eb6c36">WORKER</text>
+        <text x="480" y="184" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Web Worker</text>
+        <text x="480" y="196" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">speedtest_worker.js</text>
+
+        <rect x="720" y="152" width="160" height="48" rx="6" fill="#f5f5f5" />
+        <rect x="720" y="152" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+        <rect x="732" y="160" width="48" height="16" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8" />
+        <text x="756" y="172" class="mono" font-size="8" text-anchor="middle" letter-spacing="0.08em" fill="#4f5d75">GO</text>
+        <text x="800" y="184" class="sans" font-size="12" font-weight="600" text-anchor="middle" fill="#2d3142">Go server</text>
+        <text x="800" y="196" class="mono" font-size="8" text-anchor="middle" fill="#4f5d75">web.go</text>
+
+        <line x1="40" y1="556" x2="920" y2="556" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
+        <text x="40" y="576" class="mono" font-size="8" letter-spacing="0.14em" fill="#4f5d75">LEGEND</text>
+        <line x1="128" y1="572" x2="160" y2="572" stroke="#4f5d75" stroke-width="1.2" />
+        <text x="172" y="576" class="mono" font-size="8" fill="#4f5d75">call</text>
+        <line x1="256" y1="572" x2="288" y2="572" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" />
+        <text x="300" y="576" class="mono" font-size="8" fill="#4f5d75">return</text>
+        <rect x="400" y="564" width="8" height="16" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8" />
+        <text x="420" y="576" class="mono" font-size="8" fill="#4f5d75">activation</text>
+        <text x="552" y="576" class="mono" font-size="8" fill="#4f5d75">state 4 = done · state 5 = abort</text>
+      </svg>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cdn-consistent-hashing-ring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f4ed; color: #141413; }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="cdn-hashing-ring-title cdn-hashing-ring-desc">
+  <title id="cdn-hashing-ring-title">Ketama 一致性哈希环与虚拟节点分片调度拓扑</title>
+  <desc id="cdn-hashing-ring-desc">环形架构图展示 [0, 2^32-1] 哈希空间、虚拟节点散列、顺时针请求最近路由以及单机故障仅影响 1/N 弧段的最小迁移证明。</desc>
+  <defs>
+    <marker id="cdn-ring-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+    </marker>
+    <marker id="cdn-ring-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="960" height="600" fill="#f5f4ed"/>
+
+  <!-- Header Block -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CONSISTENT HASHING &amp; VIRTUAL SLOTS</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Ketama 一致性哈希环与虚拟节点分片调度拓扑</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">32 位整数环空间、顺时针最近路由、虚拟槽位大数均衡与单节点下线最小迁移定理（Δ = 1/N）</text>
+
+  <!-- Left: Consistent Hashing Ring (Center: 290, 330, R=140) -->
+  <!-- Outer Circular Track -->
+  <circle cx="290" cy="330" r="140" fill="#fffdfb" stroke="#141413" stroke-width="1.5"/>
+  <circle cx="290" cy="330" r="140" fill="none" stroke="rgba(20,20,19,0.20)" stroke-width="6" stroke-dasharray="4 8"/>
+
+  <!-- Clockwise Route Arc Highlight from 45 deg to 75 deg (R=140) -->
+  <!-- Path from (389, 231) to (425, 294) -->
+  <path d="M 389 231 A 140 140 0 0 1 425 294" fill="none" stroke="#e85d3f" stroke-width="3"/>
+
+  <!-- Center Hub Card -->
+  <circle cx="290" cy="330" r="64" fill="#f5f4ed" stroke="#141413" stroke-width="1"/>
+  <text x="290" y="318" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle" letter-spacing="0.12em">HASH RING</text>
+  <text x="290" y="336" fill="#141413" font-size="12" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">[0 ~ 2³²-1]</text>
+  <text x="290" y="354" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" text-anchor="middle">顺时针最近路由</text>
+
+  <!-- Degree Indicator: 0 / 2^32-1 at 12 o'clock -->
+  <line x1="290" y1="176" x2="290" y2="190" stroke="#141413" stroke-width="1.2"/>
+  <text x="290" y="170" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace" text-anchor="middle">0 / 2³²-1</text>
+
+  <!-- Virtual Nodes along the Ring -->
+  <!-- Node C3 (0 deg: 290, 190) -->
+  <circle cx="290" cy="190" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="290" y="193" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">C₃</text>
+
+  <!-- Node A1 (30 deg: 360, 209) -->
+  <circle cx="360" cy="209" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="360" y="212" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">A₁</text>
+
+  <!-- Request Key Incoming (45 deg: 389, 231) -->
+  <line x1="460" y1="180" x2="397" y2="225" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-ring-arr-accent)"/>
+  <rect x="440" y="162" width="108" height="20" rx="3" fill="#f5f4ed" stroke="#e85d3f" stroke-width="0.8"/>
+  <text x="494" y="176" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Hash(/hot_video)</text>
+
+  <!-- Node B1 (75 deg: 425, 294) - Target Focal Node -->
+  <circle cx="425" cy="294" r="14" fill="rgba(232,93,63,0.12)" stroke="#e85d3f" stroke-width="1.5"/>
+  <text x="425" y="298" fill="#e85d3f" font-size="9" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">B₁</text>
+  <text x="464" y="298" fill="#e85d3f" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">命中宿主机</text>
+
+  <!-- Node C1 (120 deg: 411, 400) -->
+  <circle cx="411" cy="400" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="411" y="403" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">C₁</text>
+
+  <!-- Node A2 (150 deg: 360, 451) -->
+  <circle cx="360" cy="451" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="360" y="454" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">A₂</text>
+
+  <!-- Node B2 (195 deg: 254, 465) -->
+  <circle cx="254" cy="465" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="254" y="468" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">B₂</text>
+
+  <!-- Node C2 (240 deg: 169, 400) -->
+  <circle cx="169" cy="400" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="169" y="403" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">C₂</text>
+
+  <!-- Node A3 (270 deg: 150, 330) -->
+  <circle cx="150" cy="330" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="150" y="333" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">A₃</text>
+
+  <!-- Node B3 (315 deg: 191, 231) -->
+  <circle cx="191" cy="231" r="11" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="191" y="234" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">B₃</text>
+
+  <!-- Right: 3 Mechanism Cards (x: 560..920, w: 360) -->
+  <!-- Card 1: Virtual Nodes -->
+  <g transform="translate(560, 150)">
+    <rect width="360" height="96" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="60" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="44" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SLOTS</text>
+    <text x="82" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">虚拟节点（Virtual Slots）消除倾斜</text>
+    <text x="14" y="48" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">每台物理机生成 160~256 个带权虚拟副本（A#1, A#2...）</text>
+    <text x="14" y="66" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">数万虚拟槽位均匀散落环上，流量分配标准差 &lt; 5%</text>
+    <text x="14" y="84" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">大数定律消除热点物理倾斜</text>
+  </g>
+
+  <!-- Card 2: Clockwise Routing -->
+  <g transform="translate(560, 260)">
+    <rect width="360" height="96" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="60" height="16" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="44" y="24" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">ROUTING</text>
+    <text x="82" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">顺时针二分查找与集群分片</text>
+    <text x="14" y="48" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">CacheKey 计算 Hash 后沿圆环顺时针寻找最近节点</text>
+    <text x="14" y="66" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">整机房 50 台机器聚合为单一逻辑分片缓存池</text>
+    <text x="14" y="84" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">杜绝重复拉取，有效缓存容量扩大 50 倍</text>
+  </g>
+
+  <!-- Card 3: Minimal Perturbation (Focal Card) -->
+  <g transform="translate(560, 370)">
+    <rect width="360" height="106" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="60" height="16" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="44" y="24" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STABILITY</text>
+    <text x="82" y="25" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">单机宕机最小迁移证明（Δ = 1/N）</text>
+    <text x="14" y="48" fill="#6b6a64" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif">任一物理节点宕机时，仅紧随其后的弧段重新映射</text>
+    <text x="14" y="66" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">全网数据迁移量严格约束为 1/N（如 50 节点仅迁移 2%）</text>
+    <text x="14" y="86" fill="#141413" font-size="9" font-family="'Geist Mono', monospace">其余 (N-1)/N (98%) 缓存 100% 稳定命中</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="532" x2="920" y2="532" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <circle cx="126" cy="558" r="6" fill="#fffdfb" stroke="#141413" stroke-width="1.2"/>
+  <text x="140" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">物理节点的虚拟槽位 (Slots)</text>
+  <circle cx="330" cy="558" r="6" fill="rgba(232,93,63,0.12)" stroke="#e85d3f" stroke-width="1.2"/>
+  <text x="344" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">目标路由命中宿主</text>
+  <line x1="500" y1="558" x2="524" y2="558" stroke="#e85d3f" stroke-width="1.5" marker-end="url(#cdn-ring-arr-accent)"/>
+  <text x="532" y="562" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">顺时针路由查找路径</text>
+</svg>
+</main>
+</body>
+</html>

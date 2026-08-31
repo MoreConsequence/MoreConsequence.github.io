@@ -1,137 +1,169 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="100%" height="100%">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="egr-title egr-desc">
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
-    <marker id="arrow-slate" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
+    </style>
+  </defs>
+  <title id="egr-title">Linux 出口发包全链路：从 Socket 写入、TC 调度到网卡 TX DMA</title>
+  <desc id="egr-desc">全链路架构图展示 Linux 出向网络包从用户态 write 系统调用、TCP 协议栈 Pacing 打标、TC 流量控制排队、GSO 硬件分段到网卡 TX DMA 发射的全流程。</desc>
+  <defs>
+    <marker id="eg-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    <marker id="eg-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
     </marker>
-    <marker id="arrow-emerald" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
-    </marker>
-    <filter id="card-shadow" x="-3%" y="-4%" width="106%" height="110%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04"/>
-    </filter>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="440" fill="#f8fafc"/>
-  <rect width="960" height="440" fill="url(#dot-grid)"/>
+  <rect width="960" height="600" fill="#f5f4ed"/>
 
-  <!-- Title Block -->
-  <g transform="translate(30, 24)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
-    <text x="24" y="18" font-family="ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif" font-size="18" font-weight="700" fill="#0f172a">Linux 出口发包全链路：从 Socket 写入、TC 调度到网卡 TX DMA</text>
-    <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748b">应用 write() ──► TCP 发送缓冲排队 ──► TC qdisc (HTB/fq Pacing) ──► GSO/TSO 分段卸载 ──► TX Ring Buffer 硬件发包</text>
+  <!-- Header -->
+  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">EGRESS PACKET FLOW · PROTOCOL STACK TO HARDWARE DMA</text>
+  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux 出口发包全链路：Socket 到网卡 TX DMA</text>
+  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">应用层 write/send ➔ TCP 分段与 Pacing ➔ IP 路由 ➔ TC qdisc 排队整形 ➔ GSO 分段 ➔ TX Ring Buffer ➔ DMA 发射</text>
+
+  <!-- 4 Columns Grid (y=136..506, h=370) -->
+  <!-- Col 1: Socket & App (x=40..220, w=180) -->
+  <g transform="translate(40, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">用户态与套接字</text>
+
+    <!-- Syscall -->
+    <rect x="14" y="42" width="152" height="96" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">write() / send() 调用</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">sock_sendmsg()</text>
+    <text x="22" y="100" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">copy_from_user()</text>
+    <text x="22" y="118" fill="#6b6a64" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">拷贝数据至内核内存</text>
+
+    <!-- SKB Alloc -->
+    <rect x="14" y="150" width="152" height="110" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="172" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">分配 sk_buff</text>
+    <text x="22" y="192" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">sk_stream_alloc_skb()</text>
+    <text x="22" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">排入 sk_write_queue</text>
+    <text x="22" y="226" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">挂载在 Socket 发送队列</text>
+    <text x="22" y="244" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace">tcp_wmem buffer</text>
+
+    <!-- Trigger -->
+    <rect x="14" y="272" width="152" height="88" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="294" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">触发协议栈发送</text>
+    <text x="22" y="314" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">tcp_push() 触发</text>
+    <text x="22" y="332" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">移交 TCP 传输控制层</text>
+    <text x="22" y="348" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">Ready for Egress</text>
   </g>
 
-  <!-- Main Pipeline Card (900px wide) -->
-  <g transform="translate(30, 75)" filter="url(#card-shadow)">
-    <rect width="900" height="335" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Arrow 1 (x=220..250) -->
+  <text x="235" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Push</text>
+  <line x1="220" y1="230" x2="250" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#eg-arr-accent)"/>
 
-    <!-- 4 Pipeline Columns (200px each) -->
-    <g transform="translate(20, 20)">
-      <!-- Stage 1: Socket & TCP Layer -->
-      <g>
-        <rect width="190" height="235" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-        <rect width="190" height="32" rx="6" fill="#dbeafe"/>
-        <text x="95" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#1e40af" text-anchor="middle">1. Socket 与 TCP 发送缓冲</text>
+  <!-- Col 2: TCP / IP Stack (x=250..470, w=220) - Focal -->
+  <g transform="translate(250, 136)">
+    <rect width="220" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 2</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">TCP / IP 传输层</text>
 
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="170" height="42" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1d4ed8" font-weight="700">copy_from_user</text>
-          <text x="8" y="28" font-size="9" fill="#2563eb">将用户态数据拷贝入内核</text>
+    <!-- TCP CC & Pacing -->
+    <rect x="14" y="42" width="192" height="150" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="24" y="50" width="80" height="16" rx="2" fill="#e85d3f"/>
+    <text x="64" y="62" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">BBR / CUBIC</text>
+    <text x="112" y="63" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">拥塞控制与打标</text>
 
-          <rect y="48" width="170" height="52" rx="3" fill="#ffffff" stroke="#bfdbfe"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">sk_write_queue 排队</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">• tcp_sendmsg 封装 SKB</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">• BBR 计算 Pacing 速率</text>
+    <text x="24" y="86" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. BBR 算法计算 Pacing 速率</text>
+    <text x="24" y="104" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. skb->tstamp = EDT 打标</text>
+    <text x="24" y="122" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">3. tcp_write_xmit() 构建报头</text>
+    <line x1="24" y1="134" x2="196" y2="134" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="152" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">skb_push() 封装 TCP 头 (20B)</text>
+    <text x="24" y="170" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">Seq/Ack 序号与 Checksum</text>
+    <text x="24" y="186" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Zero Data Copy</text>
 
-          <rect y="106" width="170" height="40" rx="3" fill="#dbeafe"/>
-          <text x="8" y="16" font-weight="700" fill="#1e40af">调用 dev_queue_xmit()</text>
-          <text x="8" y="28" font-size="8.5" fill="#1d4ed8">将数据包推向网络设备层</text>
-        </g>
-      </g>
-
-      <!-- Stage 2: TC Traffic Control -->
-      <g transform="translate(210, 0)">
-        <rect width="195" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="195" height="32" rx="6" fill="#dcfce7"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">2. TC 流量控制 (qdisc)</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">HTB 分层限速整形</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">根据 Class 限制突发带宽</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#166534" font-weight="700">fq 匀速起搏 (Pacing)</text>
-          <text x="8" y="30" font-size="9" fill="#15803d">• 红黑树按 EDT 时间戳排序</text>
-          <text x="8" y="42" font-size="9" fill="#15803d">• 纳秒级定时发包消除突发</text>
-
-          <rect y="106" width="175" height="40" rx="3" fill="#d1fae5"/>
-          <text x="8" y="16" font-weight="700" fill="#065f46">出队 enqueue / dequeue ──►</text>
-          <text x="8" y="28" font-size="8.5" fill="#047857">调用 sch_direct_xmit()</text>
-        </g>
-      </g>
-
-      <!-- Stage 3: Hardware Offload (TSO/GSO) -->
-      <g transform="translate(425, 0)">
-        <rect width="195" height="235" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
-        <rect width="195" height="32" rx="6" fill="#f1f5f9"/>
-        <text x="97" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">3. 硬件分段卸载 (TSO)</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">
-          <rect width="175" height="42" rx="3" fill="#ffffff" stroke="#cbd5e1"/>
-          <text x="8" y="16" fill="#0f172a" font-weight="700">超大 SKB 发送 (64KB)</text>
-          <text x="8" y="28" font-size="9" fill="#64748b">协议栈无需在 CPU 提前分片</text>
-
-          <rect y="48" width="175" height="52" rx="3" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="8" y="16" fill="#1e40af" font-weight="700">网卡硬件 TSO 引擎</text>
-          <text x="8" y="30" font-size="9" fill="#2563eb">网卡物理芯片自动切片为 MTU</text>
-          <text x="8" y="42" font-size="9" fill="#2563eb">并硬件自动计算 TCP 校验和</text>
-
-          <rect y="106" width="175" height="40" rx="3" fill="#f8fafc"/>
-          <text x="8" y="16" fill="#475569">节省 CPU 算力高达 60% ──►</text>
-          <text x="8" y="28" font-size="8.5" fill="#64748b">直达网卡驱动</text>
-        </g>
-      </g>
-
-      <!-- Stage 4: TX Ring Buffer DMA -->
-      <g transform="translate(640, 0)">
-        <rect width="220" height="235" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
-        <rect width="220" height="32" rx="6" fill="#dcfce7"/>
-        <text x="110" y="21" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="#166534" text-anchor="middle">4. TX Ring Buffer 与 DMA</text>
-
-        <g transform="translate(10, 44)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5">
-          <rect width="200" height="42" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#14532d" font-weight="700">写入 TX 描述符环形队列</text>
-          <text x="8" y="28" font-size="9" fill="#15803d">驱动向 tx_ring 提交物理地址</text>
-
-          <rect y="48" width="200" height="52" rx="3" fill="#ffffff" stroke="#a7f3d0"/>
-          <text x="8" y="16" fill="#166534" font-weight="700">网卡 DMA 读取并发送</text>
-          <text x="8" y="30" font-size="9" fill="#15803d">• DMA 控制器直接从主存读包</text>
-          <text x="8" y="42" font-size="9" fill="#15803d">• 经 PHY 芯片打入物理光纤</text>
-
-          <rect y="106" width="200" height="40" rx="3" fill="#d1fae5" stroke="#10b981"/>
-          <text x="8" y="16" fill="#065f46" font-weight="700">✓ 发送完成中断触发：</text>
-          <text x="8" y="28" font-size="9" font-weight="700" fill="#047857">驱动释放 SKB 内存与描述符</text>
-        </g>
-      </g>
-    </g>
-
-    <!-- Bottom Insight Bar -->
-    <g transform="translate(20, 265)">
-      <rect width="860" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
-      <text x="430" y="22" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">
-        💡 <tspan font-weight="700" fill="#0f172a">发包架构全景闭环：</tspan> Linux 发包链路通过 <tspan font-weight="700" fill="#2563eb">“TCP Pacing 匀速控流 + TSO 硬件分段卸载”</tspan>，
-      </text>
-      <text x="430" y="38" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#64748b" text-anchor="middle">
-        在最大化网卡万兆/十万兆线速吞吐的同时，彻底消除了操作系统 CPU 的无谓分片开销。
-      </text>
-    </g>
+    <!-- IP Layer -->
+    <rect x="14" y="202" width="192" height="158" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="224" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">IP 层与 Netfilter 出向</text>
+    <text x="24" y="244" fill="#6b6a64" font-size="8.5" font-family="'Geist Mono', monospace">ip_queue_xmit()</text>
+    <text x="24" y="262" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">查找路由表 (FIB Lookup)</text>
+    <text x="24" y="280" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">NF_INET_POST_ROUTING</text>
+    <line x1="24" y1="292" x2="196" y2="292" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="312" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">iptables SNAT 地址转换</text>
+    <text x="24" y="330" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">dev_queue_xmit(skb)</text>
+    <text x="24" y="348" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Ready for Traffic Control</text>
   </g>
+
+  <!-- Arrow 2 (x=470..500) -->
+  <text x="485" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">qdisc</text>
+  <line x1="470" y1="230" x2="500" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#eg-arr-accent)"/>
+
+  <!-- Col 3: TC & GSO (x=500..710, w=210) - Focal -->
+  <g transform="translate(500, 136)">
+    <rect width="210" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#e85d3f" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 3</text>
+    <text x="100" y="26" fill="#141413" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">TC 排队与 GSO</text>
+
+    <!-- TC qdisc -->
+    <rect x="14" y="42" width="182" height="142" rx="4" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
+    <text x="24" y="64" fill="#e85d3f" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">TC qdisc 排队整形</text>
+    <text x="24" y="84" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">qdisc->enqueue(skb)</text>
+    <text x="24" y="100" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• HTB 多租户带宽借调</text>
+    <text x="24" y="116" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• fq 纳秒级 EDT 匀速起搏</text>
+    <text x="24" y="132" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• eBPF TC 字节码过滤注入</text>
+    <line x1="24" y1="144" x2="186" y2="144" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="162" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">qdisc_run() 触发批量出队</text>
+    <text x="24" y="176" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Smooth Packet Stream</text>
+
+    <!-- GSO Engine -->
+    <rect x="14" y="196" width="182" height="164" rx="4" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
+    <text x="24" y="218" fill="#141413" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">GSO 硬件大包分段</text>
+    <text x="24" y="238" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">在协议栈内保持 64KB 超大包</text>
+    <text x="24" y="256" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">即将打入网卡前：</text>
+    <text x="24" y="274" fill="#141413" font-size="8" font-family="'Geist Mono', monospace">validate_xmit_skb()</text>
+    <line x1="24" y1="286" x2="186" y2="286" stroke="rgba(20,20,19,0.16)" stroke-width="0.6"/>
+    <text x="24" y="306" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">分切为 MTU (1500B) 物理包</text>
+    <text x="24" y="324" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">节省 90% 协议栈遍历开销！</text>
+    <text x="24" y="342" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">TSO Hardware Offload</text>
+  </g>
+
+  <!-- Arrow 3 (x=710..740) -->
+  <text x="725" y="222" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DMA</text>
+  <line x1="710" y1="230" x2="740" y2="230" stroke="#e85d3f" stroke-width="1.2" marker-end="url(#eg-arr-accent)"/>
+
+  <!-- Col 4: Hardware TX DMA (x=740..920, w=180) -->
+  <g transform="translate(740, 136)">
+    <rect width="180" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#141413" stroke-width="0.8"/>
+    <text x="52" y="25" fill="#141413" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 4</text>
+    <text x="100" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡 TX DMA</text>
+
+    <!-- Driver Hook -->
+    <rect x="14" y="42" width="152" height="142" rx="4" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
+    <text x="22" y="64" fill="#141413" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">驱动 ndo_start_xmit</text>
+    <text x="22" y="84" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">ixgbe_xmit_frame()</text>
+    <text x="22" y="102" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">写 TX Ring 描述符</text>
+    <text x="22" y="120" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">绑定物理内存页地址</text>
+    <text x="22" y="138" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">writel(doorbell)</text>
+    <text x="22" y="156" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">敲响网卡硬件门铃</text>
+
+    <!-- PHY Transmission -->
+    <rect x="14" y="196" width="152" height="164" rx="4" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+    <text x="22" y="218" fill="#e85d3f" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">PCIe DMA 与发射</text>
+    <text x="22" y="238" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">网卡 DMA 主动拉取：</text>
+    <text x="22" y="256" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• 直读主机 RAM 数据</text>
+    <text x="22" y="272" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace">• 硬件填充 FCS 校验和</text>
+    <text x="22" y="288" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">• PHY 转化为光电信号</text>
+    <line x1="22" y1="300" x2="156" y2="300" stroke="#e85d3f" stroke-width="0.6"/>
+    <text x="22" y="320" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">发射出物理光纤光口</text>
+    <text x="22" y="338" fill="#e85d3f" font-size="8" font-family="'Geist Mono', monospace">10GbE / 100GbE Line Out</text>
+  </g>
+
+  <!-- Legend Strip -->
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
+  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">用户态与硬件发送阶段</text>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
+  <text x="310" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">TCP Pacing 打标与 TC 整形核心</text>
 </svg>

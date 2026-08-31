@@ -83,10 +83,6 @@ zod : [{"path":"id","msg":"Invalid input: expected string, received number"}]
 
 对人来说，两种错误都能开始排查；对 Agent 来说，`path`、期望类型和实际类型可以直接进入下一轮修正。这个收益成立的前提是错误对象仍被当作不可信输入处理，不能把库内部 message 当成跨版本稳定 API。服务对外应继续包一层自己的 `error.code`。
 
-
-
-![JSON Schema 验证引擎横评：Zod 解释执行 vs Ajv 预编译代码生成 (Codegen)](../../../public/images/ajv-json-schema-validator-codegen-ast.svg)
-
 ## 四、取舍：schema 的成本要和信任边界对齐
 
 | 场景 | 选择 | 原因 |

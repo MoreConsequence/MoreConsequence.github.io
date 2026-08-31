@@ -173,10 +173,6 @@ func (r *SecretRedactor) Redact(input []byte) []byte {
 
 ---
 
-
-
-![Oract 零环境权威 (Zero Ambient Authority) 安全边界拓扑](../../../public/images/oract-zero-ambient-authority-security-boundary.svg)
-
 ## 四、防线三：Linux Bubblewrap 原生沙箱隔离
 
 对于任意代码和命令执行，ORACT 在 Linux 环境下原生集成了 **Bubblewrap (`bwrap`)**，通过内核级 Namespaces 与 cgroups 进行物理隔离。

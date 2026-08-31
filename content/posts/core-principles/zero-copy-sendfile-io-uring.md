@@ -52,10 +52,6 @@ sequenceDiagram
 
 账单结论：**该路径在“大文件、高带宽”场景下可能把 CPU copy 变成瓶颈**。nginx 从早期版本就提供 `sendfile` 指令；静态文件是否受益，要结合文件是否命中页缓存、TLS 是否在用户态终止、网卡能力和真实 profile 验证，不能从指令名推出固定收益。
 
-
-
-![Linux splice() 管道页表重映射：pipe_buffer 与零拷贝数据流转](../../../public/images/zero-copy-splice-pipe-buffer-scatter.svg)
-
 ## 二、sendfile：一次 syscall，CPU 拷贝归零
 
 在 Linux 支持的文件到 socket 路径上，`sendfile` 允许内核直接在页缓存与 socket 发送路径之间传递数据，应用不需要把文件内容搬进用户态；但这不是“所有文件系统/设备都零 copy”的保证：不支持的端点、TLS、额外数据变换或内核 fallback 都可能重新产生 copy。
