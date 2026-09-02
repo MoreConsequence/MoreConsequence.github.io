@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>四类危险默认值</title>
+<style>
+  body { margin: 0; background: #f5f5f5; }
+  svg { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 960 480" width="960" height="480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hdrqTitle hdrqDesc">
+<title id="hdrqTitle">四类危险默认值：按失效触发条件与可发现性划分</title>
+<desc id="hdrqDesc">四张卡片对比放大类、阈值类、继承类和静默类默认值各自的触发条件、失效表现与典型例子。静默类因为从出错到被发现的时间最长，审计优先级最高。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="40" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">四类危险默认值</text>
+<text x="48" y="62" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">排序轴是从出错到被发现的时间，不是这个参数有多重要</text>
+
+<!-- Card 1: 放大类 -->
+<rect x="48" y="88" width="416" height="152" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="68" y="120" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">放大类</text>
+<text x="444" y="120" fill="#7a8399" font-size="10" text-anchor="end" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">优先级 4</text>
+<line x1="68" y1="134" x2="444" y2="134" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="68" y="156" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">触发</text>
+<text x="112" y="156" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">随并发或重试次数放大</text>
+<text x="68" y="180" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">表现</text>
+<text x="112" y="180" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">雪崩与级联超时，分钟级报警</text>
+<text x="68" y="204" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">例子</text>
+<text x="112" y="204" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">重试次数、连接池上限、并发信号量</text>
+<text x="68" y="226" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">几乎不需提前审计：错了立刻报警，延迟归因可直接命中</text>
+
+<!-- Card 2: 阈值类 -->
+<rect x="496" y="88" width="416" height="152" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="516" y="120" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">阈值类</text>
+<text x="892" y="120" fill="#7a8399" font-size="10" text-anchor="end" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">优先级 3</text>
+<line x1="516" y1="134" x2="892" y2="134" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="516" y="156" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">触发</text>
+<text x="560" y="156" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">到某个规模或运行时长才被穿过</text>
+<text x="516" y="180" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">表现</text>
+<text x="560" y="180" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">缓慢劣化，症状是「以前还好好的」</text>
+<text x="516" y="204" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">例子</text>
+<text x="560" y="204" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">fd 上限、somaxconn、日志滚动策略</text>
+<text x="516" y="226" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">审计时机跟着容量规划走，不跟着发布走</text>
+
+<!-- Card 3: 继承类 -->
+<rect x="48" y="264" width="416" height="152" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="68" y="296" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">继承类</text>
+<text x="444" y="296" fill="#7a8399" font-size="10" text-anchor="end" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">优先级 2</text>
+<line x1="68" y1="310" x2="444" y2="310" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="68" y="332" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">触发</text>
+<text x="112" y="332" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">上游版本或基线镜像发生变更</text>
+<text x="68" y="356" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">表现</text>
+<text x="112" y="356" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">症状立刻可见，但责任不在你的配置里</text>
+<text x="68" y="380" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">例子</text>
+<text x="112" y="380" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">K8s QoS 默认、云 LB 空闲超时、托管参数组</text>
+<text x="68" y="402" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">「我们什么都没改」这句话本身就是线索</text>
+
+<!-- Card 4: 静默类 (accent) -->
+<rect x="496" y="264" width="416" height="152" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="516" y="296" fill="#eb6c36" font-size="14" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">静默类</text>
+<text x="892" y="296" fill="#eb6c36" font-size="10" text-anchor="end" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">优先级 1</text>
+<line x1="516" y1="310" x2="892" y2="310" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="516" y="332" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">触发</text>
+<text x="560" y="332" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">恒定存在，从不主动报错</text>
+<text x="516" y="356" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">表现</text>
+<text x="560" y="356" fill="#2d3142" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">数天至数月后表现为数据或空间问题</text>
+<text x="516" y="380" fill="#7a8399" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">例子</text>
+<text x="560" y="380" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">持久化默认值、autovacuum 阈值、备份保留</text>
+<text x="516" y="402" fill="#eb6c36" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">危险不在错得最厉害，在出错与发现之间隔了几个月</text>
+
+<!-- footer -->
+<line x1="48" y1="440" x2="912" y2="440" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="48" y="462" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">判据：已被监控覆盖的行为即使错了也不需提前管理；没有被任何指标覆盖的行为，即使看起来不重要也必须显式化。</text>
+</svg>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 500" width="960" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="oehzTitle oehzDesc">
+<title id="oehzTitle">P99 上的 Heisenberg 偏移</title>
+<desc id="oehzDesc">同一份服务在两种状态下的延迟分布：左边是真实分布，P99 大约 80ms；右边是被观测污染后的分布，主体未变但尾被拉长，P99 翻倍到 180ms。每次观测开销再小，乘以 QPS 和并发核数，乘以缓存污染，乘以自反应决策，最终堆到 P99 那里就会从不可见变成显著。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-ink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2d3142"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">观测前 vs 观测后：同一份服务的 P99</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">主体几乎不动，但尾被污染拉长。P99 翻倍不是"每次纳秒级开销"能解释的——是开销 × QPS × 核数 × cache × 自反应的累积</text>
+
+<!-- left: real distribution -->
+<text x="48" y="100" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">真实分布</text>
+
+<!-- baseline (ink, 1) -->
+<line x1="48" y1="380" x2="448" y2="380" stroke="#2d3142" stroke-width="1" marker-end="url(#arrow-ink)"/>
+<line x1="48" y1="120" x2="48" y2="380" stroke="#2d3142" stroke-width="1" marker-end="url(#arrow-ink)"/>
+
+<!-- axis labels -->
+<text x="48" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">0</text>
+<text x="148" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">50ms</text>
+<text x="248" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">100ms</text>
+<text x="348" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">150ms</text>
+<text x="448" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="end">200ms+</text>
+
+<text x="40" y="124" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="end" dominant-baseline="middle">密度</text>
+
+<!-- distribution: bell curve approximated with line segments (default 1) -->
+<path d="M 48 376 L 80 360 L 110 320 L 140 260 L 170 200 L 200 160 L 230 140 L 260 160 L 290 200 L 320 260 L 360 320 L 400 360 L 448 376" fill="none" stroke="#4f5d75" stroke-width="1"/>
+
+<!-- P99 marker (accent 1.2) -->
+<line x1="232" y1="120" x2="232" y2="376" stroke="#eb6c36" stroke-width="1.2" stroke-dasharray="3,3"/>
+<rect x="172" y="128" width="120" height="32" rx="2" fill="#ffffff"/>
+<text x="232" y="144" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">P99 ≈ 80ms</text>
+<text x="232" y="158" fill="#7a8399" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">真实尾</text>
+
+<!-- right: polluted distribution -->
+<text x="512" y="100" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">被观测污染后</text>
+
+<!-- baseline -->
+<line x1="512" y1="380" x2="912" y2="380" stroke="#2d3142" stroke-width="1" marker-end="url(#arrow-ink)"/>
+<line x1="512" y1="120" x2="512" y2="380" stroke="#2d3142" stroke-width="1" marker-end="url(#arrow-ink)"/>
+
+<text x="512" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">0</text>
+<text x="612" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">50ms</text>
+<text x="712" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">100ms</text>
+<text x="812" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">150ms</text>
+<text x="912" y="400" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="end">200ms+</text>
+
+<text x="504" y="124" fill="#2d3142" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="end" dominant-baseline="middle">密度</text>
+
+<!-- distribution: same body, much fatter tail (accent 1.2) -->
+<path d="M 512 376 L 544 360 L 574 320 L 604 260 L 634 200 L 664 160 L 694 140 L 724 156 L 754 196 L 784 240 L 814 296 L 844 332 L 874 356 L 912 372" fill="none" stroke="#eb6c36" stroke-width="1.2"/>
+
+<!-- P99 marker (new) -->
+<line x1="824" y1="120" x2="824" y2="376" stroke="#eb6c36" stroke-width="1.2" stroke-dasharray="3,3"/>
+<rect x="764" y="128" width="120" height="32" rx="2" fill="#ffffff"/>
+<text x="824" y="144" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">P99 ≈ 180ms</text>
+<text x="824" y="158" fill="#7a8399" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">被污染尾</text>
+
+<!-- arrow from P99 of left to P99 of right (ink dashed) -->
+<path d="M 240 144 L 764 144" fill="none" stroke="#2d3142" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow-ink)"/>
+
+<!-- footer -->
+<line x1="48" y1="436" x2="912" y2="436" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="458" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">示意图（基于 8 万 QPS、Prometheus counter + 新增 metric 的真实案例，非通用数据）</text>
+<text x="48" y="476" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">左图 / 右图同分布；只有尾部被污染</text>
+</svg>

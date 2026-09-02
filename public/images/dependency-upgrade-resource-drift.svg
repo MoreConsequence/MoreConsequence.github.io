@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 570" width="960" height="570" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="durdTitle durdDesc">
+<title id="durdTitle">四类资源特征漂移及各自唯一能抓住它的指标</title>
+<desc id="durdDesc">资源特征漂移分四类，每一类对应一个不同的指标，用错指标就会漏报。分配型改变单次调用的堆分配量与峰值存活内存，通过垃圾回收耦合到进程内所有请求，唯一能抓住它的是堆占用的 p99 与最大值。占有时长型改变连接、锁与 goroutine 的持有时间，等价于并发上升，唯一能抓住它的是 in-use 数量的分布尾部。扇出放大型改变一次业务调用触发的下游调用次数，被下游容量乘一遍，唯一能抓住它的是每个入站请求对应的出站请求数。唤醒节拍型改变定时器、心跳与轮询的频率，只在空闲时段显形，唯一能抓住它的是零业务负载时的基线 CPU 与系统调用率。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">四类漂移互不替代，每一类只有一个指标能抓住它</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">只盯延迟，等于放弃了分配型与占有时长型的早期预警</text>
+
+<!-- card 1 -->
+<rect x="48" y="100" width="400" height="188" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="68" y="126" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">类型一 · ALLOCATION</text>
+<text x="68" y="152" fill="#2d3142" font-size="13.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">分配型</text>
+<text x="68" y="178" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">单次调用的堆分配次数与峰值存活内存</text>
+<text x="68" y="204" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">通过 GC 耦合到进程内所有请求</text>
+<text x="68" y="220" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">抬头的是所有接口的尾延迟，不只是这个库</text>
+<rect x="68" y="232" width="360" height="40" rx="4" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="84" y="248" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.1em">唯一能抓住它的指标</text>
+<text x="84" y="266" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">堆占用的 p99 与最大值，不看均值</text>
+
+<!-- card 2 -->
+<rect x="512" y="100" width="400" height="188" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="532" y="126" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">类型二 · HOLD DURATION</text>
+<text x="532" y="152" fill="#2d3142" font-size="13.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">占有时长型</text>
+<text x="532" y="178" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">连接、锁、goroutine 的持有时间</text>
+<text x="532" y="204" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">数量没变只是每次久一点，等于并发上升</text>
+<text x="532" y="220" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">在资源被抢光之前完全不可见</text>
+<rect x="532" y="232" width="360" height="40" rx="4" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="548" y="248" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.1em">唯一能抓住它的指标</text>
+<text x="548" y="266" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">in-use 数量的分布尾部，不看均值</text>
+
+<!-- card 3 -->
+<rect x="48" y="304" width="400" height="188" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="68" y="330" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">类型三 · AMPLIFICATION</text>
+<text x="68" y="356" fill="#2d3142" font-size="13.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">扇出放大型</text>
+<text x="68" y="382" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">一次业务调用背后触发的下游调用次数</text>
+<text x="68" y="408" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">你的 QPS 没变，下游 QPS 翻倍</text>
+<text x="68" y="424" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">而下游的容量是按你的旧扇出规划的</text>
+<rect x="68" y="436" width="360" height="40" rx="4" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="84" y="452" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.1em">唯一能抓住它的指标</text>
+<text x="84" y="470" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每入站请求对应的出站请求数（扇出比）</text>
+
+<!-- card 4 -->
+<rect x="512" y="304" width="400" height="188" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="532" y="330" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">类型四 · WAKE-UP CADENCE</text>
+<text x="532" y="356" fill="#2d3142" font-size="13.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">唤醒节拍型</text>
+<text x="532" y="382" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">定时器、心跳、轮询、keepalive 的频率</text>
+<text x="532" y="408" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">只在空闲时段显形：低峰期 CPU 不降</text>
+<text x="532" y="424" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">余量在最需要它的那个时刻已被吃掉</text>
+<rect x="532" y="436" width="360" height="40" rx="4" fill="rgba(235,108,54,0.04)" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="548" y="452" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.1em">唯一能抓住它的指标</text>
+<text x="548" y="470" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">零业务负载时的基线 CPU 与系统调用率</text>
+
+<!-- footer -->
+<line x1="48" y1="520" x2="912" y2="520" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="540" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">扇出比与空闲基线 CPU 这两项不会出现在任何默认监控里，必须显式埋点——这正是「升级前也看了监控、还是漏了」的原因。</text>
+<text x="48" y="556" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">四类各准备一个指标，缺一个就等于放弃一类的早期预警</text>
+
+</svg>

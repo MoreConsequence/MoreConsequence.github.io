@@ -1,20 +1,18 @@
 # 《LibreSpeed Go 源码行纪》系列路线图
 
-以 `librespeed/speedtest-go`（commit 59cff12，2026-08-17，全量 21 个 .go 文件、2,371 行）为标本，
-逐层读穿一个"能跑的生产级测速服务"。与《你的带宽是怎么被算出来的》互为理论与实现两半。
+以 `librespeed/speedtest-go`（commit 59cff12，2026-08-17，全量 21 个 `.go` 文件、2,371 行）为标本，
+沿一条请求到结果的因果链，读懂一个可运行的自托管测速服务。与《你的带宽是怎么被算出来的》互为理论与实现两半。
 
 ## 篇目与状态
 
 | # | slug | 核心问题 | 状态 |
 | --- | --- | --- | --- |
-| 01 | librespeed-go-01-overview | 27 行 main.go 怎么长成一个完整服务：全景地图 + 本机运行取证 | ✅ 已发布 |
-| 02 | librespeed-go-02-endpoints | 下行/上行/延迟三端点的服务端真相（garbage/empty/ckSize 钳制） | ✅ 已发布 |
-| 03 | librespeed-go-03-client-ip | 五级代理头链、私网分类的位运算、ipinfo+MaxMind 双源回退 | ✅ 已发布 |
-| 04 | librespeed-go-04-contract | 客户端↔服务端交互合同全图：test_order 状态机/grace time/time_auto/抖动加权/计量权不对称 | ✅ 已发布 |
-| 05 | librespeed-go-05-interface | 接口规格书：12 条路由的方法/参数/响应/错误码 + 完整会话 curl 序列 | ✅ 已发布 |
-| 06 | librespeed-go-06-lifecycle | 原理压轴:一次测速的完整一生——每一步算术的手算走查 | ✅ 已发布 |
-| 07 | librespeed-go-07-telemetry | ULID、RedactIP 脱敏正则、ID 混淆 salt 文件、7 后端工厂与 WAL | ✅ 已发布（含混淆+脱敏实测） |
-| 08 | librespeed-go-08-config-deploy | viper 死键化石、TLS/HTTP2 矩阵、systemd activation、proxy protocol | ✅ 已发布，系列完 |
+| 01 | librespeed-go-01-overview | 从 main.go 到 garbage/empty/getIP：服务骨架与三个测量端点 | ✅ 已合并重写 |
+| 02 | librespeed-go-03-client-ip | 从请求来源到结果记录：身份、隐私、ID 与存储 | ✅ 已合并重写 |
+| 03 | librespeed-go-04-contract | 一次测速如何完成：Worker 合同、阶段、计量点与算法 | ✅ 已合并重写 |
+| 04 | librespeed-go-05-interface | 从 URL 到监听入口：接口兼容、管理面、配置与部署边界 | ✅ 已合并重写 |
+
+原 02、06、07、08 的内容已经分别并入以上四篇，旧文章源和无引用配图已删除。
 
 ## 取证基线
 
@@ -24,6 +22,6 @@
 
 ## 规则
 
-1. 每篇引用的行号必须在写作当日对当前 commit 复核一次；
-2. 涉及行为断言（字节数、状态码、分类文案）必须有 evidence_run.log 对应条目；
-3. 与 PHP 版行为的兼容点必须注明"兼容口径"，不当作 Go 版独立设计。
+1. 文章中的行为断言（字节数、状态码、分类文案）必须能回到当前源码或 `evidence_run.log`；
+2. 与 PHP 版行为的兼容点注明“兼容口径”，不当作 Go 版独立设计；
+3. 不把 Darwin/arm64 loopback 结果写成公网、Linux 或生产证明。

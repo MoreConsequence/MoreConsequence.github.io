@@ -14,12 +14,13 @@
 
 | 图 | 读者应该读出什么 |
 | --- | --- |
+| `speedtest-whitepaper-idc-path` | IDC 是承载与互联环境，测速节点是应用端点；上下行经过接入网、ISP/IXP/骨干和 IDC 出口 |
 | `speedtest-whitepaper-measurement-model` | 上下行的计量点不同，结果受路径最短板约束 |
 | `speedtest-whitepaper-bdp-window` | BDP 解释单流等待与多流的真实作用，不能把并发写成凭空增带宽 |
 | `speedtest-whitepaper-backpressure` | 慢消费如何从 Recv-Q 传导到 TCP window=0，`io.Copy(Discard)`解决的是接收路径 |
 | `speedtest-whitepaper-time-sampling` | 时钟语义、grace 窗口、200ms 更新和统计量是不同决策 |
 | `speedtest-whitepaper-librespeed-map` | 浏览器 Worker、HTTP Handler、结果处理和数据库的真实职责边界 |
-| `speedtest-whitepaper-worker-sequence` | `speedtest-go@59cff12` 的默认 `IP_D_U` 协议和可选 P 阶段 |
+| `speedtest-whitepaper-worker-sequence` | `speedtest-go@59cff12` 的 Main thread 控制轮询、默认 `IP_D_U` 协议和可选 P 阶段；请求/返回 y 分别对齐激活条上下边界 |
 | `speedtest-whitepaper-evidence-boundary` | 源码事实、本机观察和生产证明不能互相替代 |
 
 ## 有意删除

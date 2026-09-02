@@ -1,110 +1,118 @@
 ---
-title: "五级代理头、CGNAT 位运算与双源回退：getIP 的身份与距离工程"
-description: "源码行纪第三篇：LibreSpeed Go 如何从请求里还原真实客户端 IP（CF-Connecting-IPv6 → Client-IP → X-Real-IP → XFF 首地址 → RemoteAddr），如何用一条位运算识别 ULA IPv6，以及 ipinfo.io 与 MaxMind 离线库的双源回退和 haversine 距离的取整合同。"
+title: "从请求来源到结果记录：LibreSpeed Go 的身份、隐私与存储"
+description: "把 getIP 的候选地址链、特殊地址短路、GeoIP 回退，以及遥测脱敏、ULID 混淆和 DataAccess 存储边界放进一条数据路径。"
 publishedAt: "2026-08-26"
-tags: ["Go", "网络", "源码阅读", "GeoIP"]
+updatedAt: "2026-08-31"
+tags: ["Go", "网络", "源码阅读", "隐私", "存储"]
 draft: false
 featured: false
 series: "LibreSpeed Go 源码行纪"
 ---
 
-**TL;DR：** 测速服务的 `/getIP` 端点要回答三个问题：你是谁（IP）、你在哪个网（ISP）、你离服务器多远（距离）。LibreSpeed Go 的实现（`web/getip_util.go` + `web/helpers.go`）给出了三个值得抄的工程答案：还原客户端 IP 用**五级优先链**且每一级都做合法性校验；判断私网/特殊地址用一张覆盖 localhost/私网/link-local/CGNAT/ULA 的分类表，其中 ULA 判定是一条位运算 `ip[0]&0xFE == 0xFC`；ISP 归属走 **ipinfo.io 在线 API 优先、MaxMind 离线 mmdb 兜底**的双源回退，距离计算用 haversine 并把"四舍五入到十位"写成了与 PHP 版 `round($d,-1)` 逐位一致的合同。
+**TL;DR：** `/getIP` 解决的是“如何展示这次请求来自哪里”，不是“如何信任这个请求”。LibreSpeed Go 先按固定顺序读取五个候选来源并逐个校验，再把特殊地址直接分类；只有需要且能够解释时，才走 ipinfo.io 与本地 mmdb 的 GeoIP 路径。测速结果进入 `Record` 后还要经过“是否收集、是否脱敏、如何编号、写入哪个后端”四个边界。代理头、XOR 混淆和本机取证都不能被扩大解释成安全认证或生产隐私保证。
 
+## 一、先把“来源”与“信任”分开
 
----
+`getClientIP` 的工作是从 HTTP 请求中找出一个可继续处理的候选值。它按源码顺序尝试：
+
+```text
+CF-Connecting-IPv6
+  → Client-IP
+  → X-Real-IP
+  → X-Forwarded-For 的第一段
+  → RemoteAddr
+```
 
 ![LibreSpeed Go /getIP 请求处理：客户端候选 IP、特殊地址短路与 ISP 查询回退](../../../public/images/librespeed-go-client-ip-proxy-cgnat-lookup.svg)
 
+每一级都会去空白、按需要截取 XFF 第一段，再用 `net.ParseIP` 检查格式；CF 这一项还要求结果确实是 IPv6。失败意味着继续降级，不会因为一个坏头让整个请求失败。IPv4-mapped IPv6 还会统一成点分形式，避免同一来源在后续分类中出现两种表示。
 
+这条链的顺序是兼容合同，不是安全等级。客户端可以伪造这些请求头，因此它适合生成结果页上的说明，不适合决定“这个用户能不能访问管理接口”。真正的访问控制必须依赖受保护的认证信息，而不是 `getClientIP` 的返回值。
 
-![getClientIP 五级候选读取顺序：代理头逐级校验，RemoteAddr 最后兜底](../../../public/images/client-ip-five-level-proxy-chain.svg)
+## 二、特殊地址先分类，公网地址才考虑外呼
 
-## 一、你是谁：五级代理头链
+拿到候选 IP 后，`classifyPrivateIP` 先处理不适合查询公网归属的地址：
 
-反代与 CDN 普遍存在的今天，`r.RemoteAddr` 经常只是最后一跳代理的地址。`getClientIP`（`getip_util.go:44-72`）按固定优先级逐级尝试：
-
-```text
-1. CF-Connecting-IPv6   （Cloudflare 注入，必须是合法 IPv6）
-2. Client-IP
-3. X-Real-IP
-4. X-Forwarded-For      （取逗号分隔链的第一段）
-5. RemoteAddr           （兜底）
-```
-
-两个设计细节比顺序本身更重要：
-
-**第一，每一级候选都要过校验函数** `normalizeCandidateIP`：去空白、XFF 取首段、`net.ParseIP` 验证；对 CF 头还额外要求"必须真的是 IPv6"（`To16() != nil && To4() == nil`）。校验失败不是报错而是**降级到下一级**——伪造或格式错误的头部不会毒化结果。同时所有返回值统一 `TrimPrefix("::ffff:")`，把 IPv4-mapped IPv6 归一成点分 IPv4，避免同一个客户端在分类逻辑里被当成两种形态。
-
-**第二，注释明确写着"mirroring the PHP getIP_util.php behavior"**。这条优先级链不是 Go 版的发明，而是 PHP 版多年沉淀的行为合同。它也直接告诉你这套链的安全边界：这些头全部可以被客户端伪造，所以它只适合"提升展示友好度"，绝不能当访问控制依据（08 篇安全话题会回到这一点）。
-
-
-
-![classifyPrivateIP 的特殊地址匹配顺序：localhost、link-local、私网、ULA 与 CGNAT](../../../public/images/special-ip-subnet-classification-matrix.svg)
-
-## 二、它在哪个网：一张特殊地址分类表
-
-拿到 IP 后先过 `classifyPrivateIP`（`getip_util.go:77-103`）：命中特殊地址就不再查询 ISP，直接返回人类可读描述。本机回环实测：
-
-```json
-{"processedString":"127.0.0.1 - localhost IPv4 access","rawIspInfo":{...}}
-```
-
-分类表覆盖六类，每类都有存在理由：
-
-| 分类 | 匹配 | 为什么单独列出 |
+| 分类 | 例子 | 处理 |
 | --- | --- | --- |
-| localhost IPv6 / IPv4 | `::1`、`127.*` | 自托管时最常见的访问来源 |
-| link-local | `fe80:` 前缀、`169.254.*` | DHCP 失败/直连线场景 |
-| 私有 IPv4 | `10.*`、`172.16-31.*`、`192.168.*` | 家用/办公内网 |
-| ULA IPv6 | fc00::/7 | IPv6 的"私有地址"等价物 |
-| CGNAT | `100.64.0.0 – 100.127.x.x` | 运营商级 NAT，移动网络用户的海量来源 |
+| localhost | `::1`、`127.*` | 返回本地访问描述 |
+| link-local | `fe80:*`、`169.254.*` | 直接分类 |
+| 私有 IPv4 | `10.*`、`172.16–31.*`、`192.168.*` | 返回内网描述 |
+| ULA IPv6 | `fc00::/7` | 位运算分类 |
+| CGNAT | `100.64.0.0/10` | 返回运营商 NAT 描述 |
 
-两处实现技巧值得展开。**ULA 判定没有用正则**，而是一条位运算：
+ULA 的判断可以直接写成：
 
 ```go
-// fc00::/7 means the first 7 bits are 1111110
 return ip[0]&0xFE == 0xFC
 ```
 
-fc00::/7 的意思是前 7 位为 `1111110`——把首字节与 `0xFE`（保留最高 7 位）比较是否等于 `0xFC`，一行就覆盖 fc00 到 fdff 的整个区间，比任何前缀枚举都便宜且不会写错边界。**CGNAT 判定则用正则** `^100\.([6-9][0-9]|1[0-2][0-7])\.`：第二段只在 64–127 之间命中，精确圈出 RFC 6598 分配的 100.64.0.0/10。两种手法混用的标准是清晰的——能用位运算表达的语义就用位运算，需要跨字节段匹配的才上正则。
+它检查 IPv6 首字节的前 7 位，不需要枚举 `fc00` 到 `fdff` 的前缀。CGNAT 则是跨多个十进制段的范围匹配，代码使用正则表达式。两者共同的设计点不是“哪种写法更高级”，而是先把地址语义确定下来，再决定是否调用外部服务。
 
-这个分类表的实际价值：自托管测速点的访问日志里大量来自内网与 CGNAT，把它们显式标注出来，既避免拿内网 IP 去查 GeoAPI 的无意义外呼，也让用户看到"你正在内网测速，结果不代表公网带宽"。
+公网地址且请求带 `isp=true` 时，代码才进入 GeoIP 路径：在线 ipinfo.io 优先，结果为空或失败时尝试本地 `.mmdb`，最后至少保留裸 IP。离线库要兼容 ipinfo 和 MaxMind 两套字段形态，否则“有 fallback”可能只是配置上存在、数据上不可用。
 
-## 三、你的 ISP 与距离：在线优先、离线兜底、距离有取整合同
+![classifyPrivateIP 的特殊地址匹配顺序：localhost、link-local、私网、ULA 与 CGNAT](../../../public/images/special-ip-subnet-classification-matrix.svg)
 
-ISP 信息查询实现了三级瀑布（`helpers.go:270-289`）：
+距离使用 haversine 计算；公里等单位还要经过既有的取整和文案规则，以保持与 PHP 前端的显示兼容。当前 dated evidence 主要覆盖 loopback 特殊地址，不能把一次本机回环结果当成公网 GeoIP 成功率。
+
+## 三、遥测先过数据开关，再进入存储
+
+`POST /results/telemetry` 不是把表单直接塞进数据库。`Record` 的有效路径可以压缩成：
 
 ```text
-getISPInfoByPriority:
-  ① ipinfo.io 在线 API（可配 token）
-  ② 结果为空 → MaxMind/ipinfo 离线 .mmdb 库
-  ③ 仍为空 → 只显示裸 IP
+database_type == "none"  → 直接返回 Telemetry is disabled
+                         ↓
+提取请求元数据和表单字段
+                         ↓
+redact_ip_addresses?     → 替换 IP / hostname
+                         ↓
+生成 ULID
+                         ↓
+database.DB.Insert
 ```
 
-离线库部分（`getGeoIPData`）兼容了**两种数据库字段方言**：ipinfo 官方 mmdb 的 `as_name`/`country_name`，以及标准 MaxMind GeoIP2 的 `autonomous_system.organization` / `country.names.en`——查一次库、两套 schema 都能读，这是"离线回退"能真正落地的前提（只支持一种格式的 fallback 在现实数据面前经常等于没有）。mmdb reader 用惰性单例打开（`geoIPOpened` 标志 + 首用时 Open），避免启动时的硬依赖。
+![遥测从 Worker 上报、ULID 混淆到 ResolveID 读回结果的完整路径](../../../public/images/librespeed-go-telemetry-ulid-obfuscation.svg)
 
-距离计算的输入是 ipinfo 返回的 `loc` 字段（"纬度,经度"字符串），算法是 haversine 球面距离，但真正有意思的是**输出层的取整合同**：
+`redact_ip_addresses=true` 时，源码会处理请求地址以及 `ispinfo`、`log` 中的 IPv4、IPv6 和 hostname。hostname 替换要保持 JSON 片段形状，例如使用 `"hostname":"REDACTED"`，而不是把值随意删掉导致后续解析失败。脱敏是入库前的处理，不等于上游代理、应用日志或外部 GeoIP 服务已经全部匿名化。
+
+## 四、ID 需要可查找，但不是安全令牌
+
+结果 ID 的第一层是 ULID：时间戳加熵，使记录能够按时间排序。开启 ID 混淆后，代码用持久化 salt 对 ULID 的前 4 个字节做 XOR，再以 base64url 返回；读取时 `ResolveID` 可以还原它。
+
+```text
+obfuscated = ULID[0:4] XOR salt[0:4] + ULID[4:16]
+```
+
+这个设计解决的是“不要让人顺手枚举结果 ID”，不是密码学保密。源码注释明确写着 `NOT cryptographically secure`，所以不能把混淆后的 ID 当 bearer token 或授权证明。
+
+存储端只暴露实际需要的三个操作：
 
 ```go
-// roundToNearest10 rounds a float64 to the nearest 10,
-// matching PHP round($d, -1)
-func roundToNearest10(val float64) float64 {
-	return float64(int64(val/10+0.5)) * 10
+type DataAccess interface {
+	Insert(*schema.TelemetryData) error
+	FetchByUUID(string) (*schema.TelemetryData, error)
+	FetchLast100() ([]schema.TelemetryData, error)
 }
 ```
 
-公里数四舍五入到十位（`<20 km` 有专门文案）、海里保留两位、英里同样取整到十位。注释点名"matching PHP round($d, -1)"——又是那条纪律：前端会把这段文字原样展示给用户，Go 版必须和 PHP 版产出逐字符一致的结果，否则同一份测速记录在两代服务之间会"漂移"。另外注意服务器坐标的来源（`SetServerLocation`）：配置文件给了经纬度就用配置，没给就在**启动时调一次 ipinfo.io 查自己的出口 IP 归属**——本系列运行取证的服务器日志第一条就是 `Fetched server coordinates: 25.053100, 121.526400`。
+当前配置可选的实现可按语义分组：
 
-## 四、结论：身份层的三条纪律
+| 类型 | 实现 | 适用边界 |
+| --- | --- | --- |
+| 外部 SQL | PostgreSQL、MySQL、MSSQL | 持久化服务 |
+| 本地文件 | SQLite、Bolt | 单机部署 |
+| 进程内 | memory | 测试和取证，重启丢失 |
+| 空实现 | none | 明确关闭遥测写入 |
 
-1. **信任要分级**：五个头的优先级是"越可信的越靠前"，且每一级独立校验、失败降级——永不因一个坏头而报错；
-2. **特殊地址先于外部查询**：内网/CGNAT/ULA 显式分类，省掉无效外呼，也向用户诚实说明"这次测量发生在哪一层"；
-3. **展示层的一致性也是合同**：取整方式、单位文案、甚至 `<20 km` 这种阈值文案，都是前后端之间的隐式协议。
+窄接口的价值在于结果处理不必知道具体数据库；代价也很明确：持久化、并发、备份和跨实例一致性仍由所选后端和部署者负责。
 
-下一篇进入数据层：遥测上报里的 ULID 生成、`RedactIP` 的三组脱敏正则、ID 混淆的 salt 文件设计，以及七种存储后端的工厂模式。
+## 五、四个边界比“隐私已解决”更准确
+
+这条数据路径只证明四件事：特殊来源可以短路、上报可以关闭、入库前可以脱敏、公开 ID 可以降低顺手猜测。它没有证明代理头可信、XOR 能抗攻击、外部日志已匿名，也没有证明七种后端在同一部署下具备相同的故障语义。
 
 ## 参考资料
 
-- 项目仓库 @ commit `59cff12`；运行取证：`evidence/librespeed-go-series/2026-08-26-local/evidence_run.log`
-- 关键文件：`web/getip_util.go`（120 行）、`web/helpers.go`（289 行）
-- 站内相关：[garbage、empty 与被钳制的 1 GiB](/writing/librespeed-go-02-endpoints)、[RSS、heapUsed 与 GC 后保留量](/writing/memory-metrics-rss-heapused)
+- [librespeed/speedtest-go](https://github.com/librespeed/speedtest-go)，commit `59cff12`
+- `web/getip_util.go`、`web/helpers.go`、`results/telemetry.go`、`results/idobfuscation.go`
+- 本机取证：`evidence/librespeed-go-series/2026-08-26-local/evidence_obf.log`
+- 系列相关：[一个测速点的最小闭环](/writing/librespeed-go-01-overview)、[Worker 合同与计量算法](/writing/librespeed-go-04-contract)、[接口兼容与部署边界](/writing/librespeed-go-05-interface)

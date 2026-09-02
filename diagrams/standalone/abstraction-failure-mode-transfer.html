@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>失败模式的重新分配</title>
+<style>
+  body { margin: 0; background: #f5f5f5; }
+  svg { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 960 480" width="960" height="480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="afmtTitle afmtDesc">
+<title id="afmtTitle">抽象层如何重新分配失败模式：内部消化与未声明转移</title>
+<desc id="afmtDesc">四层抽象从上到下依次是业务函数、RPC 客户端、数据库驱动和 TCP。每层把失败模式分成两堆：内部消化的一部分停在那一层，推给调用者的一部分沿调用栈向上累积。TCP 那一层的转移列是空的，说明转移为零的抽象确实存在。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="38" fill="#2d3142" font-size="19" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">抽象不是「漏」，是把失败模式重新分配</text>
+<text x="48" y="58" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">左边一列没有箭头：消化掉的失败模式就停在那层。右边一列有箭头：推给调用者的部分会一路向上累积</text>
+
+<!-- column headers -->
+<text x="64" y="86" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">抽象层</text>
+<text x="288" y="86" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">已消化 · 调用者无需知道</text>
+<text x="592" y="86" fill="#eb6c36" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">已转移 · 契约里没有写</text>
+
+<!-- Row 1: 业务函数 -->
+<rect x="48" y="96" width="176" height="56" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="120" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">业务函数</text>
+<text x="64" y="138" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">Transfer()</text>
+<rect x="256" y="96" width="272" height="56" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="288" y="126" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">参数校验、事务边界</text>
+<rect x="560" y="96" width="272" height="56" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="592" y="126" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">外部通知失败后状态未知</text>
+
+<!-- Row 2: RPC client -->
+<rect x="48" y="184" width="176" height="56" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="208" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">RPC / HTTP 客户端</text>
+<text x="64" y="226" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">client.Do()</text>
+<rect x="256" y="184" width="272" height="56" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="288" y="214" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">连接复用、序列化</text>
+<rect x="560" y="184" width="272" height="56" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="592" y="206" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">超时只取消等待，不取消操作</text>
+<text x="592" y="224" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">失败三态在错误类型里不可区分</text>
+
+<!-- Row 3: 数据库驱动 -->
+<rect x="48" y="272" width="176" height="56" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="296" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">数据库驱动</text>
+<text x="64" y="314" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">driver.Exec()</text>
+<rect x="256" y="272" width="272" height="56" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="288" y="302" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">语句重试、连接健康检查</text>
+<rect x="560" y="272" width="272" height="56" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="592" y="302" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">取消后服务端语句仍在跑</text>
+
+<!-- Row 4: TCP -->
+<rect x="48" y="360" width="176" height="56" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="384" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">TCP</text>
+<text x="64" y="402" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">socket</text>
+<rect x="256" y="360" width="272" height="56" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="288" y="382" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">丢包重传、乱序重组</text>
+<text x="288" y="400" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">拥塞控制、连接状态机</text>
+<rect x="560" y="360" width="272" height="56" rx="4" fill="none" stroke="rgba(45,49,66,0.22)" stroke-width="0.8" stroke-dasharray="4 4"/>
+<text x="592" y="390" fill="#7a8399" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">无 —— 全部消化，这是好抽象的标志</text>
+
+<!-- upward transfer arrows, drawn inside the row gaps so they never cross a box -->
+<line x1="696" y1="272" x2="696" y2="246" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="696" y1="184" x2="696" y2="158" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+<rect x="708" y="250" width="108" height="12" fill="#f5f5f5"/>
+<text x="762" y="259" fill="#eb6c36" font-size="9" text-anchor="middle" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">推给调用者</text>
+<rect x="708" y="162" width="108" height="12" fill="#f5f5f5"/>
+<text x="762" y="171" fill="#eb6c36" font-size="9" text-anchor="middle" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">推给调用者</text>
+
+<!-- callout -->
+<line x1="48" y1="440" x2="912" y2="440" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="48" y="462" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">判据：如果完全不知道它内部怎么处理失败，你会做错什么吗？答案是「不会」的那一列，就是抽象真正的收益；答案是「会」的那一列，才是债。</text>
+</svg>
+</body>
+</html>

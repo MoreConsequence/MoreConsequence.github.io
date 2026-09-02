@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>观测改变行为的三个机制</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 540" width="960" height="540" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="oetmTitle oetmDesc">
+<title id="oetmTitle">观测改变行为的三个机制</title>
+<desc id="oetmDesc">观测不是单向读取，至少引入三类副作用。机制一：开销被 QPS 倍乘、跨核放大。机制二：采样在错误路径上偏，导致错误请求几乎采不到。机制三：自反应系统把观测值当决策输入，观测加 5% CPU 会让 HPA 加节点，新节点 RPC 又改回 P99，构成反馈闭环。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">观测不是单向读取，它至少有三种副作用</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">任何观测动作都至少引入三类干扰——开销倍乘、采样偏差、自反应反馈</text>
+
+<!-- panel 1 -->
+<rect x="48" y="92" width="288" height="356" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="118" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">机制一</text>
+<text x="64" y="142" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">开销被 QPS 倍乘</text>
+
+<text x="64" y="178" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每次观测 = 一次共享状态写</text>
+
+<rect x="64" y="196" width="256" height="64" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="80" y="218" fill="#2d3142" font-size="10.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">5ns × 100k QPS × 64 核</text>
+<text x="80" y="238" fill="#2d3142" font-size="10.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">= 32ms/核/秒</text>
+<text x="80" y="252" fill="#7a8399" font-size="9" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">这个数字再小，乘完是另一回事</text>
+
+<text x="64" y="290" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">次级效应</text>
+<line x1="64" y1="298" x2="320" y2="298" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="64" y="318" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">· 缓存污染：探针把业务代码挤出 L1</text>
+<text x="64" y="336" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">· NUMA 跨节点同步原语</text>
+<text x="64" y="354" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">· 与锁配合变微秒级</text>
+
+<text x="64" y="392" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">治法</text>
+<line x1="64" y1="400" x2="320" y2="400" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="64" y="420" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">本地聚合 + 批量上报</text>
+
+<!-- panel 2 -->
+<rect x="336" y="92" width="288" height="356" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="352" y="118" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">机制二</text>
+<text x="352" y="142" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">采样在错误路径上偏</text>
+
+<text x="352" y="178" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">head-based 假设"每个请求等概率"</text>
+<text x="352" y="196" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">但失败请求更长、更复杂</text>
+
+<rect x="352" y="216" width="256" height="64" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="368" y="238" fill="#2d3142" font-size="10.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">0.1% head 采样</text>
+<text x="368" y="256" fill="#2d3142" font-size="10.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">≠ 0.1% 错误率样本</text>
+
+<text x="352" y="306" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">实际偏差</text>
+<line x1="352" y1="314" x2="608" y2="314" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="352" y="334" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">·错误请求触发多分支</text>
+<text x="352" y="352" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">·采样器看不到"已失败的请求"</text>
+<text x="352" y="370" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">·错误样本数严重不足</text>
+
+<text x="352" y="408" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">治法</text>
+<line x1="352" y1="416" x2="608" y2="416" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="352" y="436" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">tail-based 失败强制采样 / 全采</text>
+
+<!-- panel 3 (accent) -->
+<rect x="624" y="92" width="288" height="356" rx="6" fill="rgba(235,108,54,0.04)" stroke="#eb6c36" stroke-width="1"/>
+<text x="640" y="118" fill="#eb6c36" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">机制三</text>
+<text x="640" y="142" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">自反应系统把观测当输入</text>
+
+<text x="640" y="178" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">HPA 读 CPU 决定加节点</text>
+<text x="640" y="196" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">你加了 5% CPU 探针……</text>
+
+<!-- loop diagram -->
+<circle cx="700" cy="262" r="22" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="700" y="266" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">CPU</text>
+
+<circle cx="836" cy="262" r="22" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="836" y="266" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">HPA</text>
+
+<circle cx="836" cy="346" r="22" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="836" y="350" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">节点</text>
+
+<circle cx="700" cy="346" r="22" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="700" y="350" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">P99</text>
+
+<path d="M 722 262 L 814 262" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<path d="M 836 284 L 836 324" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<path d="M 814 346 L 722 346" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<path d="M 700 324 L 700 284" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+<text x="752" y="256" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">+5%</text>
+<text x="844" y="304" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">+节点</text>
+<text x="752" y="338" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">P99↑</text>
+<text x="660" y="304" fill="#eb6c36" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">循环</text>
+
+<text x="640" y="412" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">治法</text>
+<line x1="640" y1="420" x2="896" y2="420" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="640" y="440" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">换观测点 / 去掉自反应</text>
+
+<!-- footer -->
+<line x1="48" y1="476" x2="912" y2="476" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="498" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">机制三是隐藏最深的：观测本身成了被观测系统的因果输入。把监控当成独立子系统设计，比纠结"用哪个后端"实际得多。</text>
+<text x="48" y="514" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">把这三件事纳入「加新 metric」的 PR 模板</text>
+
+</svg>
+</body>
+</html>

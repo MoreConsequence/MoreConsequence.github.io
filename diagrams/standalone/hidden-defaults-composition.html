@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>默认值的组合涌现</title>
+<style>
+  body { margin: 0; background: #f5f5f5; }
+  svg { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 960 420" width="960" height="420" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hdcTitle hdcDesc">
+<title id="hdcTitle">三个各自无害的默认值如何在并发下组合出新的失效模式</title>
+<desc id="hdcDesc">左侧是三个单独审视都说得通的默认值，中间是并发达到拐点这一条件，右侧是组合后涌现的三个行为：连接 churn、TLS 握手风暴与 TIME_WAIT 堆积。任何单个值都推不出这个结论。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="40" y="38" fill="#2d3142" font-size="19" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">组合涌现：三个说得通的值，拼出一个说不通的行为</text>
+<text x="40" y="60" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每一层单独审视都是合理的保护或要求；拐点在测试环境的并发下不会发生</text>
+
+<!-- column headers -->
+<text x="40" y="92" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">未显式设置的默认值</text>
+<text x="640" y="92" fill="#eb6c36" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">组合后的涌现行为</text>
+
+<!-- input 1 -->
+<rect x="40" y="108" width="272" height="60" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="60" y="132" fill="#2d3142" font-size="11" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">MaxIdleConnsPerHost = 2</text>
+<text x="60" y="152" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">限制每主机空闲连接数，防止单客户端占用过多</text>
+
+<!-- input 2 -->
+<rect x="40" y="184" width="272" height="60" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="60" y="208" fill="#2d3142" font-size="11" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">http.Client.Timeout = 0</text>
+<text x="60" y="228" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">零值表示无超时，等待不会被任何机制打断</text>
+
+<!-- input 3 -->
+<rect x="40" y="260" width="272" height="60" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="60" y="284" fill="#2d3142" font-size="11" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">上游为 HTTPS</text>
+<text x="60" y="304" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每个新建连接都要一次完整握手</text>
+
+<!-- center condition node -->
+<rect x="392" y="184" width="176" height="60" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="480" y="214" fill="#eb6c36" font-size="13" font-weight="600" text-anchor="middle" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">并发 ≥ N</text>
+<text x="480" y="232" fill="#4f5d75" font-size="9.5" text-anchor="middle" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">N 是拐点，随目标环境变化</text>
+
+<!-- output 1 -->
+<rect x="640" y="108" width="280" height="60" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="660" y="132" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">连接 churn</text>
+<text x="660" y="152" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">超出 2 的并发请求新建连接，用完立即被关闭</text>
+
+<!-- output 2 -->
+<rect x="640" y="184" width="280" height="60" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="660" y="208" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">TLS 握手风暴</text>
+<text x="660" y="228" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每次新建连接付额外往返与非对称计算开销</text>
+
+<!-- output 3 -->
+<rect x="640" y="260" width="280" height="60" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="660" y="284" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">TIME_WAIT 堆积</text>
+<text x="660" y="304" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">被关闭的连接进入等待状态，占用端口与内核表项</text>
+
+<!-- arrows: inputs -> center -->
+<line x1="312" y1="138" x2="392" y2="196" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="312" y1="214" x2="392" y2="214" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="312" y1="290" x2="392" y2="232" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- arrows: center -> outputs -->
+<line x1="568" y1="196" x2="640" y2="138" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="568" y1="214" x2="640" y2="214" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="568" y1="232" x2="640" y2="290" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+<!-- footer note -->
+<line x1="40" y1="348" x2="920" y2="348" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="40" y="374" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">单独看每个值都是保护或要求：限制空闲连接是资源保护，不设超时是「由调用者决定」，用 HTTPS 是安全要求。</text>
+<text x="40" y="394" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">组合之后涌现的行为不属于其中任何一个值，也没有写进任何一层的文档。具体阈值按目标 Go 版本、内核版本与上游协议核对。</text>
+</svg>
+</body>
+</html>

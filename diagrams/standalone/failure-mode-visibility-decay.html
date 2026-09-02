@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>失败模式在调用栈中的可见性衰减</title>
+<style>
+  body { margin: 0; background: #f5f5f5; }
+  svg { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 960 460" width="960" height="460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fmvdTitle fmvdDesc">
+<title id="fmvdTitle">失败模式在调用栈中的可见性衰减</title>
+<desc id="fmvdDesc">从 TCP 协议栈到业务层共五层，越往上错误携带的信息越少：最底层能看到重传次数与具体错误码，业务层只剩一个泛化的 error。而决定是否重试的决策恰好发生在信息最少的业务层。右侧条形表示可区分性的示意高低，不含实测数值。</desc>
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="38" fill="#2d3142" font-size="19" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">信息在最底层，决策在最上层</text>
+<text x="48" y="58" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">每一层的简化都是合理的；累积的效果是「能不能重试」所需的信息在传递途中被吃掉了</text>
+
+<!-- headers -->
+<text x="64" y="84" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">调用栈层次</text>
+<text x="256" y="84" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">这一层看到的错误</text>
+<text x="560" y="84" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">可区分性（示意，非实测）</text>
+
+<!-- Row 1: 业务层 -->
+<rect x="48" y="96" width="168" height="48" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="64" y="116" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">业务层</text>
+<text x="64" y="133" fill="#eb6c36" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">重试决策在此</text>
+<rect x="240" y="96" width="280" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="256" y="116" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">一个泛化的 error</text>
+<text x="256" y="133" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">只剩 message 与 errors.Is 判定</text>
+<rect x="560" y="112" width="320" height="12" rx="2" fill="rgba(45,49,66,0.10)"/>
+<rect x="560" y="112" width="40" height="12" rx="2" fill="#eb6c36"/>
+<text x="892" y="122" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">最低</text>
+
+<!-- Row 2: database/sql -->
+<rect x="48" y="160" width="168" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="64" y="180" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">database/sql</text>
+<text x="64" y="197" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">连接池与重试</text>
+<rect x="240" y="160" width="280" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="256" y="180" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">判定「连接可能坏了」</text>
+<text x="256" y="197" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">决定要不要换一条连接重试</text>
+<rect x="560" y="176" width="320" height="12" rx="2" fill="rgba(45,49,66,0.10)"/>
+<rect x="560" y="176" width="96" height="12" rx="2" fill="#eb6c36"/>
+<text x="892" y="186" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">低</text>
+
+<!-- Row 3: 驱动 -->
+<rect x="48" y="224" width="168" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="64" y="244" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">数据库驱动</text>
+<text x="64" y="261" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">语句与连接状态</text>
+<rect x="240" y="224" width="280" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="256" y="244" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">看见连接状态</text>
+<text x="256" y="261" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">能区分网络错误与语句错误</text>
+<rect x="560" y="240" width="320" height="12" rx="2" fill="rgba(45,49,66,0.10)"/>
+<rect x="560" y="240" width="160" height="12" rx="2" fill="#eb6c36"/>
+<text x="892" y="250" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">中</text>
+
+<!-- Row 4: socket -->
+<rect x="48" y="288" width="168" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="64" y="308" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">系统 socket</text>
+<text x="64" y="325" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">errno</text>
+<rect x="240" y="288" width="280" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="256" y="308" fill="#2d3142" font-size="10.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">ECONNRESET、ETIMEDOUT</text>
+<text x="256" y="325" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">可定位到具体错误码</text>
+<rect x="560" y="304" width="320" height="12" rx="2" fill="rgba(45,49,66,0.10)"/>
+<rect x="560" y="304" width="240" height="12" rx="2" fill="#eb6c36"/>
+<text x="892" y="314" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">高</text>
+
+<!-- Row 5: TCP -->
+<rect x="48" y="352" width="168" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="64" y="372" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">TCP 协议栈</text>
+<text x="64" y="389" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">内核态</text>
+<rect x="240" y="352" width="280" height="48" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="256" y="372" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">重传次数、RTO、对端窗口</text>
+<text x="256" y="389" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">全部可见</text>
+<rect x="560" y="368" width="320" height="12" rx="2" fill="rgba(45,49,66,0.10)"/>
+<rect x="560" y="368" width="320" height="12" rx="2" fill="#eb6c36"/>
+<text x="892" y="378" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">完整</text>
+
+<!-- callout -->
+<line x1="48" y1="424" x2="928" y2="424" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="48" y="444" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">补救只有两条路，且都不便宜：让底层把可区分性编码进错误类型（要求跨层约定），或让操作本身幂等（把「能不能重试」这个问题消掉）。</text>
+</svg>
+</body>
+</html>
