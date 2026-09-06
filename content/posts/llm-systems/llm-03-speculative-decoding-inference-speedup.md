@@ -2,6 +2,7 @@
 title: "投机采样（Speculative Decoding）物理本质：草稿模型推测与大模型并行验证"
 description: "直击大模型自回归串行瓶颈的数学与工程破局：从小草稿模型快速自回归推测、大目标模型单次前向并行矩阵校验，到接受-拒绝采样概率分布无损等价性严格证明。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "投机采样", "Speculative Decoding", "推理加速", "数学证明", "vLLM"]
 draft: false
 featured: true
@@ -162,3 +163,9 @@ def speculative_step(target_logits, draft_logits, K=4):
 3. **Prompt Lookup Decoding**：在 RAG 或文档摘要场景中，直接从用户原始 Prompt 中使用 N-gram 贪婪匹配作为候选词推测，**零额外模型开销**获得 2 倍以上加速！
 
 在下一篇中，我们将从单机推理引擎跃升至分布式服务网关：**大模型长连接网关工程：SSE 流式代理、HTTP 分块传输与反压熔断**。
+
+## 参考资料
+
+- Leviathan et al.，Fast Inference from Transformers via Speculative Decoding——接受率与加速比理论，<https://arxiv.org/abs/2211.17192>
+- Chen et al.，Accelerating Large Language Model Decoding with Speculative Sampling——采样等价性证明，<https://arxiv.org/abs/2302.01318>
+- vLLM 文档：Speculative Decoding——draft 模型配置，<https://docs.vllm.ai/en/latest/features/spec_decode.html>

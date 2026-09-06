@@ -2,6 +2,7 @@
 title: "现代 CDN 核心机理与全景架构（二）：七层边缘分层缓存、Ketama 一致性哈希与回源风暴（Thundering Herd）熔断防御"
 description: "深入剖析 CDN 边缘七层架构的底层实现：L1/L2 内存磁盘分层存储、Ketama 一致性哈希分片调度、Singleflight 回源请求合并熔断机制、RFC 5861 Stale-While-Revalidate 异步重校验状态机，以及全局秒级缓存失效拓扑。"
 publishedAt: "2026-08-29"
+updatedAt: "2026-09-06"
 tags: ["CDN", "缓存体系", "一致性哈希", "性能优化", "系统设计"]
 series: "现代 CDN 与边缘加速架构"
 draft: false
@@ -190,3 +191,9 @@ ETag: "01928374a"
 | **源站回源流量压力** | 极大（回源率 $\sim 35\%$） | 较大（回源率 $\sim 15\%$） | **极小（回源率严格控制在 $\le 1\%$）** |
 
 至此，在《现代 CDN 与边缘加速架构》的第二篇中，我们完整拆解了七层分层存储拓扑、Ketama 一致性哈希分片、Singleflight 回源风暴熔断机制与 SWR 协议状态机的底层实现。在下一篇中，我们将深入剖析 **[《现代 CDN 核心机理与全景架构（三）：动态请求加速（DCA）、私有骨干专网智能路由与 TCP 拥塞控制实战》](/writing/cdn-03-dynamic-acceleration-smart-routing)**。
+
+## 参考资料
+
+- Karger et al., Consistent Hashing and Random Trees (STOC 1997)——一致性哈希的原始证明，<https://dl.acm.org/doi/10.1145/258533.258596>
+- Maglev: A Unified and Reliable L4 Load Balancer——Google 的一致性哈希负载均衡实现，<https://arxiv.org/abs/1604.05936>
+- A Fast, Minimal Memory, Consistent Hash Algorithm (Jump Hash)——磁悬浮前的另一种低扰动方案，<https://arxiv.org/abs/1406.2294>

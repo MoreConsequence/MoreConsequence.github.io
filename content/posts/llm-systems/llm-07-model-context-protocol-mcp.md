@@ -2,6 +2,7 @@
 title: "Model Context Protocol (MCP) 深度剖析：架构全景、JSON-RPC 传输层、三大基石与生产网关落地"
 description: "深度剖析 Anthropic 推出的开放协议 MCP（Model Context Protocol）：解构 Host/Client/Server 三层拓扑、Stdio 本地进程管道与 HTTP+SSE 远程传输层、Resources/Prompts/Tools/Roots 四大第一等协议原语，以及在企业级 Agent 生产网关中的鉴权、限流与沙箱隔离实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "MCP", "Agent架构", "协议设计", "JSON-RPC", "系统设计"]
 draft: false
 featured: true
@@ -193,9 +194,14 @@ MCP 严禁客户端在未协商能力的情况下盲目发送指令。每次连�
 
 ---
 
-## 七、 总结
+## 七、 总结：一次接入、全生态复用的标准基石
 
 Model Context Protocol (MCP) 代表了大模型系统工程从“碎片化脚本拼装”走向“工业级标准化通信”的关键里程碑：
 - **对应用开发者**：屏蔽了底层数据源的私有 API 差异，一次编写即可接入整个 AI 客户端生态；
 - **对工具提供者**：无需针对数十个 AI 产品分别开发插件，专注维护单一标准的 MCP Server；
 - **对系统架构师**：提供了清晰的进程隔离、安全沙箱与能力协商边界，为构建高可用的企业级 Agent 基础设施奠定了标准基石。
+
+## 参考资料
+
+- Model Context Protocol 规范——架构、原语与生命周期，<https://modelcontextprotocol.io/specification>
+- JSON-RPC 2.0 Specification——MCP 消息层的底层协议，<https://www.jsonrpc.org/specification>

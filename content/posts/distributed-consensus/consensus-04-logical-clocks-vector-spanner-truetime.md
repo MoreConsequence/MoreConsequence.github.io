@@ -2,6 +2,7 @@
 title: "分布式时序与因果一致性：Lamport 逻辑时钟、向量时钟到 Spanner TrueTime 物理不确定性"
 description: "直击分布式时间的核心物理困境：为什么 NTP 物理时钟无法实现全局全序？从 Lamport 逻辑时钟、向量时钟并发分支检测，到 Google Spanner TrueTime 硬件原子钟与 Commit Wait 破局全景。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["分布式时序", "Lamport时钟", "向量时钟", "TrueTime", "Spanner", "因果一致性"]
 draft: false
 featured: true
@@ -164,3 +165,9 @@ Spanner 制定了严格的 **Commit Wait 规则**：
 | **TrueTime (Spanner)** | 硬件原子钟/GPS + 误差区间休眠等待 | 每次提交需休眠 $2\epsilon$ ($\approx 10\text{ms}$) | **全球最强**（线性一致性与外部因果全序） | Google Cloud Spanner |
 
 在下一篇中，我们将进入分布式系统的终极检验场：**混沌工程与一致性检验：Jepsen 故障注入架构与 Knossos 线性一致性黑盒判定**。
+
+## 参考资料
+
+- Lamport，Time, Clocks, and the Ordering of Events in a Distributed System——逻辑时钟与 happen-before，<https://lamport.azurewebsites.net/pubs/time-clocks.pdf>
+- Corbett et al.，Spanner: Google's Globally-Distributed Database——TrueTime 与 commit wait，<https://research.google/pubs/spanner-googles-globally-distributed-database/>
+- Kulkarni et al.，Logical Physical Clocks (HLC)——混合逻辑时钟的因果一致性证明，<https://cse.buffalo.edu/tech-reports/2014-04.pdf>

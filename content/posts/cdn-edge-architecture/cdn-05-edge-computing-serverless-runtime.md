@@ -2,6 +2,7 @@
 title: "现代 CDN 核心机理与全景架构（五）：边缘计算与 Serverless：从边缘 KV、V8 Isolate 到全球分布式状态编排"
 description: "深入剖析 CDN 边缘计算（Edge Computing）与 Serverless 运行时的底层机理：V8 Isolate 轻量沙箱微秒级冷启动、全球读就近最终一致性 Edge KV、区域强一致 Raft 事务（Durable Objects/Edge SQL），以及 HTML TransformStream 边缘流式组装。"
 publishedAt: "2026-08-29"
+updatedAt: "2026-09-06"
 tags: ["CDN", "边缘计算", "Serverless", "V8 Isolate", "分布式系统"]
 series: "现代 CDN 与边缘加速架构"
 draft: false
@@ -100,3 +101,9 @@ featured: true
 ![现代 CDN 与边缘加速架构五层技术栈工程全景蓝图 (Full Stack Blueprint)](../../../public/images/cdn-five-layer-architecture-blueprint.svg)
 
 现代 CDN 的终极价值，正是通过这一整套**空间拓扑重构、分层缓存分片、覆盖网智能调度与边缘沙箱计算**，在对抗光速传播物理极限的同时，为全球用户提供毫秒级、高可用且极致安全的现代 Web 体验。
+
+## 参考资料
+
+- Cloudflare Workers 文档——V8 Isolate 运行时与边缘请求生命周期，<https://developers.cloudflare.com/workers/>
+- V8 Blog：Custom Startup Snapshots——堆快照加速冷启动的机制来源，<https://v8.dev/blog/custom-startup-snapshots>
+- Cloudflare Blog：Cloud computing without containers——Isolate 与容器的隔离边界对比，<https://blog.cloudflare.com/cloud-computing-without-containers/>

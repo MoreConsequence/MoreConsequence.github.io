@@ -1988,3 +1988,57 @@ evidence（2026-08-19 复跑 heap-objs-version.out / buffer-version.out）为 44
 - `eslint.config.mjs` 忽略 `experiments/**/*.js` 与 `experiments/**/*.ts`。
 - 实验结论必须运行目标实验入口，或在适用时运行 `npm run verify:experiments`；evidence 继续按 `evidence/<slug>/<date>/` 落盘。
 - 真实断电、etcd 时钟偏移、GPU 并发、kind datapath、生产账单等外部证据缺口仍按本文件对应条目管理；正文标为范围外不等于证据已取得。
+
+## 三十九、2026-09-06 全库图表规范化与内容审计清零
+
+本节登记一次覆盖全部 588 张 `public/images/*.svg` 与对应 HTML 源的图表规范化批次，以及内容审计脚本的修复与 25 篇新增批次文章的参考资料补齐。本轮不新增任何实验结论，不改变任何性能数字与文章论证；颜色 token、描边宽度与画布尺寸的对齐属于呈现层规范统一。
+
+### 39.1 图表规范化（583 张 SVG + 391 个 HTML 源）
+
+| 处理 | 规模 | 说明 |
+| --- | --- | --- |
+| 调色板迁移到 skill 规范 token | 564 张 | 旧墨 `#141413`→`#2d3142`、旧珊瑚 `#e85d3f`→`#eb6c36`、暖纸 `#f5f4ed`→`#f5f5f5`、`#fffdfb`→`#ffffff`、暖灰 `#6b6a64`→`#4f5d75`、`#857a69`→`#7a8399`、`#2d5a8a`→`#2e5aa8`（含 rgba 前缀族，rule 线 0.16→0.12 落到规范 rule token）；C 组 pastel 批次仅映射中性角色（slate-900/50/500/400→ink/paper/muted/soft），语义分类色（绿/红/蓝）保留 |
+| 字体族对齐 | C 组 203 张 | `ui-sans-serif/system-ui` → `'Geist','Noto Sans SC',sans-serif`，`ui-monospace` → `'Geist Mono',monospace`（`<img>` 内本就按回退字体渲染，仅源码对齐契约） |
+| stroke 归一到 0.8/1/1.2 + series 1.8/2.4 | 全量 | 连接器按契约强制（FAINT→0.8、accent→1.2、其余→1）；rect 同规则；自由图形按档位吸附（1.4→1.2、2→1.8、2.5/3/6→2.4） |
+| 三色 canonical marker 定义补齐 | 缺失文件 | `arrow`/`arrow-accent`/`arrow-link` 全部定义（校验器要求定义存在） |
+| 可访问性契约补齐 | 204 张 | `role="img"` + 前缀化 `<title>/<desc>`（文本复用文章 alt 或既有 title），588/588 合规 |
+| 画布 4px 网格 | 2 张 | `960×466`→`960×468`、`960×570`→`960×572`；880 宽 3 张属 output-spec `fit` 档合法尺寸，保留 |
+
+`scripts/verify-diagram-strokes.py` 本轮扩展：series 档位（1.8/2.4，来自 skill `type-line.md`：focal 1.8、ridgeline/bump 2.4）、`translate()` 组偏移解析（否则 transform 系文件坐标误报）、path 解析器支持相对命令 m/l/h/v/q（遵循 AGENTS.md"曲线必须真正解析"）、遮罩-节点检查增加绘制顺序感知（盒子后绘且完全含于遮罩 = 面板上徽章，rule 6 允许）。最终 `verify-diagram-strokes.py public/images/*.svg`：**588/588 ALL PASS**。
+
+### 39.2 渲染层发现的几何错漏（全部修复并复扫清零）
+
+| 文件 | 缺陷 | 修复 |
+| --- | --- | --- |
+| `mysql-deadlock-wait-for-graph` | 引用未定义的 `#fl-arr-accent`，Graph/Rollback 箭头无箭头尖（HTML 源同修） | 改指 `#dl-arr-accent` 并重导出 |
+| `cdn-anycast-bgp-topology` | "AS-Path=2 ✓" 72px 标签塞 48px 盒间隙，压箭头并切两侧节点边框 | 标签改 `AS=2 ✓`（与 AS=3/AS=4 命名一致），上弯折线上移 y180→172 腾出 6px 遮罩间距 |
+| `cdn-tcp-termination-proxy` | 右侧面板三张 160px 节点卡物理重叠 36px | 缩为 112px 宽、中心与生命线不动 |
+| `cdn-xdp-unimog-gue-tunnel-reroute` | 自环箭头起止点深入节点内部；"误入"标签遮罩切节点边框 | 自环改接节点底边（y244）；标签缩入 40px 间隙 |
+| `consensus-redis-master-slave-failover-split-brain` | 垂直箭头穿过标签遮罩 | 标签移至箭头侧边 8px |
+| `cdn-singleflight-request-coalescing` | 5 处标签遮罩压在连接线上 | 遮罩统一抬到线上方 6px、高度 16→12 |
+| `cdn-bbr-kleinrock-optimal-operating-point` | 零长度死元素 `stroke="none"` 无宽度 | 删除 |
+| `tc-fq-pacing-bbr-synergy`、`xdp-driver-bypass-pipeline` | 生成器坐标 bug：同组多盒文字全部落在 Box 1 局部坐标（48 处） | 按盒 x 偏移重排，渲染复核从不可读恢复清晰 |
+| 46 张（C 组三栏卡片批次） | "机制要点"卡片背景 y=162 与文字局部 y=18/34/48/62 脱钩，文字叠在终端面板首行 | 卡内 12 处文字统一 +162 偏移，抽样渲染复核 |
+| `af-xdp-umem`、`kernel-network-ebpf-comprehensive-map`、`btree-page-split-cascade`、`storage-btree-16kb-page-split` | 同类盒偏移缺失（Chunk/核面板/页拆分文字全部叠在首格） | 按前序盒 rect 偏移修正（52 处），渲染复核 |
+| `cdn-direct-origin-handshake-waterfall` | 副标题转义 `<tspan>` 被当字面文本渲染 | 改为真 `<tspan>` 下标，渲染确认 |
+
+transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**。HTML↔SVG 派生同步复检：379 个有源 SVG 全部一致；`git diff --check` 通过（from-html 重导出带入的行尾空白已剥离）。
+
+### 39.3 内容审计修复与参考资料补齐
+
+- `scripts/content-quality-audit.mjs` 修复为递归扫描：08-30 文章重组进系列子目录后，非递归 readdir 导致审计恒报 `Posts: 0`。修复后覆盖 233 篇。
+- 25 篇 08-23 后新增批次文章（cdn 5、consensus 6、kernel 6、llm 8）补 `## 参考资料`（75 个一手来源：RFC、内核文档、论文 arXiv/ACM/USENIX、官方文档），全部 URL 经 HTTP 探活，3 个死链已替换（Ongaro 论文改 USENIX ATC'14 PDF、early-hints 改 Chrome docs、XDP 改 iovisor）。4 篇裸"总结"标题改为信息型标题。实质修改统一补 `updatedAt: 2026-09-06`。
+- 修复后 `npm run audit:content`：233 篇，`Issues: {}`。
+
+### 39.4 当前验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `python3 scripts/verify-diagram-strokes.py public/images/*.svg` | 588/588 ALL PASS |
+| 可访问性契约扫描 | 588/588（role/title/desc/aria-labelledby 前缀 id） |
+| 文字叠堆复扫（transform 感知） | 0 |
+| HTML↔SVG 同步 | mismatch = 0 |
+| `npm run audit:content` | 233 篇，`Issues: {}` |
+| `git diff --check` | 通过 |
+
+剩余边界：C 组 pastel 批次保留语义分类色（非全量 monochrome 化，属刻意决策）；3 张 880 宽画布为 `fit` 档合法尺寸；在线 403/429 限流响应的链接（vLLM 文档）按可达处理，后续可用 GET 复核。

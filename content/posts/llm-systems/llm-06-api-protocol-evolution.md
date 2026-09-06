@@ -2,6 +2,7 @@
 title: "大模型 API 协议演进史：从 /v1/completions 到 Realtime 双向帧的协议下沉与架构权衡"
 description: "深度剖析大模型通信协议从 2020 年至今的代际演化：主流厂商格式全景对比、纯文本续写定界符危机、ChatML 角色标记与 SSE 字节截断乱码、Tool Use 多态内容块、CFG 文法受限解码、Prompt Caching 计费模型，到基于 WebSocket 的全双工实时事件帧与毫秒级打断机制，附每个字段的底层物理语义与专属时序架构图。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "API设计", "协议演进", "WebSockets", "受限解码", "系统架构"]
 draft: false
 featured: true
@@ -570,3 +571,10 @@ OpenAI Realtime API 采用基于 **WebSocket（或 WebRTC 数据通道）的全�
 - **状态下沉与智能体工作流协议（Responses API）**：OpenAI 最新的 `/v1/responses` 正在尝试将对话状态、长程任务暂停唤醒（Human-in-the-loop）、后台多步推理与工具递归调用封装为单一的第一等公民协议实体。
 
 掌握这些协议的物理边界与底层权衡，是在面对多模型接入、网关架构设计与高可靠 Agentic 系统落地时不可或缺的核心基本功。
+
+## 参考资料
+
+- OpenAI API Reference：Chat Completions——chat/completions 契约与 usage 字段，<https://platform.openai.com/docs/api-reference/chat>
+- OpenAI：Function Calling——工具调用 schema 与错误回喂，<https://platform.openai.com/docs/guides/function-calling>
+- Anthropic API Reference：Messages——messages 契约与流式事件，<https://docs.anthropic.com/en/api/messages>
+- WHATWG HTML Standard：Server-sent events——流式响应的协议层，<https://html.spec.whatwg.org/multipage/server-sent-events.html>

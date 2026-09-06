@@ -2,6 +2,7 @@
 title: "大模型语义缓存与检索防抖：Embedding 相似度边界与 RAG 链路保护"
 description: "直击大模型降本增效的核心工程底盘：为什么传统 KV 缓存对自然语言失效？从向量语义缓存（Semantic Cache）相似度阈值边界、假阳性（False Positive）灾难窗口，到 L1 精确哈希 + L2 向量检索 + 实体交叉校验双层架构落地实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "语义缓存", "Semantic Cache", "RAG架构", "向量检索", "系统设计"]
 draft: false
 featured: true
@@ -166,3 +167,8 @@ $$\text{RAG\_Cache\_Key} = \text{Hash}\Big(\text{SemanticPromptVector},\; \text{
 5. **前置成本防线（Semantic Cache & Verification）**：以双层缓存与实体防抖拦截海量重复算力消耗。
 
 大模型后端不仅是大模型算法的承载容器，更是**经典计算机系统架构、现代操作系统分页理论与高并发网络工程在大 AI 时代的最壮丽交响**！
+
+## 参考资料
+
+- Bang，GPTCache: An Open-Source Semantic Cache for LLM Applications——语义缓存的检索与命中设计，<https://arxiv.org/abs/2303.01935>
+- vLLM 文档：Automatic Prefix Caching——精确前缀缓存与语义缓存的边界对照，<https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html>

@@ -2,6 +2,7 @@
 title: "混沌工程与分布式一致性检验：Jepsen 故障注入与 Knossos 线性一致性判定"
 description: "直击分布式存储系统检验的最硬核防线：从线性一致性（Linearizability）严格数学定义、Jepsen 混沌故障注入架构（Nemesis），到 Knossos 历史轨迹检验算法实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["混沌工程", "Jepsen", "线性一致性", "分布式测试", "故障注入", "系统设计"]
 draft: false
 featured: true
@@ -119,3 +120,9 @@ Knossos 采用图搜索回溯剪枝算法，穷举验证历史日志：
 5. **终极检验（Jepsen & Linearizability）**：用混沌工程与数学检验器刺破宣传假象，以严谨的数据轨迹验证工程正确性。
 
 分布式系统从没有点石成金的魔法，有的只是在冰冷残酷的硬件故障与不可靠网络之间，**用严密的数学逻辑、清晰的物理边界与防御性架构设计，为人类软件构筑起最值得信赖的数据方舟**。
+
+## 参考资料
+
+- Jepsen：Consistency——线性一致性、顺序一致性与因果一致性的判据图，<https://jepsen.io/consistency>
+- Jepsen：Analyses——分布式数据库故障注入实测报告索引，<https://jepsen.io/analyses>
+- Herlihy & Wing，Linearizability: A Correctness Condition for Concurrent Objects——线性一致性的形式化定义，<https://doi.org/10.1145/78969.78972>

@@ -2,6 +2,7 @@
 title: "现代 CDN 核心机理与全景架构（四）：安全防御体系：边缘 WAF、DDoS 分布式清洗与 TLS 证书自动化卸载"
 description: "深入拆解现代 CDN 的边缘安全立体防御体系：Anycast 空间稀释分布式抗 D、eBPF/XDP 网卡级线速丢包、JA4 TLS/HTTP2 协议指纹识别、分布式令牌桶频控，以及 TLS 1.3 0-RTT 防重放机制与 ACME 证书自动化轮换。"
 publishedAt: "2026-08-29"
+updatedAt: "2026-09-06"
 tags: ["CDN", "边缘安全", "DDoS清洗", "WAF", "TLS"]
 series: "现代 CDN 与边缘加速架构"
 draft: false
@@ -117,3 +118,9 @@ TLS 1.3 支持使用会话凭证（Session Ticket / PSK）进行 0-RTT 快速握
 | **TLS 证书维护成本** | 手工运维上传，易过期遗漏 | 集中式网关管理 | **ACME 自动化全生命周期轮换 + OCSP 封套** |
 
 至此，在《现代 CDN 与边缘加速架构》的第四篇中，我们全面解析了现代 CDN 的边缘立体安全防护体系，从 Anycast 空间稀释、eBPF/XDP 网卡级线速清洗，到 JA4 深度协议指纹与 TLS 1.3 0-RTT 防重放机制。在下一篇（终篇）中，我们将深入剖析 **[《现代 CDN 核心机理与全景架构（五）：边缘计算与 Serverless：从边缘 KV、V8 Isolate 到全球分布式状态编排》](/writing/cdn-05-edge-computing-serverless-runtime)**。
+
+## 参考资料
+
+- OWASP Top 10——Web 应用风险分类与 WAF 规则的对照基准，<https://owasp.org/Top10/>
+- RFC 4732：Internet Denial-of-Service Considerations——DoS 攻击面与缓解的分类学，<https://www.rfc-editor.org/rfc/rfc4732>
+- Cloudflare Learning：What is a DDoS attack?——容量型与应用层攻击的分层视角，<https://www.cloudflare.com/learning/ddos/what-is-a-ddos-attack/>

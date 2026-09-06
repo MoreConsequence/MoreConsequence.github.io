@@ -2,6 +2,7 @@
 title: "分布式事务工程演进：2PC/3PC 阻塞困境、SAGA 状态机编排与本地消息表"
 description: "直击分布式事务的核心物理困境：从 2PC 协调者宕机同步阻塞、3PC 脑裂局限，到 SAGA 逆向补偿状态机与本地消息表（Transactional Outbox + CDC）生产级落地实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["分布式事务", "2PC", "SAGA模式", "本地消息表", "CDC", "系统设计"]
 draft: false
 featured: true
@@ -195,3 +196,9 @@ async function handlePaymentSuccess(orderId: string) {
 | **适用场景** | 遗留系统、单机房跨同构数据库 | 跨部门、多阶段、必须支持逆向回滚的业务流程 | 单向事件广播、通知、缓存/索引同步、异步解耦 |
 
 在下一篇中，我们将深入物理时序的终极难题：**分布式时间与因果一致性：Lamport 逻辑时钟、向量时钟到 Google Spanner TrueTime 的物理不确定性破局**。
+
+## 参考资料
+
+- Garcia-Molina & Salem，Sagas (SIGMOD 1987)——长事务拆分与补偿的原始论文，<https://doi.org/10.1145/38713.38742>
+- Microservices.io：Transactional Outbox pattern——Outbox 模式的标准描述，<https://microservices.io/patterns/data/transactional-outbox.html>
+- Debezium：Outbox Event Router——Outbox → CDC 的生产实现，<https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html>

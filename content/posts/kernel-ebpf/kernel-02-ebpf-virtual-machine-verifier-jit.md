@@ -2,6 +2,7 @@
 title: "深入 eBPF 虚拟机内核：字节码指令集、Verifier 静态安全性验证与 JIT 编译"
 description: "直击 eBPF 技术的底层内核机理：从 64 位精简寄存器模型（R0~R10）与指令集编码、Verifier 静态验证器（DAG 路径分析、内存越界与死循环规约），到 JIT 裸机机器码直译与 BPF Maps 无锁共享内存通信全景。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "eBPF", "虚拟机", "Verifier", "JIT", "BPF Maps"]
 draft: false
 featured: true
@@ -213,3 +214,9 @@ eBPF 绝不是一个简单的包过滤工具，而是**Linux 操作系统有史�
 4. **数据层**：BPF Maps 提供了内核态与用户态解耦的无锁共享内存通信基石。
 
 在下一篇中，我们将深入 eBPF 在网络性能领域的王牌杀手锏：**XDP（eXpress Data Path）极速网络旁路：驱动层线速包处理与 Tbps 级性能神话**。
+
+## 参考资料
+
+- Linux 内核文档：BPF Design Q&A——指令集与校验器设计边界，<https://docs.kernel.org/bpf/bpf_design_QA.html>
+- Linux 内核文档：BPF Verifier——校验器的安全性证明路径，<https://docs.kernel.org/bpf/verifier.html>
+- Linux 内核文档：BTF——BPF Type Format 与类型信息，<https://docs.kernel.org/bpf/btf.html>

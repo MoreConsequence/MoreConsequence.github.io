@@ -2,6 +2,7 @@
 title: "Linux 网络收发包物理路径：从网卡 DMA、Ring Buffer、NAPI 轮询到 sk_buff 内存流转"
 description: "深入 Linux 内核网络收包物理全景：从光电信号到网卡硬件 DMA 直传、RX/TX Ring Buffer 环形缓冲区管理、硬中断到 NAPI 软中断（net_rx_action）批量轮询，再到 sk_buff 控制头与数据区分离的零拷贝流转机理。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "网络协议栈", "NAPI", "DMA", "sk_buff", "性能调优"]
 draft: false
 featured: true
@@ -177,3 +178,8 @@ Linux 网络收发包路径绝非黑盒，它是一套精妙平衡了硬件特�
 4. **多核层**：RSS / RPS 硬件多队列将海量并发包均匀摊平到数十个 CPU 核心。
 
 然而，无论 `sk_buff` 如何优化，它终究需要经历内核分配、锁操作与多层协议栈穿透。在下一篇中，我们将进入现代 Linux 内核最火热的性能利刃：**深入 eBPF 虚拟机内核：字节码指令集、Verifier 静态安全性验证与 JIT 编译**。
+
+## 参考资料
+
+- Linux 内核文档：NAPI——中断与轮询混合的收包模型，<https://docs.kernel.org/networking/napi.html>
+- Linux 内核文档：sk_buff——套接字缓冲区结构与生命周期，<https://docs.kernel.org/networking/skbuff.html>

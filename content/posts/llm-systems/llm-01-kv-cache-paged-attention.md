@@ -2,6 +2,7 @@
 title: "大模型显存墙与内存虚拟化：KV Cache 物理开销与 PagedAttention 底层原理"
 description: "直击大模型推理后端的显存瓶颈：从自回归两阶段特征（Prefill 计算密集 vs Decode 显存带宽密集）、KV Cache 显存容量精确公式，到 vLLM PagedAttention 操作系统页表级显存分页与零碎片管理。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "KV Cache", "PagedAttention", "vLLM", "GPU显存", "推理加速"]
 draft: false
 featured: true
@@ -156,3 +157,9 @@ class BlockManager:
 | **Prompt 缓存** | 每次重复请求全量重算 | **Prefix Caching（前缀缓存）**：系统级自动命中公共 Prompt 块，0 算力秒开 |
 
 显存管理不仅是操作系统的核心底盘，更是大模型时代高并发推理工程的胜负手。在下一篇中，我们将深入推理调度的最前线：**大模型吞吐翻倍引擎：从静态批处理到连续批处理（Continuous Batching）调度状态机**。
+
+## 参考资料
+
+- Kwon et al.，Efficient Memory Management for LLM Serving with PagedAttention (vLLM, SOSP 2023)，<https://arxiv.org/abs/2309.06180>
+- vLLM 官方博客（2023-06-20）——PagedAttention 的吞吐与显存实测，<https://blog.vllm.ai/2023/06/20/vllm.html>
+- vLLM 文档：Automatic Prefix Caching——前缀级 KV 复用，<https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html>

@@ -2,6 +2,7 @@
 title: "大模型长连接网关工程：SSE 流式代理、HTTP 分块传输与反压熔断"
 description: "直击大模型落地网关层的物理演进：从 30 秒超长连接导致的 RPC 连接池耗尽雪崩、SSE (Server-Sent Events) 流式代理分块传输，到 TCP 零窗口反压与全链路级联取消（AbortSignal）机制。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "SSE", "流式网关", "反压机制", "系统设计", "全链路取消"]
 draft: false
 featured: true
@@ -184,3 +185,9 @@ async def generate_stream(request, context):
 | **内存开销** | 极低（小 JSON 缓冲） | 必须依赖流式管道直通，杜绝任何全量 Buffer |
 
 在大模型后端体系中，网关不再是简单的反向代理，而是**连接客户端体验与底层 GPU 显存生命周期的中枢神经**。在下一篇中，我们将进入大模型降本增效的终极大招：**大模型语义缓存与检索防抖：Embedding 相似度边界与 RAG 链路保护**。
+
+## 参考资料
+
+- WHATWG HTML Standard：Server-sent events——SSE 协议规范，<https://html.spec.whatwg.org/multipage/server-sent-events.html>
+- MDN：Using server-sent events——EventSource 与重连语义，<https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events>
+- Node.js 文档：Stream——背压（drain）的官方契约，<https://nodejs.org/api/stream.html>

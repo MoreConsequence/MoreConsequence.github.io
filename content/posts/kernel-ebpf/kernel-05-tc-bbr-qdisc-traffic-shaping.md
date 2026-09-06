@@ -2,6 +2,7 @@
 title: "Linux 流量控制（TC）与拥塞调度：qdisc 排队规则、HTB 分层令牌桶与 BBR 联动调优"
 description: "深入 Linux 流量控制（TC）的物理本质：从 qdisc 排队规则体系、HTB 分层令牌桶多租户限速与带宽借调，到 Fair Queueing (fq) 毫秒级 Pacing 匀速发包与 Google BBR 算法联动根治 Bufferbloat 全景实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "流量控制", "TC", "qdisc", "HTB", "BBR", "网络调优"]
 draft: false
 featured: true
@@ -149,3 +150,9 @@ net.ipv4.tcp_fastopen = 3
 5. **出口调度（TC & fq/BBR）**：以 HTB 分层令牌桶与 fq 毫秒级 Pacing 匀速发包根治 Bufferbloat 拥塞。
 
 操作系统内核不再是不可逾越的物理高墙，而是**每一位追求极致性能的资深工程师手中最强大、最通透的可编程武器**！
+
+## 参考资料
+
+- Cardwell et al.，BBR: Congestion-Based Congestion Control (ACM Queue)——BBR 的模型与实测，<https://queue.acm.org/detail.cfm?id=3022184>
+- man7.org：tc(8)——流量控制命令与 qdisc 接口，<https://man7.org/linux/man-pages/man8/tc.8.html>
+- Linux 内核文档：netdev QDisc——队列规程框架，<https://docs.kernel.org/networking/netdevices.html>

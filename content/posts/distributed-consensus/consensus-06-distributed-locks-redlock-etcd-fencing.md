@@ -2,6 +2,7 @@
 title: "分布式锁的工程演进与物理红线：从 Redis Redlock、etcd 租约到 Fencing Token 终极对决"
 description: "深度剖析分布式锁在不可靠异步网络中的第一性原理：回顾 Martin Kleppmann 与 Antirez 世纪大辩论，推导 STW 垃圾回收、时钟漂移与异步复制丢锁如何让任何纯内存锁瞬间失效；详解 etcd Raft 租约事务机制，并给出通过单调递增 Fencing Token 在存储层实现绝对互斥的生产级数学证明。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["分布式系统", "分布式锁", "Redlock", "etcd", "并发控制", "系统架构"]
 draft: false
 featured: true
@@ -137,9 +138,16 @@ WHERE order_id = 999 AND fencing_token < 302;
 
 ---
 
-## 六、 总结
+## 六、 总结：端到端防错体系的三道防线
 
 分布式锁的本质不是为了追求所谓“完美的锁服务”，而是**在不可靠的物理网络与进程调度约束下，构建端到端的防错体系**：
 - 认清单纯依赖 TTL 超时的局限性，警惕 STW GC 与主从切换丢锁风险；
 - 在需要强一致协调时选择 etcd 等 CP 系统；
 - 在涉及持久化数据修改的最后一道防线上，**必须由存储层通过 Fencing Token 乐观版本号守住底线**。
+
+## 参考资料
+
+- Kleppmann，How to do distributed locking——Redlock 安全性争议与 Fencing Token 论证，<https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html>
+- antirez，Is Redlock safe?——Redlock 作者的回应，<http://antirez.com/news/101>
+- Redis：Distributed Locks——官方 Redlock 与单实例锁文档，<https://redis.io/docs/latest/develop/use/patterns/distributed-locks/>
+- etcd 官方文档—— lease 与事务原语，<https://etcd.io/docs/>

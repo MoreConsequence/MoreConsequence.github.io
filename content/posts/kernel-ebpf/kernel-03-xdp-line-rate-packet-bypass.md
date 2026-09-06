@@ -2,6 +2,7 @@
 title: "XDP（eXpress Data Path）极速网络旁路：驱动层线速包处理与 Tbps 级性能神话"
 description: "直击 Linux 网络性能的最前线：为什么标准内核协议栈吞吐卡在 1.5M PPS？深入 XDP 驱动层网络旁路机制、四大动作原语（XDP_DROP/TX/REDIRECT/PASS），到 AF_XDP (XSK) 零拷贝 UMEM 直通用户态 24M+ PPS 线速处理。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "XDP", "eBPF", "AF_XDP", "高性能网络", "DDoS防御"]
 draft: false
 featured: true
@@ -157,3 +158,8 @@ AF_XDP 在用户态应用程序与网卡硬件之间构建了一块共享内存�
 3. **开启 JIT 机器码优化**：`sysctl -w net.core.bpf_jit_enable=1` 确保字节码全速运行。
 
 在下一篇中，我们将进入系统级可观测性与排障的最高殿堂：**eBPF 无侵入可观测性实战：Kprobe 动态插桩、Tracepoint 静态埋点与 Off-CPU 溯源**。
+
+## 参考资料
+
+- Linux 内核文档：AF_XDP——XSK 与 UMEM 无锁环形队列，<https://docs.kernel.org/networking/af_xdp.html>
+- iovisor：XDP——eXpress Data Path 钩子与程序类型，<https://www.iovisor.org/technology/xdp>

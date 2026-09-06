@@ -2,6 +2,7 @@
 title: "现代 CDN 核心机理与全景架构（一）：Anycast BGP 路由广播、TCP 路由漂移防御与四层终结代理的物理本质"
 description: "从光速传播延迟的物理硬限制出发，深入拆解 Anycast BGP 路由广播、最短 AS-Path 陷阱、TCP 路由漂移与 TCB 状态丢失的工业解法、Mathis 吞吐量公式，以及边缘四层 TCP/TLS 终结代理如何通过分段隔离将冷启动时延削减 70% 以上。"
 publishedAt: "2026-08-29"
+updatedAt: "2026-09-06"
 tags: ["CDN", "网络协议", "BGP", "TCP", "系统设计"]
 series: "现代 CDN 与边缘加速架构"
 draft: false
@@ -218,3 +219,10 @@ CDN 边缘分段架构完美解耦了传输层：
 ---
 
 作为《现代 CDN 与边缘加速架构》专栏的开篇，我们从光速的物理硬限制出发，完整论证了 Anycast BGP 路由广播、边缘吸附与四层 TCP 终结代理的底层机理，推导了 Mathis 吞吐量公式，并给出了解决 Anycast TCP 路由漂移的工业标准方案。在下一篇中，我们将深入剖析 **[《现代 CDN 核心机理与全景架构（二）：七层边缘分层缓存、Ketama 一致性哈希与回源风暴（Thundering Herd）熔断防御》](/writing/cdn-02-edge-cache-consistent-hashing)**。
+
+## 参考资料
+
+- RFC 4271：A Border Gateway Protocol 4 (BGP-4)——BGP 报文、路径属性与选路状态机，<https://www.rfc-editor.org/rfc/rfc4271>
+- RFC 7938：Use of BGP for Routing in Large-Scale Data Centers——大规模场景下的 BGP 运维实践，<https://www.rfc-editor.org/rfc/rfc7938>
+- RFC 1546：Host Anycasting Service——Anycast 的原始定义与语义，<https://www.rfc-editor.org/rfc/rfc1546>
+- Cloudflare Learning：What is an anycast network?——Anycast 吸附与回源的工程视角，<https://www.cloudflare.com/learning/cdn/glossary/anycast-network/>

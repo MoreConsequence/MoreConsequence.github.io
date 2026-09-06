@@ -2,6 +2,7 @@
 title: "现代 CDN 核心机理与全景架构（三）：动态请求加速（DCA）、私有骨干专网智能路由与 TCP 拥塞控制实战"
 description: "深入剖析针对不可缓存的纯动态 API、电商交易与 WebSocket 流式请求，CDN 如何通过四层边缘终结、预热多路复用连接池、全球探测覆盖网与动态 Dijkstra 智能选路，以及 BBR 拥塞控制在长肥管道中的落地实践。"
 publishedAt: "2026-08-29"
+updatedAt: "2026-09-06"
 tags: ["CDN", "动态加速", "智能路由", "BBR", "系统设计"]
 series: "现代 CDN 与边缘加速架构"
 draft: false
@@ -148,3 +149,10 @@ BBR 算法不再依赖丢包反馈，而是交替对网络物理边界进行主�
 | **端到端 TTFB 表现** | $560\text{ ms} \sim 1500\text{ ms}$（抖动大） | $\sim 380\text{ ms}$ | **稳定维持在 $180\text{ ms} \sim 190\text{ ms}$（降低 67%）** |
 
 至此，在《现代 CDN 与边缘加速架构》的第三篇中，我们彻底攻克了纯动态 API 无法缓存的加速难题，剖析了边缘四层终结、预热连接池复用、全球智能探测覆盖网与 BBR 拥塞控制调优的底层机理。在下一篇中，我们将深入剖析 **[《现代 CDN 核心机理与全景架构（四）：安全防御体系：边缘 WAF、DDoS 分布式清洗与 TLS 证书自动化卸载》](/writing/cdn-04-edge-security-waf-ddos)**。
+
+## 参考资料
+
+- RFC 8297：An HTTP Status Code for Indicating Hints (103 Early Hints)，<https://www.rfc-editor.org/rfc/rfc8297>
+- web.dev：Early Hints——预连接与预加载提示的浏览器侧行为，<https://developer.chrome.com/docs/web-platform/early-hints>
+- RFC 8446：The Transport Layer Security (TLS) Protocol Version 1.3——0-RTT 与握手成本，<https://www.rfc-editor.org/rfc/rfc8446>
+- RFC 9110：HTTP Semantics——缓存与条件请求的语义基础，<https://www.rfc-editor.org/rfc/rfc9110>

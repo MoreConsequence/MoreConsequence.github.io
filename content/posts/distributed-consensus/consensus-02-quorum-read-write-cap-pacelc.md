@@ -2,6 +2,7 @@
 title: "Quorum 机制与一致性边界：R+W>N 物理重叠、Sloppy Quorum 与 PACELC 权衡"
 description: "深度推导分布式 Quorum 读写多数派的鸽巢重叠数学本质、弱网络下的 Sloppy Quorum 与 Hinted Handoff，以及超越 CAP 的 PACELC 物理决策矩阵。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["分布式系统", "Quorum", "CAP定理", "PACELC", "一致性模型"]
 draft: false
 featured: true
@@ -150,3 +151,10 @@ $$\mathbf{If\ Partition\ (P) \implies Choose\ [A\ vs\ C];\quad Else\ (E) \implie
    - 前者为 CP，后者为 AP。在现代 Web 架构中，绝大部分用户体验偏好“降级看到微量旧数据”，胜过直接看到“红色 500 报错页”。
 
 在下一篇中，我们将从单数据分片的 Quorum 跃升至跨数据库的复杂交互，深度解构 **分布式事务的演进：2PC/3PC 阻塞困境、SAGA 编排与本地消息表实战**。
+
+## 参考资料
+
+- Gilbert & Lynch，Brewer's Conjecture and the Feasibility of Consistent, Available, Partition-Tolerant Web Services——CAP 不可三得的证明，<https://doi.org/10.1145/564585.564601>
+- Brewer，CAP Twelve Years Later: How the Rules Have Changed——CAP 的工程化再解读，<https://doi.org/10.1109/MC.2012.37>
+- Abadi，Problems with CAP, and Yahoo's partial truce——PACELC 的原始表述，<https://dbmsmusings.blogspot.com/2010/04/problems-with-cap-and-clouds-cure-is.html>
+- DeCandia et al.，Dynamo—— Quorum (R+W>N) 与最终一致的工业实现，<https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf>

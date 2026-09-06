@@ -2,6 +2,7 @@
 title: "Linux 内存管理深度剖析：从虚拟地址空间、四级页表、TLB 命中到 HugePages 性能陷阱"
 description: "深度剖析 Linux 内存寻址与分页机制的第一性原理：拆解 x86-64 虚拟地址切片、CR3 寄存器与四级页表（PGD/P4D/PUD/PMD/PTE）硬件遍历时钟开销；详解 TLB 硬件快表与多核 TLB Shootdown 广播中断风暴；深入推导静态 HugePages 为什么能提升性能，以及为什么 Redis / MySQL 生产环境强制禁用透明大页（THP）以规避直接内存规整引起的严重长尾延迟尖刺。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "内存管理", "页表", "TLB", "HugePages", "性能调优"]
 draft: false
 featured: true
@@ -148,9 +149,14 @@ vm.min_free_kbytes = 1048576
 
 ---
 
-## 六、 总结
+## 六、 总结：寻址代价与两类大页的适用边界
 
 Linux 内存管理是连接软件数据结构与硬件晶体管的关键中枢：
 - 认识到四级页表遍历与 TLB Miss 的物理时钟代价，理解现代 CPU 寻址的第一性原理；
 - 对于 DPDK、向量数据库与高性能大模型推理引擎，**主动使用静态 HugePages** 提升 TLB 覆盖率；
 - 对于 Redis、MySQL、Elasticsearch 等传统内存密集型数据库，**坚决在生产环境禁用透明大页 THP**，彻底斩断由直接内存规整与 COW 放大引起的延迟抖动与 OOM 风险。
+
+## 参考资料
+
+- Linux 内核文档：Transparent Hugepages——THP 行为与 defrag 设置，<https://docs.kernel.org/admin-guide/mm/transhuge.html>
+- Linux 内核文档：hugetlbpage——静态大页的预留与管理，<https://docs.kernel.org/admin-guide/mm/hugetlbpage.html>

@@ -2,6 +2,7 @@
 title: "大模型吞吐翻倍引擎：从静态批处理到连续批处理（Continuous Batching）状态机"
 description: "直击大模型推理调度的核心物理机理：从静态批处理的 Padding 算力浪费与木桶效应，到 Orca 迭代级连续批处理（Iteration-level Scheduling）状态机与 Chunked Prefill 算力配平实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "连续批处理", "vLLM", "推理调度", "Chunked Prefill", "GPU加速"]
 draft: false
 featured: true
@@ -142,3 +143,8 @@ $$\text{Batch} = [\text{1 个 512-Token 的 Prefill 块}] + [\text{40 个在途�
 | **连续批处理 + Chunked Prefill** | 迭代分块级 (Chunked) | **$\approx 0\%$** | **极低且稳定** | **极低且平滑（P99 波动 $< 10\text{ms}$）** |
 
 连续批处理与 Chunked Prefill 将现代大模型后端的吞吐能力推向了极限。在下一篇中，我们将深入探索打破自回归串行枷锁的数学奇迹：**投机采样（Speculative Decoding）物理本质：草稿模型推测与大模型并行验证**。
+
+## 参考资料
+
+- Yu et al.，Orca: A Distributed Serving System for Transformer-Based Generative Models (OSDI 2022)——iteration-level 调度的原始论文，<https://www.usenix.org/conference/osdi22/presentation/yu>
+- vLLM 官方博客——continuous batching 的工程实现与吞吐数据，<https://blog.vllm.ai/2023/06/20/vllm.html>

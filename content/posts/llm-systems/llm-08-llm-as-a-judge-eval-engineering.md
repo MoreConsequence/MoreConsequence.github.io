@@ -2,6 +2,7 @@
 title: "LLM-as-a-Judge 评测的科学与工程陷阱：四大系统性偏差、Kappa 一致性度量与 CI 自动化门禁"
 description: "深度剖析大模型评测体系的物理底盘：为什么人工评测无法规模化而简陋的 LLM-as-a-Judge 充满自欺欺人？深入拆解位置偏差、长度啰嗦偏差、家族自偏好与打分尺度漂移四大物理成因，推导 Cohen's Kappa / Fleiss' Kappa 统计一致性度量，并构建基于双向交换（Swap-Pair）与 GitHub Actions 的自动化回归质量门禁。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["大模型工程", "LLM评测", "LLM-as-a-Judge", "CI/CD", "统计学", "系统架构"]
 draft: false
 featured: true
@@ -180,9 +181,15 @@ jobs:
 
 ---
 
-## 六、 总结
+## 六、 总结：评测是一门对抗偏差的系统学科
 
 大模型评测绝非简单的“写几句 Prompt 看看输出好不好看”，而是一套融合了**统计学检验、物理偏差对抗、双向交换盲测与持续集成工程（CI/CD）的严肃系统学科**：
 - 认识到位置偏差、长度偏差与家族自偏好的物理必然性，用 Swap-Pair 与盲测设计对抗偏差；
 - 用 Cohen's Kappa 数学公式校准裁判可信度，拒绝自欺欺人；
 - 将评测固化为研发流水线上的自动化确定性门禁，才能在快速迭代的大模型时代保持系统的质量下限与演进上限。
+
+## 参考资料
+
+- Zheng et al.，Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena——位置偏差与互换提升，<https://arxiv.org/abs/2306.05685>
+- Liu et al.，G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment——表单化评分与偏差，<https://arxiv.org/abs/2303.16634>
+- Cohen，A Coefficient of Agreement for Nominal Scales——Kappa 一致性度量的原始定义，<https://doi.org/10.1177/001316446002000104>

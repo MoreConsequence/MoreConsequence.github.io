@@ -2,6 +2,7 @@
 title: "eBPF 无侵入可观测性实战：Kprobe 动态插桩、Tracepoint 静态埋点与 Off-CPU 溯源"
 description: "直击 Linux 系统级性能排障的最高殿堂：从 Kprobe 动态探针断点替换（int3）与寄存器捕获机理、Tracepoint 零损耗静态探针，到基于 eBPF 捕获 finish_task_switch 深度溯源 Off-CPU 阻塞时延全景实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["Linux内核", "eBPF", "Kprobe", "Tracepoint", "可观测性", "Off-CPU分析", "性能排障"]
 draft: false
 featured: true
@@ -187,3 +188,8 @@ tracepoint:sched:sched_switch /@start[args->next_pid]/ {
 | **Uprobe** | 任意用户态二进制代码指令 | 较高（涉及用户-内核-用户两次切态） | 依赖 ELF 符号表 | 零侵入抓取 HTTPS 握手明文、Go 协程调度函数耗时分析 |
 
 掌握了从网卡到内核探针的全链路机制后，我们还需要掌控出口流量的调度与整形。在下一篇中，我们将进入 Linux 流量控制与拥塞调度的精髓：**Linux 流量控制（TC）与拥塞调度：qdisc 排队规则、HTB 分层令牌桶与 BBR 联动调优**。
+
+## 参考资料
+
+- Linux 内核文档：Kprobes——内核动态探针的注册与限制，<https://docs.kernel.org/trace/kprobes.html>
+- Linux 内核文档：Tracepoints——静态探针与 BPF 关联，<https://docs.kernel.org/trace/tracepoints.html>

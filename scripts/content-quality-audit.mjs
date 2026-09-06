@@ -5,8 +5,13 @@ import { parse } from "yaml";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postsDir = path.join(root, "content", "posts");
-const files = fs.readdirSync(postsDir).filter((file) => file.endsWith(".md")).sort();
-const slugs = new Set(files.map((file) => file.slice(0, -3)));
+// Posts live in per-series subdirectories; scan recursively so the audit
+// keeps covering the whole corpus.
+const files = fs
+  .readdirSync(postsDir, { recursive: true })
+  .filter((file) => file.endsWith(".md"))
+  .sort();
+const slugs = new Set(files.map((file) => path.basename(file, ".md")));
 const weakHeading = /^(?:[一二三四五六七八九十百]+、\s*)?(背景|架构|结果|结论|总结|引言|概述|实现|原理|问题|方案|测试|性能|小结|下一步)$/;
 // Ellipses are valid in code excerpts, and "TODO" can be discussed as a concept.
 // Flag editorial markers that still ask the reader to wait or the author to finish.

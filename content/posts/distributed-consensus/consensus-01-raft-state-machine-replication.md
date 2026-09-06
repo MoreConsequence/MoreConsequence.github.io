@@ -2,6 +2,7 @@
 title: "深入 Raft 共识内核：Leader 选举状态机、日志复制与物理脑裂防御"
 description: "直击 Raft 共识算法的工程物理本质：从节点三态流转、Term 任期单调性、多数派日志提交推进，到非对称网络分区脑裂与 Pre-Vote 预投票防御实战。"
 publishedAt: "2026-08-30"
+updatedAt: "2026-09-06"
 tags: ["分布式系统", "Raft", "高可用", "系统设计", "etcd"]
 draft: false
 featured: true
@@ -230,3 +231,10 @@ func (r *RaftNode) HandlePreVote(req *PreVoteArgs, resp *PreVoteReply) {
 | **日志爆炸** | 日志无限追加耗尽磁盘与内存 | **Log Compaction 与 Snapshot 机制**：定期快照截断历史，Follower 落后过大直接全量发送快照 |
 
 共识算法从来不是教科书里死板的几条规则，而是在不可靠的物理硬件与异步网络中，通过**严谨的数学鸽巢重叠与防御性状态机编排**，构筑出绝对坚固的数据一致性壁垒。在下一篇中，我们将深入推导 **Quorum 读写多数派重叠数学原理与 CAP/PACELC 理论的物理边界**。
+
+## 参考资料
+
+- Ongaro & Ousterhout，In Search of an Understandable Consensus Algorithm (Raft)——论文原文，<https://raft.github.io/raft.pdf>
+- raft.github.io——Raft 可视化与论文索引，<https://raft.github.io/>
+- Diego Ongaro 博士论文：Consensus: Bridging Theory and Practice——成员变更与快照等工程细节，<https://www.usenix.org/system/files/conference/atc14/atc14-paper-ongaro.pdf>
+- etcd 官方文档——Raft 的生产实现参考，<https://etcd.io/docs/>
