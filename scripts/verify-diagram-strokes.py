@@ -3,13 +3,15 @@
 
 Checks (per the diagram-design skill token system, style-guide.md L113-123 + SKILL.md L293-340):
 
-  1. stroke-width only uses the three allowed tokens: 0.8 (hairline), 1 (default), 1.2 (strong).
+  1. stroke-width only uses the allowed tokens: core 0.8 (hairline), 1 (default), 1.2 (strong);
+     line/path/polyline/polygon/circle/ellipse may additionally use the type-line.md series
+     scale 1.8 (focal series) and 2.4 (ridgeline/bump focal, ring tracks).
      - node box borders (rect) & neutral connectors          -> 1
      - accent/focal connectors (stroke #eb6c36, line/path)   -> 1.2
      - axes / baselines / inner eyebrows / faint containers  -> 0.8
-     Checked on every drawable element (rect, line, path, polyline, polygon, circle, ellipse) --
-     connectors and arrowheads are line/path, so restricting this to rect would miss the
-     exact class of defect it exists to catch.
+     Core-token widths are color-checked on every drawable element; series-scale
+     widths are exempt from color expectations (a 2.4 ring track at faint
+     ink-alpha is a data graphic, not a hairline).
   2. all three arrow markers (arrow, arrow-accent, arrow-link) are defined, canonical size
      markerWidth=8 markerHeight=6 refX=7 refY=3, polygon "0 0, 8 3, 0 6".
   3. no arrow-label mask rect overlaps a connector segment (6-10px gap rule).
@@ -32,6 +34,12 @@ FAINT = {
 ACCENT = "#eb6c36"
 NODE_STROKE = {"#2d3142", "#4f5d75", "#7a8399", ACCENT}
 ALLOWED_W = {"0.8", "1", "1.2"}
+# Chart/ring data graphics carry their own scale from type-line.md: focal
+# series 1.8, ridgeline/bump focal 2.4. They apply to line/path/polyline/
+# polygon/circle/ellipse only -- boxes stay on the core tokens.
+SERIES_W = {"1.8", "2.4"}
+CORE_W = {"0.8", "1", "1.2"}
+SERIES_TAGS = {"line", "path", "polyline", "polygon", "circle", "ellipse"}
 CANON_MARKERS = {"arrow", "arrow-accent", "arrow-link"}
 CANON_MARKER_ATTRS = {"markerWidth": "8", "markerHeight": "6", "refX": "7", "refY": "3"}
 DRAWABLE = ("rect", "line", "path", "polyline", "polygon", "circle", "ellipse")
@@ -72,42 +80,62 @@ def seg_hits_rect(x1, y1, x2, y2, rx, ry, rw, rh):
 
 
 def path_segments(d):
-    """Return [(x1,y1,x2,y2), ...] for absolute M/L/H/V/Q paths, or None if the path
-    uses arcs or relative commands we cannot resolve without a full interpreter.
+    """Return [(x1,y1,x2,y2), ...] for absolute/relative M/L/H/V/Q paths, or None
+    if the path uses arcs, cubics, or closepath we cannot resolve linearly.
 
     Absolute Q is how the style guide expresses a rounded orthogonal elbow. The
     control point sits exactly on the corner, so inserting it as a vertex yields a
     conservative envelope (the real curve bulges *inside* the corner). Overlap
     reports are therefore never false negatives -- at worst slightly strict.
     """
-    if re.search(r"[CcAaSsTtZzmlhvcsqtaz]", d):
+    if re.search(r"[CcSsAaTtZz]", d):
         return None
-    pts, cur = [], None
-    for cmd, arg in re.findall(r"([MLHVQ])\s*([-\d.,\s]+)", d):
+    pts, cur, start = [], None, None
+    for cmd, arg in re.findall(r"([MLHVQmlhvq])\s*([-\d.,\s]*)", d):
         nums = [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", arg)]
-        if cmd in ("M", "L"):
+        if cmd in ("M", "m"):
+            if not nums or len(nums) % 2:
+                return None
             for i in range(0, len(nums) - 1, 2):
-                cur = (nums[i], nums[i + 1])
+                nx, ny = nums[i], nums[i + 1]
+                if cmd == "m" and cur is not None:
+                    nx, ny = cur[0] + nx, cur[1] + ny
+                cur = (nx, ny)
+                if start is None:
+                    start = cur
                 pts.append(cur)
-        elif cmd == "H":                      # absolute horizontal: y stays
-            if cur is None:
+        elif cmd in ("L", "l"):
+            if cur is None or not nums or len(nums) % 2:
+                return None
+            for i in range(0, len(nums) - 1, 2):
+                nx, ny = nums[i], nums[i + 1]
+                if cmd == "l":
+                    nx, ny = cur[0] + nx, cur[1] + ny
+                cur = (nx, ny)
+                pts.append(cur)
+        elif cmd in ("H", "h"):
+            if cur is None or not nums:
                 return None
             for x in nums:
-                cur = (x, cur[1])
+                cur = (cur[0] + x if cmd == "h" else x, cur[1])
                 pts.append(cur)
-        elif cmd == "V":                      # absolute vertical: x stays
-            if cur is None:
+        elif cmd in ("V", "v"):
+            if cur is None or not nums:
                 return None
             for y in nums:
-                cur = (cur[0], y)
+                cur = (cur[0], cur[1] + y if cmd == "v" else y)
                 pts.append(cur)
-        elif cmd == "Q":                      # absolute quadratic: ctrl = corner
-            if cur is None or len(nums) < 4:
+        elif cmd in ("Q", "q"):
+            if cur is None or not nums or len(nums) % 4:
                 return None
             for i in range(0, len(nums) - 3, 4):
-                cur = (nums[i], nums[i + 1])          # control point
+                cx, cy, ex, ey = nums[i:i + 4]
+                if cmd == "q":
+                    cx, cy = cur[0] + cx, cur[1] + cy
+                    ex, ey = cur[0] + ex, cur[1] + ey
+                cur = (cx, cy)          # control point = corner envelope
                 pts.append(cur)
-                cur = (nums[i + 2], nums[i + 3])      # end point
+                cur = (ex, ey)          # end point
                 pts.append(cur)
     if len(pts) < 2:
         return None
@@ -135,12 +163,36 @@ def audit(svg_text):
     problems = []
     arrows, masks, boxes = [], [], []
     widths = {}
+    paint_order = 0
 
-    for el in root.iter():
+    def walk(el, tx, ty):
+        # accumulate translate(x[,y]) group offsets so geometry checks see
+        # rendered coordinates; non-translate transforms mark the element
+        # unmeasurable and skip its geometry collection.
+        nonlocal paint_order
+        paint_order += 1
         tag = el.tag.split("}")[-1]
-        if tag not in DRAWABLE:
-            continue
+        my_tx, my_ty = tx, ty
+        tr = el.get("transform")
+        if tr:
+            m = re.fullmatch(r"\s*translate\(\s*([-\d.]+)[,\s]+([-\d.]+)\s*\)\s*", tr)
+            if m:
+                my_tx += float(m.group(1))
+                my_ty += float(m.group(2))
+            elif re.fullmatch(r"\s*translate\(\s*([-\d.]+)\s*\)\s*", tr):
+                my_tx += float(re.fullmatch(r"\s*translate\(\s*([-\d.]+)\s*\)\s*", tr).group(1))
+            else:
+                my_tx = my_ty = None  # unmeasurable subtree
 
+        if tag in DRAWABLE and my_tx is not None:
+            check_drawable(el, tag, my_tx, my_ty)
+        for child in el:
+            walk(child, my_tx, my_ty)
+
+    def shifted(v, d):
+        return None if v is None else v + d
+
+    def check_drawable(el, tag, tx, ty):
         sc = el.get("stroke")
         sw = el.get("stroke-width")
         is_arrow = bool(el.get("marker-end"))
@@ -151,9 +203,13 @@ def audit(svg_text):
                 problems.append(f"<{tag}> stroke={sc} has no stroke-width")
             else:
                 widths[sw] = widths.get(sw, 0) + 1
-                if sw not in ALLOWED_W:
-                    problems.append(f"<{tag}> stroke={sc} stroke-width={sw} not in {sorted(ALLOWED_W)}")
-                else:
+                allowed = ALLOWED_W | (SERIES_W if tag in SERIES_TAGS else set())
+                if sw not in allowed:
+                    problems.append(f"<{tag}> stroke={sc} stroke-width={sw} not in {sorted(allowed)}")
+                elif sw in CORE_W:
+                    # Series-scale widths are exempt from color expectations:
+                    # a 2.4 ring track at a faint ink-alpha is a data graphic,
+                    # not a hairline container.
                     exp = expected_width(tag, sc.strip())
                     if sw != exp:
                         problems.append(f"<{tag}> stroke={sc} stroke-width={sw}, expected {exp}")
@@ -161,7 +217,8 @@ def audit(svg_text):
         # 2. collect connector segments for the mask-overlap check
         if is_arrow:
             if tag == "line":
-                c = [num(el, a) for a in ("x1", "y1", "x2", "y2")]
+                c = [shifted(num(el, a), d) for a, d in
+                     (("x1", tx), ("y1", ty), ("x2", tx), ("y2", ty))]
                 if None not in c:
                     arrows.append(tuple(c))
             elif tag == "path":
@@ -169,20 +226,25 @@ def audit(svg_text):
                 if segs is None:
                     problems.append("arrow <path> uses curves; cannot verify mask clearance")
                 else:
-                    arrows.extend(segs)
+                    arrows.extend((x1 + tx, y1 + ty, x2 + tx, y2 + ty)
+                                  for x1, y1, x2, y2 in segs)
 
         # 3. collect label masks and node boxes
         if tag == "rect":
             fill = el.get("fill")
             w = el.get("width")
             if fill == "#f5f5f5" and sc in (None, "transparent"):
-                c = [num(el, a) for a in ("x", "y", "width", "height")]
+                c = [shifted(num(el, a), d) for a, d in
+                     (("x", tx), ("y", ty), ("width", 0), ("height", 0))]
                 if None not in c:
-                    masks.append(tuple(c))
+                    masks.append((paint_order, tuple(c)))
             if sc in NODE_STROKE and fill != "#f5f5f5" and w not in (None, "100%"):
-                c = [num(el, a) for a in ("x", "y", "width", "height")]
+                c = [shifted(num(el, a), d) for a, d in
+                     (("x", tx), ("y", ty), ("width", 0), ("height", 0))]
                 if None not in c:
-                    boxes.append(tuple(c))
+                    boxes.append((paint_order, tuple(c)))
+
+    walk(root, 0.0, 0.0)
 
     # 4. markers present and canonical
     have = set(re.findall(r'<marker id="([^"]+)"', svg_text))
@@ -212,16 +274,21 @@ def audit(svg_text):
                 problems.append(f"marker #{mid} {k}={attrs.get(k)}, expected {v}")
 
     # 5. mask vs connector
-    for m in masks:
+    for _, m in masks:
         for a in arrows:
             if seg_hits_rect(*a, *m):
                 problems.append(f"label mask {m} overlaps connector {a}")
                 break
 
-    # 6. mask vs node border
-    for m in masks:
-        for b in boxes:
+    # 6. mask vs node border (paint-order aware). Rule 6 bans a mask painted
+    #    before a node it partially covers (the node fill clips the label
+    #    text). A box fully inside a mask and painted after it is the
+    #    chip/badge-on-backdrop pattern, which rule 6 explicitly allows.
+    for mi, m in masks:
+        for bi, b in boxes:
             if rects_overlap(m, b) and not fully_inside(m, b):
+                if fully_inside(b, m) and bi > mi:
+                    continue
                 problems.append(f"label mask {m} cuts node border {b}")
 
     return problems, widths, len(arrows), len(masks)

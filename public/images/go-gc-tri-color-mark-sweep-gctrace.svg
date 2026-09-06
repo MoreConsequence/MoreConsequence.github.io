@@ -1,124 +1,116 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="gc-title gc-desc">
-  <defs>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;display=swap');
-      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&amp;family=Noto+Serif+SC:wght@400&amp;display=swap');
-    </style>
-  </defs>
-  <title id="gc-title">Go 三色标记-清除 GC 架构与 gctrace 日志拆解</title>
-  <desc id="gc-desc">Go 运行时垃圾回收架构图展示 STW 准备阶段、并发 mark/scan（含 assist、background、idle）、STW 标记终止阶段，以及 gctrace 日志全字段公式解剖。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="go-gc-tri-color-mark-sweep-gctrace-title go-gc-tri-color-mark-sweep-gctrace-desc"><title id="go-gc-tri-color-mark-sweep-gctrace-title">Go 三色标记-清除 GC 架构与 gctrace 日志拆解</title><desc id="go-gc-tri-color-mark-sweep-gctrace-desc">Go 运行时垃圾回收架构图展示 STW 准备阶段、并发 mark/scan（含 assist、background、idle）、STW 标记终止阶段，以及 gctrace 日志全字段公式解剖。</desc>
   <defs>
     <marker id="gc-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#6b6a64"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
     </marker>
     <marker id="gc-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#e85d3f"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
     </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="960" height="600" fill="#f5f4ed"/>
+  <rect width="960" height="600" fill="#f5f5f5"/>
 
   <!-- Header -->
-  <text x="40" y="48" fill="#6b6a64" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GC ARCHITECTURE · TRI-COLOR CONCURRENT MARK-SWEEP &amp; GCTRACE METRICS</text>
-  <text x="40" y="84" fill="#141413" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Go 三色标记-清除 GC 与 gctrace 拆解</text>
-  <text x="40" y="112" fill="#6b6a64" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">STW 准备 ➔ 并发 mark/scan (assist/bg/idle) ➔ STW 终止 ➔ 并发 sweep ➔ gctrace 日志剖析</text>
+  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">GC ARCHITECTURE · TRI-COLOR CONCURRENT MARK-SWEEP &amp; GCTRACE METRICS</text>
+  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Go 三色标记-清除 GC 与 gctrace 拆解</text>
+  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">STW 准备 ➔ 并发 mark/scan (assist/bg/idle) ➔ STW 终止 ➔ 并发 sweep ➔ gctrace 日志剖析</text>
 
   <!-- 4 Columns Architecture (y=136..506, h=370) -->
   <!-- Col 1: Sweep Term (x=40..245, w=205) -->
   <g transform="translate(40, 136)">
-    <rect width="205" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
-    <text x="62" y="25" fill="#141413" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STW PHASE 1</text>
-    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">STW 准备阶段</text>
+    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STW PHASE 1</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">STW 准备阶段</text>
 
     <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
-    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Sweep Termination</text>
-    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极短暂停顿（约 0.06ms）停止所有 P</text>
-    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 确保上轮清扫收尾，开启写屏障</text>
-    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Micro-Second Stop-The-World</text>
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">Sweep Termination</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极短暂停顿（约 0.06ms）停止所有 P</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 确保上轮清扫收尾，开启写屏障</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Micro-Second Stop-The-World</text>
 
     <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
-    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段职责：</text>
-    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全局切换 GC 运行状态至 _GCmark；</text>
-    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 启用混合写屏障（Write Barrier）；</text>
-    <text x="20" y="226" fill="#6b6a64" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为并发三色标记就绪根对象。</text>
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">阶段职责：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 全局切换 GC 运行状态至 _GCmark；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 启用混合写屏障（Write Barrier）；</text>
+    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 为并发三色标记就绪根对象。</text>
   </g>
 
   <!-- Col 2: Concurrent Mark (x=260..475, w=215) - Focal -->
   <g transform="translate(260, 136)">
-    <rect width="215" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CONCURRENT</text>
-    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">并发 mark/scan</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">并发 mark/scan</text>
 
     <!-- Box -->
-    <rect x="12" y="42" width="191" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
-    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">25% CPU Dedicated Mark</text>
-    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Background Worker 并发三色标记</text>
-    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Assist 业务辅助 + Idle 空闲算力</text>
-    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">Tri-Color Object Graph Walk</text>
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">25% CPU Dedicated Mark</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Background Worker 并发三色标记</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Assist 业务辅助 + Idle 空闲算力</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Tri-Color Object Graph Walk</text>
 
     <!-- Details -->
-    <rect x="12" y="148" width="191" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
-    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">标记核心：</text>
-    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 业务协程与标记协程并发并行执行；</text>
-    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 分配过快将强制触发 Mark Assist；</text>
-    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 是整个 GC 耗费 CPU 最主要的阶段。</text>
+    <rect x="12" y="148" width="191" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">标记核心：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 业务协程与标记协程并发并行执行；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 分配过快将强制触发 Mark Assist；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 是整个 GC 耗费 CPU 最主要的阶段。</text>
   </g>
 
   <!-- Col 3: Mark Term (x=490..695, w=205) - Focal -->
   <g transform="translate(490, 136)">
-    <rect width="205" height="376" rx="6" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1.2"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#e85d3f"/>
+    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STW PHASE 2</text>
-    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">STW 终止阶段</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">STW 终止阶段</text>
 
     <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="1"/>
-    <text x="20" y="62" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Mark Termination</text>
-    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极短暂停顿（约 0.01ms）关闭写屏障</text>
-    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 计算下轮触发目标 goal 并切换状态</text>
-    <text x="20" y="110" fill="#e85d3f" font-size="7.5" font-family="'Geist Mono', monospace">State Finalization &amp; Goal Fit</text>
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Mark Termination</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 极短暂停顿（约 0.01ms）关闭写屏障</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 计算下轮触发目标 goal 并切换状态</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">State Finalization &amp; Goal Fit</text>
 
     <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#fffdfb" stroke="#e85d3f" stroke-width="0.8"/>
-    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">收尾工作：</text>
-    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 统计本轮回收结果与活跃堆大小；</text>
-    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 唤醒并发清扫器（Concurrent Sweep）；</text>
-    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 迅速恢复用户业务正常全速运行。</text>
+    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">收尾工作：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 统计本轮回收结果与活跃堆大小；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 唤醒并发清扫器（Concurrent Sweep）；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 迅速恢复用户业务正常全速运行。</text>
   </g>
 
   <!-- Col 4: gctrace (x=710..920, w=210) -->
   <g transform="translate(710, 136)">
-    <rect width="210" height="376" rx="6" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#141413"/>
+    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GCTRACE=1</text>
-    <text x="118" y="26" fill="#141413" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">gctrace 日志拆解</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">gctrace 日志拆解</text>
 
     <!-- Box -->
-    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f4ed" stroke="#141413" stroke-width="0.8"/>
-    <text x="20" y="62" fill="#141413" font-size="8.5" font-family="'Geist Mono', monospace">Clock + CPU + Heap</text>
-    <text x="20" y="78" fill="#141413" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 0.06+18+0.01 ms (三段墙钟时间)</text>
-    <text x="20" y="94" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 8-&gt;12-&gt;11 MB (GC前-&gt;清扫后-&gt;存活)</text>
-    <text x="20" y="110" fill="#6b6a64" font-size="7.5" font-family="'Geist Mono', monospace">Exact Diagnostic Telemetry</text>
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">Clock + CPU + Heap</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 0.06+18+0.01 ms (三段墙钟时间)</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 8-&gt;12-&gt;11 MB (GC前-&gt;清扫后-&gt;存活)</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Exact Diagnostic Telemetry</text>
 
     <!-- Details -->
-    <rect x="12" y="148" width="186" height="212" rx="3" fill="#fffdfb" stroke="#141413" stroke-width="0.8"/>
-    <text x="20" y="170" fill="#141413" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">排障准则：</text>
-    <text x="20" y="190" fill="#6b6a64" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 通过 gctrace 直观洞察 STW 耗时占比；</text>
-    <text x="20" y="208" fill="#e85d3f" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 区分 Assist 与 Background CPU 压力；</text>
-    <text x="20" y="226" fill="#141413" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 精准指导内存分配与 GC 调优。</text>
+    <rect x="12" y="148" width="186" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">排障准则：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 通过 gctrace 直观洞察 STW 耗时占比；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 区分 Assist 与 Background CPU 压力；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 精准指导内存分配与 GC 调优。</text>
   </g>
 
   <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(20,20,19,0.16)" stroke-width="0.8"/>
-  <text x="40" y="564" fill="#6b6a64" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#fffdfb" stroke="#141413" stroke-width="1"/>
-  <text x="140" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">STW 准备阶段与 gctrace 日志精准度量拆解</text>
-  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(232,93,63,0.06)" stroke="#e85d3f" stroke-width="1"/>
-  <text x="390" y="564" fill="#6b6a64" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">并发 mark/scan 三色标记与 STW 终止收尾核心</text>
-</svg>
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">STW 准备阶段与 gctrace 日志精准度量拆解</text>
+  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="390" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">并发 mark/scan 三色标记与 STW 终止收尾核心</text>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
