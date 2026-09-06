@@ -2094,3 +2094,8 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | xmlns 修复 | 227+26 张 | 227 张此前完全缺失 xmlns（浏览器 `<img>` 加载会拒绝渲染——线上本就处于部分裂图状态，本轮起永久修复并纳入检查）；26 张在修复过程中产生重复 xmlns，已去重。全库单 xmlns + 可解析验证通过 |
 
 验证：`verify-diagram-strokes.py` 594/594 ALL PASS；越界 0；叠堆 0；a11y 594/594；单 xmlns 594/594；渲染目检覆盖 2/4/6 面板型与规范图对照（规范批次未被收缩误伤）。保留决策：深色终端块作为 terminal 变体保留；同批"三栏/四栏卡片"的版式骨架保留（内容结构如此），但等宽栅格的视觉问题随留白收缩与规范配色已消除。
+
+## 四十三、2026-09-07 diagram-design skill 升级与项目 profile 标记
+
+- 按用户指令从上游 `cathrynlavery/diagram-design` 重新安装 `~/.codex/skills/diagram-design`（备份于 `~/.codex/skills/diagram-design.bak-20260907`）。上游为同一 2.6 版的新修订：新增 CJK/繁体中文标签规则与 Noto TC 字体栈、Mermaid 解析增强、模板与示例更新；设计 token（paper/ink/muted/soft/accent）与 `self_check.py` 完全未变——全库 594 张图与 `verify-diagram-strokes.py` 的口径不受影响。新增的中文标签三规则（简体栈回退、12px 下限、箭头标签换 register）与本库现有简体图的字体栈一致。
+- 按新 skill 的 profiles 机制初始化：`~/.diagram-design/profiles/default.md`（原生默认皮肤的恢复副本），项目根新增 `.diagram-design` 标记（`profile: default`）——后续生成走 marker-first 直读，跳过首跑品牌询问，且不改动安装副本。
