@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>日志信息在三个位置被销毁</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 560" width="960" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="log-level-three-destruction-points-title log-level-three-destruction-points-desc"><title id="log-level-three-destruction-points-title">日志信息的三个销毁点</title><desc id="log-level-three-destruction-points-desc">一条日志从产生到被读取，信息在三个位置被单向丢弃：写入点由写代码的人主观赋级别，传输点在拥塞时优先丢弃低级别，存储点做单向聚合并按保留期清除。级别只是第一处的开关。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">日志信息在三个位置被销毁，级别只是第一处</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">三处的控制权在不同人手里，三处都不可逆</text>
+
+<!-- flow chips -->
+<rect x="48" y="96" width="88" height="32" rx="4" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+<text x="92" y="117" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">日志产生</text>
+<rect x="824" y="96" width="88" height="32" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="868" y="117" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">有人读取</text>
+<line x1="136" y1="112" x2="160" y2="112" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="800" y1="112" x2="824" y2="112" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- destruction card 1: 写入点 -->
+<rect x="48" y="152" width="264" height="224" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="64" y="168" width="76" height="20" rx="2" fill="transparent" stroke="#7a8399" stroke-width="1"/>
+<text x="102" y="182" fill="#7a8399" font-size="8.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">销毁点 1</text>
+<text x="64" y="216" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">写入点：级别判定</text>
+<text x="64" y="244" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">写代码的人给每行日志赋级别，</text>
+<text x="64" y="262" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">RFC 5424 承认这个赋值是主观的。</text>
+<rect x="64" y="280" width="232" height="68" rx="4" fill="rgba(45,49,66,0.04)" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="76" y="308" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">severities are very</text>
+<text x="76" y="324" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">subjective — RFC 5424 A.3</text>
+<text x="64" y="366" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">关闭的级别从此不再产生记录。</text>
+
+<!-- destruction card 2: 传输点 -->
+<rect x="348" y="152" width="264" height="224" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<rect x="364" y="168" width="76" height="20" rx="2" fill="transparent" stroke="#7a8399" stroke-width="1"/>
+<text x="402" y="182" fill="#7a8399" font-size="8.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">销毁点 2</text>
+<text x="364" y="216" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">传输点：拥塞丢弃</text>
+<text x="364" y="244" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">RFC 5424 §8.6：拥塞时建议优先</text>
+<text x="364" y="262" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">丢弃数值大的 severity（DEBUG 先丢）。</text>
+<rect x="364" y="280" width="232" height="68" rx="4" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<text x="376" y="308" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">最不稳定的时刻，</text>
+<text x="376" y="324" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">主动丢掉最多诊断信息</text>
+<text x="364" y="366" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">丢弃被写进了协议建议。</text>
+
+<!-- destruction card 3: 存储点 (focal) -->
+<rect x="648" y="152" width="264" height="224" rx="6" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<rect x="664" y="168" width="76" height="20" rx="2" fill="transparent" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+<text x="702" y="182" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">销毁点 3</text>
+<text x="664" y="216" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">存储点：聚合与保留期</text>
+<text x="664" y="244" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">聚合成指标是单程旅行：指标可以</text>
+<text x="664" y="262" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">从事件推导，事件无法从指标还原。</text>
+<rect x="664" y="280" width="232" height="68" rx="4" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<text x="676" y="308" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">Aggregation is a</text>
+<text x="676" y="324" fill="#2d3142" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">one-way trip — charity.wtf</text>
+<text x="664" y="366" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">保留期一到，连原始事件也没了。</text>
+
+<!-- connectors between cards -->
+<line x1="312" y1="264" x2="348" y2="264" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<line x1="612" y1="264" x2="648" y2="264" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- bottom takeaway -->
+<line x1="48" y1="424" x2="912" y2="424" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="452" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">TAKEAWAY</text>
+<text x="48" y="480" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">级别开关只管辖第一处；传输与存储的销毁各有自己的机制，事后都无法反悔</text>
+<text x="48" y="504" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">写入之前值得问的不是"这条重不重要"，而是"这条在事发之后还能不能重建"。</text>
+
+</svg>
+</body>
+</html>

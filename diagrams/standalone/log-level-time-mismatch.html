@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>动态调级与事故排查的时间方向相反</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 560" width="960" height="560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="log-level-time-mismatch-title log-level-time-mismatch-desc"><title id="log-level-time-mismatch-title">调级向前，排查向后</title><desc id="log-level-time-mismatch-desc">请求时间轴上，故障请求发生在调级之前。动态调级只对切换之后的请求生效，方向向前；事故排查需要的是切换之前那一次请求的细节，方向向后。两个方向相反，调到 DEBUG 也捞不回已销毁的上下文。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">调级向前生效，排查向后追溯</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">"出事再开 DEBUG"修不了这个时间错配：你需要的不是下一次请求</text>
+
+<!-- request timeline -->
+<text x="48" y="112" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">请求时间轴</text>
+<line x1="80" y1="176" x2="880" y2="176" stroke="#2d3142" stroke-width="1"/>
+<text x="880" y="200" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="end">时间</text>
+
+<!-- destroyed region (before switch) -->
+<rect x="80" y="144" width="416" height="64" rx="4" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<text x="96" y="164" fill="#eb6c36" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">只留下 INFO 记录</text>
+
+<!-- incident request marker -->
+<circle cx="240" cy="176" r="6" fill="#eb6c36"/>
+<text x="240" y="132" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">故障请求（那一次）</text>
+<text x="240" y="232" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">带当时的库存快照 · 下游响应 · 分支</text>
+
+<!-- later requests -->
+<circle cx="416" cy="176" r="4" fill="#7a8399"/>
+<circle cx="560" cy="176" r="4" fill="#7a8399"/>
+<circle cx="704" cy="176" r="4" fill="#7a8399"/>
+<text x="416" y="232" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">T+1</text>
+<text x="560" y="232" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">T+2</text>
+<text x="704" y="232" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">T+n</text>
+
+<!-- level switch marker -->
+<rect x="496" y="160" width="128" height="32" rx="4" fill="#ffffff" stroke="#2e5aa8" stroke-width="1"/>
+<text x="560" y="181" fill="#2e5aa8" font-size="10.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">调到 DEBUG</text>
+
+<!-- forward arrow (what DEBUG captures) -->
+<line x1="624" y1="176" x2="880" y2="176" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+<text x="752" y="168" fill="#2e5aa8" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">DEBUG 从这里起作用</text>
+
+<!-- backward arrow (what investigation needs) -->
+<line x1="496" y1="296" x2="248" y2="296" stroke="#eb6c36" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-accent)"/>
+<text x="372" y="288" fill="#eb6c36" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">排查需要的是已经过去的这一次</text>
+
+<!-- mismatch card -->
+<rect x="48" y="352" width="864" height="152" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="384" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">"先 INFO，出事再开 DEBUG"隐含的三个假设，生产里都不成立</text>
+<text x="64" y="412" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 失败可复现 —— 大部分有价值的故障是低概率组合触发的，下一次请求不走同一条路径；</text>
+<text x="64" y="436" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 失败与历史状态无关 —— 缓存、锁、额度、时间窗口都是当时的，重放看不到同样的细节；</text>
+<text x="64" y="460" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 即时生效也只对"切换之后"有意义 —— 而事故数据在切换之前。方向相反，怎么调都捞不回来。</text>
+<text x="64" y="488" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">附带代价：事故期间调低级别还会抬高负载——你最需要信息的时刻，恰恰是最不能加负载的时刻。</text>
+
+</svg>
+</body>
+</html>

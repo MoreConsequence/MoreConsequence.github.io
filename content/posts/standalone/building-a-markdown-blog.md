@@ -149,7 +149,7 @@ git log --oneline --follow -- content/posts/clock-skew-distributed-systems.md  #
 
 ## 六、图片与静态资源
 
-正文只是内容的一半，配图是另一半。这套工作流里图片同样以文件存在：`public/images/` 目录，正文用标准的 Markdown 图片语法引用——比如 perf 文章的配图就是 `![perf 火焰图判读示例:memcpy 占 44% 的真热点](../../../public/images/flamegraph-sample.svg)`，路径指向仓库里真实存在的文件。
+正文只是内容的一半，配图是另一半。这套工作流里图片同样以文件存在：`public/images/` 目录，正文用标准的 Markdown 图片语法引用——比如 perf 文章的配图就是 `![perf 采样原理与火焰图三维语义拓扑：X 轴调用总耗时占比与 Y 轴调用栈深度](../../../public/images/flamegraph-cpu-profiling-flame-palette.svg)`，路径指向仓库里真实存在的文件。
 
 图片管理有一个常常被忽视的约束：**每张图都要有 `alt` 文本**。`alt` 不是给"看不见的人"的礼貌项——屏幕阅读器靠它朗读图片，搜索引擎靠它理解图片上下文，图片加载失败时浏览器把它显示成占位文字。一篇"手把手画火焰图"的文章配图没有 `alt`，等于这篇教程对读屏用户是空白。
 

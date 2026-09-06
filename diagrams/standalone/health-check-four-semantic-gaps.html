@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>健康检查与业务请求的四个语义差异</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 528" width="960" height="528" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="health-check-four-semantic-gaps-title health-check-four-semantic-gaps-desc"><title id="health-check-four-semantic-gaps-title">健康检查与业务请求的四个语义差异</title><desc id="health-check-four-semantic-gaps-desc">四个维度上健康检查与业务请求语义不同：失败作用对象是一个节点而不是一次请求；调用者是自报身份的 kubelet 探针；成本随节点数线性放大而与业务价值无关；结果有三态且未配置的探针视为成功。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">健康检查与业务请求的四个语义差异</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">不能照业务接口的经验写探针——两者失败后的处置方、作用对象和放大方式都不同</text>
+
+<!-- column headers -->
+<text x="48" y="100" fill="#7a8399" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">维度</text>
+<text x="248" y="100" fill="#4f5d75" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">业务请求</text>
+<text x="544" y="100" fill="#eb6c36" font-size="10" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">健康检查 · 探针</text>
+
+<!-- Row 1: 失败作用对象 -->
+<rect x="48" y="116" width="160" height="72" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="146" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">失败作用对象</text>
+<text x="64" y="168" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">维度一</text>
+<rect x="232" y="116" width="288" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="248" y="146" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">这一次请求本身</text>
+<text x="248" y="168" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">返回错误 · 记日志 · 可能重试</text>
+<rect x="544" y="116" width="368" height="72" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="560" y="146" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">承载它的那个节点</text>
+<text x="560" y="168" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">重启容器，或从 EndpointSlice 摘除 IP</text>
+
+<!-- Row 2: 调用者身份 -->
+<rect x="48" y="204" width="160" height="72" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="234" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">调用者身份</text>
+<text x="64" y="256" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">维度二</text>
+<rect x="232" y="204" width="288" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="248" y="234" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">带业务上下文</text>
+<text x="248" y="256" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">用户 · 租户 · trace · 幂等键</text>
+<rect x="544" y="204" width="368" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="560" y="234" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">kubelet 直连，自报 User-Agent</text>
+<text x="560" y="256" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">kube-probe/&lt;version&gt; · 不鉴权 · 不占配额</text>
+
+<!-- Row 3: 成本放大 -->
+<rect x="48" y="292" width="160" height="72" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="322" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">成本放大</text>
+<text x="64" y="344" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">维度三</text>
+<rect x="232" y="292" width="288" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="248" y="322" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">与业务价值正相关</text>
+<text x="248" y="344" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">处理一次下单，换来一笔订单</text>
+<rect x="544" y="292" width="368" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="560" y="322" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">零业务价值 × 节点数线性放大</text>
+<text x="560" y="344" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">节点数 × 探针频率 × 单次成本</text>
+
+<!-- Row 4: 结果取值 -->
+<rect x="48" y="380" width="160" height="72" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="410" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">结果取值</text>
+<text x="64" y="432" fill="#7a8399" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">维度四</text>
+<rect x="232" y="380" width="288" height="72" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1"/>
+<text x="248" y="410" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">两态：成功 / 失败</text>
+<text x="248" y="432" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">超时归入失败</text>
+<rect x="544" y="380" width="368" height="72" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="560" y="410" fill="#2d3142" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">三态：Success / Failure / Unknown</text>
+<text x="560" y="432" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">未配置的探针视为 Success；readiness 延迟期除外</text>
+
+<!-- bottom takeaway -->
+<text x="48" y="496" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">误判成本结构不同：业务接口偶发 5% 错误可以容忍；探针 5% 误判 = 5% 的节点被随机重启或摘流。</text>
+
+</svg>
+</body>
+</html>

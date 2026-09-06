@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>liveness 检查依赖的正反馈重启循环</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 600" width="960" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="health-check-cascade-restart-loop-title health-check-cascade-restart-loop-desc"><title id="health-check-cascade-restart-loop-title">级联重启循环</title><desc id="health-check-cascade-restart-loop-desc">liveness 探针检查下游依赖时，一次下游抖动变成正反馈循环：探针失败触发 kubelet 重启，重启让剩余 Pod 压力升高、探针变慢再失败，引发更多重启。循环只能等下游恢复才停。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">一次下游抖动，怎么变成整个集群的滚动重启</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">liveness 检查依赖时，重启不是修复动作，而是放大机制</text>
+
+<!-- trigger (external) -->
+<rect x="48" y="112" width="272" height="56" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="64" y="136" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">Redis 所在网络抖动约 30 秒</text>
+<text x="64" y="156" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">外部触发 · 与本服务代码无关</text>
+
+<!-- trigger arrow into loop -->
+<path d="M 320,140 H 464 Q 472,140 472,148 V 196" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+<!-- loop nodes: diamond layout -->
+<!-- top -->
+<rect x="328" y="200" width="288" height="72" rx="6" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="344" y="228" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">liveness 探针连续 3 次失败</text>
+<text x="344" y="250" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">检查里包含「Redis 能否连通」</text>
+<!-- right -->
+<rect x="664" y="328" width="248" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="680" y="356" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">kubelet 重启容器</text>
+<text x="680" y="378" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">进程重新初始化 · 缓存全冷</text>
+<!-- bottom -->
+<rect x="328" y="456" width="288" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="344" y="484" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">剩余 Pod 压力升高</text>
+<text x="344" y="506" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">被重启的 Pod 启动期不接流量</text>
+<!-- left -->
+<rect x="48" y="328" width="248" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="64" y="356" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">探针响应变慢，也开始失败</text>
+<text x="64" y="378" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">健康节点被拉进循环</text>
+
+<!-- cycle connectors (clockwise, rounded elbows) -->
+<line x1="616" y1="236" x2="760" y2="236" stroke="#4f5d75" stroke-width="1"/>
+<line x1="788" y1="236" x2="788" y2="320" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<path d="M 788,400 V 484 Q 788,492 780,492 H 624" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="328" y1="492" x2="176" y2="492" stroke="#eb6c36" stroke-width="1.2"/>
+<line x1="172" y1="492" x2="172" y2="408" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<line x1="172" y1="328" x2="172" y2="236" stroke="#4f5d75" stroke-width="1"/>
+<line x1="172" y1="236" x2="320" y2="236" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+<!-- center label -->
+<rect x="392" y="340" width="176" height="48" rx="6" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.22)" stroke-width="0.8"/>
+<text x="480" y="360" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">正反馈循环</text>
+<text x="480" y="378" fill="#4f5d75" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">K8s 官方警告的级联失败</text>
+
+<!-- escape note -->
+<rect x="664" y="112" width="248" height="56" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="680" y="136" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">循环的停止条件</text>
+<text x="680" y="156" fill="#7a8399" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">只有下游恢复，循环才会停</text>
+
+<!-- bottom takeaway -->
+<line x1="48" y1="552" x2="912" y2="552" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="580" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">判断标准：这个检查项失败时，重启这个容器是有效的修复动作吗？Redis 不可达时，答案是否。</text>
+
+</svg>
+</body>
+</html>

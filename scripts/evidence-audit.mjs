@@ -6,7 +6,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postsDir = path.join(root, "content", "posts");
 const evidenceDir = path.join(root, "evidence");
 
-const files = fs.readdirSync(postsDir).filter((file) => file.endsWith(".md")).sort();
+const files = fs
+  .readdirSync(postsDir, { recursive: true })
+  .filter((file) => file.endsWith(".md"))
+  .sort();
 
 const round3 = (n) => Math.round(n * 1000) / 1000;
 const round = (n, d) => Math.round(n * 10 ** d) / 10 ** d;
@@ -53,7 +56,11 @@ function hasRawFiles(evDirName) {
 const reports = [];
 for (const file of files) {
   const slug = file.slice(0, -3);
-  const source = fs.readFileSync(path.join(postsDir, file), "utf8");
+  const source = fs
+    .readFileSync(path.join(postsDir, file), "utf8")
+    // Quoted tool output inside fenced blocks is historical evidence, not a
+    // live path reference; strip fences before scanning.
+    .replace(/^```[\s\S]*?^```.*$/gm, "");
   const match = source.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!match) continue;
   const body = match[2];

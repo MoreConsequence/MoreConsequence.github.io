@@ -46,6 +46,16 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "abstraction-leaks-failure-modes",
+      "dependency-upgrade-resource-signature",
+      "health-check-semantics-special-request",
+      "hidden-defaults-architecture-decisions",
+      "legacy-code-as-information-compression",
+      "log-level-irreversible-information-destruction",
+      "monitoring-vs-forensics",
+      "observer-effect-monitoring-as-load",
+      "rollback-observed-side-effects",
+      "distributed-clock-ordering-hlc-truetime",
       "consensus-01-raft-state-machine-replication",
       "consensus-02-quorum-read-write-cap-pacelc",
       "consensus-03-distributed-transactions-2pc-saga-outbox",
@@ -135,6 +145,7 @@ describe("Markdown content pipeline", () => {
       "agent-engine-tools",
       "benchmark-one-variable",
       "esm-cjs-dual-package",
+      "evidence-engineering-raw-output",
       "git-bisect-regression-hunt",
       "go-context-vs-abortsignal",
       "histogram-bucket-design",

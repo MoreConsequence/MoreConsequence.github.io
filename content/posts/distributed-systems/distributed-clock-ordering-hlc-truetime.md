@@ -3,7 +3,7 @@ title: "没有全局时钟的世界：HLC、TrueTime 与因果一致性怎么选
 description: "墙钟不可信、逻辑时钟丢了真实时间之后，分布式系统怎么给事件排序？拆解物理时钟、TrueTime 有界不确定性、HLC 混合逻辑时钟与 TSO 集中式时间戳四者的合同、成本与失败模型，给出按部署跨度与排序语义选型的决策边界。"
 publishedAt: "2026-08-31"
 tags: ["分布式", "一致性", "时钟", "系统设计", "HLC"]
-draft: true
+draft: false
 featured: false
 ---
 

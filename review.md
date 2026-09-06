@@ -2042,3 +2042,35 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `git diff --check` | 通过 |
 
 剩余边界：C 组 pastel 批次保留语义分类色（非全量 monochrome 化，属刻意决策）；3 张 880 宽画布为 `fit` 档合法尺寸；在线 403/429 限流响应的链接（vLLM 文档）按可达处理，后续可用 GET 复核。
+
+## 四十、2026-09-07 草稿终审与全量发布：11 篇翻为 production
+
+按用户指令（优化到可发布水平后发布），对当时标记 `draft: true` 的草稿逐篇终审。核对后确认真实草稿为 11 篇——`building-a-markdown-blog` 与 `inside-my-markdown-blog-architecture` 的 `draft: true` 命中来自正文 frontmatter 示例代码，两篇实为 production（首轮回扫误计，已按 frontmatter 解析口径修正）。
+
+### 40.1 终审发现的发布阻断项（全部修复）
+
+| 问题 | 范围 | 处理 |
+| --- | --- | --- |
+| 引用的配图文件不存在 | health-check 3 张、log-level 3 张（直接发布会挂图） | 按 skill 规范新建 6 个 HTML 源（`diagrams/standalone/`）并导出：三销毁点、调级时间错配、可重建性三分类、级联重启循环、四语义差异、三探针失败处置链；`verify-diagram-strokes.py` 全过 + 渲染目检（修掉 2 处初版缺陷：卡片末行压边、触发箭头断链/连线穿框/箭头未接节点边缘、标签相撞） |
+| `flamegraph-sample.svg` 不存在但正文声称"路径指向仓库里真实存在的文件" | `building-a-markdown-blog` §6 | 改为引用真实存在的 `flamegraph-cpu-profiling-flame-palette.svg` 及其真实 alt |
+| 事故叙事无场景声明 | monitoring、legacy-code、hidden-defaults（observer/log-level/health/rollback/dependency 已有） | 按 observer-effect 的措辞惯例补 `> 场景说明`（数字为量级示意/构造示例，默认值按版本核对） |
+| `audit:evidence` 与 `audit:content` 同样的非递归 readdir bug | `scripts/evidence-audit.mjs` | 修复为递归扫描（修复前恒报 0 篇）；另剥离 fenced code 后再扫描——`rebuild-incident-evidence-chain` 引用的历史工具输出（v4 表格）曾被误判为活路径硬失败 |
+| 文中"135 篇"计数过时 | `evidence-engineering-raw-output` TL;DR 与 §四/§五 | 改为"本文发布时全库 233 篇（2026-09-06 复核硬检查 0 失败）" |
+
+### 40.2 终审通过项（未改动论证）
+
+- 数字边界：所有含具体数字的事故叙事均有场景声明或量级示意标注；hlc-truetime 的 7–10ms 等外部数字带核对日期与出处；`npm run audit:evidence` 的软漂移候选（含本篇自引用的 211.3MB 表格转述）属文档化的"派生/换算人工判断"类。
+- 草稿互链：log-level → monitoring/observer 等草稿间互链在本批同翻后全部指向 production。
+- 仓库事实：`inside-my-markdown-blog-architecture` 引用的 workflow 名、npm 脚本、目录结构与当前 checkout 一致。
+
+### 40.3 发布验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `npm run audit:content` | 233 篇，`Issues: {}` |
+| `npm run audit:evidence` | 233 篇发布态，硬失败 0，软候选 13（人工判断类） |
+| `python3 scripts/verify-diagram-strokes.py public/images/*.svg` | 594/594 ALL PASS（588+6 新图） |
+| `npm test` | 12 files / 45 tests 通过（slug 数组按 `readPostSources(production)` 实测重生成，233 项） |
+| `npm run lint` | 0 error，1 个既有 `<img>` warning |
+| `npm run build` | 625 个静态页面生成成功 |
+| frontmatter | 11 篇 `draft: true → false`；两篇 markdown-blog 文章维持 production 不变 |

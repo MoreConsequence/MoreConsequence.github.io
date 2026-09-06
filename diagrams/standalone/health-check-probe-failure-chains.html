@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>三种探针的失败处置链</title>
+<style>body{margin:0;background:#f5f5f5}svg{display:block;margin:0 auto}</style>
+</head>
+<body>
+<svg viewBox="0 0 960 600" width="960" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="health-check-probe-failure-chains-title health-check-probe-failure-chains-desc"><title id="health-check-probe-failure-chains-title">三种探针的失败处置链</title><desc id="health-check-probe-failure-chains-desc">startup 探针失败杀死容器，并在成功前门控 liveness 与 readiness；liveness 失败杀死并重启容器；readiness 失败只把 Pod IP 从 EndpointSlice 摘除、保留进程。三种探针的区别不在检查方式而在失败处置。</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/>
+
+<text x="48" y="42" fill="#2d3142" font-size="20" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">三种探针的区别不在检查方式，在失败处置</text>
+<text x="48" y="64" fill="#4f5d75" font-size="11" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">阈值都是连续 failureThreshold 次失败（默认 3），中间成功一次即清零</text>
+
+<!-- startup column -->
+<rect x="48" y="96" width="256" height="56" rx="6" fill="#ffffff" stroke="#2e5aa8" stroke-width="1"/>
+<text x="176" y="120" fill="#2e5aa8" font-size="12.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">startup</text>
+<text x="176" y="140" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">应用是否已经启动完成</text>
+<line x1="176" y1="152" x2="176" y2="184" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="48" y="184" width="256" height="48" rx="4" fill="rgba(45,49,66,0.04)" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="176" y="214" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">连续失败达阈值（仅启动阶段）</text>
+<line x1="176" y1="232" x2="176" y2="264" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="48" y="264" width="256" height="56" rx="6" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="176" y="288" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">杀死容器，交给 restartPolicy</text>
+<text x="176" y="308" fill="#eb6c36" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">处置：重启进程</text>
+<!-- gate note -->
+<rect x="48" y="344" width="256" height="88" rx="6" fill="rgba(46,90,168,0.04)" stroke="rgba(46,90,168,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="64" y="372" fill="#2e5aa8" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">门控：startup 成功之前，</text>
+<text x="64" y="392" fill="#2e5aa8" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">liveness 与 readiness 不会执行</text>
+<text x="64" y="416" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">给慢启动应用留初始化时间</text>
+
+<!-- liveness column -->
+<rect x="352" y="96" width="256" height="56" rx="6" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="480" y="120" fill="#eb6c36" font-size="12.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">liveness</text>
+<text x="480" y="140" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">进程是否陷入不可恢复状态</text>
+<line x1="480" y1="152" x2="480" y2="184" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="352" y="184" width="256" height="48" rx="4" fill="rgba(45,49,66,0.04)" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="480" y="214" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">连续失败达阈值（整个生命周期）</text>
+<line x1="480" y1="232" x2="480" y2="264" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="352" y="264" width="256" height="56" rx="6" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+<text x="480" y="288" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">杀死并重启容器</text>
+<text x="480" y="308" fill="#eb6c36" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">处置：重启进程</text>
+<!-- note -->
+<rect x="352" y="344" width="256" height="88" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="368" y="372" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">liveness 不等 readiness</text>
+<text x="368" y="392" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">两者独立判定，不存在先后缓冲；</text>
+<text x="368" y="410" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">检查项必须轻，且失败可被重启修复</text>
+
+<!-- readiness column -->
+<rect x="656" y="96" width="256" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="784" y="120" fill="#2d3142" font-size="12.5" font-weight="600" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">readiness</text>
+<text x="784" y="140" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">当前能否接收流量</text>
+<line x1="784" y1="152" x2="784" y2="184" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="656" y="184" width="256" height="48" rx="4" fill="rgba(45,49,66,0.04)" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+<text x="784" y="214" fill="#4f5d75" font-size="10" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">连续失败达阈值（整个生命周期）</text>
+<line x1="784" y1="232" x2="784" y2="264" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+<rect x="656" y="264" width="256" height="56" rx="6" fill="#ffffff" stroke="#2e5aa8" stroke-width="1"/>
+<text x="784" y="288" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">从 EndpointSlice 摘除 Pod IP</text>
+<text x="784" y="308" fill="#2e5aa8" font-size="9.5" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">处置：只摘流量，保留进程</text>
+<!-- note -->
+<rect x="656" y="344" width="256" height="88" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="672" y="372" fill="#2d3142" font-size="10.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">摘流的放大效应</text>
+<text x="672" y="392" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">所有副本依赖同一下游时，下游抖动</text>
+<text x="672" y="410" fill="#4f5d75" font-size="9.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">= 全体同时摘流，连降级结果也没了</text>
+
+<!-- gate arrows from startup to siblings -->
+<line x1="304" y1="368" x2="328" y2="368" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow-link)"/>
+<line x1="608" y1="368" x2="632" y2="368" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow-link)"/>
+
+<!-- bottom strip -->
+<line x1="48" y1="464" x2="912" y2="464" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+<text x="48" y="494" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">设计顺序</text>
+<text x="48" y="522" fill="#2d3142" font-size="11.5" font-weight="600" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">失败后重启有效 → liveness；失败后该停流量 → readiness；都不成立 → 指标和告警，不要放进任何探针</text>
+<text x="48" y="546" fill="#4f5d75" font-size="10.5" font-family="'Geist', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">官方默认值（核对日期 2026-09-01）：periodSeconds 10s · timeoutSeconds 1s · failureThreshold 3 · successThreshold 1 · initialDelaySeconds 0</text>
+
+</svg>
+</body>
+</html>
