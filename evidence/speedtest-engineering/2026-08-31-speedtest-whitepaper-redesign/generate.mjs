@@ -52,7 +52,7 @@ function pathSegments(d) {
   let current = null;
   for (const match of d.matchAll(/([MHVQ])([^MHVQ]*)/g)) {
     const command = match[1];
-    const numbers = [...match[2].matchAll(/-?d+(?:.d+)?/g)].map((item) => Number(item[0]));
+    const numbers = [...match[2].matchAll(/-?\d+(?:\.\d+)?/g)].map((item) => Number(item[0]));
     if (command === "M" && numbers.length >= 2) {
       current = { x: numbers[0], y: numbers[1] };
       continue;
@@ -452,8 +452,8 @@ function backpressure() {
   body += node({ x: 456, y: 384, width: 176, height: 64, tag: "APP", title: "slow consumer", sub: "read gap grows", fill: C.white, stroke: C.ink, titleSize: 12 });
   body += node({ x: 696, y: 384, width: 176, height: 64, tag: "TCP", title: "window → 0", sub: "sender stalls", fill: C.accentTint, stroke: C.accent, titleSize: 12, focal: true });
   body += label(204, 284, 48, "body", C.muted);
-  body += label(404, 228, 64, "prompt", C.link);
-  body += label(404, 408, 48, "gap", C.accent);
+  body += label(404, 212, 48, "prompt", C.link);
+  body += label(404, 308, 48, "gap", C.accent);
   body += rect(56, 456, 144, 52, { fill: C.paper2, stroke: C.rule, strokeWidth: 0.8, rx: 4 });
   body += text(128, 478, "服务端不计速率", { fill: C.ink, size: 10, family: F.sans, weight: 600, anchor: "middle" });
   body += text(128, 494, "只负责及时读完", { fill: C.muted, size: 9, family: F.sans, anchor: "middle" });
