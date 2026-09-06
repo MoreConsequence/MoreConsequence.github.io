@@ -2,115 +2,115 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="rwmutex-reader-writer-starvation-tradeoff-title rwmutex-reader-writer-starvation-tradeoff-desc"><title id="rwmutex-reader-writer-starvation-tradeoff-title">RWMutex 读写互斥与防写饥饿权衡</title><desc id="rwmutex-reader-writer-starvation-tradeoff-desc">Go RWMutex 架构图展示 readerCount 负数翻转标记、写者排队阻塞新读者防饥饿、存量读者退出演进以及 atomic/Mutex/RWMutex 选型决策树。</desc>
   <defs>
     <marker id="rw-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
     <marker id="rw-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  
+  <rect width="960" height="600" fill="#f5f5f5" />
 
-  <!-- Header -->
+  
   <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">RWMUTEX INTERNALS · READERCOUNT FLIP, WRITER QUEUE &amp; SELECTION MATRIX</text>
   <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">RWMutex 读写互斥与防写饥饿权衡</text>
   <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">readerCount 负数翻转 ➔ 写者排队阻塞新读者 ➔ 存量退出交接 ➔ 并发原语选型决策</text>
 
-  <!-- 4 Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: Flip (x=40..245, w=205) -->
+  
+  
   <g transform="translate(40, 136)">
-    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">READERCOUNT</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">计数负数翻转</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">readerCount -= 1&lt;&lt;30</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读锁 RLock 并发累加 readerCount</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 写锁 Lock 一键翻转为负数标记就绪</text>
     <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Atomic Negative State Inversion</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">状态设计：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 单个 32 位整型同时承载数量与状态；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 极速原子判断是否有写者正在等待；</text>
     <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无需额外全局锁维护状态。</text>
   </g>
 
-  <!-- Col 2: Starvation Defense (x=260..475, w=215) - Focal -->
+  
   <g transform="translate(260, 136)">
-    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DEFENSE</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">防写饥饿阻塞新读者</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Block Incoming Readers</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 当 readerCount &lt; 0 时新读者全阻塞</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 杜绝海量高频并发读导致写者饥饿</text>
     <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Writer Priority Barrier</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="191" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">机制价值：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保写操作具备确定的上限等待延迟；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 避免系统配置或状态无法下发；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护读写公平性原则。</text>
   </g>
 
-  <!-- Col 3: Handoff (x=490..695, w=205) - Focal -->
+  
   <g transform="translate(490, 136)">
-    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">HANDOFF</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">存量退出与交接</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">RUnlock ➔ Writer Wakeup</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 存量读者执行完 RUnlock 计数归零</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 最后一个存量读者唤醒挂起的写者</text>
     <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Exact Semaphore Handoff</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">交接闭环：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 写者执行完 Unlock 恢复 readerCount；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 批量唤醒所有阻塞在队列中的新读者；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 流程严密无死锁隐患。</text>
   </g>
 
-  <!-- Col 4: Selection Matrix (x=710..920, w=210) -->
+  
   <g transform="translate(710, 136)">
-    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
+    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DECISION</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">并发原语选型树</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">Atomic vs Mutex vs RWMutex</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 单计数器 ➔ atomic (39ns)</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 复合状态 ➔ sync.Mutex (99ns)</text>
     <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Workload-Driven Selection</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="186" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="186" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 读多写少且读耗时长才用 RWMutex；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 绝不盲目套用读写锁；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严格以同语义基准测试为唯一裁判。</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
   <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-  <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">readerCount 负数翻转与并发原语选型决策</text>
-  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-  <text x="390" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">防写饥饿屏障与存量读者退出唤醒交接核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+  <rect x="120" y="436.0" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">readerCount 负数翻转与并发原语选型决策</text>
+  <rect x="370" y="436.0" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">防写饥饿屏障与存量读者退出唤醒交接核心</text>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

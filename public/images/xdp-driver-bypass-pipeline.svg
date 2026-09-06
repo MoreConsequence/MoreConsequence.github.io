@@ -2,110 +2,110 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="xdp-driver-bypass-pipeline-title xdp-driver-bypass-pipeline-desc"><title id="xdp-driver-bypass-pipeline-title">XDP 驱动层网络旁路 vs 传统 Linux 协议栈性能对比</title><desc id="xdp-driver-bypass-pipeline-desc">路径对比图展示传统 Linux 协议栈漫长链条（1.5M PPS）与 XDP 在网卡驱动层尚未分配 SKB 前就地决议（24M+ PPS）的吞吐与延迟鸿沟。</desc>
   <defs>
     <marker id="xp-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
     <marker id="xp-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  
+  <rect width="960" height="600" fill="#f5f5f5" />
 
-  <!-- Header -->
+  
   <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">PACKET PROCESSING BYPASS · XDP VS LINUX STACK</text>
   <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">XDP 驱动层极速旁路 vs 传统协议栈路径对比</text>
   <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">传统协议栈 1.5M PPS (SKB 分配 + Netfilter 漫长遍历) vs XDP 24M+ PPS (驱动层裸指针就地决议)</text>
 
-  <!-- Lane 1: Traditional Stack (y=136..306, h=170) -->
+  
   <g transform="translate(40, 136)">
-    <rect width="880" height="170" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="14" y="12" width="140" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <rect width="880" height="170" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="14" y="12" width="140" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="84" y="25" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TRADITIONAL STACK</text>
     <text x="164" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传统 Linux 协议栈漫长链路 (1.5M PPS 瓶颈)</text>
 
-    <!-- 5 Step Boxes Across -->
+    
     <g transform="translate(14, 42)">
-      <!-- Step 1 -->
-      <rect x="0" y="0" width="150" height="74" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="0" y="0" width="150" height="74" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
       <text x="12" y="24" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">1. NIC DMA 写入</text>
       <text x="12" y="42" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Hard IRQ 触发</text>
       <text x="12" y="58" fill="#4f5d75" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂入软中断轮询队列</text>
 
-      <line x1="150" y1="37" x2="176" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)"/>
+      <line x1="150" y1="37" x2="176" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)" />
 
-      <!-- Step 2 -->
-      <rect x="176" y="0" width="156" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="176" y="0" width="156" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
       <text x="188" y="24" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">2. 分配 sk_buff</text>
       <text x="188" y="42" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Slab Alloc ~230B</text>
       <text x="188" y="58" fill="#4f5d75" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">清零元数据，耗费上百周期</text>
 
-      <line x1="332" y1="37" x2="358" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)"/>
+      <line x1="332" y1="37" x2="358" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)" />
 
-      <!-- Step 3 -->
-      <rect x="358" y="0" width="164" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="358" y="0" width="164" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
       <text x="370" y="24" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">3. Netfilter / 路由</text>
       <text x="370" y="42" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">iptables / conntrack</text>
       <text x="370" y="58" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">漫长规则链串行遍历</text>
 
-      <line x1="522" y1="37" x2="548" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)"/>
+      <line x1="522" y1="37" x2="548" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)" />
 
-      <!-- Step 4 -->
-      <rect x="548" y="0" width="144" height="74" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="548" y="0" width="144" height="74" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
       <text x="560" y="24" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">4. TCP 协议栈</text>
       <text x="560" y="42" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">tcp_v4_rcv() 校验</text>
       <text x="560" y="58" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Spinlock 获取锁排队</text>
 
-      <line x1="692" y1="37" x2="718" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)"/>
+      <line x1="692" y1="37" x2="718" y2="37" stroke="#4f5d75" stroke-width="1" marker-end="url(#xp-arr)" />
 
-      <!-- Step 5 -->
-      <rect x="718" y="0" width="134" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="718" y="0" width="134" height="74" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
       <text x="730" y="24" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">5. 拷贝至用户态</text>
       <text x="730" y="42" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace">copy_to_user()</text>
       <text x="730" y="58" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Latency: ~8-15μs</text>
     </g>
 
-    <!-- Bottom summary line -->
-    <rect x="14" y="126" width="852" height="32" rx="2" fill="#f5f5f5"/>
+    
+    <rect x="14" y="126" width="852" height="32" rx="2" fill="#f5f5f5" />
     <text x="24" y="146" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">致命痛点：DDoS 攻击流量在到达 iptables 丢弃前，CPU 已经被上游 SKB 分配和协议栈遍历彻底打死！</text>
   </g>
 
-  <!-- Lane 2: XDP Bypass (y=320..506, h=186) - Focal -->
+  
   <g transform="translate(40, 320)">
-    <rect width="880" height="186" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="14" y="12" width="120" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="880" height="186" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#eb6c36" />
     <text x="74" y="25" fill="#ffffff" font-size="8" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">XDP BYPASS</text>
     <text x="144" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">XDP 驱动层极速旁路架构 (24M+ PPS 线速)</text>
 
-    <!-- 4 Actions Blocks Across -->
+    
     <g transform="translate(14, 42)">
-      <!-- Entry Hook (Focal) -->
-      <rect x="0" y="0" width="230" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+      
+      <rect x="0" y="0" width="230" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
       <text x="12" y="24" fill="#eb6c36" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">网卡驱动 XDP Hook 入口</text>
       <text x="12" y="42" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">ctx: struct xdp_md (裸指针)</text>
       <text x="12" y="58" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">0 SKB 分配 · 0 软中断切换</text>
       <text x="12" y="74" fill="#4f5d75" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1 纳秒完成四元组解析与判定！</text>
 
-      <line x1="230" y1="44" x2="260" y2="44" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#xp-arr-accent)"/>
+      <line x1="230" y1="44" x2="260" y2="44" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#xp-arr-accent)" />
 
-      <!-- Action 1: XDP_DROP -->
-      <rect x="260" y="0" width="180" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+      
+      <rect x="260" y="0" width="180" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
       <text x="272" y="22" fill="#eb6c36" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">XDP_DROP (就地丢弃)</text>
       <text x="272" y="38" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">重置 Ring Buffer 描述符</text>
       <text x="272" y="52" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">Tbps 级抗 DDoS 清洗</text>
       <text x="272" y="68" fill="#2d3142" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">吞吐: 24M+ PPS (单核极限)</text>
       <text x="272" y="80" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace">Line Rate Clean</text>
 
-      <!-- Action 2: XDP_TX / REDIRECT -->
-      <rect x="450" y="0" width="200" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+      
+      <rect x="450" y="0" width="200" height="88" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
       <text x="462" y="22" fill="#eb6c36" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">XDP_TX / XDP_REDIRECT</text>
       <text x="462" y="38" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">XDP_TX: 原路弹回 (L4 反向LB)</text>
       <text x="462" y="52" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" font-weight="600">REDIRECT: 跨网卡 / AF_XDP</text>
       <text x="462" y="68" fill="#2d3142" font-size="7.5" font-family="'Geist', 'Noto Sans SC', sans-serif">直通用户态 UMEM 零拷贝内存</text>
       <text x="462" y="80" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace">Zero-Copy User Plane</text>
 
-      <!-- Action 3: XDP_PASS -->
-      <rect x="660" y="0" width="192" height="88" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      
+      <rect x="660" y="0" width="192" height="88" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
       <text x="672" y="22" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">XDP_PASS (放行入栈)</text>
       <text x="672" y="38" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">仅对合规业务流量分配 SKB</text>
       <text x="672" y="52" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace">交由 Linux 协议栈正常处理</text>
@@ -113,16 +113,16 @@
       <text x="672" y="80" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace">Standard Linux Ecosystem</text>
     </g>
 
-    <!-- Bottom summary line -->
-    <rect x="14" y="140" width="852" height="34" rx="2" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="140" width="852" height="34" rx="2" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="161" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">物理收益：包处理性能跃升 15 倍以上（1.5M PPS ➔ 24M+ PPS），彻底终结 DPDK 垄断同时保留 Linux 驱动生态！</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
   <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
   <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">传统协议栈冗长链路</text>
-  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
   <text x="310" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">XDP 驱动层网络旁路核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

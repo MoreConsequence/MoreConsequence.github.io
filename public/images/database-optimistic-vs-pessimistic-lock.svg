@@ -2,85 +2,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="database-optimistic-vs-pessimistic-lock-title database-optimistic-vs-pessimistic-lock-desc"><title id="database-optimistic-vs-pessimistic-lock-title">乐观锁冲突重试税 (Retry Tax) vs 悲观锁排队等待税 (Queue Tax) 对比</title><desc id="database-optimistic-vs-pessimistic-lock-desc">对比图展示乐观锁基于几何分布的重试税 p/(1-p) 与悲观锁基于持锁时间的排队税 (N+1)/2*s 在数学模型、触发机制与临界交叉点上的物理权衡。</desc>
   <defs>
     <marker id="op-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
     <marker id="op-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  
+  <rect width="960" height="600" fill="#f5f5f5" />
 
-  <!-- Header -->
+  
   <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">CONCURRENCY CONTROL TAX · RETRY TAX VS QUEUE TAX</text>
   <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">乐观锁重试税 vs 悲观锁排队税全景对比</text>
   <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">乐观锁 (结果税: E[retries] = p/(1-p)，低冲突近免费，高冲突爆炸) vs 悲观锁 (过程税: E[latency] = (N+1)/2*s，线性排队)</text>
 
-  <!-- 2 Main Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: Optimistic (x=40..460, w=420) - Focal -->
+  
+  
   <g transform="translate(40, 136)">
-    <rect width="420" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="14" y="12" width="120" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="420" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="14" y="12" width="120" height="18" rx="2" fill="#eb6c36" />
     <text x="74" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">OPTIMISTIC LOCK</text>
     <text x="144" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">乐观锁 (版本号 CAS 机制)</text>
 
-    <!-- Math Box -->
-    <rect x="14" y="42" width="392" height="74" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="42" width="392" height="74" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="64" fill="#eb6c36" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">结果税数学模型 (几何分布)</text>
     <text x="24" y="82" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">E[retries] = p / (1 - p)   E[attempts] = 1 / (1 - p)</text>
     <text x="24" y="100" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">p=0.01 ➔ 重试 0.01 次 | p=0.90 ➔ 重试 9 次 (曲棍球杆爆炸)</text>
 
-    <!-- Details -->
-    <rect x="14" y="126" width="392" height="120" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="126" width="392" height="120" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="148" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心运行特征：</text>
     <text x="24" y="168" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不加锁：普通 SELECT 快照读，0 阻塞；</text>
     <text x="24" y="186" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 仅在 UPDATE WHERE version=? 校验版本；</text>
     <text x="24" y="204" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无死锁 (Deadlock-Free)，但有活锁 (Livelock) 风险。</text>
     <text x="24" y="224" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Zero Lock Holding &amp; Non-Blocking Read</text>
 
-    <!-- Summary -->
-    <rect x="14" y="256" width="392" height="104" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="256" width="392" height="104" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="278" fill="#eb6c36" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">黄金适用场景</text>
     <text x="24" y="298" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">读多写少、冲突率极低 (p &lt; 0.3)、并发写分布极其分散的数据行 (如用户个人资料修改)。</text>
     <text x="24" y="322" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Near-Zero Overhead Under Low Contention</text>
     <text x="24" y="340" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Ideal For Distributed / RESTful API Updates</text>
   </g>
 
-  <!-- Col 2: Pessimistic (x=480..920, w=440) -->
+  
   <g transform="translate(480, 136)">
-    <rect width="440" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <rect width="440" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="14" y="12" width="130" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="79" y="25" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">PESSIMISTIC LOCK</text>
     <text x="154" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">悲观锁 (FOR UPDATE 排队)</text>
 
-    <!-- Math Box -->
-    <rect x="14" y="42" width="412" height="74" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="42" width="412" height="74" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="64" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">过程税数学模型 (线性排队)</text>
     <text x="24" y="82" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace" font-weight="700">E[latency] = (N + 1) / 2 * s   (s: 持锁时间)</text>
     <text x="24" y="100" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">纯等待延迟: (N - 1) / 2 * s (随并发数 N 线性递增)</text>
 
-    <!-- Details -->
-    <rect x="14" y="126" width="412" height="120" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="126" width="412" height="120" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="148" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心运行特征：</text>
     <text x="24" y="168" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 强行加锁：当前读直接持排他锁，杜绝重试；</text>
     <text x="24" y="186" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无论是否真冲突，并发写者必须 FIFO 严格排队；</text>
     <text x="24" y="204" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 持锁时间 s 是最值钱参数，长事务会引发雪崩。</text>
     <text x="24" y="224" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Strict FIFO Execution &amp; Guaranteed Write</text>
 
-    <!-- Summary -->
-    <rect x="14" y="256" width="412" height="104" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="256" width="412" height="104" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="278" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">黄金适用场景</text>
-    <text x="24" y="298" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高冲突热点行 (秒杀库存、账户强扣减)、同行动并发写者集中 (p > p*) 的关键交易场景。</text>
+    <text x="24" y="298" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">高冲突热点行 (秒杀库存、账户强扣减)、同行动并发写者集中 (p &gt; p*) 的关键交易场景。</text>
     <text x="24" y="322" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Guaranteed Single-Pass Success on Hotspot</text>
     <text x="24" y="340" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">High Contention Hotspot Defense</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
   <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
   <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">悲观锁排队过程税</text>
-  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="290" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
   <text x="310" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">乐观锁版本号 CAS 与 p/(1-p) 重试税核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

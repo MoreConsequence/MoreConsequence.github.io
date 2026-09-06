@@ -1,106 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%" role="img" aria-labelledby="raft-linearizable-read-index-vs-lease-read-title raft-linearizable-read-index-vs-lease-read-desc"><title id="raft-linearizable-read-index-vs-lease-read-title">Raft 线性一致性读演进：Log Read (全量走日志) vs ReadIndex (心跳确认) vs Lease…</title><desc id="raft-linearizable-read-index-vs-lease-read-desc">Raft 线性一致性读演进：Log Read (全量走日志) vs ReadIndex (心跳确认) vs Lease Read (本地时钟租约)</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="100%" height="100%" role="img" aria-labelledby="raft-linearizable-read-index-vs-lease-read-title raft-linearizable-read-index-vs-lease-read-desc"><title id="raft-linearizable-read-index-vs-lease-read-title">Raft 线性一致性读演进：Log Read (全量走日志) vs ReadIndex (心跳确认) vs Lease…</title><desc id="raft-linearizable-read-index-vs-lease-read-desc">Raft 线性一致性读演进：Log Read (全量走日志) vs ReadIndex (心跳确认) vs Lease Read (本地时钟租约)</desc>
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
+    
     <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2d3142" flood-opacity="0.04"/>
-    </filter>
+    
   </defs>
-  <rect width="960" height="480" fill="#f5f5f5"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <rect width="960" height="480" fill="#f5f5f5" />
+  <rect width="960" height="480" fill="url(#dot-grid)" opacity="0" />
 
   <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb" />
     <text x="24" y="18" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" fill="#2d3142">Raft 线性一致性读三代演进：Log Read vs ReadIndex vs Lease Read</text>
     <text x="24" y="36" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" fill="#4f5d75">Log Read (每次读都走一遍 Raft 日志复制，吞吐低下) ｜ ReadIndex (只发一轮轻量心跳确认 Leader 身份) ｜ Lease Read (本地租约直读 0 网络 RPC)</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 3 Columns (285px each) -->
-    <!-- Col 1 -->
+  <g transform="translate(30, 70)">
+    
+    
     <g>
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="1"/>
-      <rect width="285" height="34" rx="8" fill="#fef2f2"/>
-      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">1. Log Read (最原始读机制)</text>
+      <rect width="285" height="320" rx="8" fill="#ffffff" stroke="rgba(235,108,54,0.50)" stroke-width="1" />
+      <rect width="285" height="34" rx="8" fill="#ffffff" />
+      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#2d3142" text-anchor="middle">1. Log Read (最原始读机制)</text>
 
       <g transform="translate(15, 46)" font-family="'Geist', 'Noto Sans SC', sans-serif">
-        <rect width="255" height="150" rx="4" fill="#2d3142"/>
+        <rect width="255" height="150" rx="4" fill="#2d3142" />
         <g font-family="'Geist Mono', monospace" font-size="7.5" fill="#f5f5f5">
-          <text x="10" y="18" fill="#38bdf8">// 将读请求伪装成一条空写日志</text>
-          <text x="10" y="34" fill="#93c5fd">1. 写本地 WAL 日志文件 (磁盘 I/O)</text>
-          <text x="10" y="50" fill="#93c5fd">2. AppendEntries 向全网多数派广播</text>
-          <text x="10" y="66" fill="#93c5fd">3. 多数派落盘提交后才返回查询数据</text>
+          <text x="10" y="18" fill="#f5f5f5">// 将读请求伪装成一条空写日志</text>
+          <text x="10" y="34" fill="#f5f5f5">1. 写本地 WAL 日志文件 (磁盘 I/O)</text>
+          <text x="10" y="50" fill="#f5f5f5">2. AppendEntries 向全网多数派广播</text>
+          <text x="10" y="66" fill="#f5f5f5">3. 多数派落盘提交后才返回查询数据</text>
 
-          <text x="10" y="90" fill="#ef4444">🔴 性能代价：</text>
-          <text x="10" y="106" fill="#fca5a5">• 读吞吐量被磁盘写入与多数派网络死死锁死；</text>
-          <text x="10" y="122" fill="#ef4444">• QPS 无法突破 5,000/秒！</text>
+          <text x="10" y="90" fill="#f5f5f5">🔴 性能代价：</text>
+          <text x="10" y="106" fill="#f5f5f5">• 读吞吐量被磁盘写入与多数派网络死死锁死；</text>
+          <text x="10" y="122" fill="#f5f5f5">• QPS 无法突破 5,000/秒！</text>
         </g>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
-        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#991b1b">机制评估：</text>
-        <text x="10" y="196" font-size="7.5" fill="#7f1d1d">• 保证绝对线性一致，但吞吐代价过大；</text>
-        <text x="10" y="210" font-size="7.5" fill="#7f1d1d">• 现代分布式存储系统均已彻底废弃该方案；</text>
-        <text x="10" y="224" font-size="7.5" font-weight="700" fill="#dc2626">• 仅作为 Raft 论文理论对照基准。</text>
+        <rect y="162" width="255" height="80" rx="4" fill="#ffffff" stroke="rgba(235,108,54,0.30)" stroke-width="1" />
+        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#2d3142">机制评估：</text>
+        <text x="10" y="196" font-size="7.5" fill="#2d3142">• 保证绝对线性一致，但吞吐代价过大；</text>
+        <text x="10" y="210" font-size="7.5" fill="#2d3142">• 现代分布式存储系统均已彻底废弃该方案；</text>
+        <text x="10" y="224" font-size="7.5" font-weight="700" fill="#eb6c36">• 仅作为 Raft 论文理论对照基准。</text>
       </g>
     </g>
 
-    <!-- Col 2 -->
+    
     <g transform="translate(300, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
-      <rect width="285" height="34" rx="8" fill="#eff6ff"/>
-      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">2. ReadIndex (心跳确认模式)</text>
+      <rect width="285" height="320" rx="8" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
+      <rect width="285" height="34" rx="8" fill="#ffffff" />
+      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#2d3142" text-anchor="middle">2. ReadIndex (心跳确认模式)</text>
 
       <g transform="translate(15, 46)" font-family="'Geist', 'Noto Sans SC', sans-serif">
-        <rect width="255" height="150" rx="4" fill="#2d3142"/>
+        <rect width="255" height="150" rx="4" fill="#2d3142" />
         <g font-family="'Geist Mono', monospace" font-size="7.5" fill="#f5f5f5">
-          <text x="10" y="18" fill="#4ade80">// 0 磁盘 I/O，仅需 1 轮轻量网络心跳</text>
-          <text x="10" y="34" fill="#86efac">1. 记录当前 commitIndex 为 readIndex</text>
-          <text x="10" y="50" fill="#38bdf8">2. 向 Follower 发送广播心跳 (Heartbeat)</text>
-          <text x="10" y="66" fill="#34d399">3. 多数派确认自己仍是合法 Leader！</text>
-          <text x="10" y="84" fill="#38bdf8">4. 等待本地 applyIndex &gt;= readIndex 后直读！</text>
+          <text x="10" y="18" fill="#f5f5f5">// 0 磁盘 I/O，仅需 1 轮轻量网络心跳</text>
+          <text x="10" y="34" fill="#f5f5f5">1. 记录当前 commitIndex 为 readIndex</text>
+          <text x="10" y="50" fill="#f5f5f5">2. 向 Follower 发送广播心跳 (Heartbeat)</text>
+          <text x="10" y="66" fill="#f5f5f5">3. 多数派确认自己仍是合法 Leader！</text>
+          <text x="10" y="84" fill="#f5f5f5">4. 等待本地 applyIndex &gt;= readIndex 后直读！</text>
 
-          <text x="10" y="108" fill="#4ade80">✓ 绝对防范网络分区脑裂读到脏数据！</text>
-          <text x="10" y="122" fill="#4ade80">✓ 读吞吐量提升 20 倍以上！</text>
+          <text x="10" y="108" fill="#f5f5f5">✓ 绝对防范网络分区脑裂读到脏数据！</text>
+          <text x="10" y="122" fill="#f5f5f5">✓ 读吞吐量提升 20 倍以上！</text>
         </g>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="196" font-size="7.5" fill="#1d4ed8">• 广泛应用于 etcd、TiKV 等核心系统；</text>
-        <text x="10" y="210" font-size="7.5" fill="#1d4ed8">• 不依赖任何机器物理时钟精度；</text>
-        <text x="10" y="224" font-size="7.5" fill="#047857">• 兼顾绝对安全与高吞吐的工业基石。</text>
+        <rect y="162" width="255" height="80" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.16)" stroke-width="1" />
+        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#2d3142">机制要点：</text>
+        <text x="10" y="196" font-size="7.5" fill="#4f5d75">• 广泛应用于 etcd、TiKV 等核心系统；</text>
+        <text x="10" y="210" font-size="7.5" fill="#4f5d75">• 不依赖任何机器物理时钟精度；</text>
+        <text x="10" y="224" font-size="7.5" fill="#4f5d75">• 兼顾绝对安全与高吞吐的工业基石。</text>
       </g>
     </g>
 
-    <!-- Col 3 -->
+    
     <g transform="translate(600, 0)">
-      <rect width="285" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
-      <rect width="285" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">3. Lease Read (本地租约极速读)</text>
+      <rect width="285" height="320" rx="8" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
+      <rect width="285" height="34" rx="8" fill="#ffffff" />
+      <text x="142" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#2d3142" text-anchor="middle">3. Lease Read (本地租约极速读)</text>
 
       <g transform="translate(15, 46)" font-family="'Geist', 'Noto Sans SC', sans-serif">
-        <rect width="255" height="150" rx="4" fill="#2d3142"/>
+        <rect width="255" height="150" rx="4" fill="#2d3142" />
         <g font-family="'Geist Mono', monospace" font-size="7.5" fill="#f5f5f5">
-          <text x="10" y="18" fill="#fb923c">// 0 磁盘 I/O + 0 网络 RPC！</text>
-          <text x="10" y="34" fill="#fed7aa">1. Leader 获得多数派租约 (如 500ms)</text>
-          <text x="10" y="50" fill="#fed7aa">2. Follower 保证在 500ms 内绝不发起新选举</text>
-          <text x="10" y="68" fill="#34d399">3. 在租约有效期内，Leader 本地内存直读返回！</text>
+          <text x="10" y="18" fill="#f5f5f5">// 0 磁盘 I/O + 0 网络 RPC！</text>
+          <text x="10" y="34" fill="#f5f5f5">1. Leader 获得多数派租约 (如 500ms)</text>
+          <text x="10" y="50" fill="#f5f5f5">2. Follower 保证在 500ms 内绝不发起新选举</text>
+          <text x="10" y="68" fill="#f5f5f5">3. 在租约有效期内，Leader 本地内存直读返回！</text>
 
-          <text x="10" y="92" fill="#4ade80">✓ 单机读 QPS 突破 100 万/秒！</text>
-          <text x="10" y="108" fill="#fbbf24">⚠️ 约束: 依赖物理时钟漂移在安全误差内</text>
-          <text x="10" y="122" fill="#34d399">✓ 极致性能天花板！</text>
+          <text x="10" y="92" fill="#f5f5f5">✓ 单机读 QPS 突破 100 万/秒！</text>
+          <text x="10" y="108" fill="#f5f5f5">⚠️ 约束: 依赖物理时钟漂移在安全误差内</text>
+          <text x="10" y="122" fill="#f5f5f5">✓ 极致性能天花板！</text>
         </g>
 
-        <rect y="162" width="255" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0" stroke-width="1"/>
-        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="196" font-size="7.5" fill="#15803d">• 结合 NTP 时钟漂移上界严格计算租约时长；</text>
-        <text x="10" y="210" font-size="7.5" fill="#15803d">• 让分布式共识读性能完全等同于单机内存读；</text>
-        <text x="10" y="224" font-size="7.5" fill="#047857">• 打造超低延迟线性一致性读引擎！</text>
+        <rect y="162" width="255" height="80" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.16)" stroke-width="1" />
+        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#2d3142">机制要点：</text>
+        <text x="10" y="196" font-size="7.5" fill="#4f5d75">• 结合 NTP 时钟漂移上界严格计算租约时长；</text>
+        <text x="10" y="210" font-size="7.5" fill="#4f5d75">• 让分布式共识读性能完全等同于单机内存读；</text>
+        <text x="10" y="224" font-size="7.5" fill="#4f5d75">• 打造超低延迟线性一致性读引擎！</text>
       </g>
     </g>
   </g>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

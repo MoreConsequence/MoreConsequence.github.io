@@ -2,117 +2,117 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="postgres-bloat-autovacuum-freeze-title postgres-bloat-autovacuum-freeze-desc"><title id="postgres-bloat-autovacuum-freeze-title">PostgreSQL 表膨胀 (Bloat)、Autovacuum 与事务 ID 冻结 (Transaction…</title><desc id="postgres-bloat-autovacuum-freeze-desc">架构全景图展示 PostgreSQL 就地多版本死元组导致的表膨胀、普通 VACUUM 仅页内回收而不缩文件的物理真相以及防 21.5 亿事务 ID 回卷停摆的冻结机制。</desc>
   <defs>
     <marker id="pb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
     <marker id="pb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  
+  <rect width="960" height="600" fill="#f5f5f5" />
 
-  <!-- Header -->
+  
   <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">POSTGRESQL BLOAT &amp; FREEZE · DEAD TUPLES &amp; WRAPAROUND DEFENSE</text>
   <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">PostgreSQL 表膨胀 (Bloat) 与事务 ID 冻结全景</text>
   <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">就地多版本死元组 (44.3% 膨胀) ➔ 普通 VACUUM 页内回收 (文件不缩水) ➔ 事务 ID 冻结防 21.5 亿回卷停摆</text>
 
-  <!-- 3 Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: Bloat Mechanism (x=40..310, w=270) -->
+  
+  
   <g transform="translate(40, 136)">
-    <rect width="270" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="14" y="12" width="90" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <rect width="270" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="14" y="12" width="90" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="59" y="25" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STAGE 1</text>
     <text x="114" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">就地死元组膨胀</text>
 
-    <!-- Content Box -->
-    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="42" width="242" height="100" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="64" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">行内留档 (In-Place Version)</text>
     <text x="24" y="82" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">1. 无独立 Undo: 旧版本留数据页内</text>
     <text x="24" y="100" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">2. UPDATE: 插入新行 + 旧行置 xmax</text>
     <text x="24" y="118" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">3. 实测死元组可占表 44.3% 空间！</text>
     <text x="24" y="132" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace">Dead Tuples Accumulated</text>
 
-    <!-- Details -->
-    <rect x="14" y="152" width="242" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="152" width="242" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="174" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">长事务帮凶风险：</text>
     <text x="24" y="194" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 若存在未提交读事务拖住 OldestXmin</text>
     <text x="24" y="214" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 清理工绝对无法回收死元组！</text>
     <text x="24" y="232" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 表体积急剧膨胀，顺序扫变慢。</text>
 
-    <!-- Summary -->
-    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="262" width="242" height="98" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="284" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">膨胀税本质</text>
     <text x="24" y="302" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">写操作无需额外写 Undo，但将高昂的清理账单全部推给了 VACUUM。</text>
     <text x="24" y="326" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Deferred Cleanup Debt</text>
     <text x="24" y="342" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Sequential Scan Degradation</text>
   </g>
 
-  <!-- Col 2: Vacuum (x=340..630, w=290) - Focal -->
+  
   <g transform="translate(340, 136)">
-    <rect width="290" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="14" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="290" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
     <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 2 · VACUUM</text>
     <text x="124" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Autovacuum 回收机制</text>
 
-    <!-- Content Box -->
-    <rect x="14" y="42" width="262" height="100" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="42" width="262" height="100" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="64" fill="#eb6c36" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">触发阈值: 50 + 0.2 * reltuples</text>
     <text x="24" y="82" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">1. 无论多大表，默认躺到 ~20% 才醒！</text>
     <text x="24" y="100" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 回收死元组 ➔ 标记为页内可复用空间</text>
     <text x="24" y="118" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">3. 更新 Visibility Map (Index-Only加速)</text>
     <text x="24" y="132" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace">In-Place Page Defragmentation</text>
 
-    <!-- Details -->
-    <rect x="14" y="152" width="262" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="152" width="262" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="174" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">颠覆认知的物理真相：</text>
     <text x="24" y="194" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">普通 VACUUM 绝不缩小物理表文件！</text>
     <text x="24" y="214" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 空间仅在页内复用，OS 磁盘占用不变；</text>
     <text x="24" y="232" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 真正还空间需 VACUUM FULL 或 pg_repack。</text>
 
-    <!-- Summary -->
-    <rect x="14" y="262" width="262" height="98" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="262" width="262" height="98" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="284" fill="#eb6c36" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">调优黄金法则</text>
     <text x="24" y="302" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">大表调低 scale_factor (如 0.05)；调大 cost_limit 破除限流，防止产废追不上回收。</text>
     <text x="24" y="326" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Proactive Cleaning Strategy</text>
     <text x="24" y="342" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Zero File Shrink Truth</text>
   </g>
 
-  <!-- Col 3: XID Freeze (x=660..920, w=260) - Focal -->
+  
   <g transform="translate(660, 136)">
-    <rect width="260" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="14" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
+    <rect width="260" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="14" y="12" width="100" height="18" rx="2" fill="#2d3142" />
     <text x="64" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STAGE 3 · FREEZE</text>
     <text x="124" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">XID 冻结与防回卷</text>
 
-    <!-- Content Box -->
-    <rect x="14" y="42" width="232" height="100" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="42" width="232" height="100" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="64" fill="#eb6c36" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">32 位回卷安全线 (21.5 亿)</text>
     <text x="24" y="82" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">1. 事务 ID 达 2^31 ➔ 历史数据变未来</text>
     <text x="24" y="100" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">2. 达 2 亿岁: 强制启动全表冻结！</text>
     <text x="24" y="118" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">3. 将老 xmin 标为 Frozen (恒可见)</text>
     <text x="24" y="132" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace">autovacuum_freeze_max_age = 200M</text>
 
-    <!-- Details -->
-    <rect x="14" y="152" width="232" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="14" y="152" width="232" height="100" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="24" y="174" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终极保命停摆机制：</text>
     <text x="24" y="194" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 距离回卷剩 1000 万事务: 告警；</text>
     <text x="24" y="214" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 剩 100 万: 拒绝一切新写入！</text>
     <text x="24" y="232" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 数据库直接停摆，需单用户修复。</text>
 
-    <!-- Summary -->
-    <rect x="14" y="262" width="232" height="98" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="14" y="262" width="232" height="98" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="24" y="284" fill="#eb6c36" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">生死防线</text>
     <text x="24" y="302" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">监控 age(relfrozenxid)，超阈值即排期维护。</text>
     <text x="24" y="326" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600">Wraparound Defense Hard Stop</text>
     <text x="24" y="342" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Zero Data Loss Guarantee</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
   <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
   <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">死元组累积与表膨胀机制</text>
-  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="310" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
   <text x="330" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">普通 VACUUM 页内回收与 XID 冻结防 21.5 亿回卷核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

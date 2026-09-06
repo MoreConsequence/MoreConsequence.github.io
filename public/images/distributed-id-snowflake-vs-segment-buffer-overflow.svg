@@ -1,80 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%" role="img" aria-labelledby="distributed-id-snowflake-vs-segment-buffer-overflow-title distributed-id-snowflake-vs-segment-buffer-overflow-desc"><title id="distributed-id-snowflake-vs-segment-buffer-overflow-title">分布式 ID 架构演进：雪花算法 (Snowflake) 时钟回拨 vs 双 Buffer 动态号段分发对比</title><desc id="distributed-id-snowflake-vs-segment-buffer-overflow-desc">分布式 ID 架构演进：雪花算法 (Snowflake) 时钟回拨 vs 双 Buffer 动态号段分发对比</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="100%" height="100%" role="img" aria-labelledby="distributed-id-snowflake-vs-segment-buffer-overflow-title distributed-id-snowflake-vs-segment-buffer-overflow-desc"><title id="distributed-id-snowflake-vs-segment-buffer-overflow-title">分布式 ID 架构演进：雪花算法 (Snowflake) 时钟回拨 vs 双 Buffer 动态号段分发对比</title><desc id="distributed-id-snowflake-vs-segment-buffer-overflow-desc">分布式 ID 架构演进：雪花算法 (Snowflake) 时钟回拨 vs 双 Buffer 动态号段分发对比</desc>
   <defs>
-    <pattern id="dot-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.6"/>
-    </pattern>
+    
     <marker id="arrow-blue" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="7" markerHeight="6" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
-    <filter id="card-shadow" x="-2%" y="-3%" width="104%" height="108%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2d3142" flood-opacity="0.04"/>
-    </filter>
+    
   </defs>
-  <rect width="960" height="480" fill="#f5f5f5"/>
-  <rect width="960" height="480" fill="url(#dot-grid)"/>
+  <rect width="960" height="480" fill="#f5f5f5" />
+  <rect width="960" height="480" fill="url(#dot-grid)" opacity="0" />
 
   <g transform="translate(30, 20)">
-    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb"/>
+    <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb" />
     <text x="24" y="18" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" fill="#2d3142">分布式 ID 方案抉择：雪花算法 (Snowflake) vs 数据库双 Buffer 号段模式</text>
     <text x="24" y="36" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" fill="#4f5d75">Snowflake (64 位整数，依赖机器时钟与 NTP 时钟回拨防护) ｜ 号段模式 (双 Buffer 异步换桶，毫秒发号 QPS 破百万)</text>
   </g>
 
-  <g transform="translate(30, 70)" filter="url(#card-shadow)">
-    <!-- 2 Panes (435px each) -->
-    <!-- Left: Snowflake -->
+  <g transform="translate(30, 70)">
+    
+    
     <g>
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
-      <rect width="435" height="34" rx="8" fill="#eff6ff"/>
-      <text x="217" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">1. Snowflake (64 位结构化 ID)</text>
+      <rect width="435" height="320" rx="8" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
+      <rect width="435" height="34" rx="8" fill="#ffffff" />
+      <text x="217" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#2d3142" text-anchor="middle">1. Snowflake (64 位结构化 ID)</text>
 
       <g transform="translate(15, 46)" font-family="'Geist', 'Noto Sans SC', sans-serif">
-        <rect width="405" height="150" rx="4" fill="#2d3142"/>
+        <rect width="405" height="150" rx="4" fill="#2d3142" />
         <g transform="translate(10, 15)" font-family="'Geist Mono', monospace" font-size="7.5" fill="#f5f5f5">
-          <text y="14" fill="#38bdf8">[0 (1-bit)] + [毫秒时间戳 (41-bit)] + [WorkerID (10-bit)] + [序号 (12-bit)]</text>
+          <text y="14" fill="#f5f5f5">[0 (1-bit)] + [毫秒时间戳 (41-bit)] + [WorkerID (10-bit)] + [序号 (12-bit)]</text>
 
-          <text y="38" fill="#4ade80">✓ 优势: 纯本地计算，零 RPC 网络开销，全局趋势递增</text>
-          <text y="54" fill="#4ade80">✓ 单机 QPS 上限高达 409.6 万/秒！</text>
+          <text y="38" fill="#f5f5f5">✓ 优势: 纯本地计算，零 RPC 网络开销，全局趋势递增</text>
+          <text y="54" fill="#f5f5f5">✓ 单机 QPS 上限高达 409.6 万/秒！</text>
 
-          <text y="78" fill="#f87171">⚠️ 致命软肋：NTP 时钟回拨 (Clock Backward)</text>
-          <text y="94" fill="#fca5a5">• 服务器时钟哪怕倒退 10ms，也会导致生成重复 ID！</text>
-          <text y="110" fill="#34d399">• 防御解法: 历史时间戳缓存 + 追赶等待 + 备用 WorkerID！</text>
+          <text y="78" fill="#f5f5f5">⚠️ 致命软肋：NTP 时钟回拨 (Clock Backward)</text>
+          <text y="94" fill="#f5f5f5">• 服务器时钟哪怕倒退 10ms，也会导致生成重复 ID！</text>
+          <text y="110" fill="#f5f5f5">• 防御解法: 历史时间戳缓存 + 追赶等待 + 备用 WorkerID！</text>
         </g>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#1e40af">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#1d4ed8">• 完美契合分库分表与 MySQL B+ 树主键顺序写入；</text>
-        <text x="10" y="48" font-size="7.5" fill="#1d4ed8">• 避免自增 ID 泄露每日业务订单总量；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造高性能分布式业务最基础的流水号发生器。</text>
+        <rect y="162" width="405" height="80" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.16)" stroke-width="1" />
+        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#2d3142">机制要点：</text>
+        <text x="10" y="196" font-size="7.5" fill="#4f5d75">• 完美契合分库分表与 MySQL B+ 树主键顺序写入；</text>
+        <text x="10" y="210" font-size="7.5" fill="#4f5d75">• 避免自增 ID 泄露每日业务订单总量；</text>
+        <text x="10" y="224" font-size="7.5" fill="#4f5d75">• 打造高性能分布式业务最基础的流水号发生器。</text>
       </g>
     </g>
 
-    <!-- Right: Segment Buffer -->
+    
     <g transform="translate(465, 0)">
-      <rect width="435" height="385" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
-      <rect width="435" height="34" rx="8" fill="#f0fdf4"/>
-      <text x="217" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="middle">2. 双 Buffer 动态号段模式 (Segment)</text>
+      <rect width="435" height="320" rx="8" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
+      <rect width="435" height="34" rx="8" fill="#ffffff" />
+      <text x="217" y="22" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" font-weight="700" fill="#2d3142" text-anchor="middle">2. 双 Buffer 动态号段模式 (Segment)</text>
 
       <g transform="translate(15, 46)" font-family="'Geist', 'Noto Sans SC', sans-serif">
-        <rect width="405" height="150" rx="4" fill="#2d3142"/>
+        <rect width="405" height="150" rx="4" fill="#2d3142" />
         <g transform="translate(10, 15)" font-family="'Geist Mono', monospace" font-size="7.5" fill="#f5f5f5">
-          <text y="14" fill="#4ade80">// 数据库步长申请: step = 100,000</text>
-          <text y="28" fill="#86efac">UPDATE id_alloc SET max_id = max_id + step WHERE tag = 'order'</text>
+          <text y="14" fill="#f5f5f5">// 数据库步长申请: step = 100,000</text>
+          <text y="28" fill="#f5f5f5">UPDATE id_alloc SET max_id = max_id + step WHERE tag = 'order'</text>
 
-          <text y="50" fill="#38bdf8">► 内存双 Buffer 异步预加载 (Double Buffering):</text>
+          <text y="50" fill="#f5f5f5">► 内存双 Buffer 异步预加载 (Double Buffering):</text>
           <text y="64" fill="#cbd5e1">• Buffer A 消耗到 20% 时，异步协程悄悄去 DB 申请 Buffer B</text>
           <text y="78" fill="#cbd5e1">• Buffer A 耗尽时毫秒级无感切换至 Buffer B！</text>
 
-          <text y="102" fill="#34d399">✓ 彻底与服务器系统时钟解绑，绝对不会有时钟回拨风险！</text>
-          <text y="118" fill="#4ade80">✓ 即使数据库宕机 1 小时，内存号段依然可支撑千万次发号！</text>
+          <text y="102" fill="#f5f5f5">✓ 彻底与服务器系统时钟解绑，绝对不会有时钟回拨风险！</text>
+          <text y="118" fill="#f5f5f5">✓ 即使数据库宕机 1 小时，内存号段依然可支撑千万次发号！</text>
         </g>
 
-        <rect y="162" width="405" height="96" rx="4" fill="#f0fdf4" stroke="#a7f3d0" stroke-width="1"/>
-        <text x="10" y="18" font-size="8.5" font-weight="700" fill="#166534">机制要点：</text>
-        <text x="10" y="34" font-size="7.5" fill="#15803d">• 广泛应用于美团 Leaf、滴滴 TinyID 等工业框架；</text>
-        <text x="10" y="48" font-size="7.5" fill="#15803d">• ID 绝对严格单调自增，无孔洞不浪费；</text>
-        <text x="10" y="62" font-size="7.5" fill="#047857">• 打造超强容灾韧性的企业级发号架构！</text>
+        <rect y="162" width="405" height="80" rx="4" fill="#ffffff" stroke="rgba(45,49,66,0.16)" stroke-width="1" />
+        <text x="10" y="180" font-size="8.5" font-weight="700" fill="#2d3142">机制要点：</text>
+        <text x="10" y="196" font-size="7.5" fill="#4f5d75">• 广泛应用于美团 Leaf、滴滴 TinyID 等工业框架；</text>
+        <text x="10" y="210" font-size="7.5" fill="#4f5d75">• ID 绝对严格单调自增，无孔洞不浪费；</text>
+        <text x="10" y="224" font-size="7.5" fill="#4f5d75">• 打造超强容灾韧性的企业级发号架构！</text>
       </g>
     </g>
   </g>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

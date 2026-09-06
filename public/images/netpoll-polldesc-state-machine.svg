@@ -2,115 +2,115 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="netpoll-polldesc-state-machine-title netpoll-polldesc-state-machine-desc"><title id="netpoll-polldesc-state-machine-title">pollDesc 状态机与 pollable 边界全景</title><desc id="netpoll-polldesc-state-machine-desc">Go 网络轮询器状态机与边界图展示 pollDesc 内部状态流转、pollable Socket 与非 pollable 普通文件 I/O 差异以及生产线程治理策略。</desc>
   <defs>
     <marker id="pm-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
     </marker>
     <marker id="pm-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  
+  <rect width="960" height="600" fill="#f5f5f5" />
 
-  <!-- Header -->
+  
   <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">POLLABLE BOUNDARIES · POLLDESC STATE MACHINE, SOCKETS VS FILE BLOCKING</text>
   <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">pollDesc 状态机与 pollable 边界</text>
   <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">pollDesc (pdNil / pdWait / pdReady) ➔ Socket 优雅让出 ➔ 文件 IO 钉死 M ➔ 生产治理</text>
 
-  <!-- 4 Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: pollDesc (x=40..245, w=205) -->
+  
+  
   <g transform="translate(40, 136)">
-    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">POLLDESC</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">内部状态机</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">pdNil ➔ pdWait ➔ pdReady</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• pd.rg / pd.wg 原子 CAS 状态切换</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 单方向仅允许挂载单个等待协程 G</text>
     <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Atomic Descriptor State Engine</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">状态约束：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 严禁多个 goroutine 并发读同一连接；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 重复挂载将直接触发 runtime throw；</text>
     <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护绝对单义性等待关系。</text>
   </g>
 
-  <!-- Col 2: pollable (x=260..475, w=215) - Focal -->
+  
   <g transform="translate(260, 136)">
-    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">POLLABLE</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">Socket 优雅让出</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Sockets / Pipes (OK)</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 成功注册进 epoll/kqueue 事件表</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 遇阻塞优雅 gopark 让出 M 执行权</text>
     <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Asynchronous Reactor Pattern</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="191" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">优雅特性：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 线程数量稳定在 GOMAXPROCS；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 零多线程上下文切换抖动；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 支撑单机百万 C1000K 连接。</text>
   </g>
 
-  <!-- Col 3: Non-pollable (x=490..695, w=205) - Focal -->
+  
   <g transform="translate(490, 136)">
-    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
+    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">NON-POLLABLE</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">文件 IO 钉死 M</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">Disk Files / Raw Syscall</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Linux epoll 对普通文件返回 EPERM</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 无法异步化，M 线程被钉死在内核中</text>
     <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Synchronous Blocking Degrade</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">退化冲击：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 触发 sysmon retake/handoffp 新建 M；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 系统 OS 线程数暴增数十乃至上百；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 消耗海量系统栈内存与调度算力。</text>
   </g>
 
-  <!-- Col 4: Production (x=710..920, w=210) -->
+  
   <g transform="translate(710, 136)">
-    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
+    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142" />
     <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">GOVERNANCE</text>
     <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">生产线程治理</text>
 
-    <!-- Box -->
-    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">pprof: IO wait vs syscall</text>
     <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• IO wait ➔ netpoll 正常，调大连接池</text>
     <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• syscall ➔ 钉 M 异常，限制并发协程池</text>
     <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Thread Triage &amp; Pool Control</text>
 
-    <!-- Details -->
-    <rect x="12" y="148" width="186" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+    
+    <rect x="12" y="148" width="186" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程总结：</text>
     <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 区分网络 socket 与磁盘文件调用栈；</text>
     <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 大批量文件读取严禁无脑开协程；</text>
     <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确保服务端线程数始终受控健康。</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  
+  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
   <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-  <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">pollDesc 内部状态机与生产线程治理策略</text>
-  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-  <text x="390" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">pollable Socket 优雅让出与文件 IO 钉 M 核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+  <rect x="120" y="436.0" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
+  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">pollDesc 内部状态机与生产线程治理策略</text>
+  <rect x="370" y="436.0" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
+  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">pollable Socket 优雅让出与文件 IO 钉 M 核心</text>
+<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>
