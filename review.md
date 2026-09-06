@@ -2074,3 +2074,9 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `npm run lint` | 0 error，1 个既有 `<img>` warning |
 | `npm run build` | 625 个静态页面生成成功 |
 | frontmatter | 11 篇 `draft: true → false`；两篇 markdown-blog 文章维持 production 不变 |
+
+## 四十一、2026-09-07 全量溢出扫描：13 张图收边
+
+594 张 SVG 全量渲染成功（0 失败、无空白输出）后，加跑 transform 感知的元素越界扫描（文字按 CJK 1.0×fs / ASCII 0.6×fs 估宽，画布容差 4px），发现 13 张存在文字超界（8 条 C 组副标题超界 23~96px、4 张右面板卡片结论行超界 16~61px、2 处标注贴边/出界）。逐条以缩短文案修复（保留关键数字与语义：如 Raft 选举保留 150~300ms 与 N/2+1），有 HTML 源的 5 张同步。修复后全库越界 0、`verify-diagram-strokes.py` 594/594 ALL PASS、13 张渲染目检通过。
+
+同批完成 evidence 软漂移候选的人工判定（13 处）：38.12ms 在 `evidence/service-observability-slo-port/run.out` 原文存在（检查器目录解析误报）；30.1ns=3009ns/100、30.6ms=三段实测合计为派生值；53.96ms/806.7MB/12.8ns 为带日期的历史值且正文显式降级；211.3MB 为对 memory-metrics raw 的转述引用；service-incident-drama 各值为已声明的构造演练口径。0 真实漂移。
