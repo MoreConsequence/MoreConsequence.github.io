@@ -403,7 +403,7 @@ function bdpWindow() {
   body += node({ x: 304, y: 236, width: 160, height: 64, tag: "WINDOW", title: "单个 cwnd", sub: "in-flight bytes", fill: C.linkTint, stroke: C.link, titleSize: 12 });
   body += node({ x: 520, y: 236, width: 144, height: 64, tag: "C_PATH", title: "共享瓶颈", sub: "path capacity", fill: C.accentTint, stroke: C.accent, titleSize: 12, focal: true });
   body += node({ x: 744, y: 236, width: 128, height: 64, tag: "RECV", title: "receiver", sub: "ACK", titleSize: 12 });
-  body += text(304, 314, "窗口不足时，发送方会在 ACK 到来前出现空档。", { fill: C.muted, size: 9, family: F.sans });
+  body += text(304, 326, "窗口不足时，发送方会在 ACK 到来前出现空档。", { fill: C.muted, size: 9, family: F.sans });
 
   body += line(216, 420, 288, 420, { stroke: C.link, marker: `${id}-arrow-link` });
   body += line(496, 420, 544, 420, { stroke: C.link, marker: `${id}-arrow-link` });
@@ -542,10 +542,12 @@ function workerSequence() {
   for (const center of centers) body += line(center, 196, center, 532, { stroke: "rgba(45,49,66,0.20)", strokeWidth: 0.8, dash: "3,3" });
 
   // The optional zone is painted first so its border never hides an activation bar.
-  body += rect(520, 400, 352, 48, { fill: "rgba(45,49,66,0.02)", stroke: "rgba(45,49,66,0.22)", strokeWidth: 0.8, rx: 4 });
-  body += rect(520, 400, 72, 16, { fill: C.paper, stroke: "rgba(45,49,66,0.22)", strokeWidth: 0.8, rx: 2 });
-  body += text(556, 412, "OPTIONAL", { fill: C.muted, size: 8, family: F.mono, anchor: "middle", spacing: 0.08 });
-  body += text(608, 436, "[P in test_order]", { fill: C.muted, size: 8, family: F.mono });
+  // It must fully contain the P label masks and note, and stay clear of the
+  // telemetry label below (container bottom 450, telemetry mask top 460).
+  body += rect(496, 398, 294, 52, { fill: "rgba(45,49,66,0.02)", stroke: "rgba(45,49,66,0.22)", strokeWidth: 0.8, rx: 4 });
+  body += rect(600, 398, 72, 16, { fill: C.paper, stroke: "rgba(45,49,66,0.22)", strokeWidth: 0.8, rx: 2 });
+  body += text(636, 410, "OPTIONAL", { fill: C.muted, size: 8, family: F.mono, anchor: "middle", spacing: 0.08 });
+  body += text(505, 410, "[P in test_order]", { fill: C.muted, size: 8, family: F.mono });
 
   const activation = {
     ui: { left: 156, right: 164, start: 220, end: 500 },
@@ -566,9 +568,9 @@ function workerSequence() {
     [activation.server.left, 348, activation.worker.right, 348, C.muted, `${id}-arrow`, "random bytes", 604, 332, 112],
     [activation.worker.right, 372, activation.server.left, 372, C.link, `${id}-arrow-link`, "POST /empty ×3", 604, 352, 112],
     [activation.server.left, 392, activation.worker.right, 392, C.muted, `${id}-arrow`, "200", 620, 376, 48],
-    [activation.worker.right, 416, activation.server.left, 416, C.link, `${id}-arrow-link`, "P? GET /empty ×10", 588, 396, 144],
+    [activation.worker.right, 416, activation.server.left, 416, C.link, `${id}-arrow-link`, "P? GET /empty ×10", 588, 400, 144],
     [activation.server.left, 432, activation.worker.right, 432, C.muted, `${id}-arrow`, "P samples ×10", 500, 436, 96],
-    [activation.worker.right, 456, activation.server.left, 456, C.link, `${id}-arrow-link`, "POST telemetry", 604, 436, 112],
+    [activation.worker.right, 456, activation.server.left, 456, C.link, `${id}-arrow-link`, "POST telemetry · level>0", 576, 460, 124],
     [activation.server.left, 476, activation.worker.right, 476, C.accent, `${id}-arrow-accent`, "id <ULID>", 604, 480, 112, "5,4"],
     [activation.worker.left, activation.worker.end, activation.ui.right, activation.ui.end, C.accent, `${id}-arrow-accent`, "onend / done", 248, 504, 112, "5,4"],
   ];
@@ -595,7 +597,7 @@ function workerSequence() {
   body += node({ x: 400, y: 136, width: 160, height: 64, tag: "WORKER", title: "Web Worker", sub: "runNextTest", fill: C.accentTint, stroke: C.accent, titleSize: 12, focal: true });
   body += node({ x: 720, y: 136, width: 160, height: 64, tag: "GO", title: "Go server", sub: "HTTP handlers", fill: C.white, stroke: C.ink, titleSize: 12 });
   body += text(56, 566, "激活条上边界对齐请求箭头，下边界对齐返回箭头；虚线生命线只表示时间。P 只有显式写进 test_order 才发生。", { fill: C.muted, size: 10, family: F.sans });
-  return frame({ id, title: "Worker 合同：顺序由字符串驱动", description: "真实 Worker 时序展示 Main thread 创建 Worker、发送 start 和每 200ms 的 status，Worker 按默认 IP_D_U 调用 getIP、garbage、empty 和 telemetry；P 阶段只在 test_order 显式包含时出现。每个服务端激活条的上边界对齐请求箭头，下边界对齐返回箭头。", eyebrow: "PROTOCOL · WORKER", subtitle: "Main thread 负责控制与渲染，Worker 才持有测速数据流", body });
+  return frame({ id, title: "Worker 合同：顺序由字符串驱动", description: "真实 Worker 时序展示 Main thread 创建 Worker、发送 start 和每 200ms 的 status，Worker 按默认 IP_D_U 调用 getIP、garbage、empty；telemetry_level>0 时才提交遥测；P 阶段只在 test_order 显式包含时出现。每个服务端激活条的上边界对齐请求箭头，下边界对齐返回箭头。", eyebrow: "PROTOCOL · WORKER", subtitle: "Main thread 负责控制与渲染，Worker 才持有测速数据流", body });
 }
 
 function evidenceBoundary() {
@@ -628,6 +630,41 @@ function evidenceBoundary() {
   return frame({ id, title: "源码事实、运行观察和生产证明要分开", description: "证据边界图把 speedtest-go 的源码事实、本机 loopback 运行观察，以及尚未验证的公网容量、Linux、TLS 和高可用部署分开。", eyebrow: "EVIDENCE · SCOPE", subtitle: "一张图提醒读者：可读到的实现，不自动升级成可运营的结果", body });
 }
 
+function evolutionTimeline() {
+  const id = "speedtest-whitepaper-evolution";
+  startLayout(id);
+  let body = sectionLabel(56, 152, "TIMELINE · 2000 → 2026");
+  const axisY = 330;
+  const nodeWidth = 112;
+  const nodeHeight = 84;
+  const gap = 8;
+  const stages = [
+    { tag: "2000→2006", title: "Ookla", sub: "Flash 多连接" },
+    { tag: "2009", title: "M-Lab NDT", sub: "开放存档" },
+    { tag: "2016-03", title: "LibreSpeed", sub: "开源自托管" },
+    { tag: "2016-05", title: "fast.com", sub: "只测下行" },
+    { tag: "2018-01", title: "HTML5 转正", sub: "插件退出" },
+    { tag: "2020-07", title: "ndt7", sub: "单流 + BBR" },
+    { tag: "2020 →", title: "speedtest-go", sub: "Go 单二进制", focal: true },
+  ];
+  stages.forEach((stage, index) => {
+    const x = 64 + index * (nodeWidth + gap);
+    const cx = x + nodeWidth / 2;
+    const above = index % 2 === 0;
+    const y = above ? axisY - 24 - nodeHeight : axisY + 24;
+    body += node({ x, y, width: nodeWidth, height: nodeHeight, tag: stage.tag, title: stage.title, sub: stage.sub, titleSize: 12, focal: Boolean(stage.focal) });
+    if (above) body += line(cx, y + nodeHeight, cx, axisY - 8, {});
+    else body += line(cx, axisY + 8, cx, y, {});
+  });
+  body += line(64, axisY, 896, axisY, { stroke: C.muted, strokeWidth: 1.2, marker: `${id}-arrow-link` });
+  body += text(56, 478, "标本（橙色）只回答一次测试如何计量；去哪里测、能承载多少是部署与平台层的问题。", { fill: C.muted, size: 10, family: F.sans });
+  body += legend([
+    { x: 136, label: "TIMELINE", fill: C.link },
+    { x: 376, label: "SPECIMEN", fill: C.accent },
+  ]);
+  return frame({ id, title: "从插件到自托管再到开放测量", description: "时间线展示四代测速演进：2000 speedtest.net 域名测速、2006 Ookla 成立、2009 M-Lab NDT、2016 LibreSpeed 与 fast.com、2018 Ookla HTML5 转正、2020 ndt7、Go 后端 speedtest-go；speedtest-go 为本文标本。", eyebrow: "EVOLUTION · TIMELINE", subtitle: "每一代都重新定义一次被测对象；标本位于开源自托管一支", body });
+}
+
 const diagrams = [
   ["speedtest-whitepaper-idc-path", idcPath()],
   ["speedtest-whitepaper-measurement-model", measurementModel()],
@@ -637,6 +674,7 @@ const diagrams = [
   ["speedtest-whitepaper-librespeed-map", sourceMap()],
   ["speedtest-whitepaper-worker-sequence", workerSequence()],
   ["speedtest-whitepaper-evidence-boundary", evidenceBoundary()],
+  ["speedtest-whitepaper-evolution", evolutionTimeline()],
 ];
 
 await mkdir(evidenceDir, { recursive: true });

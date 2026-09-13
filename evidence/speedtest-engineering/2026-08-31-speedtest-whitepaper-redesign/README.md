@@ -22,6 +22,7 @@
 | `speedtest-whitepaper-librespeed-map` | 浏览器 Worker、HTTP Handler、结果处理和数据库的真实职责边界 |
 | `speedtest-whitepaper-worker-sequence` | `speedtest-go@59cff12` 的 Main thread 控制轮询、默认 `IP_D_U` 协议和可选 P 阶段；请求/返回 y 分别对齐激活条上下边界 |
 | `speedtest-whitepaper-evidence-boundary` | 源码事实、本机观察和生产证明不能互相替代 |
+| `speedtest-whitepaper-evolution` | 四代测速时间线：每代改变的被测对象，标本（橙色）位于开源自托管一支 |
 
 ## 有意删除
 
