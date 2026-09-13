@@ -36,6 +36,7 @@
 | ✅ 采样与温度的可复现性（2026-08-16 发布） | temperature/top-p/seed 到底改变什么、为何"不保证确定性" | 纯数学模拟（softmax 缩放/核采样截断/seed 锁定），scripts 见 experiments/llm-sampling-reproducibility/ |
 | ✅ 工具调用的契约设计（2026-08-16 发布） | 函数调用如何被模型消费、schema 稳定性、错误如何喂回模型 | 确定性模拟（三种错误形状 0%/100%/100% 成功率），scripts 见 experiments/llm-tool-calling-contract/ |
 | ✅ 幻觉的可测量性（2026-08-16 发布） | 幻觉不是玄学：什么场景必然幻觉、评测时如何判定 | 确定性模拟（样本量误差/不可判定题污染/分栏统计），scripts 见 experiments/llm-hallucination-measurable/ |
+| ✅ 账单敏感度：同标价差 10 倍的四个乘数（2026-09-13 草稿 `llm-10-model-bill-sensitivity`） | 同 workload 下 cache 折扣/输出膨胀/命中率/长上下文附加费各放大几倍 | 纯算术模型 + 手算复核，experiments/llm-bill-sensitivity/ |
 
 **候选 slug**：`llm-token-economics`、`llm-embedding-retrieval`、`llm-sampling-reproducibility`、`llm-tool-calling-contract`、`llm-hallucination-measurable`
 
@@ -49,6 +50,9 @@
 | 写工具的幂等键 | 上次只承诺了"先写幂等键"——现在落地：200/201 语义、重放检测、并发窗口 | 接 service-idempotency 实验 + 单测 |
 | 对话级预算 | 从单轮超时升级为整会话 token/步数/费用预算，超预算的优雅降级 | ✅ 2026-08-23 草稿 `agent-session-budget`：四种刹车策略 300 会话对照，experiments/ts-agent-budget/ |
 | 工具死循环防护 | Agent 卡在"错误→修正→再错"的检测与熔断 | 故障注入 + 状态机扩展 |
+| ✅ MCP 无状态化：删握手/session 后多轮去哪了（2026-09-13 草稿 `llm-09-mcp-stateless-core`） | 传输会话删除后，重试/网关路由/错误码由谁承担 | 零依赖 Node 双实例 7 断言，experiments/mcp-stateless/ |
+| ✅ MCP Tasks 扩展：长任务状态放哪（2026-09-13 草稿 `llm-11-mcp-tasks-extension`） | taskId + 轮询；T4 反例证明无共享存储即 404 | 零依赖 Node 三实例 5 断言，experiments/mcp-tasks-extension/ |
+| ✅ A2A 卡发现：对等体发现/版本/能力匹配（2026-09-13 草稿 `a2a-agent-card-discovery`） | 卡即配置、未知 skill 零请求、主版本拦截 | 零依赖 Node 双对等体 5 断言，experiments/a2a-card-discovery/ |
 
 ### S3. 分布式系统的故障模型【冲高阶后端硬通货】
 
@@ -60,6 +64,7 @@
 | 时钟与排序 | Lamport/向量时钟直觉、逻辑时钟 vs 墙钟、因果序 | ✅ 时钟偏移已发布；排序篇 `lamport-vector-clocks` 2026-08-23 完成草稿（固定种子模拟，experiments/lamport-vector-clocks/） |
 | 共识直觉 | Paxos/Raft 到底解决了什么、为什么多数派、脑裂 | 模拟器（raft.js 类）复现 |
 | ✅ 分布式事务三选一（2026-08-23 草稿 `two-phase-commit-vs-saga-outbox`） | 2PC / SAGA / Outbox 的故障模型与语义承诺 | 10 个故障注入点确定性矩阵，experiments/distributed-tx-faults/ |
+| ✅ 窗口边界 burst：定窗 2.00x vs 滑窗 1.00x（2026-09-13 草稿 `rate-limit-window-boundary`） | 窗口边界 ±1ms 的放行数、内存代价与容量合同 | Python 标准库确定性模拟，experiments/rate-limit-window-boundary/ |
 
 ### S4. 数据库/存储原理【高阶后端另一块】
 
@@ -80,6 +85,7 @@
 | llm-as-judge 可靠吗 | 用模型评模型的偏差来源、与人工评分的一致性 | 对照实验（同一评测集双评） |
 | ✅ eval 集设计陷阱（2026-08-23 草稿 `eval-set-leakage`，系列首篇） | 数据泄漏、标签噪音、样本量幻觉 | 固定种子泄漏膨胀曲线 0/20/50/80%，experiments/eval-leakage/ |
 | 回归测试 Agent | 把评测接进 CI 的工程实践 | 接 service-pipeline 扩展 |
+| ✅ eval 发布门三规则（2026-09-14 草稿 `llm-12-eval-deploy-gate`） | 关键一票否决/数据集版本/抖动预算，退出码即合同 | 纯标准库 harness（v1 放行/v2 拦截），experiments/eval-deploy-gate/ |
 
 ### S6. 给 LLM 设计 API【服务系列延伸】
 

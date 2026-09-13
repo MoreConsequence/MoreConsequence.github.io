@@ -2099,3 +2099,26 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 
 - 按用户指令从上游 `cathrynlavery/diagram-design` 重新安装 `~/.codex/skills/diagram-design`（备份于 `~/.codex/skills/diagram-design.bak-20260907`）。上游为同一 2.6 版的新修订：新增 CJK/繁体中文标签规则与 Noto TC 字体栈、Mermaid 解析增强、模板与示例更新；设计 token（paper/ink/muted/soft/accent）与 `self_check.py` 完全未变——全库 594 张图与 `verify-diagram-strokes.py` 的口径不受影响。新增的中文标签三规则（简体栈回退、12px 下限、箭头标签换 register）与本库现有简体图的字体栈一致。
 - 按新 skill 的 profiles 机制初始化：`~/.diagram-design/profiles/default.md`（原生默认皮肤的恢复副本），项目根新增 `.diagram-design` 标记（`profile: default`）——后续生成走 marker-first 直读，跳过首跑品牌询问，且不改动安装副本。
+
+## 四十四、2026-09-13/14 快速拓展批：10 篇草稿（GitHub 趋势选题，全部 draft:true）
+
+选题来源：2026-09-13 GitHub 趋势调研（trending 仓库 + 运行时 release + LLM/Agent 生态三路子代理，结论仅落聊天记录，未落盘）。
+本批约束：本机无 docker/kind/redis/MySQL/PG（daemon 不可用），Go 停在 1.25.1——只选零依赖（Node 24.19.0 / Python 3.12.9 标准库）或纯算术可验证的题；外部版本事实全部标核对日期与复核边界。
+
+| 草稿 | 系列 | 核心问题 | 证据（全部本机实测） | 仍不能证明 |
+| --- | --- | --- | --- | --- |
+| `llm-09-mcp-stateless-core` | 大模型后端 | 删握手/session 后多轮去哪了 | `experiments/mcp-stateless/demo.mjs` 7 PASS；`evidence/mcp-stateless-core/2026-09-13-local/` | 真实 Tier-1 SDK、多机网关 |
+| `llm-10-model-bill-sensitivity` | 大模型后端 | 同 $10/$50 账单差 10.7x 的四个乘数 | `experiments/llm-bill-sensitivity/bill.mjs`，A 基线 $1.352 手算复核一致 | 真实账单（价格为第三方快照假设输入，需官网重核） |
+| `llm-11-mcp-tasks-extension` | 大模型后端 | 长任务状态放哪（T4 反例：无共享存储即 404） | `experiments/mcp-tasks-extension/demo.mjs` 5 PASS | 真实 SDK Tasks、DB/Redis 持久化 |
+| `a2a-agent-card-discovery` | 系统设计手记 | 发现/版本/能力匹配交给谁 | `experiments/a2a-card-discovery/demo.mjs` 5 PASS | 真实 A2A SDK、卡签发链、多跳授权 |
+| `rate-limit-window-boundary` | 系统设计手记 | 边界 2ms 定窗 2.00x vs 滑窗 1.00x | `experiments/rate-limit-window-boundary/sim.py` 确定性模拟 | 真实 Redis 8.8 命令、分布式 skew |
+| `llm-12-eval-deploy-gate` | 大模型后端 | 门三规则：关键一票否决/版本绑定/抖动预算 | `experiments/eval-deploy-gate/gate.py` 4 PASS（v1 放行/v2 拦截） | 真实模型与裁判、生产 CI 负载 |
+| `node-permission-model-boundary` | 从 Go 到 TypeScript | 白名单外读写/spawn 全拦，默认全放行 | `experiments/node-permission-boundary/run.sh` 7 PASS（双目录全绿） | 网络 host 限、worker 约束、生产案例 |
+| `go-encoding-json-v2-goroutineleak` | Go 的设计边界 | v2 strict 逐字串 + 约 1.2x；leak 画像三反例 | `experiments/go127-json-leak/` 4 测试 + bench（独立 go.mod，gate 零影响） | 其他 payload/架构倍数、生产定位 |
+| `go-generic-methods-interface-boundary` | Go 的设计边界 | 方法可泛、接口不可泛（两条逐字编译错误） | `experiments/go127-generic-methods/` 4 测试（正例 3 + 负编译，go1.27.1） | 未来版本放开、反射限制 |
+| `typescript-71-beta-native-check` | 从 Go 到 TypeScript | 本仓 typecheck 约 5x、TS2322 逐字一致 | `experiments/ts71-beta-probe/`（7.1.0-dev 当日 nightly，隔离安装） | 其他仓库、emit、API 链 |
+
+实验 runner 规范（本批两次踩坑后确立）：所有入口必须目录无关——Python 按 `Path(__file__).parent` 解析数据，shell 按 `dirname $0` 定位探针，仓库根与实验目录双跑验证。
+图表：本批新文只用 Mermaid 时序图 2 张（llm-09 跨实例 MRTR、a2a 发现路由）， fence 与旧文一致，参与者先声明、线性无交叉，无需重画；其余用表格承载，不强行画图。
+验证：`git diff --check` 通过；`npm run audit:content` 243 篇 `Issues: {}`；`tests/content.test.ts` 10/10；`npm run build` 未跑（发布前执行）。未提交未发布，10 篇均为 `draft: true`。
+发布补记（2026-09-14）：20 篇翻 `draft: false`；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（253 production，含 7 篇无 draft 字段的早期文章）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG（含 20 新页）、`verify:experiments` 全过后提交发布。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，本次 rebuild 对齐，无源码改动）。
