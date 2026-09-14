@@ -2100,7 +2100,7 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 - 按用户指令从上游 `cathrynlavery/diagram-design` 重新安装 `~/.codex/skills/diagram-design`（备份于 `~/.codex/skills/diagram-design.bak-20260907`）。上游为同一 2.6 版的新修订：新增 CJK/繁体中文标签规则与 Noto TC 字体栈、Mermaid 解析增强、模板与示例更新；设计 token（paper/ink/muted/soft/accent）与 `self_check.py` 完全未变——全库 594 张图与 `verify-diagram-strokes.py` 的口径不受影响。新增的中文标签三规则（简体栈回退、12px 下限、箭头标签换 register）与本库现有简体图的字体栈一致。
 - 按新 skill 的 profiles 机制初始化：`~/.diagram-design/profiles/default.md`（原生默认皮肤的恢复副本），项目根新增 `.diagram-design` 标记（`profile: default`）——后续生成走 marker-first 直读，跳过首跑品牌询问，且不改动安装副本。
 
-## 四十四、2026-09-13/14 快速拓展批：28 篇（GitHub 趋势选题，先草稿后发布）
+## 四十四、2026-09-13/14 快速拓展批：36 篇（GitHub 趋势选题，先草稿后发布）
 
 选题来源：2026-09-13 GitHub 趋势调研（trending 仓库 + 运行时 release + LLM/Agent 生态三路子代理，结论仅落聊天记录，未落盘）。
 本批约束：本机无 docker/kind/redis/MySQL/PG（daemon 不可用）；Go 1.25.1 主工具链 + GOTOOLCHAIN 直装 1.27.x；Node v24.19.0；Python 3.12.9 标准库。只选零依赖可验证的题；外部版本事实全部标核对日期与复核边界。
@@ -2135,7 +2135,15 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `gossip-rounds-infection` | 系统设计手记 | 100 节点 16 轮 vs fanout=3 用 7 轮 | `experiments/gossip-rounds/gossip.py` 固定种子 + 多种子 | 真实丢包、成员变更 |
 | `service-pagination-cursor` | 系统设计手记 | offset 重 2 行、cursor 无重连续 | `experiments/cursor-pagination/pages.py` 双写对照 3 断言 | 删行空洞、大 offset 性能 |
 | `llm-error-shape-feeds-model` | 无系列（S6 首篇） | 粗码 0/5、富错误 5/5（≤2 轮） | `experiments/error-shape-heal/heal.mjs` 确定性对照 | 真实模型、hint 粒度成本 |
+| `go-synctest-bubble` | Go 的设计边界 | 虚拟时钟+阻塞断言，UTC 午夜起点 | `experiments/go127-synctest/` 3 测试（入口 Test 非 Run） | 真实网络、生产竞态 |
+| `node-sqlite-builtin` | 从 Go 到 TypeScript | 参数化/具名/显式事务，无 transaction 助手 | `experiments/node-sqlite/demo.mjs` 3 断言 | WAL/并发、生产性能 |
+| `sqlite-fts-tokenizer` | 数据库存储 | 默认 0 命中，trigram 满 3 token 同召回 | `experiments/sqlite-fts/fts.py` 4 断言 | 索引体积、拼音扩展 |
+| `http-chunked-flush` | 网络协议 | 首字节 1.1ms vs 302ms | `experiments/http-chunked/` 2 测试 | 公网、代理缓冲 |
+| `crdt-gcounter-merge` | 系统设计手记 | 顺序无关 23、幂等、槽位隔离 | `experiments/crdt-gcounter/gcounter.py` 3 断言 | 同步延迟、槽位爆炸 |
+| `llm-15-context-eviction` | 大模型后端 | 恒 8/20，策略只改分布（合成） | `experiments/context-eviction/evict.py` 4 断言 | 真实模型召回 |
+| `service-webhook-hmac` | 系统设计手记 | 签名+去重，同 id 不重执 | `experiments/webhook-hmac/hook.mjs` 4 断言 | 密钥轮换、重放窗口 |
+| `retry-budget-math` | 系统设计手记 | 1.02x/1.248x/熔断回 1.0 | `experiments/retry-budget/retry.py` 纯算术 4 断言 | 退避抖动、半开恢复 |
 
 实验 runner 规范（本批踩坑后确立）：所有入口必须目录无关——Python 按 `Path(__file__).parent` 解析数据，shell 按 `dirname $0` 定位探针，Go 子模块独立 go.mod（`go 1.27.0`，父模块与 gate 零影响），仓库根与实验目录双跑验证。另：`nojsonv2` 逃生舱只保 v1 调用方，直引 v2 的代码在其下连编译都过不了（`escape-hatch.out`）。
 图表：新文只用 Mermaid 时序图 2 张（llm-09 跨实例 MRTR、a2a 发现路由），fence 与旧文一致，参与者先声明、线性无交叉，无需重画；其余用表格承载，不强行画图。
-发布记录（2026-09-14）：分两批翻 `draft: false`（20 篇 + 8 篇）；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（261 production，含 7 篇无 draft 字段的早期文章）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG、`verify:experiments` 全过后提交发布（`c89f71d` + 本批 commit）。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，rebuild 对齐，无源码改动）。
+发布记录（2026-09-14）：分两批翻 `draft: false`（20 篇 + 8 篇）；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（261 production，含 7 篇无 draft 字段的早期文章）；第 4 批 8 篇同流程发布（269 production）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG、`verify:experiments` 全过后提交发布（`c89f71d` + 本批 commit）。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，rebuild 对齐，无源码改动）。
