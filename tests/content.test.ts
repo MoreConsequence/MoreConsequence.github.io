@@ -48,6 +48,7 @@ describe("Markdown content pipeline", () => {
     expect(posts.map((post) => post.slug)).toEqual([
       "a2a-delegate-chain",
       "agent-tooloop-fuse",
+      "capability-map-interview",
       "cors-preflight-trio",
       "crdt-gcounter-merge",
       "go-encoding-json-v2-goroutineleak",
@@ -78,6 +79,7 @@ describe("Markdown content pipeline", () => {
       "schema-breaking-detector",
       "service-config-hot-reload",
       "service-pagination-cursor",
+      "service-payment-callback-design",
       "service-webhook-hmac",
       "slo-burn-rate-alert",
       "sqlite-fts-tokenizer",

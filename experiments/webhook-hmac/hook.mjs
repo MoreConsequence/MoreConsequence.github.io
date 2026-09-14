@@ -6,7 +6,10 @@ import crypto from "node:crypto";
 const SECRET = "s3cr3t";
 const seen = new Set();
 let executions = 0;
-const sign = (body) => crypto.createHmac("sha256", SECRET).update(body).digest("hex");
+// 密钥轮换：过渡期内新旧双密钥同时有效，执行业务前先记用的是哪把。
+let activeSecrets = [SECRET];
+const signWith = (secret, body) => crypto.createHmac("sha256", secret).update(body).digest("hex");
+const sign = (body) => signWith(SECRET, body);
 
 const srv = http.createServer(async (req, res) => {
   const send = (code, obj) => {
@@ -16,16 +19,21 @@ const srv = http.createServer(async (req, res) => {
   let body = "";
   for await (const c of req) body += c;
   const sig = req.headers["x-signature"];
-  const expect = sign(body);
-  if (typeof sig !== "string" || sig.length !== expect.length ||
-      !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) {
+  // 轮换语义：逐把试签，哪把对上记哪把；长度先行避免 timingSafeEqual 抛错。
+  const hit = typeof sig === "string"
+    ? activeSecrets.find((s) => {
+        const expect = signWith(s, body);
+        return sig.length === expect.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect));
+      })
+    : undefined;
+  if (hit === undefined) {
     return send(401, { error: "bad signature" });
   }
   const { id } = JSON.parse(body);
   if (seen.has(id)) return send(200, { duplicate: true });
   seen.add(id);
   executions++;
-  return send(200, { ok: true });
+  return send(200, { ok: true, key: hit === SECRET ? "old" : "new" });
 });
 await new Promise((r) => srv.listen(0, "127.0.0.1", r));
 const port = srv.address().port;
@@ -66,6 +74,18 @@ check("H3 篡改体签名失效", r3.status === 401, `status=${r3.status}`);
 
 const r4 = await deliver({ id: "evt-3", amount: 100 }, "wrong-secret");
 check("H4 错密钥拒绝", r4.status === 401, `status=${r4.status}`);
+
+// H5/H6：密钥轮换演练——加入新密钥后双签并行，旧密钥退役后旧签失效。
+activeSecrets = [SECRET, "n3w-s3cr3t"];
+const r5 = await deliver({ id: "evt-4", amount: 1 }, "n3w-s3cr3t");
+check("H5 过渡期新签可用", r5.status === 200 && r5.body.key === "new", JSON.stringify(r5.body));
+const r5b = await deliver({ id: "evt-5", amount: 1 }, SECRET);
+check("H5b 过渡期旧签仍可用", r5b.status === 200 && r5b.body.key === "old");
+activeSecrets = ["n3w-s3cr3t"];
+const r6 = await deliver({ id: "evt-6", amount: 1 }, SECRET);
+check("H6 退役后旧签失效", r6.status === 401, `status=${r6.status}`);
+const r6b = await deliver({ id: "evt-7", amount: 1 }, "n3w-s3cr3t");
+check("H6b 退役后新签正常", r6b.status === 200 && r6b.body.ok === true);
 
 srv.close();
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
