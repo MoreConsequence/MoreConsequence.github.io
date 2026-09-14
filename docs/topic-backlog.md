@@ -72,7 +72,7 @@
 
 | 主题 | 核心问题 | 验证方式 |
 | --- | --- | --- |
-| 事务隔离级别 | 四种隔离的异常现象、幻读/不可重复读的真实场景 | SQLite/Postgres 本机可复现实验 |
+| 事务隔离级别 | 四种隔离的异常现象、幻读/不可重复读的真实场景 | SQLite/Postgres 本机可复现实验（✅ 2026-09-14 草稿 `sqlite-tx-isolation`：WAL 读快照 + 双写 BUSY，experiments/sqlite-tx-isolation/） |
 | 索引选择 | B+Tree vs Hash vs 覆盖索引：何时用哪个 | 数据量与查询延迟实测 |
 | 主从与一致性 | 复制延迟、读己之写、主从切换的可用性账 | docker-compose 本机集群 |
 
@@ -93,7 +93,7 @@
 
 | 主题 | 核心问题 | 验证方式 |
 | --- | --- | --- |
-| 错误形状喂模型 | 错误码太粗/太细各会怎样、details 如何帮模型自愈 | 接契约实验 + 本地模型对话 |
+| ✅ 错误形状喂模型（2026-09-14 草稿 `llm-error-shape-feeds-model`） | 错误码太粗/太细各会怎样、details 如何帮模型自愈 | stub 对照：粗码 0/5 vs 富 hint 5/5，experiments/error-shape-heal/ |
 | schema 稳定性 | 字段改名/类型收紧对已训练模型的影响 | 契约演进演示 |
 
 ### S7. 求职素材转化【非系列，一次性】

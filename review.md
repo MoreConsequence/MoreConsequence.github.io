@@ -2100,10 +2100,10 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 - 按用户指令从上游 `cathrynlavery/diagram-design` 重新安装 `~/.codex/skills/diagram-design`（备份于 `~/.codex/skills/diagram-design.bak-20260907`）。上游为同一 2.6 版的新修订：新增 CJK/繁体中文标签规则与 Noto TC 字体栈、Mermaid 解析增强、模板与示例更新；设计 token（paper/ink/muted/soft/accent）与 `self_check.py` 完全未变——全库 594 张图与 `verify-diagram-strokes.py` 的口径不受影响。新增的中文标签三规则（简体栈回退、12px 下限、箭头标签换 register）与本库现有简体图的字体栈一致。
 - 按新 skill 的 profiles 机制初始化：`~/.diagram-design/profiles/default.md`（原生默认皮肤的恢复副本），项目根新增 `.diagram-design` 标记（`profile: default`）——后续生成走 marker-first 直读，跳过首跑品牌询问，且不改动安装副本。
 
-## 四十四、2026-09-13/14 快速拓展批：10 篇草稿（GitHub 趋势选题，全部 draft:true）
+## 四十四、2026-09-13/14 快速拓展批：28 篇（GitHub 趋势选题，先草稿后发布）
 
 选题来源：2026-09-13 GitHub 趋势调研（trending 仓库 + 运行时 release + LLM/Agent 生态三路子代理，结论仅落聊天记录，未落盘）。
-本批约束：本机无 docker/kind/redis/MySQL/PG（daemon 不可用），Go 停在 1.25.1——只选零依赖（Node 24.19.0 / Python 3.12.9 标准库）或纯算术可验证的题；外部版本事实全部标核对日期与复核边界。
+本批约束：本机无 docker/kind/redis/MySQL/PG（daemon 不可用）；Go 1.25.1 主工具链 + GOTOOLCHAIN 直装 1.27.x；Node v24.19.0；Python 3.12.9 标准库。只选零依赖可验证的题；外部版本事实全部标核对日期与复核边界。
 
 | 草稿 | 系列 | 核心问题 | 证据（全部本机实测） | 仍不能证明 |
 | --- | --- | --- | --- | --- |
@@ -2117,8 +2117,25 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `go-encoding-json-v2-goroutineleak` | Go 的设计边界 | v2 strict 逐字串 + 约 1.2x；leak 画像三反例 | `experiments/go127-json-leak/` 4 测试 + bench（独立 go.mod，gate 零影响） | 其他 payload/架构倍数、生产定位 |
 | `go-generic-methods-interface-boundary` | Go 的设计边界 | 方法可泛、接口不可泛（两条逐字编译错误） | `experiments/go127-generic-methods/` 4 测试（正例 3 + 负编译，go1.27.1） | 未来版本放开、反射限制 |
 | `typescript-71-beta-native-check` | 从 Go 到 TypeScript | 本仓 typecheck 约 5x、TS2322 逐字一致 | `experiments/ts71-beta-probe/`（7.1.0-dev 当日 nightly，隔离安装） | 其他仓库、emit、API 链 |
+| `go-uuid-v7-ordered` | Go 的设计边界 | v7 有序但非严格单调（跨毫秒有序） | `experiments/go127-uuid/` 4 测试（位/往返/万级唯一/有序） | B-tree 真实性能、跨版本 |
+| `go-timer-sync-channel` | Go 的设计边界 | 通道恒同步：cap 0、恰好一次、Stop/Reset | `experiments/go127-timer/` 3 测试 | 生产延迟分布、高频分配 |
+| `go-traceback-pprof-labels` | Go 的设计边界 | 标签进 traceback 头，一键可关 | `experiments/go127-traceback/` 子进程双断言 | 生产 crash 管道、多标签开销 |
+| `node-als-request-context` | 从 Go 到 TypeScript | 10 并发隔离 10/10 vs 共享变量 1/10 | `experiments/node-als-context/demo.mjs` 2 断言 | run 开销、跨线程传递 |
+| `http-keepalive-reuse-idle` | 网络协议 | 1 连接/10 连接/2 连接三数 | `experiments/http-keepalive/` ConnState 计数 3 测试 | TLS/H2、公网 NAT |
+| `sqlite-wal-checkpoint` | 数据库存储 | 49KB 先长后消，2000 行不少 | `experiments/sqlite-wal/wal.py` 3 断言 | 并发写、备份窗口 |
+| `llm-13-pass-at-k-unbiased` | 大模型后端 | 0.506 锁定真值 vs 朴素 0.297 | `experiments/pass-at-k/passk.py` 固定种子 2000 题 | 真实模型、温度形状 |
+| `agent-tooloop-fuse` | 从 Go 到 TypeScript | 同签名连错 3 次熔断，交替不误伤 | `experiments/agent-fuse/fuse.mjs` 4 断言（S2 死循环防护落地） | 真实错误分布、签名归一化 |
+| `llm-14-sse-resume-push` | 大模型后端 | 续传 [3,4] 无丢无重 | `experiments/sse-resume/sse.mjs` 3 断言 | 真实断线、事件窗策略 |
+| `slo-burn-rate-alert` | 系统设计手记 | ticket +7min、page +16min、零误报 | `experiments/burn-rate-alert/burn.py` 30 天分钟级 trace | 真实流量、多服务聚合 |
+| `go-mldsa-sign-verify` | Go 的设计边界 | 闭环+双拒绝，公钥 1952B/签名 3309B | `experiments/go127-mldsa/` 4 测试 | X.509 集成、互操作、性能 |
+| `go-slog-level-filter` | Go 的设计边界 | Debug 默认不出、With 透传、JSON 机读 | `experiments/go-slog-filter/` 3 测试 | 生产量 benchmark、otel 桥接 |
+| `node-structured-clone-semantics` | 从 Go 到 TypeScript | 隔离真、函数拒收、类退化 plain | `experiments/node-clone-semantics/clone.mjs` 4 断言 | transferable、性能对比 |
+| `a2a-delegate-chain` | 系统设计手记 | 委派边界：下游只见子任务 | `experiments/a2a-delegate-chain/chain.mjs` 3 断言 | 真实 SDK、多跳授权、循环转包 |
+| `sqlite-tx-isolation` | 数据库存储 | 读快照稳定、双写立即 BUSY（S4） | `experiments/sqlite-tx-isolation/isolation.py` 双连接 3 断言 | 并发吞吐、生产锁等待 |
+| `gossip-rounds-infection` | 系统设计手记 | 100 节点 16 轮 vs fanout=3 用 7 轮 | `experiments/gossip-rounds/gossip.py` 固定种子 + 多种子 | 真实丢包、成员变更 |
+| `service-pagination-cursor` | 系统设计手记 | offset 重 2 行、cursor 无重连续 | `experiments/cursor-pagination/pages.py` 双写对照 3 断言 | 删行空洞、大 offset 性能 |
+| `llm-error-shape-feeds-model` | 无系列（S6 首篇） | 粗码 0/5、富错误 5/5（≤2 轮） | `experiments/error-shape-heal/heal.mjs` 确定性对照 | 真实模型、hint 粒度成本 |
 
-实验 runner 规范（本批两次踩坑后确立）：所有入口必须目录无关——Python 按 `Path(__file__).parent` 解析数据，shell 按 `dirname $0` 定位探针，仓库根与实验目录双跑验证。
-图表：本批新文只用 Mermaid 时序图 2 张（llm-09 跨实例 MRTR、a2a 发现路由）， fence 与旧文一致，参与者先声明、线性无交叉，无需重画；其余用表格承载，不强行画图。
-验证：`git diff --check` 通过；`npm run audit:content` 243 篇 `Issues: {}`；`tests/content.test.ts` 10/10；`npm run build` 未跑（发布前执行）。未提交未发布，10 篇均为 `draft: true`。
-发布补记（2026-09-14）：20 篇翻 `draft: false`；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（253 production，含 7 篇无 draft 字段的早期文章）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG（含 20 新页）、`verify:experiments` 全过后提交发布。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，本次 rebuild 对齐，无源码改动）。
+实验 runner 规范（本批踩坑后确立）：所有入口必须目录无关——Python 按 `Path(__file__).parent` 解析数据，shell 按 `dirname $0` 定位探针，Go 子模块独立 go.mod（`go 1.27.0`，父模块与 gate 零影响），仓库根与实验目录双跑验证。另：`nojsonv2` 逃生舱只保 v1 调用方，直引 v2 的代码在其下连编译都过不了（`escape-hatch.out`）。
+图表：新文只用 Mermaid 时序图 2 张（llm-09 跨实例 MRTR、a2a 发现路由），fence 与旧文一致，参与者先声明、线性无交叉，无需重画；其余用表格承载，不强行画图。
+发布记录（2026-09-14）：分两批翻 `draft: false`（20 篇 + 8 篇）；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（261 production，含 7 篇无 draft 字段的早期文章）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG、`verify:experiments` 全过后提交发布（`c89f71d` + 本批 commit）。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，rebuild 对齐，无源码改动）。
