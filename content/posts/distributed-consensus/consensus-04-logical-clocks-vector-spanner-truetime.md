@@ -2,7 +2,7 @@
 title: "分布式时序与因果一致性：Lamport 逻辑时钟、向量时钟到 Spanner TrueTime 物理不确定性"
 description: "直击分布式时间的核心物理困境：为什么 NTP 物理时钟无法实现全局全序？从 Lamport 逻辑时钟、向量时钟并发分支检测，到 Google Spanner TrueTime 硬件原子钟与 Commit Wait 破局全景。"
 publishedAt: "2026-08-30"
-updatedAt: "2026-09-06"
+updatedAt: "2026-09-14"
 tags: ["分布式时序", "Lamport时钟", "向量时钟", "TrueTime", "Spanner", "因果一致性"]
 draft: false
 featured: true
@@ -10,6 +10,8 @@ series: "分布式共识与高可用容错"
 ---
 
 **TL;DR：** 在狭义相对论与经典物理世界中，**分布式系统不存在绝对统一的全局物理时钟**。晶振物理温漂、NTP 步进跳变与不对称网络时延，使得“用机器物理时间戳排序并发事件”成为灾难性的反模式。Leslie Lamport 创立的**逻辑时钟**将时钟从物理测量中解放出来，定义了基于消息因果通信的偏序关系（$a \to b \implies L(a) < L(b)$）；**向量时钟（Vector Clock）**进一步以 $O(N)$ 空间开销实现了双向因果与并发分支检测（$V_A \parallel V_B$）。而 **Google Spanner TrueTime** 则在工程巅峰处给出了第三种答案：通过机房部署硬件原子钟与 GPS 接收器将物理误差严格限定在 $\epsilon \le 7\text{ms}$，在事务提交时强制休眠 $2\epsilon$（Commit Wait），以极其微小的等待代价换来了全球分布式系统的外部一致性（External Consistency / Linearizability）与全球无锁快照读。
+
+> 分工声明：本篇讲时钟**机制**（规则、公式、Commit Wait 推导），是共识系列的分篇；逻辑时钟的**实测分歧**见 [Lamport 篇](/writing/lamport-vector-clocks)（1770 个事件对），**五方案选型决策**（含 HLC/TSO 与反例）见 [时钟选型篇](/writing/distributed-clock-ordering-hlc-truetime)。
 
 ---
 
@@ -171,3 +173,5 @@ Spanner 制定了严格的 **Commit Wait 规则**：
 - Lamport，Time, Clocks, and the Ordering of Events in a Distributed System——逻辑时钟与 happen-before，<https://lamport.azurewebsites.net/pubs/time-clocks.pdf>
 - Corbett et al.，Spanner: Google's Globally-Distributed Database——TrueTime 与 commit wait，<https://research.google/pubs/spanner-googles-globally-distributed-database/>
 - Kulkarni et al.，Logical Physical Clocks (HLC)——混合逻辑时钟的因果一致性证明，<https://cse.buffalo.edu/tech-reports/2014-04.pdf>
+- 站内实测：[Lamport 时钟说“先”，向量时钟说“不一定”](/writing/lamport-vector-clocks)（全序里的假先后实测）
+- 站内选型：[没有全局时钟的世界](/writing/distributed-clock-ordering-hlc-truetime)（五方案决策边界与反例）

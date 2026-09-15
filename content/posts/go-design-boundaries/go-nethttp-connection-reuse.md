@@ -2,7 +2,7 @@
 title: "http.Transport 的复用账本：默认 2 条空闲连接怎么拖慢高并发"
 description: "Keep-Alive 承诺连接默认复用，Go http.Transport 的默认值却只给每条宿主留 2 条空闲槽位——并发一高，大量请求取不到现成连接，只能付一次 TCP+TLS 新建税。本机实测：50 并发 × 15000 请求，默认池新建约 3580 次连接（24% 请求付税），调大池只新建 49 次；并发推到 200，默认池进入 1.1k~16.2k req/s 的震荡区，调大池稳定在 29k。四个旋钮各管一摊：MaxIdleConnsPerHost / MaxIdleConns 管复用、IdleConnTimeout 管寿命、MaxConnsPerHost 管并发硬上限。"
 publishedAt: "2026-08-16"
-updatedAt: "2026-08-17"
+updatedAt: "2026-09-14"
 tags: ["Go", "网络", "HTTP", "性能"]
 draft: false
 featured: false
@@ -132,3 +132,4 @@ go run ./go-nethttp/cmd/bench -workers 50 -requests 300 -perhost 100 -maxidle 10
 3. Go 标准库源码 `src/net/http/h2_bundle.go`（服务端默认 `http2defaultMaxStreams=250`、客户端假设 `http2defaultMaxConcurrentStreams=1000`）
 4. RFC 7230 §6.3（HTTP/1.1 持久连接）：https://www.rfc-editor.org/rfc/rfc7230
 5. RFC 8446（TLS 1.3，握手 RTT 结构）：https://www.rfc-editor.org/rfc/rfc8446
+- 站内服务端视角：[HTTP keep-alive 三个数](/writing/http-keepalive-reuse-idle)（复用/禁用/空闲超时的连接计数）

@@ -2157,3 +2157,20 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 实验 runner 规范（本批踩坑后确立）：所有入口必须目录无关——Python 按 `Path(__file__).parent` 解析数据，shell 按 `dirname $0` 定位探针，Go 子模块独立 go.mod（`go 1.27.0`，父模块与 gate 零影响），仓库根与实验目录双跑验证。另：`nojsonv2` 逃生舱只保 v1 调用方，直引 v2 的代码在其下连编译都过不了（`escape-hatch.out`）。
 图表：新文只用 Mermaid 时序图 2 张（llm-09 跨实例 MRTR、a2a 发现路由），fence 与旧文一致，参与者先声明、线性无交叉，无需重画；其余用表格承载，不强行画图。
 发布记录（2026-09-14）：分两批翻 `draft: false`（20 篇 + 8 篇）；`tests/content.test.ts` slug 期望表按 `readPostSources(production)` 实测回填（261 production，含 7 篇无 draft 字段的早期文章）；第 4 批 8 篇同流程发布（269 production）；第 5 批 8 篇同流程发布（277 production）；第 6 批 2 篇合成/索引同流程发布（279 production）+ webhook/rate-limit 两篇加固（updatedAt）；`npm test` 12 files/45 tests、`lint` 0 errors、`build` 全站 SSG、`verify:experiments` 全过后提交发布（`c89f71d` + 本批 commit）。另含 `experiments/service/dist/store.js(.map)` 的构建刷新（HEAD 源码已含 `conflictWith`，旧 dist 陈旧，rebuild 对齐，无源码改动）。
+
+## 四十五、2026-09-14 优化遍：雷同判定与分工链接（未删文、未合并）
+
+方法：全库 279 production 扫描——最长 15 篇、标题聚类、裸结论、模板隐喻密度、08-16 短篇复核。
+
+| 发现 | 判定 | 处理 |
+| --- | --- | --- |
+| 时钟三篇（lamport / hlc选型 / consensus-04） | 机制 vs 实测 vs 选型，三问不同，不合并 | consensus-04 加分工声明 + 双向内链（`updatedAt` 2026-09-14） |
+| Outbox 三篇（2pc-saga / outbox-cdc / oract-02） | 故障模型 vs 双写窗口 vs Agent 副作用，三问不同 | 不动（各有独立主角） |
+| keepalive vs nethttp 池 | 服务端生命周期 vs 客户端池调优，互补 | 双向内链（两篇均 `updatedAt` 2026-09-14） |
+| WAL 18.6k / whitepaper 27k 等长篇 | 抽读为深度非注水（torn write、fsync 语义） | 不动 |
+| 08-16 短篇（6–9KB 化） | 前批已扩充 | 不动 |
+| 本批微篇正文 340–520 字 | 证据在 experiments，正文补第二证据加固中（webhook/rate-limit 已加固） | 继续加固，不注水 |
+| 裸 `## 结论` | 全库 0 处 | 无需处理 |
+| “三本账”隐喻 | 仅 6 篇 | 未成灾，不动 |
+
+结论：本轮零删除零合并——雷同嫌疑经逐项核对均为“相邻不相同”。真正的优化动作是分工声明 + 内链，合并留待某天两篇回答同一问题时再动刀。
