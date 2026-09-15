@@ -66,7 +66,6 @@ describe("Markdown content pipeline", () => {
       "http-range-resume",
       "llm-12-eval-deploy-gate",
       "llm-13-pass-at-k-unbiased",
-      "llm-14-sse-resume-push",
       "llm-15-context-eviction",
       "llm-error-shape-feeds-model",
       "node-als-request-context",
