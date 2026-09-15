@@ -2185,3 +2185,20 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 2. **加固队列 = 26 微篇 + 5 老篇**（pi/oract 教程缺引用与证据、agent-session-budget、eval-set-leakage）。已加固：webhook（轮换）、rate-limit（令牌桶）、eviction（加权换内核）、gossip（10% 死亡对照）；合并 1 次（SSE→Tasks）。
 3. **补引用队列大**：41 篇无参考资料节（dsh/oract 系列为主 + rate-limiting/otel/cache-consistency 等老篇）、136 篇不足 3 条。注意 dsh/oract 系引用应为项目内文档而非外部论文，逐篇核对后补，不批量编造。
 4. 微篇 0 内嵌代码块是风格（代码在 experiments），不扣分到删除线；但正文 500 字以下（eviction 改前 488）在“可复用机制”上确实不够，加固方向是第二证据而非注水。
+
+## 四十七、2026-09-15 去水合并批：19 并 8（267 production）
+
+动因：标题长 + 数字串 + 正文 340–930 字，19 篇微篇符合水货体貌。按“优化→合并→换内核” ladder：各篇均有独特问题与可运行证据，不够删除线；其中 19 篇共享 8 条因果主线，执行合并。
+
+| 合并后 | 并入（已删 slug） | 主线 |
+| --- | --- | --- |
+| `go-runtime-trio-127` | timer / traceback / slog | 运行时把隐式摆明面 |
+| `go-stdlib-uuid-mldsa` | uuid / mldsa | 收编第三方领地 |
+| `go-test-synctest-fuzz` | synctest / fuzz | 挡 flaky 与漏测 |
+| `node-concurrency-context-cpu` | ALS / worker | 先分类等待与计算 |
+| `llm-12-eval-estimation-gates` | eval-gate / pass@k | 估计准 + 门严 |
+| `resilience-window-retry` | window / retry | 参数算出来 |
+| `http-four-mechanisms` | keepalive / chunked / range / cors | 语义全在头里 |
+| `a2a-discovery-delegation` | card / delegate | 协作信息进协议 |
+
+修链：llm-11→新 A2A、nethttp→新 HTTP、串讲→新韧性、能力地图 3 处文本；audit 抓到 llm-11 一处漏网链接已补。experiments/evidence 目录保留为 dated 历史（删文不删证）。slug 表回填 267。验证：audit `{}`、content 10/10、全量 12/45、lint 0 errors、build 8 新页齐全。

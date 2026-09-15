@@ -34,7 +34,7 @@ series: "系统设计手记"
 | --- | --- | --- |
 | 签名与去重 | `/writing/service-webhook-hmac` | 执行恰好 1 次，复投不重执 |
 | 幂等 claim | `/writing/service-api-shape` | 100 并发 1 个 201 + 99 个 200，异指纹 409 |
-| 重试预算 | `/writing/retry-budget-math` | 1.02x/1.248x/熔断回 1.0 |
+| 重试预算 | `/writing/resilience-window-retry` | 1.02x/1.248x/熔断回 1.0 |
 | 翻页查询 | `/writing/service-pagination-cursor` | offset 重 2 行，cursor 连续 |
 
 ## 四、面试答法：先骨架，再数字

@@ -13,11 +13,11 @@ featured: false
 
 | 段 | 回答的问题 | 代表作 |
 | --- | --- | --- |
-| 网络 | 包怎么走、丢了怎么办 | `tcp-congestion-control-bbr`、`quic-http3-connection-migration`、`http-keepalive-reuse-idle` |
+| 网络 | 包怎么走、丢了怎么办 | `tcp-congestion-control-bbr`、`quic-http3-connection-migration`、`http-four-mechanisms` |
 | 运行时 | 代码跑在哪、慢在哪 | `typescript-event-loop-vs-gmp`、`go-encoding-json-v2-goroutineleak`、`go-generic-methods-interface-boundary` |
-| 服务 | 失败怎么办、怎么证明可靠 | `service-api-shape`（幂等）、`rate-limit-window-boundary`、`service-observability-slo` |
+| 服务 | 失败怎么办、怎么证明可靠 | `service-api-shape`（幂等）、`resilience-window-retry`、`service-observability-slo` |
 | 数据 | 写到哪、怎么不丢 | `wal-crash-recovery`、`sqlite-tx-isolation`、`sqlite-fts-tokenizer` |
-| LLM 应用 | token 账单、eval 门、协议 | `llm-token-economics`、`llm-12-eval-deploy-gate`、`llm-09-mcp-stateless-core` |
+| LLM 应用 | token 账单、eval 门、协议 | `llm-token-economics`、`llm-12-eval-estimation-gates`、`llm-09-mcp-stateless-core` |
 
 ## 二、面试问法对照
 

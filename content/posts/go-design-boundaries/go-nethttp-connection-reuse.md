@@ -132,4 +132,4 @@ go run ./go-nethttp/cmd/bench -workers 50 -requests 300 -perhost 100 -maxidle 10
 3. Go 标准库源码 `src/net/http/h2_bundle.go`（服务端默认 `http2defaultMaxStreams=250`、客户端假设 `http2defaultMaxConcurrentStreams=1000`）
 4. RFC 7230 §6.3（HTTP/1.1 持久连接）：https://www.rfc-editor.org/rfc/rfc7230
 5. RFC 8446（TLS 1.3，握手 RTT 结构）：https://www.rfc-editor.org/rfc/rfc8446
-- 站内服务端视角：[HTTP keep-alive 三个数](/writing/http-keepalive-reuse-idle)（复用/禁用/空闲超时的连接计数）
+- 站内服务端视角：[HTTP 四则](/writing/http-four-mechanisms)（复用/禁用/空闲超时的连接计数）

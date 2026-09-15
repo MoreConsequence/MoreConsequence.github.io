@@ -1,16 +1,17 @@
 ---
-title: "MCP Tasks 扩展：长任务用 taskId 加轮询，连接一个不占"
-description: "MCP 2026-07-28 把 Tasks 移出核心做成官方扩展：首轮 input_required、创建即返 taskId、tasks/get 轮询、tasks/update 推进度。用三实例原型验证跨实例轮询与无共享存储的未知任务，说明状态仍需自己存。"
+title: "长任务状态三形状：MRTR 重试、Tasks 轮询、SSE 推送"
+description: "超过一次重试的长任务有三形状：MRTR 一次闭环、Tasks 扩展 taskId 加轮询、SSE 订阅加 Last-Event-ID 续传。用三实例与慢放双原型验证，并说明存储仍需自己存、推送与轮询的选用表。"
 publishedAt: "2026-09-13"
+updatedAt: "2026-09-14"
 tags: ["大模型工程", "MCP", "协议设计", "Agent架构"]
 draft: false
 featured: false
 series: "大模型后端架构与推理加速"
 ---
 
-**TL;DR：** MCP 2026-07-28 把 Tasks 移出协议核心，做成官方扩展 `io.modelcontextprotocol/tasks`：长任务创建即返 `taskId`，客户端用 `tasks/get` 轮询、`tasks/update` 推进度，全程不占长连接。5 个本地断言全部通过，其中最关键的是反例 T4——没有共享任务存储的实例收不到别人的任务，Tasks 只是状态的外壳，存储仍需自己提供。
+**TL;DR：** 超过一次重试的长任务有三形状：MRTR 一次重试闭环；MCP Tasks 扩展（`io.modelcontextprotocol/tasks`）创建即返 `taskId`，`tasks/get` 轮询、`tasks/update` 推进度，全程不占长连接；SSE 订阅加 `Last-Event-ID` 续传，无丢无重。8 个本地断言全部通过（5 + 3），其中最关键的仍是反例 T4——没有共享任务存储的实例收不到别人的任务，Tasks 只是状态的外壳，存储仍需自己提供。
 
-本文是 MCP 三部曲终篇。前两篇：[无状态核心](/writing/llm-09-mcp-stateless-core)（传输会话删除，短多轮走 MRTR 重试）、[A2A 卡发现](/writing/a2a-agent-card-discovery)（横向发现）。本文回答最后一个问题：**超过一次重试的长任务，状态放哪、谁来轮询？**
+本文是 MCP 三部曲终篇（原独立 SSE 篇已并入本节第四节）。前两篇：[无状态核心](/writing/llm-09-mcp-stateless-core)（传输会话删除，短多轮走 MRTR 重试）、[A2A 发现与委派](/writing/a2a-discovery-delegation)（横向发现）。本文回答最后一个问题：**超过一次重试的长任务，状态放哪、谁来轮询——以及何时不该轮询？**
 
 ## 一、完整路径：一次迁移任务走完什么
 
@@ -56,22 +57,42 @@ T2 与 T4 是一对：D 能读到 C 创建的任务（共享存储），E 读不
 | a2a-agent-card | 部署文档/预配置 | Agent Card 协议消息 | 调用前先拉卡 |
 | 本文 Tasks | 长连接/流 | taskId + 轮询 | 不 hold 连接，存任务状态 |
 
-## 五、证据卡与边界
+## 五、第三形状：SSE 推送对照（原独立篇并入）
+
+轮询之外还有推送：SSE 订阅加 `Last-Event-ID`，断线重连只收错过的事件。原型慢放 4 事件（`experiments/sse-resume/sse.mjs`，原始输出 `evidence/sse-resume/2026-09-14-local/run.out`）：
+
+```text
+PASS S1 首连收到前2个 | [{"id":1,...},{"id":2,...}]
+PASS S2 续传无丢无重 | [3,4]
+PASS S3 全量顺序完整
+```
+
+| 维度 | Tasks 轮询 | SSE 推送 |
+| --- | --- | --- |
+| 状态在哪 | 服务端 taskId | 客户端游标（Last-Event-ID） |
+| 断线 | 无影响（随时查） | 续传（服务端保留事件窗） |
+| 服务端成本 | 存储任务 | 长连接 |
+| 适用 | 审计、掉线频繁端 | 进度流、通知 |
+
+选用即问：客户端常在线且要低延迟进度 → 推送；要审计与任意时刻查询 → 轮询。两者可共存（推送为主、轮询兜底），但状态只能有一份权威。
+
+## 六、证据卡与边界
 
 | 字段 | 内容 |
 | --- | --- |
-| 问题 | 长任务状态能否脱离长连接，且跨实例可见？ |
-| 环境 | Darwin arm64，Node v24.19.0，零依赖，内存 Map 模拟两种存储拓扑 |
-| 输入 | 三实例 + 5 断言，确定性运行 |
-| 原始输出 | `evidence/mcp-tasks-extension/2026-09-13-local/run.out`（5 PASS） |
-| 支持结论 | 创建即返、跨实例轮询、终端态、T4 反例、正交性 |
-| 不支持结论 | 真实 SDK 的 Tasks 行为、DB/Redis 持久化、通知送达语义、生产轮询负载 |
+| 问题 | 长任务状态能否脱离长连接，且跨实例可见？推送语义能否无丢无重？ |
+| 环境 | Darwin arm64，Node v24.19.0，零依赖 |
+| 输入 | 三实例 + 5 断言；慢放 4 事件 + 3 断言，均为确定性运行 |
+| 原始输出 | `evidence/mcp-tasks-extension/2026-09-13-local/run.out`（5 PASS） + `evidence/sse-resume/2026-09-14-local/run.out`（3 PASS） |
+| 支持结论 | 创建即返、跨实例轮询、终端态、T4 反例、正交性；续传无丢无重 |
+| 不支持结论 | 真实 SDK 的 Tasks 行为、DB/Redis 持久化、通知送达语义、生产轮询负载、真实网络断线 |
 
-## 六、结论：连接归零，存储现形
+## 七、结论：连接归零，存储现形
 
-Tasks 扩展把最后一块隐式状态（hold 住的流）也显式化了：连接持有时间为零，代价是多了一个必须自己选的存储。行动清单：一行——**给任务状态选存储（与业务数据同库、同 Redis，还是独立表），再上线 Tasks**。三部曲到此闭环。
+Tasks 扩展把最后一块隐式状态（hold 住的流）也显式化了：连接持有时间为零，代价是多了一个必须自己选的存储。推送是同一问题的另一解，只是把状态从服务端搬到客户端游标。行动清单：一行——**给任务状态选存储（与业务数据同库、同 Redis，还是独立表），再上线 Tasks**。三部曲到此闭环。
 
 ## 参考资料
 
 - MCP 2026-07-28 changelog（Tasks 进扩展 SEP-2663、通知改 subscriptions/listen），<https://modelcontextprotocol.io/specification/2026-07-28/changelog>（2026-09-13 核对）
-- 前篇：MCP 无状态核心，`/writing/llm-09-mcp-stateless-core`；A2A 卡发现，`/writing/a2a-agent-card-discovery`
+- 前篇：MCP 无状态核心，`/writing/llm-09-mcp-stateless-core`；A2A 发现与委派，`/writing/a2a-discovery-delegation`
+- 推送对照实验：`experiments/sse-resume/sse.mjs` + `evidence/sse-resume/2026-09-14-local/run.out`（原独立 SSE 篇已并入本文第五节）
