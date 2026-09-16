@@ -2,6 +2,7 @@
 title: "SLO burn-rate 双阈值：ticket +7 分钟响，page +16 分钟确认"
 description: "SLO 99.9% 下 30 天合成 trace（基线 0.1% + 30 分钟 5% 故障）：ticket（6h>2 且 1h>2）+7 分钟响，page（1h>14.4 且 5m>14.4）+16 分钟确认，基线期零误报。3 断言全过。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["SLO", "告警", "可观测性", "SRE"]
 draft: false
 featured: false
@@ -9,6 +10,8 @@ series: "系统设计手记"
 ---
 
 **TL;DR：** burn-rate 告警的关键不是阈值，是快慢双窗：ticket 窗（6h>2 且 1h>2）故障后 +7 分钟响，page 窗（1h>14.4 且 5m>14.4）+16 分钟确认，30 天基线零误报。3 断言全过。单窗方案要么误报（窗太短），要么迟到（窗太长）——双窗是唯一同时解两者的形状。
+
+![burn-rate 八日峰值：平时 1.0，故障日 25.5](../../../public/images/slo-burn-rate-peak.svg)
 
 ## 一、完整路径：一次故障如何变成两次告警
 
