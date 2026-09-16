@@ -2,6 +2,7 @@
 title: "Go 1.27 标准库两新件：有序 uuid 与后量子签名"
 description: "uuid.NewV7 前 48 位是 unix 毫秒（跨毫秒有序、同毫秒不保证单调），crypto/mldsa 签验闭环（公钥 1952B、签名 3309B）。两组断言全过，同一主题：标准库替你接 formerly-第三方依赖。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["Go", "标准库", "UUID", "密码学"]
 draft: false
 featured: false
