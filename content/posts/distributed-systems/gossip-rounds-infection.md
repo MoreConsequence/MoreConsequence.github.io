@@ -2,7 +2,7 @@
 title: "gossip 感染轮次：100 节点 fanout=1 用 16 轮，fanout=3 用 7 轮"
 description: "每轮每感染者随机推 1 个（固定种子）：100 节点 16 轮全感染，fanout=3 只要 7 轮，多种子稳定。用纯模拟锁定对数级传播，并说明成员列表与反熵缺口。"
 publishedAt: "2026-09-14"
-updatedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["分布式系统", "gossip", "传播", "模拟"]
 draft: false
 featured: false
@@ -10,6 +10,8 @@ series: "系统设计手记"
 ---
 
 **TL;DR：** gossip 推送模型下 100 节点全感染：fanout=1 用 16 轮（宽松上界 18 轮内），fanout=3 只要 7 轮，多种子稳定。加固：10% 节点死亡时存活者仍 100% 覆盖，仅从 16 轮升到 18 轮——随机转发的冗余天然绕过故障。4 断言全过。结论是指数传播的形状——轮次随规模对数增长，随 fanout 线性下降。生产落地的三块另补：成员列表从哪来、反熵补漏、拜占庭不信任。
+
+![gossip 感染曲线：fanout 3 七轮收满](../../../public/images/gossip-infection-curve.svg)
 
 ## 一、合同
 
