@@ -34,5 +34,11 @@ plan2 = con.execute("EXPLAIN QUERY PLAN SELECT * FROM orders WHERE sku = 'SKU-7'
 scan = "idx_sku" not in str(plan2).lower()
 check("J3 删索引后计划不再引用它", scan, str(plan2))
 
+# J4（加固）：ALTER 加 VIRTUAL 列同样可索引——STORED 的建表限制不适用于 VIRTUAL。
+con.execute("ALTER TABLE orders ADD COLUMN qty_v INTEGER GENERATED ALWAYS AS (CAST(json_extract(body, '$.qty') AS INTEGER)) VIRTUAL")
+con.execute("CREATE INDEX idx_qty ON orders(qty_v)")
+plan4 = con.execute("EXPLAIN QUERY PLAN SELECT * FROM orders WHERE qty_v > 4900").fetchall()
+check("J4 VIRTUAL 列可后加可索引", any("idx_qty" in str(r).lower() for r in plan4), str(plan4))
+
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 sys.exit(1 if fails else 0)

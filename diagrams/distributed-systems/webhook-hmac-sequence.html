@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 624" role="img" aria-labelledby="webhook-hmac-title webhook-hmac-desc"><title id="webhook-hmac-title">webhook 签名与去重时序</title><desc id="webhook-hmac-desc">发送方带 HMAC 签名投递，接收方先验签再查去重表：首投执行一次，复投回重复标记，验签失败直接拒绝。</desc>
+  <defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <!-- Title -->
+  <text x="40" y="48" fill="#2d3142" font-size="24" font-family="'Instrument Serif', Georgia, serif">webhook：先验签，再去重，最后执行</text>
+  <text x="40" y="72" fill="#4f5d75" font-size="12" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">签名错直接 401；同 id 复投回 200-duplicate，执行恰好一次</text>
+
+  <!-- Lifelines -->
+  <line x1="160" y1="144" x2="160" y2="500" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <line x1="480" y1="144" x2="480" y2="500" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <line x1="800" y1="144" x2="800" y2="500" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+  <!-- Activation bars -->
+  <rect x="476" y="172" width="8" height="148" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="796" y="244" width="8" height="40" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="476" y="352" width="8" height="112" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="796" y="388" width="8" height="40" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+
+  <!-- Actor boxes -->
+  <rect x="80" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="160" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Sender</text>
+  <text x="160" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">支付方</text>
+
+  <rect x="400" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="480" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Receiver</text>
+  <text x="480" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">验签 + 去重</text>
+
+  <rect x="720" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="800" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Dedupe Store</text>
+  <text x="800" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">seen(id)</text>
+
+  <!-- M1: Sender -> Receiver POST signed -->
+  <line x1="164" y1="180" x2="472" y2="180" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <rect x="238" y="160" width="160" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="169" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">POST + X-Signature</text>
+
+  <!-- M2: Receiver self verify -->
+  <path d="M 480,208 H 448 V 224 H 480" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <rect x="296" y="188" width="168" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="380" y="197" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">timingSafeEqual</text>
+
+  <!-- M3: Receiver -> Store seen? -->
+  <line x1="484" y1="252" x2="792" y2="252" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <rect x="588" y="232" width="100" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="638" y="241" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">seen?(id)</text>
+
+  <!-- M4: Store -> Receiver no (dashed) -->
+  <line x1="796" y1="280" x2="488" y2="280" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <rect x="598" y="288" width="80" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="638" y="297" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">miss</text>
+
+  <!-- M5: Receiver -> Sender 200 ok (coral headline) -->
+  <line x1="476" y1="312" x2="168" y2="312" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <rect x="248" y="320" width="140" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="329" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">200 ok, 执行 1 次</text>
+
+  <!-- M6: Sender -> Receiver redeliver -->
+  <line x1="164" y1="360" x2="472" y2="360" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <rect x="238" y="340" width="160" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="349" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">复投同 id</text>
+
+  <!-- M7: Receiver -> Store seen? -->
+  <line x1="484" y1="396" x2="792" y2="396" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <rect x="588" y="376" width="100" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="638" y="385" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">seen?(id)</text>
+
+  <!-- M8: Store -> Receiver hit (dashed) -->
+  <line x1="796" y1="424" x2="488" y2="424" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <rect x="598" y="432" width="80" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="638" y="441" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">hit</text>
+
+  <!-- M9: Receiver -> Sender duplicate -->
+  <line x1="476" y1="460" x2="168" y2="460" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <rect x="238" y="468" width="160" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="477" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">200-duplicate, 不重执</text>
+
+  <!-- Rotation callout -->
+  <rect x="120" y="514" width="720" height="52" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="136" y="536" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">轮换：过渡期双签并行，旧密钥退役后旧签 401——退役前先看旧签流量归零</text>
+  <text x="136" y="556" fill="#2d3142" font-size="11" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">顺序不能反：先验签后去重，验签失败连去重表都不查</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="584" x2="920" y2="584" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="604" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+  <line x1="120" y1="600" x2="144" y2="600" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="152" y="604" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">HTTP 投递</text>
+  <line x1="250" y1="600" x2="274" y2="600" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <text x="282" y="604" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">查询 / 返回</text>
+</svg>

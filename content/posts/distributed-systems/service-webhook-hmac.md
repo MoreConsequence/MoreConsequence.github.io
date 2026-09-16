@@ -2,7 +2,7 @@
 title: "webhook 三断言：签名对上才执行，同 id 复投不重执"
 description: "HMAC-SHA256 签名 + timingSafeEqual 比对：合法投递执行 1 次，同 event id 复投回 200-duplicate 不重执，篡改体与错密钥双双 401。用 4 断言锁定，并说明密钥轮换缺口。"
 publishedAt: "2026-09-14"
-updatedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["API 设计", "webhook", "安全", "幂等"]
 draft: false
 featured: false
@@ -10,6 +10,8 @@ series: "系统设计手记"
 ---
 
 **TL;DR：** webhook 接收端三断言：合法投递执行恰好 1 次（`executions=1`），同 id 复投回 `200-duplicate` 不重执，篡改体与错密钥双双 `401`。加固：密钥轮换三步——过渡期双签并行（新旧各 1 次通过）、旧密钥退役后旧签 `401`、新签正常。8 断言全过。两条铁律：比对必须 `timingSafeEqual`（防时序侧信道），执行必须先查重（至少一次投递是常态，重试、超时、LB 都会复投）。
+
+![webhook 签名与去重时序：先验签再去重](../../../public/images/webhook-hmac-sequence.svg)
 
 ## 一、合同
 

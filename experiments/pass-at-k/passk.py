@@ -8,10 +8,10 @@ P, N, K, PROBLEMS = 0.3, 10, 2, 2000
 TRUTH = 1 - (1 - P) ** K  # 0.51
 
 
-def unbiased(c):
-    if N - c < K:
+def unbiased(c, n=N, k=K):
+    if n - c < k:
         return 1.0
-    return 1 - math.comb(N - c, K) / math.comb(N, K)
+    return 1 - math.comb(n - c, k) / math.comb(n, k)
 
 
 naive_sum = unbiased_sum = 0.0
@@ -34,5 +34,7 @@ def check(name, cond, detail=""):
 check("K1 朴素估计锁定在 p 附近（低估）", abs(naive - P) < 0.02, f"{naive:.3f} vs p={P}")
 check("K2 无偏估计锁定真值", abs(unbiased_mean - TRUTH) < 0.02, f"{unbiased_mean:.3f} vs {TRUTH:.3f}")
 check("K3 偏差方向正确", naive < unbiased_mean - 0.15, f"差 {unbiased_mean - naive:.3f}")
+# K4（加固）：n-c<k 边界走显式分支——失败数太少组不成一对时，有成功即记 1。
+check("K4 边界分支", unbiased(9) == 1.0 and unbiased(2, n=3, k=5) == 1.0, "N-c<K → 1.0")
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 raise SystemExit(1 if fails else 0)

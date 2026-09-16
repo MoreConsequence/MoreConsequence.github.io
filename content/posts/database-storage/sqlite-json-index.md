@@ -2,6 +2,7 @@
 title: "SQLite JSON 生成列索引：SEARCH 走索引，外加两个建表坑"
 description: "json_extract 生成列 + 索引让 sku 查询走 SEARCH（5000 行取 100），另记 ALTER 加 STORED 列被拒与同文本 EXPLAIN 返回旧计划两个坑。用 3 断言锁定。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["数据库", "SQLite", "JSON", "索引"]
 draft: false
 featured: false
@@ -20,7 +21,7 @@ series: "系统设计手记"
 
 ## 二、实测
 
-`experiments/sqlite-json-index/jsonidx.py`（5000 行，外联生成列），`evidence/sqlite-json-index/2026-09-14-local/run.out`，3 PASS。
+`experiments/sqlite-json-index/jsonidx.py`（5000 行，外联生成列），`evidence/sqlite-json-index/2026-09-14-local/run.out`，4 PASS。加固 J4：`ALTER` 加 VIRTUAL 列同样可建索引（STORED 的建表限制不适用于 VIRTUAL）——两类生成列的行为差要分开记。
 
 ## 三、证据卡与边界
 
