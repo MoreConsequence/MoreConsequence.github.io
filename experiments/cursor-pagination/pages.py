@@ -36,5 +36,12 @@ c2 = [r[0] for r in con.execute("SELECT ts FROM feed WHERE ts < ? ORDER BY ts DE
 check("O2 cursor 无重行", not (set(c1) & set(c2)), f"c1={c1} c2={c2}")
 check("O3 cursor 连续（差 1 衔接）", c1[-1] - c2[0] == 1, f"{c1[-1]}→{c2[0]}")
 
+# O4（加固）：删行空洞——删掉中间 2 行，cursor 不报错不断裂，只是跳过。
+# cursor 保证“无重”，不保证“无洞”：删除造成的空洞只能由业务接受或回填。
+con.execute("DELETE FROM feed WHERE ts IN (10, 11)")
+con.commit()
+c3 = [r[0] for r in con.execute("SELECT ts FROM feed WHERE ts < 12 ORDER BY ts DESC LIMIT 5")]
+check("O4 删行只留洞不断裂", c3 == [9, 8, 7, 6, 5], f"c3={c3}")
+
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 sys.exit(1 if fails else 0)

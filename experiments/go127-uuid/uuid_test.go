@@ -53,7 +53,6 @@ func TestUniqueness10k(t *testing.T) {
 }
 
 // 跨毫秒有序：v7 前 48 位是 unix 毫秒，隔 15ms 的两个必有序。
-// 同一毫秒内只保证版本位，不保证单调（后缀随机）——这正是“有序但非严格单调”。
 func TestV7CrossMsOrdered(t *testing.T) {
 	a := uuid.NewV7()
 	time.Sleep(15 * time.Millisecond)
@@ -62,4 +61,20 @@ func TestV7CrossMsOrdered(t *testing.T) {
 		t.Fatalf("跨毫秒应有序: %s vs %s", a, b)
 	}
 	t.Logf("a=%s b=%s", a, b)
+}
+
+// Go 实现的额外保证（源码确认）：12 位亚毫秒 + 同值递增兜底，
+// 同一进程连发严格递增；仅系统时钟回拨打破（该异常本测试不构造）。
+func TestV7SameMsMonotonic(t *testing.T) {
+	const M = 5000
+	ids := make([]uuid.UUID, M)
+	for i := range ids {
+		ids[i] = uuid.NewV7()
+	}
+	for i := 1; i < M; i++ {
+		if ids[i].Compare(ids[i-1]) <= 0 {
+			t.Fatalf("第 %d 个未递增", i)
+		}
+	}
+	t.Logf("连发 %d 个严格递增（含同毫秒）", M)
 }

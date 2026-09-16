@@ -2,6 +2,7 @@
 title: "翻页用 cursor 不用 offset：并发写入下 offset 重 2 行"
 description: "DESC 翻页中途写入 2 行更新的：offset 第二页与第一页重叠 [16,17]，cursor（WHERE ts < 上页末位）无重行且差 1 衔接。用 SQLite 双写对照锁定，并说明总数抖动与删行空洞的剩余边界。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["API 设计", "分页", "SQLite", "系统设计"]
 draft: false
 featured: false
@@ -20,7 +21,7 @@ series: "系统设计手记"
 
 ## 二、实测
 
-`experiments/cursor-pagination/pages.py`，`evidence/cursor-pagination/2026-09-14-local/run.out`，3 PASS。O1 的 `p1=[20..16] p2=[17..13]` 是全文关键：重的不只是“某行”，而是每写入 N 行就重 N 行——写入越频繁，offset 越接近“永远翻不完”。
+`experiments/cursor-pagination/pages.py`，`evidence/cursor-pagination/2026-09-14-local/run.out`，4 PASS。加固 O4：删掉中间 2 行，cursor 不报错不断裂、只是跳过（`[9,8,7,6,5]`）——cursor 保证“无重”，不保证“无洞”，删行空洞由业务接受或回填。O1 的 `p1=[20..16] p2=[17..13]` 是全文关键：重的不只是“某行”，而是每写入 N 行就重 N 行——写入越频繁，offset 越接近“永远翻不完”。
 
 ## 三、证据卡与边界
 
