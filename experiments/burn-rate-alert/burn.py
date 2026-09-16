@@ -44,5 +44,13 @@ check("B2 page 在故障后 60 分钟内检出", page_fire is not None and page_
 check("B3 ticket 先响、page 确认", ticket_fire is not None and page_fire is not None and ticket_fire <= page_fire,
       f"ticket +{ticket_fire - START}min, page +{page_fire - START}min"
       if ticket_fire is not None and page_fire is not None else "缺失")
+
+# B4（加固）：预算消耗比——30 分钟故障让全月消耗从 1.000 基准升到 1.034，
+# 即一次半小时故障吃掉 3.4% 月预算。
+consumed = sum(trace) / (SLO_BUDGET * MINUTES)
+check("B4 30 分钟故障多烧 3.4% 月预算", 1.03 < consumed < 1.05, f"消耗比={consumed:.3f}")
+# 若 25.5x 持续：30 天预算 / 25.5 ≈ 1.2 天烧完——page 阈值的物理含义。
+exhaust_days = 30 / 25.5
+check("B4b 峰值持续则 1.2 天烧完月预算", abs(exhaust_days - 1.18) < 0.05, f"{exhaust_days:.2f} 天")
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 raise SystemExit(1 if fails else 0)

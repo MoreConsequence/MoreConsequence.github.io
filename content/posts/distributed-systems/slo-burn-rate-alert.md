@@ -34,7 +34,7 @@ ticket 与 page 的差（9 分钟）是留给值班的预判窗口，不是延�
 
 ## 三、实测
 
-`experiments/burn-rate-alert/burn.py`（30 天分钟级合成 trace），`evidence/burn-rate-alert/2026-09-14-local/run.out`，3 PASS。
+`experiments/burn-rate-alert/burn.py`（30 天分钟级合成 trace），`evidence/burn-rate-alert/2026-09-14-local/run.out`，5 PASS。加固 B4：30 分钟故障让全月消耗从 1.000 升到 1.034（多烧 3.4% 月预算）；若 25.5x 峰值持续，30 天预算 1.18 天烧完——这就是 page 线 14.4x 的物理含义：两天烧光。
 
 ## 四、证据卡与边界
 

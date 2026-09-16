@@ -2,6 +2,7 @@
 title: "TS 7.1 nightly 自举实测：本仓 typecheck 快 5 倍，报错逐字一致"
 description: "拿 7.1.0-dev 当日 nightly 给本博客仓库做 typecheck：0 errors 与 5.9.3 基线一致，耗时 1.7s→0.35s（冷）/0.9s→0.2s（热），故意写错的 TS2322 逐字相同，unstable/sync 可 import。Beta 结论与升级边界见正文。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["TypeScript", "工具链", "性能", "实测"]
 draft: false
 featured: false
@@ -38,7 +39,7 @@ npm i typescript@next（隔离实验目录，不碰仓内 5.9.3）
 7.1.0-dev.20260913.1: 0.35s / 0.21s / 0.20s，0 errors
 ```
 
-第一轮是冷文件缓存，后两轮是热态——两边同条件，所以倍数（冷 4.8x / 热 4.5x）可比。注意 5.9.3 第一轮 1.69s 本身也有缓存效应，诚实读法是“约 5x”而不是精确常数。
+第一轮是冷文件缓存，后两轮是热态——两边同条件，所以倍数（冷 4.8x / 热 4.5x）可比。注意 5.9.3 第一轮 1.69s 本身也有缓存效应，诚实读法是“约 5x”而不是精确常数。加固：单文件夹具 emit 逐字节一致（`evidence/ts71-beta-check/emit-parity/`，两版 out `diff -r` 无差）——检查快了，产物没变。
 
 ## 四、证据卡与边界
 
