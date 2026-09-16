@@ -1,4 +1,5 @@
 # G-Counter：合并满足交换/结合/幂等，并发增量不丢数。
+# 加固：PN-Counter（增减各一槽）回答“减法怎么办”。
 # 纯标准库。运行：python3 gcounter.py
 import sys
 
@@ -56,6 +57,45 @@ d, e = GCounter(2, 0), GCounter(2, 1)
 d.inc(3)
 merged = e.merge(d)
 check("C3 跨副本可见", merged.total() == 3 and merged.v == [3, 0], f"{merged.v}")
+
+
+class PNCounter:
+    """减法答案：增减各一槽，值 = inc 槽和 - dec 槽和，合并仍逐槽 max。"""
+
+    def __init__(self, n, i):
+        self.p = [0] * n
+        self.q = [0] * n
+        self.i = i
+
+    def inc(self, k=1):
+        self.p[self.i] += k
+
+    def dec(self, k=1):
+        self.q[self.i] += k
+
+    def value(self):
+        return sum(self.p) - sum(self.q)
+
+    def merge(self, o):
+        c = PNCounter(len(self.p), self.i)
+        c.p = [max(a, b) for a, b in zip(self.p, o.p)]
+        c.q = [max(a, b) for a, b in zip(self.q, o.q)]
+        return c
+
+
+# C4：并发加减——A 加 10 减 3，B 加 5 减 8，合并恒为 4。
+x, y = PNCounter(2, 0), PNCounter(2, 1)
+x.inc(10)
+x.dec(3)
+y.inc(5)
+y.dec(8)
+v1 = x.merge(y).value()
+v2 = y.merge(x).value()
+check("C4 PN 加减收敛", v1 == v2 == 4, f"{v1}/{v2}")
+
+# C5：减法不丢——重复合并减量不 double 花。
+v3 = x.merge(y).merge(y).value()
+check("C5 减量合并幂等", v3 == 4, f"{v3}")
 
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 sys.exit(1 if fails else 0)

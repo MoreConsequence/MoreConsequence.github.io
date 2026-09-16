@@ -2,13 +2,14 @@
 title: "G-Counter 三定律：合并顺序无关、重复合并幂等、槽位隔离"
 description: "只增计数器按槽累加、合并取逐槽 max：三节点 5+7+11 在三种合并顺序下恒 23，重复合并仍 12，跨副本立即可见。用纯模拟锁定 CRDT 收敛三性，并说明减法为何不在此列。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["分布式系统", "CRDT", "一致性", "模拟"]
 draft: false
 featured: false
 series: "系统设计手记"
 ---
 
-**TL;DR：** G-Counter（只增计数器）：各节点只写自己槽，合并取逐槽 max——5+7+11 在三种合并顺序下恒为 23，重复合并同副本仍是 12（幂等），一节点 +3 后对方合并即见 `[3, 0]`。3 断言全过。代价同样明确：只有加法，没有减法（要减法换 PN-Counter，两槽一组）；只有最终一致，没有线性一致。
+**TL;DR：** G-Counter（只增计数器）：各节点只写自己槽，合并取逐槽 max——5+7+11 在三种合并顺序下恒为 23，重复合并同副本仍是 12（幂等），一节点 +3 后对方合并即见 `[3, 0]`。加固：减法用 PN-Counter（增减各一槽，值 = P 和 − Q 和）——并发加减（+10−3/+5−8）合并恒为 4，重复合并减量不 double 花。5 断言全过。代价同样明确：只有最终一致，没有线性一致。
 
 ## 一、合同
 
@@ -20,7 +21,7 @@ series: "系统设计手记"
 
 ## 二、实测
 
-`experiments/crdt-gcounter/gcounter.py`，`evidence/crdt-gcounter/2026-09-14-local/run.out`，3 PASS。
+`experiments/crdt-gcounter/gcounter.py`，`evidence/crdt-gcounter/2026-09-14-local/run.out`，5 PASS（C1–C3 只增，C4–C5 加减收敛与幂等）。
 
 ## 三、证据卡与边界
 
