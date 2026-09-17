@@ -21,7 +21,7 @@ series: "系统设计手记"
 
 ## 二、实测
 
-`experiments/crdt-gcounter/gcounter.py`，`evidence/crdt-gcounter/2026-09-14-local/run.out`，5 PASS（C1–C3 只增，C4–C5 加减收敛与幂等）。
+`experiments/crdt-gcounter/gcounter.py`，`evidence/crdt-gcounter/2026-09-14-local/run.out`，7 PASS（C1–C3 只增，C4–C5 加减收敛与幂等，C6–C7 后写胜与 tie-break）。加固 C6/C7：赋值用 LWW-Register——`(wallclock, node)` 取最大，时钟相同拼 node 裁决，无分歧。
 
 ## 三、证据卡与边界
 

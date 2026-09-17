@@ -2,6 +2,7 @@
 title: "Node 内置 sqlite：参数化、具名参数、显式事务三断言"
 description: "node:sqlite 零依赖可用：参数化写入挡住注入串、具名参数读整行对象、显式 BEGIN/ROLLBACK 原子回滚。用 3 断言锁定，并说明无 transaction 助手与 better-sqlite3 的取舍。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["Node.js", "SQLite", "数据库", "TypeScript"]
 draft: false
 featured: false
@@ -20,7 +21,7 @@ series: "从 Go 到 TypeScript"
 
 ## 二、实测
 
-`experiments/node-sqlite/demo.mjs`，`evidence/node-sqlite/2026-09-14-local/run.out`，3 PASS。另记：`db.transaction` 不存在——从 better-sqlite3 过来的人第一次一定会写错，本文即证据。
+`experiments/node-sqlite/demo.mjs`，`evidence/node-sqlite/2026-09-14-local/run.out`，5 PASS。加固 Q4：文件库 `journal_mode=WAL` 可开，内存库返回 `memory`（不支持 WAL 是预期行为）——要并发读写先落文件库。另记：`db.transaction` 不存在——从 better-sqlite3 过来的人第一次一定会写错，本文即证据。
 
 ## 三、证据卡与边界
 

@@ -51,3 +51,21 @@ func TestDebugEnabled(t *testing.T) {
 		t.Fatal("Debug 级别下 Debug 应输出")
 	}
 }
+
+// 动态级别：LevelVar 翻转即时生效，不重建 logger——线上开 Debug 不重启。
+func TestDynamicLevel(t *testing.T) {
+	var buf bytes.Buffer
+	var lv slog.LevelVar
+	lv.Set(slog.LevelInfo)
+	log := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: &lv}))
+	log.Debug("before")
+	lv.Set(slog.LevelDebug)
+	log.Debug("after")
+	out := buf.String()
+	if strings.Contains(out, "before") {
+		t.Fatal("翻转前 Debug 应被过滤")
+	}
+	if !strings.Contains(out, "after") {
+		t.Fatal("翻转后 Debug 应输出")
+	}
+}

@@ -30,5 +30,18 @@ const n2 = db.prepare("SELECT COUNT(*) AS n FROM orders").get().n;
 check("Q3 事务回滚", n2 === 2, `count=${n2}`);
 
 db.close();
+
+// Q4（加固）：WAL 模式可开——注意内存库不支持 WAL（返回 memory），文件库才行。
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+const db2 = new DatabaseSync(path.join(fs.mkdtempSync(path.join(os.tmpdir(), "lite-")), "t.db"));
+const mode = db2.prepare("PRAGMA journal_mode=WAL").get();
+check("Q4 文件库 WAL 可开", mode.journal_mode === "wal", JSON.stringify(mode));
+const mem = new DatabaseSync(":memory:");
+const memMode = mem.prepare("PRAGMA journal_mode=WAL").get();
+check("Q4b 内存库 WAL 不可用（预期）", memMode.journal_mode !== "wal", JSON.stringify(memMode));
+db2.close();
+mem.close();
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
 process.exit(failures ? 1 : 0);

@@ -97,5 +97,39 @@ check("C4 PN 加减收敛", v1 == v2 == 4, f"{v1}/{v2}")
 v3 = x.merge(y).merge(y).value()
 check("C5 减量合并幂等", v3 == 4, f"{v3}")
 
+
+class LWWRegister:
+    """赋值答案：(wallclock, node, value) 三元组取最大，wallclock 相同拼 node 打破平局。"""
+
+    def __init__(self, node):
+        self.node = node
+        self.ts, self.val = -1, None
+
+    def set(self, ts, val):
+        if ts > self.ts:
+            self.ts, self.val = ts, val
+
+    def merge(self, o):
+        c = LWWRegister(self.node)
+        if (o.ts, o.node) > (self.ts, self.node):
+            c.ts, c.val = o.ts, o.val
+        else:
+            c.ts, c.val = self.ts, self.val
+        return c
+
+
+# C6：后写胜——ts 大者赢，与合并顺序无关。
+a, b = LWWRegister(0), LWWRegister(1)
+a.set(100, "v1")
+b.set(200, "v2")
+check("C6 后写胜且顺序无关", a.merge(b).val == "v2" and b.merge(a).val == "v2",
+      f"{a.merge(b).val}/{b.merge(a).val}")
+
+# C7：时钟相同拼 node——tie-break 确定，无分歧。
+c, d = LWWRegister(0), LWWRegister(1)
+c.set(100, "x")
+d.set(100, "y")
+check("C7 同 ts 按 node 裁决", c.merge(d).val == "y" and d.merge(c).val == "y")
+
 print("ALL CHECKS PASSED" if not fails else f"{len(fails)} CHECK(S) FAILED")
 sys.exit(1 if fails else 0)
