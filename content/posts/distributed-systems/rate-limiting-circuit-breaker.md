@@ -2,7 +2,7 @@
 title: "限流、熔断与降级：高可用三件套的权衡"
 description: "限流防流量超预期、熔断防下游故障蔓延、降级保核心可用。从令牌桶、漏桶与滑动窗口，到熔断三态状态机与重试风暴，再到降级预案设计，讲透高可用三件套的分工与参数来源。"
 publishedAt: "2026-08-02"
-updatedAt: "2026-08-17"
+updatedAt: "2026-09-16"
 tags: ["系统设计", "工程实践", "高可用"]
 draft: false
 featured: false
@@ -154,3 +154,4 @@ stateDiagram-v2
 - [Resilience4j：Getting Started](https://resilience4j.readme.io/docs/getting-started-4)：限流、重试、熔断和降级组合时的配置入口。
 - [RFC 9293：TCP](https://www.rfc-editor.org/rfc/rfc9293)：拥塞和传输可靠性背景，避免把应用层限流误认为网络拥塞控制。
 - [Google SRE Book：Handling Overload](https://sre.google/sre-book/handling-overload/)：过载保护、负载削减与恢复策略。
+- [RFC 6585 §4：429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585#section-4)：限流拒绝码与 `Retry-After` 语义（可带、不可缓存）；429 是“告诉调用方等多久”，不是“默默丢弃”。
