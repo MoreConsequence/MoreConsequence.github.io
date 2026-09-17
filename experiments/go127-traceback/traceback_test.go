@@ -13,10 +13,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if os.Getenv("CRASH_CHILD") == "1" {
+	if os.Getenv("CRASH_CHILD") == "1" || os.Getenv("CRASH_BARE") == "1" {
 		go func() {
 			// 标签属于当前 goroutine：必须在崩溃体内部设置。
-			pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels("tenant", "acme", "req", "42")))
+			if os.Getenv("CRASH_BARE") != "1" {
+				pprof.SetGoroutineLabels(pprof.WithLabels(context.Background(), pprof.Labels("tenant", "acme", "req", "42")))
+			}
 			time.Sleep(50 * time.Millisecond)
 			panic("boom")
 		}()
@@ -52,4 +54,25 @@ func TestLabelsOptOut(t *testing.T) {
 		t.Fatalf("tracebacklabels=0 后不应再带标签，全文:\n%s", out)
 	}
 	t.Log("tracebacklabels=0：标签被剥离，panic 仍在")
+}
+
+// 未设置标签的 goroutine 头上无花括号——标签是显式资产，不是默认附带。
+func TestBareGoroutineNoBraces(t *testing.T) {
+	t.Helper()
+	cmd := exec.Command(os.Args[0], "-test.run=TestMain")
+	cmd.Env = append(os.Environ(), "CRASH_BARE=1", "GODEBUG=")
+	out, _ := cmd.CombinedOutput()
+	text := string(out)
+	if !strings.Contains(text, "panic: boom") {
+		t.Fatalf("应仍有 panic，全文:\n%s", text)
+	}
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(line, "goroutine ") && strings.Contains(line, "panic") {
+			continue
+		}
+		if strings.HasPrefix(line, "goroutine ") && strings.Contains(line, "{") {
+			t.Fatalf("无标签 goroutine 不应带花括号：%s", line)
+		}
+	}
+	t.Log("无标签即无花括号")
 }

@@ -17,7 +17,7 @@ series: "Go 的设计边界"
 
 ## 二、traceback：标签默认可见，一键可关
 
-`goroutine 35 [running] {req: 42, tenant: acme}:`——标签属于崩溃所在的 goroutine，须在闭包内部设置；`GODEBUG=tracebacklabels=0` 后标签消失、panic 仍在。子进程崩溃双断言（`experiments/go127-traceback/traceback_test.go`），2 PASS。警告：标签进 crash dump，含敏感信息先过开关。
+`goroutine 35 [running] {req: 42, tenant: acme}:`——标签属于崩溃所在的 goroutine，须在闭包内部设置；`GODEBUG=tracebacklabels=0` 后标签消失、panic 仍在；未设标签的 goroutine 头无花括号（`experiments/go127-traceback/traceback_test.go`），3 PASS。警告：标签进 crash dump，含敏感信息先过开关。
 
 ## 三、slog：级别是配置，字段是契约
 
