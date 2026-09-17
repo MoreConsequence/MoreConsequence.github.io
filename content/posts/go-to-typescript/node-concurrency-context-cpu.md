@@ -2,6 +2,7 @@
 title: "Node 并发两问：上下文隔离与 CPU 下放"
 description: "AsyncLocalStorage.run 让 10 并发 tenant 隔离 10/10 全对（共享变量只对 1/10），worker_threads 让被 busy 推迟 40ms 的 timer 回到 1ms。两组对照全过，同一主题：先分清等待与计算，再选工具。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["Node.js", "并发", "事件循环", "TypeScript"]
 draft: false
 featured: false
@@ -12,7 +13,7 @@ series: "从 Go 到 TypeScript"
 
 ## 一、问一：请求上下文丢在哪
 
-异步缺口是串号的根因：同步代码里共享变量永远正确，第一个 `await` 之后听天由命。铁律三条：入口处 `run`（不用裸 `enterWith`）、store 只读、日志 trace 全从 store 取 id（`experiments/node-als-context/demo.mjs`）。
+异步缺口是串号的根因：同步代码里共享变量永远正确，第一个 `await` 之后听天由命。铁律三条：入口处 `run`（不用裸 `enterWith`）、store 只读、日志 trace 全从 store 取 id（`experiments/node-als-context/demo.mjs`，3 断言）。加固 A3：嵌套 `run` 内层覆盖外层、退出恢复（`["outer","inner","inner"]`）——中间件叠加不互踩。
 
 ## 二、问二：CPU 下放给谁
 

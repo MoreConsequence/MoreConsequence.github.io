@@ -2,12 +2,13 @@
 title: "错误形状喂模型：粗码自愈 0/5，加 hint 到 5/5"
 description: "同一失败两种喂法：只有 code 的粗错误 5 任务 0 自愈，加 retryable + 可执行 hint 后 5/5 自愈且最多 2 轮。用 stub 模型确定性对照锁定，S6 给 LLM 设计 API 的第一块实证。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["LLM", "API 设计", "Agent", "容错"]
 draft: false
 featured: false
 ---
 
-**TL;DR：** 同一个 `E_CONN` 失败：只喂 `code`，stub 模型 5 任务 0 自愈；喂 `code + retryable + hint(use-read-replica)`，5/5 自愈且最多 2 轮。2 断言全过。这是 S6“给 LLM 设计 API”的第一块实证：错误形状不是给人看的，是给模型的修复策略当输入的——hint 必须是可执行的（切只读副本），不是形容词（“请重试”）。
+**TL;DR：** 同一个 `E_CONN` 失败：只喂 `code`，stub 模型 5 任务 0 自愈；喂 `code + retryable + hint(use-read-replica)`，5/5 自愈且最多 2 轮；喂形容词 hint（“请稍后重试”）回 0/5。3 断言全过。这是 S6“给 LLM 设计 API”的第一块实证：错误形状不是给人看的，是给模型的修复策略当输入的——hint 必须是可执行的（切只读副本），不是形容词（“请重试”）。
 
 ## 一、合同：错误体的三栏
 

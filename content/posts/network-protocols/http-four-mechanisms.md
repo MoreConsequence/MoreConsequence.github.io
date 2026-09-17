@@ -2,6 +2,7 @@
 title: "HTTP 四则：复用、流、续传、跨域"
 description: "10 请求 1 连接对禁用 10 连接、空闲超时重拨；Flush 首字节 1ms 对缓冲 302ms；Range 206 续接完整；预检 204 三件套且凭据回显具体源。四组断言全过，同一主题：HTTP 的语义全在头里。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["网络", "HTTP", "协议", "Go"]
 draft: false
 featured: false
@@ -16,7 +17,7 @@ series: "系统设计手记"
 
 ## 二、流：首字节是 contracts
 
-边算边吐必须显式 `Flush`；`Fprint` 写完就返默认是缓冲语义，首字节延迟 = 全量耗时（`experiments/http-chunked/`，1.15ms vs 301.7ms）。
+边算边吐必须显式 `Flush`；`Fprint` 写完就返默认是缓冲语义，首字节延迟 = 全量耗时（`experiments/http-chunked/`，1.15ms vs 301.7ms）。加固：`If-Modified-Since` 未过期回 304 空身、过期回 200 全文——条件请求是缓存生效的另一半。
 
 ## 三、续传：续接是客户端状态机
 

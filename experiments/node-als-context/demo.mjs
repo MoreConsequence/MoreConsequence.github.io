@@ -57,6 +57,21 @@ const check = (name, cond, d = "") => {
 check("A1 als.run 下 10 并发全对", goodOk === N, `${goodOk}/${N}`);
 check("A2 共享变量下必串号", badOk < N, `只对 ${badOk}/${N}（全读到最后一个 id）`);
 
+// A3（加固）：嵌套 run 内层覆盖外层，退出内层恢复外层——中间件叠加不互踩。
+const nested = await new Promise((resolve) => {
+  als.run({ id: "outer" }, () => {
+    const o1 = als.getStore()?.id;
+    als.run({ id: "inner" }, () => {
+      const i = als.getStore()?.id;
+      setImmediate(() => {
+        // 注意：此处仍在 inner 上下文中（setImmediate 继承）。
+        resolve([o1, i, als.getStore()?.id]);
+      });
+    });
+  });
+});
+check("A3 嵌套覆盖且隔离", JSON.stringify(nested) === '["outer","inner","inner"]', JSON.stringify(nested));
+
 for (const s of [good, bad]) s.close();
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
 process.exit(failures ? 1 : 0);

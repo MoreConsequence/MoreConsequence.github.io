@@ -43,5 +43,14 @@ for (let t = 0; t < 5; t++) {
 }
 check("H2 富错误自愈率 5/5", richWins === 5 && maxRounds <= 2, `${richWins}/5, 最多 ${maxRounds} 轮`);
 
+// H3（加固）：形容词 hint（"请稍后重试"）不是可执行动作——自愈率回 0，
+// 证明 hint 的价值在可执行性不在有无。
+let placeboWins = 0;
+for (let t = 0; t < 5; t++) {
+  const r = run(3, { code: "E_CONN", retryable: true, hint: "请稍后重试" });
+  if (r.healed) placeboWins++;
+}
+check("H3 安慰剂 hint 自愈 0/5", placeboWins === 0, `${placeboWins}/5`);
+
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
 process.exit(failures ? 1 : 0);

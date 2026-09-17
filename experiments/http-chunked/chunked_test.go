@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -61,4 +62,34 @@ func TestBufferedFirstByteSlow(t *testing.T) {
 		t.Fatalf("缓冲式首字节应 ≈总量，实测 %v 过小", ttfb)
 	}
 	t.Logf("buffered TTFB=%v（等价总量）", ttfb)
+}
+
+// If-Modified-Since：客户端已是最新即 304 空身，过时即 200 全文。
+func TestIfModifiedSince(t *testing.T) {
+	mtime := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeContent(w, r, "f.txt", mtime, strings.NewReader("payload-v1"))
+	}))
+	defer srv.Close()
+	fresh, _ := http.NewRequest("GET", srv.URL, nil)
+	fresh.Header.Set("If-Modified-Since", mtime.Add(time.Hour).UTC().Format(http.TimeFormat))
+	resp, err := http.DefaultClient.Do(fresh)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 304 {
+		t.Fatalf("未过期应 304，实得 %d", resp.StatusCode)
+	}
+	stale, _ := http.NewRequest("GET", srv.URL, nil)
+	stale.Header.Set("If-Modified-Since", mtime.Add(-time.Hour).UTC().Format(http.TimeFormat))
+	resp2, err := http.DefaultClient.Do(stale)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp2.Body.Close()
+	if resp2.StatusCode != 200 {
+		t.Fatalf("过期应 200，实得 %d", resp2.StatusCode)
+	}
+	t.Log("304 空身 / 200 全文对照成立")
 }
