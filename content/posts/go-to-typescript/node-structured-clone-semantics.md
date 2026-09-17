@@ -2,6 +2,7 @@
 title: "structuredClone 四语义：隔离真，函数拒收，类退化 plain"
 description: "structuredClone 深隔离通过（改克隆不动原件），函数值抛 DataCloneError（非静默丢弃），类实例退化 plain 对象，Date/Map/循环引用保留。用 4 断言锁定，并说明它与 DTO 脱敏的边界。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-16"
 tags: ["Node.js", "TypeScript", "语义", "深拷贝"]
 draft: false
 featured: false
@@ -23,7 +24,7 @@ series: "从 Go 到 TypeScript"
 
 ## 二、实测
 
-`experiments/node-clone-semantics/clone.mjs`，`evidence/node-clone-semantics/2026-09-14-local/run.out`，4 PASS。
+`experiments/node-clone-semantics/clone.mjs`，`evidence/node-clone-semantics/2026-09-14-local/run.out`，5 PASS。加固 C5：`transfer` 转移 ArrayBuffer 所有权——原件字节数归零，克隆体接管。拷贝与转移是两种语义，worker 间传大内存必须显式 transfer，否则复制成本翻倍。
 
 ## 三、证据卡与边界
 

@@ -42,8 +42,19 @@ func TestWrongKeyRejected(t *testing.T) {
 	}
 }
 
-func TestDeterministicStable(t *testing.T) {
-	sk, _ := mldsa.GenerateKey(mldsa.MLDSA44())
+func TestParameterSizes(t *testing.T) {
+	for _, p := range []mldsa.Parameters{mldsa.MLDSA44(), mldsa.MLDSA65(), mldsa.MLDSA87()} {
+		t.Logf("%s: 公钥 %dB 签名 %dB", p, p.PublicKeySize(), p.SignatureSize())
+	}
+	if got := mldsa.MLDSA44().PublicKeySize(); got != 1312 {
+		t.Fatalf("ML-DSA-44 公钥=%d，期望 1312", got)
+	}
+	if got := mldsa.MLDSA87().SignatureSize(); got != 4627 {
+		t.Fatalf("ML-DSA-87 签名=%d，期望 4627", got)
+	}
+}
+
+func TestDeterministicStable(t *testing.T) {	sk, _ := mldsa.GenerateKey(mldsa.MLDSA44())
 	a, err1 := sk.SignDeterministic([]byte("m"), nil)
 	b, err2 := sk.SignDeterministic([]byte("m"), nil)
 	if err1 != nil || err2 != nil || !bytes.Equal(a, b) {

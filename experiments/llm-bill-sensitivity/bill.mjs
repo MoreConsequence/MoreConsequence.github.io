@@ -51,6 +51,14 @@ const costs = Object.keys(PLANS).map((p) => [p, taskCost(p, 0.9, OUT_LEAN)]);
 for (const [p, c] of costs) console.log(`${p.padEnd(34)} 单任务 $${c.toFixed(3)} | 月 ${fmt(c)}`);
 console.log(`最高/最低 = ${(costs[1][1] / costs[3][1]).toFixed(1)}x（同为“能跑”，月账单差一个数量级）`);
 
+// 加固：Batch 离线半价——同 workload 改走 Batch（输入/输出价×0.5），A 方案月账单直接腰斩。
+// 前提是延迟不敏感（小时级返回），在线链路不适用。
+const batchTask = taskCost("A flagship 10/50 + cache0.25", 0.9, OUT_LEAN) * 0.5;
+console.log(`A 走 Batch：单任务 $${batchTask.toFixed(3)} | 月 ${fmt(batchTask)}（在线 $${(batchTask * 2).toFixed(3)}/任务的一半）`);
+// Batch 不改变排序：A 半价后仍贵过 C 在线价——单价主导，折扣只是乘数。
+const onlineC = taskCost("C value 1.25/4.25 + cache0.3", 0.9, OUT_LEAN);
+console.log(`CHECK Batch半价仍贵过C在线: ${batchTask > onlineC ? "PASS" : "FAIL"} ($${batchTask.toFixed(3)} vs $${onlineC.toFixed(3)})`);
+
 console.log("\n--- 长上下文附加费：整仓前缀 240K（×6），E = A + 超200K部分输入价×2 ---");
 const bigBase = taskCost("A flagship 10/50 + cache0.25", 0.9, OUT_LEAN, false, 6);
 const e = taskCost("A flagship 10/50 + cache0.25", 0.9, OUT_LEAN, true, 6);

@@ -39,5 +39,11 @@ check(
   c4.m instanceof Map && c4.m.get("k") === 1 && c4.self === c4,
 );
 
+// C5（加固）：transfer 转移所有权——原件被掏空（0 字节），克隆体接管。
+const buf = new ArrayBuffer(8);
+const c5 = structuredClone({ buf }, { transfer: [buf] });
+check("C5 transfer 掏空原件", buf.byteLength === 0 && c5.buf.byteLength === 8,
+  `orig=${buf.byteLength} clone=${c5.buf.byteLength}`);
+
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
 process.exit(failures ? 1 : 0);

@@ -17,7 +17,7 @@ series: "Go 的设计边界"
 
 ## 二、mldsa：闭环易，体积贵
 
-`GenerateKey(MLDSA65)` → `Sign` → `Verify` 通过；一字节篡改与错钥双双拒绝；`SignDeterministic` 同输入稳定（`experiments/go127-mldsa/mldsa_test.go`），4 PASS。Ed25519（32B/64B）对比下 60/50 倍体积——先试点长期存档签名，别换高频令牌。
+`GenerateKey(MLDSA65)` → `Sign` → `Verify` 通过；一字节篡改与错钥双双拒绝；`SignDeterministic` 同输入稳定；三档尺寸实测 44（1312/2420）、65（1952/3309）、87（2592/4627）（`experiments/go127-mldsa/mldsa_test.go`），5 PASS。Ed25519（32B/64B）对比下 60/50 倍体积——先试点长期存档签名，别换高频令牌。
 
 ## 三、证据卡与边界
 
