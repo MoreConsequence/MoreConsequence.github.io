@@ -77,6 +77,10 @@ check(
 const badGet = await req("GET", { origin: "https://evil.example" });
 check("C4 非法源实际请求被拦", !badGet.h["access-control-allow-origin"]);
 
+// C5（加固）：Vary: Origin 必带——否则 CDN 把 A 源的 allow-origin 缓存喂给 B 源。
+const vary = await req("GET", { origin: "https://app.example" });
+check("C5 Vary 防缓存投毒", (vary.h.vary || "").includes("Origin"), `vary=${vary.h.vary}`);
+
 srv.close();
 console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);
 process.exit(failures ? 1 : 0);

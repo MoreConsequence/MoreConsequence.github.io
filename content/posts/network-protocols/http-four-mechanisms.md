@@ -20,11 +20,13 @@ series: "系统设计手记"
 
 ## 三、续传：续接是客户端状态机
 
-206 + 精确 Content-Range + ETag 校验 + 已收字节持久化，缺一端都是重下（`experiments/http-range/`，524288+499712=1024000；另记 payload 是 1024000 不是 1048576——Content-Range 纠正过我一次）。
+206 + 精确 Content-Range + ETag 校验 + 已收字节持久化，缺一端都是重下（`experiments/http-range/`，524288+499712=1024000；另记 payload 是 1024000 不是 1048576——Content-Range 纠正过我一次）。加固：`If-Range` 对不上回全文 200——内容变了还续接就是拼坏文件。
 
 ## 四、跨域：预检三件套
 
-合法源 204（方法+头+600s 缓存），非法源 403 无头，凭据回显具体源（`experiments/cors-preflight/`）。
+## 四、跨域：预检三件套
+
+合法源 204（方法+头+600s 缓存），非法源 403 无头，凭据回显具体源（`experiments/cors-preflight/`，4→5 断言）。加固 C5：`Vary: Origin` 必带——否则 CDN 把 A 源的 allow-origin 缓存喂给 B 源，跨域隔离全破。
 
 ## 五、证据卡与边界
 

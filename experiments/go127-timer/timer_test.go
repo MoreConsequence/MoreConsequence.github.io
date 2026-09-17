@@ -31,6 +31,35 @@ func TestAfterSingleDelivery(t *testing.T) {
 	}
 }
 
+// 高频循环别用 After：每次调用分配 Timer + 通道，NewTimer + Reset 复用则零分配。
+func TestAfterAllocVsReset(t *testing.T) {
+	afterAllocs := testing.AllocsPerRun(100, func() {
+		select {
+		case <-time.After(time.Hour):
+		default:
+		}
+	})
+	var tm *time.Timer
+	resetAllocs := testing.AllocsPerRun(100, func() {
+		if tm == nil {
+			tm = time.NewTimer(time.Hour)
+		} else {
+			if !tm.Stop() {
+				select {
+				case <-tm.C:
+				default:
+				}
+			}
+			tm.Reset(time.Hour)
+		}
+	})
+	tm.Stop()
+	t.Logf("After/次=%.1f allocs，Reset复用/次=%.1f allocs", afterAllocs, resetAllocs)
+	if !(afterAllocs > resetAllocs) {
+		t.Fatalf("复用应更省：After=%.1f Reset=%.1f", afterAllocs, resetAllocs)
+	}
+}
+
 // Stop 阻止触发；Reset 复用同一 Timer。
 func TestStopReset(t *testing.T) {
 	tm := time.NewTimer(20 * time.Millisecond)

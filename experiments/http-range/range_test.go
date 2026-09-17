@@ -70,3 +70,24 @@ func getRange(t *testing.T, url, rng string) []byte {
 	body, _ := io.ReadAll(resp.Body)
 	return body
 }
+
+// If-Range 对不上即回全文 200：内容变了还续接就是拼出坏文件。
+func TestIfRangeMismatchFull(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		serveBin(w, r)
+	}))
+	defer srv.Close()
+	req, _ := http.NewRequest("GET", srv.URL, nil)
+	req.Header.Set("Range", "bytes=0-99")
+	req.Header.Set("If-Range", `"stale-etag"`)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 || len(body) != len(payload) {
+		t.Fatalf("If-Range 失配应回全文 200，实得 %d/%d 字节", resp.StatusCode, len(body))
+	}
+	t.Logf("If-Range 失配回全文：%d 字节", len(body))
+}

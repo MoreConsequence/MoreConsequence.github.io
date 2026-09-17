@@ -13,7 +13,7 @@ series: "Go 的设计边界"
 
 ## 一、timer：同步是唯一语义
 
-`cap(time.After(d)) == 0` 是同步的直接证据（旧 `asynctimerchan` 逃生已移除）；`After` 恰好投递一个值；未触发前 `Stop` 返回 true 且保证不触发；`Reset` 复用同一 Timer。`experiments/go127-timer/timer_test.go`，3 PASS。含义：循环内 `time.After` 的旧泄漏叙事终结，但高频循环仍该 `NewTimer` + `Reset`（分配形状另测）。
+`cap(time.After(d)) == 0` 是同步的直接证据（旧 `asynctimerchan` 逃生已移除）；`After` 恰好投递一个值；未触发前 `Stop` 返回 true 且保证不触发；`Reset` 复用同一 Timer。加固：高频循环里 `After` 每次 3.0 allocs，`NewTimer` + `Reset` 复用 0.0 allocs——同步不免费，复用才免费。`experiments/go127-timer/timer_test.go`，4 PASS。含义：循环内 `time.After` 的旧泄漏叙事终结，但高频循环仍该 `NewTimer` + `Reset`（分配形状另测）。
 
 ## 二、traceback：标签默认可见，一键可关
 
