@@ -2,6 +2,7 @@
 title: "Go 1.27 双特性实测：json/v2 的 strict 与 goroutineleak 画像的真相"
 description: "Go 1.27 的 encoding/json/v2 把重复键与非法 UTF-8 从容忍改成拒绝（附逐字错误串），同 payload 反序列化快约 1.2 倍；goroutineleak 画像只收录 GC 不可达的阻塞体，且必须 WriteTo 触发检测 GC。全部本机实测，倒查 runtime 源码确认语义。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-18"
 tags: ["Go", "运行时", "JSON", "pprof", "内存泄漏"]
 draft: false
 featured: false
@@ -34,6 +35,8 @@ v1 note="��" v2 err=jsontext: invalid UTF-8 within "/note" after offset 9
 BenchmarkUnmarshal_V1-8   1010 ns/op   0 B/op   0 allocs/op
 BenchmarkUnmarshal_V2-8    826 ns/op   0 B/op   0 allocs/op
 ```
+
+加固：map 输出默认不排序（v1 会排）——`jsonv2.Deterministic(true)` 才按键输出，金色测试与字节比较前先明确要不要稳定输出。
 
 注意 v1 的错误“兼容”恰恰是生产事故形状：重复键静默后赢意味着上游发错字段时旧代码从不报警。升级 v2 的第一步不是比性能，是 `grep` 全仓的容错假设。
 

@@ -23,6 +23,15 @@ func TestInferenceNoTypeArgs(t *testing.T) {
 	}
 }
 
+// 显式实参：推导信息不足时手动给 [R]，与推导版结果一致。
+func TestExplicitTypeArgs(t *testing.T) {
+	a := NewBag(1, 2).Map(func(e int) int { return e + 1 }).Items()
+	b := NewBag(1, 2).Map[int](func(e int) int { return e + 1 }).Items()
+	if !reflect.DeepEqual(a, b) {
+		t.Fatalf("显式与推导不一致: %v vs %v", a, b)
+	}
+}
+
 func TestStdlibGenericMethod(t *testing.T) {
 	// 标准库实例：math/rand/v2.(*Rand).N[Int]，同方法覆盖全部整数类型。
 	rng := rand.New(rand.NewPCG(1, 2))

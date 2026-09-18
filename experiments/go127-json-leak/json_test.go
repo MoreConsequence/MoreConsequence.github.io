@@ -61,6 +61,23 @@ func TestSameSemantics(t *testing.T) {
 	}
 }
 
+// map 输出默认不排序（v1 会排）：金色测试与字节比较前先明确要不要稳定输出。
+func TestMapKeyOrderOptIn(t *testing.T) {
+	m := map[string]int{"b": 2, "a": 1, "c": 3}
+	raw, err := jsonv2.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stabled, err := jsonv2.Marshal(m, jsonv2.Deterministic(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(stabled) != `{"a":1,"b":2,"c":3}` {
+		t.Fatalf("Deterministic 应按键排序: %s", stabled)
+	}
+	t.Logf("默认=%s 确定=%s", raw, stabled)
+}
+
 // strict 默认：重复键名 v1 静默后赢，v2 必须拒绝（若行为不符测试即红）。
 func TestDuplicateKeyStrict(t *testing.T) {
 	dup := []byte(`{"orderId":"A","orderId":"B","sku":"S","customerId":1,"qty":1,"price":1,"currency":"C"}`)

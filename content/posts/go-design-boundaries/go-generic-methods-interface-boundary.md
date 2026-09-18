@@ -2,6 +2,7 @@
 title: "Go 1.27 泛型方法：把 Map 写回类型身上，但别碰接口"
 description: "Go 1.27 允许方法声明自己的类型参数（Bag.Map、rand.N 实测），但两条禁区由编译器强制执行：接口方法不得带类型参数、泛型方法不能满足接口。用正例测试加负编译证明锁定边界。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-18"
 tags: ["Go", "泛型", "API 设计", "编译器"]
 draft: false
 featured: false
@@ -32,7 +33,7 @@ NewBag(1, 2, 3).Map(func(e int) string { ... }) // [string] 由推导补上，�
 rng.N[int8](100)  // 标准库：同一方法，int8 到 uint64 全覆盖
 ```
 
-3 个正例测试全过（`experiments/go127-generic-methods/bag_test.go`）。类型转换类操作（Map、Parse、Convert）是最佳适用：调用者省一次包名前缀，阅读顺序从“函数套数据”变成“数据调方法”。
+3 个正例测试全过（`experiments/go127-generic-methods/bag_test.go`），外加显式实参对照（`Map[int]` 与推导版结果一致）。类型转换类操作（Map、Parse、Convert）是最佳适用：调用者省一次包名前缀，阅读顺序从“函数套数据”变成“数据调方法”。
 
 ## 三、禁区：两条编译器红线（逐字引用）
 
