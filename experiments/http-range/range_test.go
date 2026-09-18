@@ -36,6 +36,7 @@ func TestRangeFirst100(t *testing.T) {
 	if cr := resp.Header.Get("Content-Range"); cr != "bytes 0-99/1024000" {
 		t.Fatalf("Content-Range=%q", cr)
 	}
+	t.Logf("Content-Range=%q", resp.Header.Get("Content-Range"))
 	if string(body) != payload[:100] {
 		t.Fatal("前 100 字节不一致")
 	}

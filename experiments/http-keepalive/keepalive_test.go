@@ -48,6 +48,7 @@ func TestKeepAliveReuse(t *testing.T) {
 	if got := conns.Load(); got != 1 {
 		t.Fatalf("复用下新建连接=%d，期望 1", got)
 	}
+	t.Logf("复用：10 请求只建 %d 连接", conns.Load())
 }
 
 // 禁用 keep-alive：10 请求建 10 连接。
@@ -61,6 +62,7 @@ func TestKeepAliveDisabled(t *testing.T) {
 	if got := conns.Load(); got != 10 {
 		t.Fatalf("禁用下新建连接=%d，期望 10", got)
 	}
+	t.Logf("禁用：10 请求建 %d 连接", conns.Load())
 }
 
 // 服务端空闲超时：5 请求 → 闲 300ms → 5 请求，共 2 连接。
@@ -75,4 +77,5 @@ func TestIdleTimeoutRedial(t *testing.T) {
 	if got := conns.Load(); got != 2 {
 		t.Fatalf("空闲超时后新建连接=%d，期望 2", got)
 	}
+	t.Logf("空闲 300ms 后重拨：共 %d 连接", conns.Load())
 }
