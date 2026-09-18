@@ -2,6 +2,7 @@
 title: "MCP 2026-07-28 无状态核心：删掉握手和 session 之后，多轮请求去哪了"
 description: "MCP 2026-07-28 把 initialize 握手和 Mcp-Session-Id 删了：每个请求自带版本与身份、网关按头路由、list 可缓存、多轮改走 MRTR 重试。本文用一个无依赖 Node 原型验证轮询与跨实例重试，并列出三处必改的迁移点。"
 publishedAt: "2026-09-13"
+updatedAt: "2026-09-18"
 tags: ["大模型工程", "MCP", "协议设计", "Agent架构", "系统设计"]
 draft: false
 featured: false
@@ -11,6 +12,8 @@ series: "大模型后端架构与推理加速"
 **TL;DR：** [MCP 2026-07-28](https://blog.modelcontextprotocol.io/posts/2026-07-28/)（2026-09-13 核对）把协议级会话删了：不再有 `initialize`/`initialized` 握手和 `Mcp-Session-Id`，每个请求自带协议版本、客户端身份与能力，任何实例都能处理，普通 round-robin 负载均衡即可。应用状态没有消失，而是显式化了——短多轮走 MRTR（服务端回 `input_required`，客户端带答案重试），长任务走 `io.modelcontextprotocol/tasks` 扩展轮询。迁移时必改三处：依赖 session 的网关粘性、服务端主动下发的 elicitation/sampling、匹配 `-32002` 的错误处理。下面 7 个本地断言全部通过，但它们只证明教学原型的控制流，不证明真实 SDK 与生产网关。
 
 本文是 [MCP 架构剖析](/writing/llm-07-model-context-protocol-mcp) 的续篇。前文第五节的三步握手状态机和第六节的网关是旧版合同；本文只回答一个新问题：**删掉握手和 session 之后，重试、多轮和网关路由的语义由谁承担？**
+
+![MCP 无状态多轮：换实例重试时序](../../../public/images/mcp-stateless-retry.svg)
 
 ## 一、先看完整路径：一个请求在新版里走完什么
 

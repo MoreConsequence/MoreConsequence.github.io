@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 592" role="img" aria-labelledby="mcp-mrtr-title mcp-mrtr-desc"><title id="mcp-mrtr-title">MCP 无状态多轮重试时序</title><desc id="mcp-mrtr-desc">客户端先调敏感工具被回 input_required 并声明所需输入，带答案重试落在另一实例上依然成功，全程无传输会话、无长连接。</desc>
+  <defs>
+  <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <!-- Title -->
+  <text x="40" y="48" fill="#2d3142" font-size="24" font-family="'Instrument Serif', Georgia, serif">MCP 无状态多轮：换实例重试照样成</text>
+  <text x="40" y="72" fill="#4f5d75" font-size="12" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">中途上下文由客户端持有，传输层无会话、无长连接</text>
+
+  <!-- Lifelines -->
+  <line x1="160" y1="144" x2="160" y2="468" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <line x1="480" y1="144" x2="480" y2="468" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <line x1="800" y1="144" x2="800" y2="468" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+  <!-- Activation bars -->
+  <rect x="156" y="172" width="8" height="52" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="476" y="244" width="8" height="120" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="796" y="316" width="8" height="52" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="1"/>
+
+  <!-- Actor boxes -->
+  <rect x="80" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="160" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">Client</text>
+  <text x="160" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">持中途上下文</text>
+
+  <rect x="400" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="480" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">实例 C</text>
+  <text x="480" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">无会话表</text>
+
+  <rect x="720" y="96" width="160" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="800" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">实例 D</text>
+  <text x="800" y="136" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">无会话表</text>
+
+  <!-- M1: Client -> C tools/call delete-db -->
+  <line x1="164" y1="180" x2="472" y2="180" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <rect x="228" y="160" width="180" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="169" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">tools/call delete-db</text>
+
+  <!-- M2: C -> Client input_required (dashed) -->
+  <line x1="476" y1="216" x2="168" y2="216" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <rect x="228" y="224" width="180" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="233" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">input_required [confirm]</text>
+
+  <!-- M3: Client -> C discover (optional, dashed open? plain link) -->
+  <line x1="164" y1="252" x2="472" y2="252" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <rect x="238" y="260" width="160" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="269" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">server/discover（可选）</text>
+
+  <!-- M4: C -> Client capabilities (dashed) -->
+  <line x1="476" y1="288" x2="168" y2="288" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <rect x="248" y="296" width="140" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="305" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">tools 可缓存</text>
+
+  <!-- M5: Client -> D retry with answers -->
+  <line x1="164" y1="324" x2="792" y2="324" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <rect x="496" y="332" width="200" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="596" y="341" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">重试 + inputResponses（换实例）</text>
+
+  <!-- M6: D -> Client applied (coral headline) -->
+  <line x1="796" y1="360" x2="168" y2="360" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <rect x="238" y="368" width="160" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="318" y="377" fill="#7a8399" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" text-anchor="middle">applied=true</text>
+
+  <!-- Stateless callout -->
+  <rect x="120" y="402" width="720" height="76" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="136" y="426" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">关键：M5 落到另一实例 D 依然成功——请求自带版本与身份</text>
+  <text x="136" y="446" fill="#2d3142" font-size="11" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">旧版同形状必 -32002（网关粘性是传输会话逼出来的）</text>
+  <text x="136" y="466" fill="#4f5d75" font-size="9" font-family="'Geist Mono', 'SF Mono', Menlo, monospace">M3/M4 可选：能力按需查询，不是前置握手</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="496" x2="920" y2="496" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="516" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'SF Mono', Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+  <line x1="120" y1="512" x2="144" y2="512" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="152" y="516" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">自描述请求</text>
+  <line x1="260" y1="512" x2="284" y2="512" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <text x="292" y="516" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">返回</text>
+  <line x1="350" y1="512" x2="374" y2="512" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="382" y="516" fill="#4f5d75" font-size="9" font-family="'Geist', 'Helvetica Neue', Arial, sans-serif">跨实例成功</text>
+</svg>
