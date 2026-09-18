@@ -2,6 +2,7 @@
 title: "eval 两件事：估计要准，门要严"
 description: "pass@k 必须用无偏估计（朴素 c/n 把 0.51 算成 0.30），发布门必须关键一票否决加版本绑定加抖动预算（v1 放行、v2 三条注入拦截）。两组断言全过，同一主题：评测的可信度分两层。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-18"
 tags: ["LLM", "eval", "统计", "CI/CD"]
 draft: false
 featured: false
@@ -26,3 +27,4 @@ series: "大模型后端架构与推理加速"
 
 - Codex / HumanEval pass@k 定义，Chen et al. 2021
 - 前篇：LLM-as-Judge（偏差与 Kappa），`/writing/llm-08-llm-as-a-judge-eval-engineering`
+- 数据集污染对照：[eval 集泄漏膨胀](/writing/eval-set-leakage)（门再严，数据集漏了也白搭）

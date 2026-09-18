@@ -2,7 +2,7 @@
 title: "韧性两算式：窗口限流与重试预算"
 description: "定窗边界 2ms 可放 2 倍、滑窗压回 1 倍、令牌桶突发看容量稳态看速率；重试放大 1+p+p²+p³，p=20% 到 1.248x 即熔断。两组断言全过，同一主题：韧性参数必须算出来，不能拍脑袋。"
 publishedAt: "2026-09-14"
-updatedAt: "2026-09-16"
+updatedAt: "2026-09-18"
 tags: ["容错", "限流", "重试", "SRE"]
 draft: false
 featured: false
@@ -28,3 +28,5 @@ p 超 10% 熔断停重试——固定重试次数恰好在最需要克制时火�
 ## 参考资料
 
 - 前篇：熔断三态，`/writing/rate-limiting-circuit-breaker`；Agent 熔断（同构），`/writing/agent-tooloop-fuse`
+- 重试的前提是幂等：[幂等工程](/writing/idempotency-engineering)（无幂等不重试，是铁律不是建议）
+- 预算的告警面：[burn-rate 双阈值](/writing/slo-burn-rate-alert)（熔断是执行侧，burn-rate 是观测侧）

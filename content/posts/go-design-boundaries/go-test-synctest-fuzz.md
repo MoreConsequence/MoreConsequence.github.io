@@ -2,6 +2,7 @@
 title: "Go 测试两件套：虚拟时钟与模糊测试"
 description: "synctest.Test 气泡内 Sleep(1h) 瞬时完成、Wait 断言全阻塞；fuzz 0.4 秒抓到空 key 真 bug，修完 30 秒 970 万次确认。两组断言全过，同一主题：把 flaky 与漏测挡在合入前。"
 publishedAt: "2026-09-14"
+updatedAt: "2026-09-18"
 tags: ["Go", "测试", "并发", "fuzz"]
 draft: false
 featured: false
@@ -25,3 +26,4 @@ series: "Go 的设计边界"
 ## 参考资料
 
 - Go 文档：testing/synctest、fuzzing，<https://pkg.go.dev/testing/synctest>、<https://go.dev/doc/fuzz/>（2026-09-14 核对）
+- 站内 benchmark 卫生：[Go benchmark 避坑](/writing/go-benchmark-pitfalls)（-benchmem、benchtime 与 profile 字节的正确读法）

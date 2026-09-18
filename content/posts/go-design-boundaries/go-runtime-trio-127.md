@@ -2,7 +2,7 @@
 title: "Go 1.27 运行时三则：同步 timer、带标签 panic、分级日志"
 description: "timer 通道恒同步无缓冲且恰好一次，panic traceback 自带 pprof 标签且一键可关，slog 分级过滤加字段透传。三组独立断言全过，同一主题：运行时把更多真相摆到明面上。"
 publishedAt: "2026-09-14"
-updatedAt: "2026-09-16"
+updatedAt: "2026-09-18"
 tags: ["Go", "运行时", "可观测性", "并发"]
 draft: false
 featured: false
@@ -30,3 +30,5 @@ series: "Go 的设计边界"
 ## 参考资料
 
 - Go 1.27 发布说明，<https://go.dev/doc/go1.27>（2026-09-14 核对）
+- 站内 timer 对照：[`time.After` 的隐藏账单](/writing/go-timeafter-hidden-cost)（分配形状与 Stop/Reset 三连）
+- 站内泄漏对照：[goroutine 泄漏画像](/writing/go-goroutine-leak-pprof)（profile 分组定位，leak 画像的前身视角）
