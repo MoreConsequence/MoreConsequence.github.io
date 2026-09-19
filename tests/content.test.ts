@@ -46,6 +46,8 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "k8s-137-dra-gang-scheduling",
+      "pg19-delayed-note",
       "etcd-37-upgrade-checklist",
       "kafka-queues-share-groups",
       "llm-16-model-silent-reroute",

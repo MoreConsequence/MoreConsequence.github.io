@@ -2,7 +2,7 @@
 title: "eval 两件事：估计要准，门要严"
 description: "pass@k 必须用无偏估计（朴素 c/n 把 0.51 算成 0.30），发布门必须关键一票否决加版本绑定加抖动预算（v1 放行、v2 三条注入拦截）。两组断言全过，同一主题：评测的可信度分两层。"
 publishedAt: "2026-09-14"
-updatedAt: "2026-09-18"
+updatedAt: "2026-09-19"
 tags: ["LLM", "eval", "统计", "CI/CD"]
 draft: false
 featured: false
@@ -18,6 +18,8 @@ series: "大模型后端架构与推理加速"
 ## 二、门禁：三条 if，不是看板
 
 关键失败直接拦、数据集版本绑定基线、抖动单独预算，退出码即合同。v2 报告 `overall 0.808` 照样 `BLOCK`——这就是一票否决与看平均分的区别（`experiments/eval-deploy-gate/gate.py`）。门脚本自身也要 cwd 无关（`Path(__file__).parent`，实测踩过）。
+
+运维附带预警：Langfuse 把 `AUTH_SESSION_MAX_AGE` 默认从 30 天砍到 14 天，未显式配置的自托管直接生效（PR [#16593](https://github.com/langfuse/langfuse/pull/16593) 及 v3 backport [#16677](https://github.com/langfuse/langfuse/pull/16677)，2026-09-19 核对）。这是滚动失活窗口不是吊销，但 eval 平台登录态与 CI 长效 token 审计要跟改——想保留 30 天就显式配 `43200`。教训与模型路由同一条：第三方默认会变，显式声明才作数。
 
 ## 三、证据卡与边界
 
