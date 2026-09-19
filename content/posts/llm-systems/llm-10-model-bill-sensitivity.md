@@ -2,7 +2,7 @@
 title: "同样的 $10/$50，为什么月账单能差 10 倍：模型定价的四个乘数"
 description: "9 月模型 wave 里多个旗舰同标 $10/$50 输入输出价，但 cache-read 折扣、输出膨胀、缓存命中率与长上下文附加费四个乘数决定真实账单。用固定 agentic workload 的纯数学模型算出 10.7 倍差，并说明价格输入的复核边界。"
 publishedAt: "2026-09-13"
-updatedAt: "2026-09-16"
+updatedAt: "2026-09-19"
 tags: ["LLM", "token", "成本工程", "Agent架构"]
 draft: false
 featured: false
@@ -10,6 +10,8 @@ series: "大模型后端架构与推理加速"
 ---
 
 **TL;DR：** 2026 年 9 月第一周，Claude Fable 5.1、GPT-6 Astra 同标输入 $10 / 输出 $50 每百万 token，Gemini 3.8 Flash 标 $0.75/$3.75，Muse Spark 1.3 标 $1.25/$4.25——但标价只定了斜率。在固定 workload（每任务 8 轮、前缀 40K、1000 任务/日）下，纯数学模型算出月账单从 $4,608 到 $49,200，差 **10.7 倍**；同一价格内，输出膨胀 3x 让账单 ×1.7，缓存命中从 90% 掉到 50% 让账单 ×1.9。价格数字是 2026-09-13 第三方 tracker 快照的假设输入（见第六节边界），本文真正可复现的结论是四个乘数的排序。
+
+![月账单：同标价差 10.7 倍](../../../public/images/bill-plans-bar.svg)
 
 本文是 [token 经济学](/writing/llm-token-economics) 的续篇。前文用 GPT-4.1 单一价格证明了“prompt 结构决定账单数量级”（裸 prompt $744/月 vs 不缓存 21K 输入 $13,644/月，18.3 倍）；本文固定 prompt 结构，只换价格结构，回答：**同样的 workload，账单差是从哪里来的？**
 
