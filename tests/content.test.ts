@@ -46,6 +46,10 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "etcd-37-upgrade-checklist",
+      "kafka-queues-share-groups",
+      "llm-16-model-silent-reroute",
+      "redis-valkey-fork",
       "a2a-discovery-delegation",
       "agent-tooloop-fuse",
       "capability-map-interview",

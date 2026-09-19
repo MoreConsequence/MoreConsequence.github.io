@@ -2202,3 +2202,16 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `a2a-discovery-delegation` | card / delegate | 协作信息进协议 |
 
 修链：llm-11→新 A2A、nethttp→新 HTTP、串讲→新韧性、能力地图 3 处文本；audit 抓到 llm-11 一处漏网链接已补。experiments/evidence 目录保留为 dated 历史（删文不删证）。slug 表回填 267。验证：audit `{}`、content 10/10、全量 12/45、lint 0 errors、build 8 新页齐全。
+
+## 四十八、2026-09-18 前沿追踪批：4 篇语义追踪（271 production）
+
+ radar 切档说明：应读者要求开“前沿雷达”——够不着实测（无集群/GPU/真账单）的前沿题改用语义追踪体：机制讲透、一手来源、核对日期、“不支持”逐条声明，不冒充实测。
+
+| 篇 | 一手来源 | 未验证项 |
+| --- | --- | --- |
+| `kafka-queues-share-groups` | kafka.apache.org 4.1.0/4.1.2 公告 | 生产吞吐、重平衡、EOS、运维 |
+| `etcd-37-upgrade-checklist` | etcd.io 3.7.0 + 7-23 补丁公告 | 延迟收益、升级演练 |
+| `redis-valkey-fork` | redis/valkey release tags | 吞吐、切换、账单 |
+| `llm-16-model-silent-reroute` | deepseek api-docs 260910 公告 | 真实质量差、账单 |
+
+验证：audit `{}`、12/45 tests、lint 0 errors、build 4 新页齐全、verify:experiments 全过后发布。
