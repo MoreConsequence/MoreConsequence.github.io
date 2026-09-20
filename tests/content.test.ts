@@ -46,6 +46,10 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "node-async-iterators-cleanup",
+      "node-cluster-ipc",
+      "node-eventemitter-pubsub",
+      "node-shared-memory-atomics",
       "cell-based-architecture-bulkhead",
       "event-sourcing-cqrs",
       "k8s-137-dra-gang-scheduling",
