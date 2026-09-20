@@ -46,8 +46,16 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "cell-based-architecture-bulkhead",
+      "event-sourcing-cqrs",
       "k8s-137-dra-gang-scheduling",
+      "lockfree-cas-aba-problem",
+      "lsm-compaction-strategies",
+      "node-als-tracing",
+      "node-graceful-shutdown",
       "pg19-delayed-note",
+      "phi-accrual-failure-detector",
+      "promise-allsettled-partial-failure",
       "etcd-37-upgrade-checklist",
       "kafka-queues-share-groups",
       "llm-16-model-silent-reroute",
