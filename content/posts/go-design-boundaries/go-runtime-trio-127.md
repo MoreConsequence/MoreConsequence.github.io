@@ -23,7 +23,13 @@ series: "Go 的设计边界"
 
 `NewJSONHandler(w, {Level: Info})` 下 `Debug` 被过滤、`Info` 输出合法 JSON（含 `level` 与自定义字段），`.With` 透传每条记录，加固：`LevelVar` 翻转即时生效——线上开 Debug 不重启（`experiments/go-slog-filter/slog_test.go`），4 PASS。级别来自部署配置，字段字典文档化，两者别混在一起 hardcode。
 
-## 四、证据卡与边界
+## 四、共同边界：显式化不是免费化
+
+三则的共同判断边界：timer 看分配（同步语义不消除 allocs，该复用复用）、traceback 看敏感信息（标签进 dump，先过开关再上线）、slog 看职责分离（级别来自部署配置，字段字典文档化）。运行时把真相摆到明面上之后，解读真相的责任回到调用方——可观测性给的是证据，不是结论。
+
+三则共享一个升级动作：把 hardcode 换成配置与开关——timer 复用策略、`tracebacklabels` 开关、slog 级别，全部进部署配置。下次升级 Go 小版本，先跑这三组断言再跑业务测试：运行时行为变了，业务测试全绿也可能是假绿——先验运行时，后验业务，这是本系列“设计边界”名字的由来。
+
+## 五、证据卡与边界
 
 原始输出：`evidence/go-timer-sync/`、`evidence/go-traceback-labels/`、`evidence/go-slog-filter/`（2026-09-14-local）。不支持：生产延迟分布、crash 管道审计、日志量 benchmark（各另起篇）。
 

@@ -37,5 +37,5 @@ series: "系统设计手记"
 
 ## 参考资料
 
-- 上文官方博客与 release notes
-- 前篇：K8s watch 与 etcd（大 list 场景），`/writing/k8s-controller-watch-etcd`
+- 上文官方博客与 release notes；etcd 官网文档，<https://etcd.io/>
+- 前篇：K8s watch 与 etcd（大 list 场景），`/writing/k8s-controller-watch-etcd`；分布式锁与 fencing（etcd 围栏），`/writing/consensus-06-distributed-locks-redlock-etcd-fencing`

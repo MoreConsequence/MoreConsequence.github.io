@@ -12,6 +12,11 @@ featured: false
 
 ## 一、合同：错误体的三栏
 
+```json
+// 富错误形状（示例）：可执行 hint，不是形容词
+{"code": "E_CONN", "retryable": true, "hint": "use-read-replica"}
+```
+
 | 栏 | 粗码 | 富错误 | 判定标准 |
 | --- | --- | --- | --- |
 | code | 有 | 有 | 机器可分支 |
@@ -34,4 +39,5 @@ stub 模型确定性行为，非真实模型。不支持：真实模型自愈率
 
 ## 参考资料
 
-- 前篇：工具调用的契约设计，`/writing/llm-tool-calling-contract`
+- JSON Schema（错误形状的机器可读契约），<https://json-schema.org/>
+- 前篇：工具调用的契约设计，`/writing/llm-tool-calling-contract`；LLM-as-Judge（结构化输出评估），`/writing/llm-08-llm-as-a-judge-eval-engineering`

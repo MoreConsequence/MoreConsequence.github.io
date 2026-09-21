@@ -21,6 +21,12 @@ series: "从 Go 到 TypeScript"
 
 ## 二、实测
 
+```js
+// 形态（experiments/node-sqlite/demo.mjs）：事务自己写 BEGIN/COMMIT
+db.exec("BEGIN");
+db.exec("ROLLBACK"); // count 回退——没有 transaction() 助手
+```
+
 `experiments/node-sqlite/demo.mjs`，`evidence/node-sqlite/2026-09-14-local/run.out`，5 PASS。加固 Q4：文件库 `journal_mode=WAL` 可开，内存库返回 `memory`（不支持 WAL 是预期行为）——要并发读写先落文件库。另记：`db.transaction` 不存在——从 better-sqlite3 过来的人第一次一定会写错，本文即证据。
 
 ## 三、证据卡与边界
@@ -30,4 +36,4 @@ series: "从 Go 到 TypeScript"
 ## 参考资料
 
 - Node.js 文档：node:sqlite，<https://nodejs.org/api/sqlite.html>（2026-09-14 核对）
-- 前篇：SQLite 双写者 BUSY，`/writing/sqlite-two-writers-busy`
+- 前篇：SQLite 双写者 BUSY，`/writing/sqlite-two-writers-busy`；WAL checkpoint 与读写语义（含原 tx-isolation），`/writing/sqlite-wal-checkpoint`；索引两形态，`/writing/sqlite-index-two-shapes`

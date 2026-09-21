@@ -33,6 +33,8 @@ Go 工程师的直觉映射：goroutine ≈ 事件循环回调；`go f()` 跨线
 
 `cluster.fork()` = `fork` + 端口共享 + 主从心跳。生产三件套：`cluster.on('exit', fork)` 自愈、`server.close()` 优雅摘流（见[优雅关闭](/writing/node-graceful-shutdown)）、健康检查让 LB 先摘再杀。`cluster` 不做任务分发——要分发任务自己按本篇实验的 `send/message` 模式写，或上队列。
 
+自愈的另一面是重启风暴：子进程启动即崩、`exit` 监听器立即重拉，循环往复打满 CPU。生产必须加退避（指数退避 + 次数上限 + 告警），否则自愈变自杀——这与熔断器的“失败关闭”同一条规则，见[速率限制与熔断](/writing/rate-limiting-circuit-breaker)。重拉前先打日志（含退出码与退避次数），否则重启风暴静默发生——自愈的观测与自愈本身同等重要。
+
 ## 四、证据卡与边界
 
 原始输出：`evidence/node-cluster-ipc/`（2026-09-20-local）。不支持：fork 启动耗时、IPC 大对象吞吐、cluster 端口复用均衡度——无压测，未验证。

@@ -31,4 +31,5 @@ series: "系统设计手记"
 
 ## 参考资料
 
-- Demers et al. 1987：Epidemic Algorithms（gossip 原始论文）
+- Demers et al. 1987：Epidemic Algorithms（gossip 原始论文）；Wikipedia（感染模型对照），<https://en.wikipedia.org/wiki/Gossip_protocol>
+- 前篇：G-Counter 合并（收敛的另一半），`/writing/crdt-gcounter-merge`；phi-accrual 故障检测（怀疑度），`/writing/phi-accrual-failure-detector`

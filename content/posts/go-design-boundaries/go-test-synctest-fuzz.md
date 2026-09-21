@@ -13,6 +13,12 @@ series: "Go 的设计边界"
 
 ## 一、synctest：虚拟的是时间，不是世界
 
+```go
+synctest.Test(t, func(t *testing.T) {
+    // 气泡内：Sleep(time.Hour) 瞬时完成，Wait 返回即除测试体外全阻塞
+})
+```
+
 入口是 `synctest.Test(t, …)`（不是 `Run`）；气泡时钟起点固定 UTC 2000-01-01 午夜（本地 +0800 下按 UTC 断言）；禁区是网络、外部进程与气泡外 goroutine（`experiments/go127-synctest/sync_test.go`），3 PASS。
 
 ## 二、fuzz：找你没想到要测什么

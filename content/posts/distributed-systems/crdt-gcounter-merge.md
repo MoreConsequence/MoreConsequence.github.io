@@ -21,6 +21,12 @@ series: "系统设计手记"
 
 ## 二、实测
 
+```python
+# 实验核心（experiments/crdt-gcounter/gcounter.py）：合并即逐槽 max
+def merge(self, o):
+    return GCounter.from_vec([max(a, b) for a, b in zip(self.v, o.v)], self.i)
+```
+
 `experiments/crdt-gcounter/gcounter.py`，`evidence/crdt-gcounter/2026-09-14-local/run.out`，7 PASS（C1–C3 只增，C4–C5 加减收敛与幂等，C6–C7 后写胜与 tie-break）。加固 C6/C7：赋值用 LWW-Register——`(wallclock, node)` 取最大，时钟相同拼 node 裁决，无分歧。
 
 ## 三、证据卡与边界
@@ -29,4 +35,5 @@ series: "系统设计手记"
 
 ## 参考资料
 
-- Shapiro et al. 2011：CRDT 综述（state-based 收敛条件）
+- Shapiro et al. 2011：CRDT 综述（state-based 收敛条件）；CRDT 资源站，<https://crdt.tech/>；Wikipedia（收敛条件对照），<https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type>
+- 前篇：gossip 感染轮次（状态传播的另一半），`/writing/gossip-rounds-infection`

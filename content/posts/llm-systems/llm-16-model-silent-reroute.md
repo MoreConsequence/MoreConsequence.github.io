@@ -36,5 +36,5 @@ series: "大模型后端架构与推理加速"
 
 ## 参考资料
 
-- 上文 API 公告
+- 上文 API 公告，<https://api-docs.deepseek.com/news/news260910>（2026-09-18 核对）
 - 前篇：账单敏感度（价格结构数学），`/writing/llm-10-model-bill-sensitivity`；eval 门（ID 绑定基线），`/writing/llm-12-eval-estimation-gates`

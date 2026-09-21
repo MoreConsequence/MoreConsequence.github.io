@@ -14,7 +14,17 @@ series: "系统设计手记"
 
 beta 期砍功能是 Postgres 流程健康的表现：宁可减 scope，不带病 GA。反例是赶火车把半成品写进稳定版——下游五年还债。等 19 的正确姿势：跟踪 open items 进 RC，而不是按原日期排人力。
 
-## 二、证据卡与边界
+## 二、被砍的是什么：三个名字与两个数字
+
+beta 起累计 53 次 revert（PG18 同期约 44 次，[Snowflake 09-16 盘点](https://www.snowflake.com/en/blog/engineering/postgresql-19-release-delay-feature-reverts/)）。点名三个：
+
+- **GROUP BY ALL**：post-commit review 发现 ORDER BY 非默认相等语义下返回错结果，late beta 改不动——revert，v20 再试（一手：cfbot revert commit `a32733d`，理由原文“too much code churn for late beta”）。
+- **MERGE/SPLIT PARTITION**：08-27 整 feature revert，设计问题；这是它第二次被砍（PG17 因同类原因）。附带教训：revert 五天后 release notes 条目还在——看 notes 不如看分支，Beta 3 有的功能，Beta 4 未必有（[Fontaine 09-03 实测](https://tapoueh.org/blog/2026/09/getting-ready-for-postgresql-19/)）。
+- **SQL/PGQ 图查询**：设计与就绪度 concerns，被砍，PG20 材料。
+
+时间线以 [19 Open Items](https://wiki.postgresql.org/wiki/PostgreSQL_19_Open_Items) 为准：Beta 4 在 09-24，RC 与 GA 待定。生产姿势不变：守 18.x；另记 Fontaine 的升级防火清单（JIT 默认关、`standard_conforming_strings` 锁死、RADIUS 移除、MD5 登录告警）——升 19 前逐条过。
+
+## 三、证据卡与边界
 
 | 字段 | 内容 |
 | --- | --- |
@@ -23,4 +33,6 @@ beta 期砍功能是 Postgres 流程健康的表现：宁可减 scope，不带�
 
 ## 参考资料
 
+- 19 Open Items（时间线一手），<https://wiki.postgresql.org/wiki/PostgreSQL_19_Open_Items>；53 次 revert 盘点，<https://www.snowflake.com/en/blog/engineering/postgresql-19-release-delay-feature-reverts/>；Fontaine 升级实测，<https://tapoueh.org/blog/2026/09/getting-ready-for-postgresql-19/>（2026-09-20 核对）
+- PostgreSQL beta 测试页，<https://www.postgresql.org/developer/beta/>；pgsql-hackers 归档（commitfest 与 revert 讨论的一手来源），<https://www.postgresql.org/list/pgsql-hackers/>
 - 前篇：PG bloat 与 autovacuum（18.x 现实），`/writing/postgres-bloat-autovacuum`

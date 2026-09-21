@@ -27,5 +27,5 @@ series: "系统设计手记"
 
 ## 参考资料
 
-- A2A 官方文档，<https://a2a-protocol.org/>；MCP roadmap（agent identity）（2026-09-14 核对）
+- A2A 官方文档，<https://a2a-protocol.org/>；A2A 规范站，<https://google.github.io/A2A/>；MCP roadmap（agent identity）（2026-09-14 核对）
 - 纵向对照：MCP 无状态核心，`/writing/llm-09-mcp-stateless-core`

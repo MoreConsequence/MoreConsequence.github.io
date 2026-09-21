@@ -44,3 +44,9 @@ system-design 面试按“路径→矩阵→数字”三段答：先画完整路
 ## 参考资料
 
 - 上表四篇正文与其 evidence 目录
+- Stripe：Webhooks 签名与重投，<https://docs.stripe.com/webhooks>；幂等键，<https://docs.stripe.com/api/idempotent_requests>
+- 前篇：幂等工程（含 claim 模式），`/writing/idempotency-engineering`；Outbox 与双写原子性，`/writing/outbox-cdc-dual-write-atomicity`
+
+## 证据卡与边界
+
+本篇是拼装 walkthrough，无独立运行实验：签名、幂等、重试预算、翻页四块数字分别来自上表四篇正文的 `evidence/` 目录，以各正文为准；真实网关行为未经对接验证。

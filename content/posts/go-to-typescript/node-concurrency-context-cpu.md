@@ -13,6 +13,11 @@ series: "从 Go 到 TypeScript"
 
 ## 一、问一：请求上下文丢在哪
 
+```ts
+// 形态（experiments/node-als-context/demo.mjs）：入口处 run，不用裸 enterWith
+requestIdStore.run({ requestId }, () => next());
+```
+
 异步缺口是串号的根因：同步代码里共享变量永远正确，第一个 `await` 之后听天由命。铁律三条：入口处 `run`（不用裸 `enterWith`）、store 只读、日志 trace 全从 store 取 id（`experiments/node-als-context/demo.mjs`，3 断言）。加固 A3：嵌套 `run` 内层覆盖外层、退出恢复（`["outer","inner","inner"]`）——中间件叠加不互踩。
 
 ## 二、问二：CPU 下放给谁
@@ -25,5 +30,6 @@ P0-05 点名的 worker 缺口至此闭环：协作等待让出、CPU 忙等下�
 
 ## 参考资料
 
-- Node.js 文档：async_context、worker_threads（2026-09-14 核对）
+- Node.js 文档：async_context（<https://nodejs.org/api/async_context.html>）、worker_threads（2026-09-14 核对）
 - 前篇：事件循环 vs GMP，`/writing/typescript-event-loop-vs-gmp`
+- 后续深挖（同一系列）：ALS 请求追踪，`/writing/node-als-tracing`；共享内存与 Atomics，`/writing/node-shared-memory-atomics`；多进程 IPC，`/writing/node-cluster-ipc`；优雅关闭，`/writing/node-graceful-shutdown`

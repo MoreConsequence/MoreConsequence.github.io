@@ -18,7 +18,19 @@ series: "系统设计手记"
 | gang 调度 | PodGroup Beta | 默认开启（门控关着） | manifest + feature-gate rollout |
 | 兼容 | 1.35/1.36/1.37 三分支维护 | 跨 minor 无痛 | 按 1.38 GA 路线图排期 |
 
-## 二、证据卡与边界
+## 二、staging 开门控清单
+
+Beta + 默认关意味着试用路径是固定的：staging 集群开门控、只放可重跑的批量任务、ResourceClaim 改写跟着设备插件走、观察一轮完整驱逐/重建再谈生产。门控开关形态（kubeadm 侧示例，gate 名以官方博客为准）：
+
+```yaml
+apiServer:
+  extraArgs:
+    feature-gates: "GenericWorkload=true"
+```
+
+按 1.38 GA 路线图排期之前，任何“1.37 gang 已可用”的说法都要加定语：可用的是 Beta 语义，不是 GA 承诺。
+
+## 三、证据卡与边界
 
 | 字段 | 内容 |
 | --- | --- |
@@ -27,5 +39,5 @@ series: "系统设计手记"
 
 ## 参考资料
 
-- 上文官方博客
+- 上文官方博客（K8s 官方博客归档），<https://kubernetes.io/blog/>；K8s DRA 概念文档，<https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/>
 - 前篇：K8s 调度器资源账本（打分公式），`/writing/k8s-scheduler-resource-ledger`

@@ -24,6 +24,12 @@ series: "从 Go 到 TypeScript"
 
 ## 二、实测
 
+```js
+// 形态（experiments/node-clone-semantics/clone.mjs）：值保留，函数拒收
+const c = structuredClone({ d: new Date(), m: new Map() }); // Date/Map 保留
+structuredClone({ f: () => {} }); // 抛 DataCloneError，不是静默丢
+```
+
 `experiments/node-clone-semantics/clone.mjs`，`evidence/node-clone-semantics/2026-09-14-local/run.out`，5 PASS。加固 C5：`transfer` 转移 ArrayBuffer 所有权——原件字节数归零，克隆体接管。拷贝与转移是两种语义，worker 间传大内存必须显式 transfer，否则复制成本翻倍。
 
 ## 三、证据卡与边界
@@ -32,5 +38,5 @@ series: "从 Go 到 TypeScript"
 
 ## 参考资料
 
-- MDN：structuredClone，<https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone>（2026-09-14 核对）
+- MDN：structuredClone，<https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone>（2026-09-14 核对）；可克隆类型表，<https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm>
 - 前篇：TypeScript DTO 边界，`/writing/typescript-dto-boundary`

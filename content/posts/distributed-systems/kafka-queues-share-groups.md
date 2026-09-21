@@ -45,5 +45,5 @@ producer → share group（无分区分配）
 
 ## 参考资料
 
-- KIP-932 与上文官方博客
-- 前篇：Kafka 再均衡停顿，`/writing/kafka-rebalance-stop-the-world`
+- KIP-932 与上文官方博客；Kafka 官方文档（消费语义），<https://kafka.apache.org/documentation/>
+- 前篇：Kafka 再均衡停顿，`/writing/kafka-rebalance-stop-the-world`；Redis 作队列（消费组语义对照），`/writing/redis-as-mq-consume-groups`

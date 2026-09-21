@@ -13,7 +13,11 @@ series: "Go 的设计边界"
 
 ## 一、uuid：版本位、往返、唯一、有序
 
-版本 nibble 与 RFC 变体位断言、36 字符往返恒等、万级零碰撞、跨毫秒 `Compare < 0`、连发 5000 严格递增（`experiments/go127-uuid/uuid_test.go`），5 PASS。选型一行：对外不可推测用 v4，数据库主键用 v7；要跨进程/跨语言的严格单调仍用序列（单调是 Go 实现的选择，不是 RFC 合同）。
+```
+xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+```
+
+v7 版位（RFC 9562 §5.7）：第 13 个十六进制位恒 `7`，变体位 `y ∈ {8, 9, a, b}`——版本 nibble 与变体位断言锁的就是这两处。36 字符往返恒等、万级零碰撞、跨毫秒 `Compare < 0`、连发 5000 严格递增（`experiments/go127-uuid/uuid_test.go`），5 PASS。选型一行：对外不可推测用 v4，数据库主键用 v7；要跨进程/跨语言的严格单调仍用序列（单调是 Go 实现的选择，不是 RFC 合同）。
 
 ## 二、mldsa：闭环易，体积贵
 
@@ -25,4 +29,5 @@ series: "Go 的设计边界"
 
 ## 参考资料
 
-- Go 1.27 发布说明，<https://go.dev/doc/go1.27>；RFC 9562；FIPS 204（2026-09-14 核对）
+- Go 1.27 发布说明，<https://go.dev/doc/go1.27>；RFC 9562（UUIDv7 时间排序），<https://www.rfc-editor.org/rfc/rfc9562.html>；FIPS 204（ML-DSA），<https://csrc.nist.gov/pubs/fips/204/final>（2026-09-14 核对）
+- 非标准库对照实现：google/uuid，<https://pkg.go.dev/github.com/google/uuid>

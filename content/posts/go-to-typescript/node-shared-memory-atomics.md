@@ -41,7 +41,7 @@ Go 的 channel 是"拷贝 + 同步"打包；Node 把两者拆开给了你——�
 
 ## 参考资料
 
-- Node.js 文档：worker_threads、SharedArrayBuffer、Atomics（2026-09-20 核对）
+- Node.js 文档：worker_threads、SharedArrayBuffer、Atomics（2026-09-20 核对）；MDN SharedArrayBuffer，<https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer>
 - MDN：Atomics.wait/notify 语义（2026-09-20 核对）
 - 前篇：并发两问（worker 下放 + transferList），`/writing/node-concurrency-context-cpu`
 - 前篇：CAS 与 ABA（同一原子原语的另一面），`/writing/lockfree-cas-aba-problem`

@@ -53,7 +53,6 @@ try {
 
 ## 参考资料
 
-- TC39 async iteration proposal（`for-await` 调用 `return()` 语义，ES2018）
-- MDN：AsyncGenerator.return()（2026-09-20 核对）
+- TC39 async iteration proposal（`for-await` 调用 `return()` 语义，ES2018）；MDN AsyncGenerator.return()，<https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/return>（2026-09-20 核对）
 - 前篇：Agent 状态机，`/writing/typescript-agent-state-machine`
 - 前篇：streams 与背压，`/writing/typescript-streams-backpressure`
