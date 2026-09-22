@@ -41,4 +41,5 @@ activeSecrets=[old] → 新签 401（未加入）
 
 ## 参考资料
 
-- 前篇：幂等工程（去重语义），`/writing/idempotency-engineering`
+- 前篇：幂等工程（去重语义），`/writing/idempotency-engineering`；API 形状与幂等键，`/writing/service-api-shape`
+- Stripe：Webhooks 签名与重投，<https://docs.stripe.com/webhooks>

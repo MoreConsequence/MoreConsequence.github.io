@@ -42,5 +42,5 @@ ticket 与 page 的差（9 分钟）是留给值班的预判窗口，不是延�
 
 ## 参考资料
 
-- Google SRE Workbook：Alerting on SLOs（多窗 burn-rate 原始出处）
+- Google SRE Workbook：Alerting on SLOs（多窗 burn-rate 原始出处），<https://sre.google/workbook/alerting-on-slos/>；SRE Book 监控章，<https://sre.google/sre-book/monitoring-distributed-systems/>
 - 前篇：SLO handler 指标原型，`/writing/service-observability-slo`

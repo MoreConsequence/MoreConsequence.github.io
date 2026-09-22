@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="100%" height="100%" role="img" aria-labelledby="iot-fd-title iot-fd-desc">
+  <title id="iot-fd-title">Linux SCM_RIGHTS 跨进程文件描述符传递与千万长连接热重启</title>
+  <desc id="iot-fd-desc">展示长连接网关在滚动发布时利用 Unix Domain Socket SCM_RIGHTS 机制无感迁移物理 TCP 套接字句柄，实现进程级升级 0 TCP 断连。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+    <pattern id="grid-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.8" fill="rgba(45,49,66,0.08)"/></pattern>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+  <rect width="100%" height="100%" fill="url(#grid-dots)"/>
+
+  <!-- Title -->
+  <text x="40" y="38" fill="#2d3142" font-size="22" font-family="'Instrument Serif', Georgia, serif">Linux SCM_RIGHTS 句柄传递与长连接网关平滑热更</text>
+  <text x="40" y="60" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Unix Domain Socket 控制消息 ── 内核 struct file* 引用交接 ── 物理 TCP 零断连零重连</text>
+
+  <!-- Process A: Old Gateway (Left) -->
+  <rect x="40" y="80" width="280" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="52" y="92" width="130" height="18" rx="3" fill="rgba(45,49,66,0.06)"/>
+  <text x="117" y="104" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">OLD PROCESS · PID 101</text>
+
+  <text x="52" y="136" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">旧版网关进程 (Old Binary)</text>
+  <text x="52" y="154" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">持有一千万物理设备 TCP 长连接</text>
+
+  <rect x="52" y="174" width="256" height="56" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="64" y="194" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">本地进程文件描述符表 (fdtable)</text>
+  <text x="64" y="210" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">fd=5 ──► TCP Conn #1 (10.0.1.12:443)</text>
+  <text x="64" y="222" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">fd=6 ──► TCP Conn #2 (10.0.1.13:443)</text>
+
+  <rect x="52" y="244" width="256" height="66" rx="4" fill="rgba(235,108,54,0.06)" stroke="rgba(235,108,54,0.45)" stroke-width="0.8"/>
+  <text x="64" y="264" fill="#eb6c36" font-size="10" font-weight="600" font-family="'Geist', sans-serif">sendmsg() 发送辅助控制报文</text>
+  <text x="64" y="280" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">cmsg_level = SOL_SOCKET</text>
+  <text x="64" y="294" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace">cmsg_type  = SCM_RIGHTS (装填 fds=[5,6])</text>
+
+  <rect x="52" y="324" width="256" height="42" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="64" y="342" fill="#2d3142" font-size="9.5" font-weight="600" font-family="'Geist', sans-serif">平滑停机 (Graceful Draining)</text>
+  <text x="64" y="356" fill="#7a8399" font-size="8" font-family="'Geist', sans-serif">出清在途缓冲区 ──► 收到 ACK 后正常退出 (exit 0)</text>
+
+  <!-- Middle: Linux Kernel (Center) -->
+  <rect x="360" y="80" width="240" height="340" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="372" y="92" width="130" height="18" rx="3" fill="rgba(235,108,54,0.12)"/>
+  <text x="437" y="104" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">LINUX KERNEL</text>
+
+  <text x="372" y="136" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">内核套接字引用中枢</text>
+  <text x="372" y="154" fill="#eb6c36" font-size="9" font-family="'Geist', sans-serif">struct file* &amp; TCP Socket 表</text>
+
+  <rect x="372" y="174" width="216" height="96" rx="4" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="384" y="196" fill="#eb6c36" font-size="10" font-weight="600" font-family="'Geist', sans-serif">内核底层物理 TCP 连接状态</text>
+  <text x="384" y="214" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">Socket A: ESTABLISHED (ref=2)</text>
+  <text x="384" y="228" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">Socket B: ESTABLISHED (ref=2)</text>
+  <text x="384" y="246" fill="#2d3142" font-size="8.5" font-family="'Geist', sans-serif">TCP 协议栈未感知任何进程变动！</text>
+  <text x="384" y="258" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace">0 丢包 · 0 重传 · 0 重连风暴</text>
+
+  <rect x="372" y="284" width="216" height="54" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="384" y="304" fill="#2d3142" font-size="9.5" font-weight="600" font-family="'Geist', sans-serif">Unix Domain Socket 管道</text>
+  <text x="384" y="320" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">/var/run/gw-upgrade.sock</text>
+  <text x="384" y="330" fill="#7a8399" font-size="7.5" font-family="'Geist', sans-serif">跨进程直接传递文件对象指针</text>
+
+  <!-- Process B: New Gateway (Right) -->
+  <rect x="640" y="80" width="280" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="652" y="92" width="130" height="18" rx="3" fill="rgba(45,49,66,0.06)"/>
+  <text x="717" y="104" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">NEW PROCESS · PID 202</text>
+
+  <text x="652" y="136" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif">新版网关进程 (New Binary)</text>
+  <text x="652" y="154" fill="#2e5aa8" font-size="9" font-family="'Geist', sans-serif">继承全部就绪 TCP 句柄继续工作</text>
+
+  <rect x="652" y="174" width="256" height="56" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="664" y="194" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">recvmsg() 接收并生成新文件描述符</text>
+  <text x="664" y="210" fill="#2e5aa8" font-size="8.5" font-family="'Geist Mono', monospace">fd=12 ──► 继承 Socket A (无需握手)</text>
+  <text x="664" y="222" fill="#2e5aa8" font-size="8.5" font-family="'Geist Mono', monospace">fd=13 ──► 继承 Socket B (无缝衔接)</text>
+
+  <rect x="652" y="244" width="256" height="66" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="664" y="264" fill="#2d3142" font-size="10" font-weight="600" font-family="'Geist', sans-serif">注册 Epoll / io_uring 事件循环</text>
+  <text x="664" y="280" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">epoll_ctl(EPOLL_CTL_ADD, fd=12)</text>
+  <text x="664" y="294" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">立即开始捕获网络设备的下一个心跳包</text>
+
+  <rect x="652" y="324" width="256" height="42" rx="4" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.18)" stroke-width="0.8"/>
+  <text x="664" y="342" fill="#2d3142" font-size="9.5" font-weight="600" font-family="'Geist', sans-serif">向旧进程发送迁移完成信号 (ACK)</text>
+  <text x="664" y="356" fill="#2e5aa8" font-size="8" font-family="'Geist', sans-serif">正式接管百万设备的入站数据流转发权</text>
+
+  <!-- Connectors (Orthogonal routing per diagram-design spec) -->
+  <!-- Old Process to Kernel Unix Socket -->
+  <path d="M 308 277 H 340 V 311 H 372" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Kernel Unix Socket to New Process -->
+  <path d="M 588 311 H 620 V 202 H 652" fill="none" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+
+  <!-- Sockets pointing to Kernel struct file (horizontal alignment at y=202) -->
+  <line x1="308" y1="202" x2="372" y2="202" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <line x1="652" y1="202" x2="588" y2="202" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+
+
+  <!-- Callout Bottom -->
+  <rect x="40" y="440" width="880" height="66" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="56" y="464" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif">核心收益：消除长连接集群滚动发布时的“自残式重连雪崩”</text>
+  <text x="56" y="482" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">传统 kill -9 会导致数百万台网络设备在 1 秒内同时发起 TLS 握手与 MQTT 连接，瞬间击垮后端鉴权数据库；</text>
+  <text x="56" y="496" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">SCM_RIGHTS 方案将物理连接锁定在 Linux 内核 TCP 层，网关升级对现场硬件 100% 透明。</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="524" x2="920" y2="524" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="548" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+  <line x1="110" y1="544" x2="134" y2="544" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="142" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">SCM_RIGHTS 句柄传递路径</text>
+  <line x1="340" y1="544" x2="364" y2="544" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="372" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">新进程接管入站事件流</text>
+  <line x1="550" y1="544" x2="574" y2="544" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="582" y="548" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">内核 struct file* 双向引用</text>
+</svg>

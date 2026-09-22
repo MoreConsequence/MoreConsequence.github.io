@@ -58,4 +58,4 @@ C1 合法预检 204 / C3 凭据回显具体源 / C5 Vary 防缓存投毒
 
 ## 参考资料
 
-- RFC 9110（Range）、Fetch CORS 协议、Go Transport 文档（2026-09-14 核对）
+- RFC 9110（Range），<https://www.rfc-editor.org/rfc/rfc9110.html>；Fetch CORS 协议，<https://fetch.spec.whatwg.org/>；Go Transport 文档，<https://pkg.go.dev/net/http#Transport>（2026-09-14 核对）

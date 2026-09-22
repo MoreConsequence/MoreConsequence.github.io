@@ -69,5 +69,5 @@ BenchmarkUnmarshal_V2-8    826 ns/op   0 B/op   0 allocs/op
 
 ## 参考资料
 
-- Go 1.27 发布说明与 `encoding/json/v2` 文档，<https://go.dev/blog/go1.27>、<https://go.dev/doc/go1.27>（2026-09-14 核对）
+- Go 1.27 发布说明与 `encoding/json/v2` 文档，<https://go.dev/blog/go1.27>、<https://go.dev/doc/go1.27>、<https://pkg.go.dev/encoding/json/v2>（2026-09-14 核对）
 - runtime 源码：`mgc.go:goroutineLeakGC`、`pprof.go:WriteTo`、`testdata/testgoroutineleakprofile/simple.go`（go1.27.0，本地 toolchain 树可查）

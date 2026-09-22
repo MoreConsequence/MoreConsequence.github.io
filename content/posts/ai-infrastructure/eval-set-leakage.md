@@ -74,5 +74,5 @@ LLM 的评测集几乎必然与网络语料重叠：你从 Stack Overflow 抄的
 ## 参考资料
 
 - 本篇实验与原始输出：`experiments/eval-leakage/leak.mjs`、`evidence/eval-set-leakage/2026-08-23-local/`
-- 数据污染的系统研究参见 Carlini et al., *Extracting Training Data from Large Language Models*（训练数据提取）及 GPT-4 技术报告中关于 benchmark 污染的讨论
+- 数据污染的系统研究参见 Carlini et al., *Extracting Training Data from Large Language Models*，<https://arxiv.org/abs/2012.07805>（训练数据提取）及 GPT-4 技术报告中关于 benchmark 污染的讨论
 - 站内相关：[LLM-as-judge 可靠吗](/writing/llm-as-judge-evals)、[幻觉的可测量性](/writing/llm-hallucination-measurable)

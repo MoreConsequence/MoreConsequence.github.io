@@ -93,4 +93,4 @@ print(f"cell 隔离爆炸半径: {with_isolation/10000:.0%}")  # 10%
 - Stripe Engineering Blog：Stripe Cells（2023-11-15，生产级 cell 隔离实践）
 - Figma Engineering Blog：How Figma scaled Redis to millions of users（2024-06-19，hash 分片隔离）
 - 前篇：速率限制与熔断，`/writing/rate-limiting-circuit-breaker`
-- 前篇：重试放大效应，`/writing/resilience-window-retry`
+- 前篇：重试放大效应，`/writing/resilience-window-retry`；金丝雀与蓝绿（cell 级 rollout），`/writing/deployment-canary-blue-green`

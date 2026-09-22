@@ -79,4 +79,5 @@ rng.N[int8](100)  // 标准库：同一方法，int8 到 uint64 全覆盖
 
 - Go 1.27 发布说明（泛型方法节），<https://go.dev/doc/go1.27>（2026-09-14 核对）
 - Go Blog：Generic Methods（2026-08-26），设计动机与示例
+- 接口装箱对照：[Go interface 装箱成本](/writing/go-interface-boxing)（方法集与动态分发的另一面）
 - VictoriaMetrics Go 1.27 tour（接口限制的编译实证），<https://victoriametrics.com/blog/go-1-27/>

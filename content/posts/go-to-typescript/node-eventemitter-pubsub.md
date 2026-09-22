@@ -52,6 +52,6 @@ for (const fn of listeners) await fn(payload);
 
 ## 参考资料
 
-- Node.js 文档：events、worker_threads BroadcastChannel（2026-09-20 核对，导出表实测）
+- Node.js 文档：events（2026-09-20 核对，导出表实测）、worker_threads（含 BroadcastChannel），<https://nodejs.org/api/worker_threads.html>；MDN BroadcastChannel，<https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel>
 - 前篇：共享内存与 Atomics，`/writing/node-shared-memory-atomics`
 - 前篇：多进程 IPC（本批），`/writing/node-cluster-ipc`

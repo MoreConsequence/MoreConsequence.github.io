@@ -71,3 +71,4 @@ Go 没有等价的进程内权限模型——Go 程序的文件与进程能力�
 ## 参考资料
 
 - Node.js 官方文档：Permission Model（以本地 v24.19.0 实测行为为准，版本差异按目标版本重测），<https://nodejs.org/api/permissions.html>（2026-09-14 核对）
+- 思想来源：Deno 安全模型，<https://docs.deno.com/runtime/fundamentals/security/>；OpenBSD `pledge`（能力收缩的祖师），<https://man.openbsd.org/pledge>

@@ -76,4 +76,5 @@ Prometheus `Histogram` 默认桶是 `{.005, .01, .025, .05, .1, .25, .5, 1, 2.5,
 ## 参考资料
 
 - [Prometheus Histogram 实践指南](https://prometheus.io/docs/practices/histograms/)
+- Prometheus 指标类型（Histogram 章节），<https://prometheus.io/docs/concepts/metric_types/#histogram>；`histogram_quantile` 函数，<https://prometheus.io/docs/prometheus/latest/querying/functions/#histogram_quantile>
 - 本仓库实验：`experiments/histogram-bucket-design/`；原始输出：`evidence/histogram-bucket-design/2026-08-19-local/run.out`

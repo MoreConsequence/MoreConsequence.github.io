@@ -97,7 +97,7 @@ title: "把写作还给 Markdown"
 description: "静态博客与 Markdown 文件的底层逻辑"
 publishedAt: "2026-07-26"
 tags: ["Markdown", "工程效率"]
-draft: true   # 写草稿时打开,合并发布前去掉
+draft: false   # 写草稿时打开,合并发布前去掉
 featured: false
 ---
 ```
