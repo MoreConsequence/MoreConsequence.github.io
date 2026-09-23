@@ -2,6 +2,7 @@
 title: "亿级实时在线推荐系统架构：从四级漏斗到双塔模型与实时特征穿透"
 description: "深度拆解现代千亿级候选池、亿级日活在线实时个性化推荐系统的底层工业架构。从 Covington 2016 YouTube 经典论文确立的“召回-粗排-精排-重排”四级漏斗分层递进体系，到向量双塔（Two-Tower DSSM）与 HNSW 近似最近邻检索的亚毫秒解耦；从 Flink 流式计算驱动的 Feature Store 毫秒级特征穿透，到多任务学习（MMoE）综合价值排序与行列式点过程（DPP）多样性打散重排。"
 publishedAt: "2026-05-26"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "推荐系统", "双塔模型", "Feature Store", "实时流计算"]
 category: "面试深度拆解"
 draft: false

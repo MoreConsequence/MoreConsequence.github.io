@@ -2,6 +2,7 @@
 title: "分布式锁的物理边界：从 Martin Kleppmann 论战 Redlock 到 Fencing Token 形式化防御"
 description: "深度拆解分布式锁的理论极限、工业实现与正确性证明。从 2016 年分布式领域著名的 Martin Kleppmann 与 Redis 作者 Antirez 针对 Redlock 算法的历史世纪论战切入，剖析异步网络中 GC 停顿、时钟跳变与未持久化重启对分布式锁的毁灭性击穿；推导 Google Chubby 论文中的单调屏障令牌（Fencing Token）数学原理；最后给出 etcd 租约版本控制与数据库乐观校验的生产级全景实践。"
 publishedAt: "2026-05-17"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式锁", "Redlock", "分布式一致性", "etcd"]
 category: "面试深度拆解"
 draft: false

@@ -2,6 +2,7 @@
 title: "现代高性能内存分配器架构：从 glibc ptmalloc 锁竞争到 jemalloc 与 mimalloc 线程局部缓存"
 description: "深度拆解现代高并发服务（如 Envoy、Redis、TiKV、ClickHouse）底层核心内存分配器（Memory Allocator）的系统设计与生产调优。从操作系统 brk 与 mmap 的内核级锁争用与 TLB 击落（Shootdown）代价，推导 glibc ptmalloc 在多核服务器下的 Arena 互斥锁瓶颈与外碎片黑洞；详解 jemalloc 多阶分级（Size Classes）、无锁线程缓存（tcache）、Slab 位图元数据外置与衰减式脏页清退（Decay Purging）；深入剖析 mimalloc 自由链表分片（Free-list Sharding）与跨线程释放无锁原子推入设计；给出生产级内存泄漏与透明大页（THP）毛刺排查全套实战方案。"
 publishedAt: "2026-06-06"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "内存分配器", "jemalloc", "mimalloc", "Linux内核", "性能工程"]
 category: "面试深度拆解"
 draft: false

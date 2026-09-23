@@ -11,6 +11,7 @@ tags:
   - "Megatron-LM"
   - "DeepSpeed"
   - "GPU Cluster"
+series: "前沿大模型训练与全栈 Infra 解密"
 ---
 
 > **TL;DR：**

@@ -4,6 +4,7 @@ description: "由浅入深解析大模型推理引擎（vLLM）的灵魂支柱 P
 publishedAt: "2026-06-26"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "PagedAttention"

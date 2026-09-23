@@ -2,6 +2,7 @@
 title: "分布式事务的终局决战：从 2PC 阻塞挂起到 TCC 悬挂防御与 Transactional Outbox"
 description: "深度拆解微服务与异构存储环境下分布式事务的底层一致性拓扑与工程演进。从 Jim Gray 1978 开山论文 2PC 两阶段提交的同步阻塞与单点脑裂死穴，到 Garcia-Molina 1987 Saga 长事务补偿状态机与隔离性缺失；从 TCC（Try-Confirm-Cancel）业务资源预留、空回滚、业务悬挂的防御矩阵，到基于 CDC 与 Debezium 的 Transactional Outbox 最终一致性最佳实践。"
 publishedAt: "2026-05-21"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式事务", "2PC", "TCC", "Saga", "Transactional Outbox"]
 category: "面试深度拆解"
 draft: false

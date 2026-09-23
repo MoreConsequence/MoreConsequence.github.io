@@ -2,6 +2,7 @@
 title: "生产级分布式向量数据库架构：从存算分离到流式不可变段与混合检索 CBO"
 description: "深度拆解百亿级高维向量检索与大模型 RAG 架构下，生产级分布式向量数据库（如 Milvus 2.x、Qdrant、Pinecone）的系统设计。剖析从单机 FAISS 内存库向多租户大规模分布式系统的演进路径；详解流式 WAL（Growing Segment）与后台不可变段（Sealed Segment）的生命周期转换；推导 HNSW 内存膨胀物理瓶颈与 DiskANN / PQ 混合存储架构；深入剖析标量过滤与向量检索在动态成本优化器（CBO）下的单阶段掩码遍历与两阶段两路归并实现。"
 publishedAt: "2026-05-31"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "向量数据库", "HNSW", "RAG", "分布式存储"]
 category: "面试深度拆解"
 draft: false

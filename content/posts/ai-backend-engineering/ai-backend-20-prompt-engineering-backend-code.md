@@ -4,6 +4,7 @@ description: "打破‘提示词就是找感觉聊天’的业余偏见，从严
 publishedAt: "2026-07-01"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Prompt Engineering"

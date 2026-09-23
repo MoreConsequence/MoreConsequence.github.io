@@ -4,6 +4,7 @@ description: "破除‘大模型天然不可测’的工程迷思，专为研发
 publishedAt: "2026-07-03"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Testing"

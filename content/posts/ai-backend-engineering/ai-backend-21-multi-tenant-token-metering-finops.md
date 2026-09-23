@@ -4,6 +4,7 @@ description: "专为 SaaS 与企业级平台后端工程师打造的 AI 成本�
 publishedAt: "2026-07-02"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "FinOps"

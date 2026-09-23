@@ -2,6 +2,7 @@
 title: "实时多人协同文档系统架构：从操作转换（OT）到 CRDT 数学收敛与因果树"
 description: "深度拆解百万级并发实时协同编辑系统的底层架构演进。从 Ellis & Gibbs 1989 开山之作操作转换（Operational Transformation, OT）与 Jupiter 中心化定序器模型，到 Marc Shapiro 2011 奠基的无冲突复制数据类型（CRDT）半格数学收敛证明，深入剖析字符位置标识空间分裂、Yjs/Automerge 块级游程压缩与富文本并发撤销重做（Undo/Redo）的工业级实现。"
 publishedAt: "2026-05-15"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "协同文档", "CRDT", "OT算法", "分布式一致性"]
 category: "面试深度拆解"
 draft: false

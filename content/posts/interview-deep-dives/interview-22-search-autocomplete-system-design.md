@@ -2,6 +2,7 @@
 title: 面试官：如何设计千万级搜索自动补全系统？（从 Trie 字典树、节点 Top-K 空间换时间到离线原子切表与实时热词）
 description: 深度拆解支撑千万级并发搜索建议的自动补全（Search Autocomplete / Typeahead Suggestion）系统架构设计（参考 Alex Xu 系统设计精要第 13 章及 Google Suggest、Baidu、Amazon 真实工业演进）：剖析关系型数据库 LIKE 前缀查询在深度排序下的 I/O 破产；推导 Edward Fredkin 1960 年开山 Trie 字典树的数据结构本质；深入推导出为什么必须在节点级预存 Top-K 列表以将检索复杂度由子树 DFS 压缩至 O(L) 常数时间；并给出海量 Unicode 汉字内存压缩、离线批处理快照构建原子指针翻转、与外挂 Redis 滑动窗口实时突发热词的工业级全景架构。
 publishedAt: 2026-05-08
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "搜索补全", "Trie树", "字典树", "Top-K", "搜索引擎", "高并发"]
 category: 面试深度拆解
 draft: false

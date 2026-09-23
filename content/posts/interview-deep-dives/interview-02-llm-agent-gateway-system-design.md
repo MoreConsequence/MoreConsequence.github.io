@@ -2,6 +2,7 @@
 title: 面试官：如何设计支撑千万级流量的 LLM 智能体网关？（从 Radix Tree 前缀缓存路由、流式 SSE 背压到 Token 预算动态拦截）
 description: 深度拆解大模型智能体网关的核心系统设计：为何传统 Envoy/Kong 轮询会导致 KV Cache 击穿与显存雪崩？剖析基于 Radix Tree 的前缀缓存感知路由、流式 SSE 反应式背压与僵尸连接熔断、以及两阶段预扣对账的 Token Leaky Bucket 限流引擎。
 publishedAt: 2026-04-18
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "LLM", "网关架构", "KV Cache", "Radix Tree", "流式背压"]
 category: 面试深度拆解
 draft: false

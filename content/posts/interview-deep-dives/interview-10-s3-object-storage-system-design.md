@@ -2,6 +2,7 @@
 title: 面试官：如何设计高可用高持久的 S3 分布式对象存储系统？（元数据分离、小文件合并与纠删码 Erasure Coding 权衡）
 description: 深度拆解支撑 Exabyte 级海量数据的分布式对象存储系统架构（参考 Alex Xu 系统设计精要第 24 章与 Facebook Haystack / AWS S3 真实设计）：剖析为何传统 POSIX 文件系统在海量小文件下全面崩溃？深入推导元数据与数据面解耦、小文件追加打包至大数据块（Volume Chunk）的索引机制、以及 3 副本与纠删码（Reed-Solomon Erasure Coding）在耐久度、存储成本与网络重构带宽之间的物理权衡。
 publishedAt: 2026-04-26
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "对象存储", "AWS S3", "纠删码", "Haystack", "分布式存储"]
 category: 面试深度拆解
 draft: false

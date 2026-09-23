@@ -2,6 +2,7 @@
 title: 面试官：如何设计超低延迟证券撮合交易系统（Stock Exchange）？LMAX Disruptor、单线程内存撮合与确定性重放
 description: 深度拆解百万 QPS、微秒级延迟的证券撮合交易系统设计（参考 Alex Xu 系统设计精要与 NASDAQ/LMAX 真实架构）：为何数据库事务与分布式两阶段提交在撮合面前彻底失效？深入剖析基于定序器（Sequencer）的严格单调全局定序、LMAX Disruptor 无锁环形队列与 CPU 缓存行对齐、单核单线程纯内存撮合状态机、以及 WAL 顺序日志与热备确定性重放（Deterministic Replay）。
 publishedAt: 2026-04-24
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "撮合引擎", "LMAX Disruptor", "无锁队列", "高频交易", "确定性重放"]
 category: 面试深度拆解
 draft: false

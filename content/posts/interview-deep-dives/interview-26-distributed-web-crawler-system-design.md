@@ -2,6 +2,7 @@
 title: "百亿级分布式网络爬虫系统架构：从 Mercator 礼貌性 Frontier 到布隆去重与陷阱防御"
 description: "深度拆解百亿级网页分布式网络爬虫的端到端系统架构。从 Compaq SRC Mercator 经典论文的两级 URL Frontier（优先级与礼貌性调度）拓扑，到百亿 URL 布隆过滤器 18GB 内存数学推导与 SimHash 近似网页内容去重，再到异步 DNS 解析优化与蜘蛛陷阱防御体系。"
 publishedAt: "2026-05-12"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "网络爬虫", "布隆过滤器", "分布式系统", "高并发"]
 category: "面试深度拆解"
 draft: false

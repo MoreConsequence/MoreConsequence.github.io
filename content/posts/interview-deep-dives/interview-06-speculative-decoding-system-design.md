@@ -2,6 +2,7 @@
 title: 面试官：如何在大模型推理服务中设计投机采样（Speculative Decoding）系统？草稿模型、Tree Attention 与吞吐倒挂陷阱
 description: 深度拆解大模型推理加速的最核心系统设计考点：自回归解码的 HBM 显存带宽墙物理根因；修正拒绝采样（Modified Rejection Sampling）的数学无损证明；Tree Attention 树状多路径因果掩码设计；以及高并发大 Batch Size 下为何会出现“吞吐倒挂”现象，如何构建自适应熔断门控。
 publishedAt: 2026-04-22
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "LLM", "推理加速", "投机采样", "Tree Attention", "Roofline"]
 category: 面试深度拆解
 draft: false

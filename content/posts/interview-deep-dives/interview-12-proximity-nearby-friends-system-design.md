@@ -2,6 +2,7 @@
 title: 面试官：如何设计千万级“附近的人”与高并发实时位置系统？（从经纬度多维索引困境、GeoHash、Google S2 希尔伯特曲线到百万 WebSocket 移动广播降噪）
 description: 深度拆解支撑千万级移动用户的实时位置与“附近的人”系统设计（参考 Alex Xu 系统设计精要第 16、17 章及 Uber/微信位置架构）：剖析为何传统关系型数据库复合索引在经纬度范围查询下必然失效？深入推导空间填充曲线（Space-Filling Curves）从 Morton Z-Order 码（GeoHash）到 Google S2 希尔伯特曲线的数学演进与降维投影；系统性解决每秒数百万 GPS 上报与好友实时移动带来的“下行 WebSocket 广播雪崩”，给出网格跃迁订阅、死区滤波与分层 Redis 缓存的工业级架构。
 publishedAt: 2026-04-28
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "LBS", "GeoHash", "Google S2", "希尔伯特曲线", "WebSocket", "高并发"]
 category: 面试深度拆解
 draft: false

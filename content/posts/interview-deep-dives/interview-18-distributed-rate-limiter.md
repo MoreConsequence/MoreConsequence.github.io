@@ -2,6 +2,7 @@
 title: 面试官：如何设计千万级分布式限流系统？（从固定窗口突变、滑动日志内存膨胀、令牌桶到 Redis Lua 与 Netflix 自适应动态限流）
 description: 深度拆解支撑千万级流量与微服务防护的分布式限流器（Distributed Rate Limiter）架构设计（参考 Alex Xu 系统设计精要第 4 章及 Stripe、Cloudflare、Netflix Concurrency Limits 真实工业演进）：剖析固定窗口的 2 倍临界突发缺陷、滑动窗口日志的内存爆炸痛点；推导令牌桶（Token Bucket）与漏桶的物理数学本质及惰性时间戳刷新（Lazy Refill）；详解 Redis + Lua 集群原子扣减与本地批量预取的架构平衡；并从第一性原理推导基于 TCP BBR 与利特尔法则（Little's Law）的 Netflix 动态自适应限流。
 publishedAt: 2026-05-04
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式限流", "令牌桶", "Redis Lua", "高并发", "自适应限流", "微服务架构"]
 category: 面试深度拆解
 draft: false

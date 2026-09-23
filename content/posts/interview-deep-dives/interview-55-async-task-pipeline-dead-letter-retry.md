@@ -2,6 +2,7 @@
 title: "大规模异步任务流水线与死信治理：从延迟队列重试风暴到全抖动退避与毒丸隔离"
 description: "深度拆解百万 QPS 异步任务、分布式工作流与消息驱动架构下的重试机制与死信治理系统设计。推导下游短暂抖动引发千倍并发重试风暴（Retry Storm / Self-DDoS）的数学机理；形式化证明全抖动指数退避（Full Jitter Exponential Backoff）消除波峰谐振的时序分布；剖析导致消费者无限崩溃死循环的“毒丸任务（Poison Pill）”与死信队列（DLQ）生命周期；对比 Redis ZSET、RocketMQ 多阶延迟队列与分层时间轮的物理实现；给出 Kubernetes 环境下基于 SIGTERM 的飞航任务无损平滑排空（Graceful Drain）最佳实践。"
 publishedAt: "2026-06-10"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "异步任务", "消息队列", "重试风暴", "死信队列", "分布式系统"]
 category: "面试深度拆解"
 draft: false

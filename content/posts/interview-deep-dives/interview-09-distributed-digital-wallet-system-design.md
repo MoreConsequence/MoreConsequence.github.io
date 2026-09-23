@@ -2,6 +2,7 @@
 title: 面试官：如何设计支撑百万 QPS 的分布式数字钱包系统？（从 Luca Pacioli 复式记账公理、Pat Helland 账本演进到热点分段钱包）
 description: 深度拆解金融级分布式数字钱包与核心账务系统设计（参考 Alex Xu 架构精要第 27 章与顶级支付中台实践）：从 1494 年 Luca Pacioli 复式记账数学公理、2007 年 Pat Helland 叛逆者论文对 2PC 强一致的解构，到不可变事件溯源（Event Sourcing）流水账本、热点商户分段钱包（Sharded Wallet）防死锁并发控制、以及资金绝对守恒异步对账系统。
 publishedAt: 2026-04-25
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "数字钱包", "复式记账", "分布式事务", "Pat Helland", "分段锁"]
 category: 面试深度拆解
 draft: false

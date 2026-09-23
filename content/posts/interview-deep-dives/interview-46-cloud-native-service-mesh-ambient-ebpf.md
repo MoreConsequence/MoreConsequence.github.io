@@ -2,6 +2,7 @@
 title: "服务网格 Service Mesh 的终局演进：从 Sidecar 内存税到 Istio Ambient 与 eBPF 内核直通"
 description: "深度拆解云原生服务网格（Service Mesh）从传统 Pod 内置 Sidecar 模式向无 Sidecar（Sidecarless）架构的工业级演进。推导万级 Pod 下 Envoy 边车数 TB 级内存税（Sidecar Tax）与双跳协议栈时延开销；剖析 Istio Ambient Mesh 将 L4 安全传输（ztunnel / HBONE）与 L7 复杂治理（Waypoint Proxy）解耦的分层设计；详解 Cilium 借助 Linux eBPF sockops 与 sk_msg 绕过宿主机 TCP/IP 栈的内核级零拷贝直通机制；对比多租户安全边界与生产落地选型全景。"
 publishedAt: "2026-06-01"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "ServiceMesh", "Istio", "eBPF", "云原生", "Kubernetes"]
 category: "面试深度拆解"
 draft: false

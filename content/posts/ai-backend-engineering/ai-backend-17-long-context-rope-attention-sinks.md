@@ -4,6 +4,7 @@ description: "以直观的时钟指针物理模型，由浅入深拆解长上下
 publishedAt: "2026-06-27"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "RoPE"

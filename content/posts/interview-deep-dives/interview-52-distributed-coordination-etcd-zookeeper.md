@@ -2,6 +2,7 @@
 title: "跨数据中心高可用分布式协调服务：从 ZooKeeper 惊群治理到 etcd Raft 租约与 Fencing Token 形式化防线"
 description: "深度拆解以 ZooKeeper、etcd、Consul 为核心的分布式协调与一致性锁系统的设计与高并发生产演进。从 Zab 协议与 Raft 共识模型的选举与日志复制对比，剖析 ZooKeeper 临时顺序节点如何利用前驱监听规避惊群风暴（Herd Effect）；详解 etcd v3 基于 bbolt 的扁平 MVCC 全局单调递增版本（Revision）、gRPC 流式多路复用 Watch 与集中式租约（Lease）机制；深入推导 Martin Kleppmann 论战中 STW GC 与时钟跳变击穿分布式锁的本质，给出结合存储层单调递增隔离令牌（Fencing Token）的绝对一致性工业级闭环。"
 publishedAt: "2026-06-07"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式协调", "etcd", "ZooKeeper", "分布式锁", "共识协议"]
 category: "面试深度拆解"
 draft: false

@@ -2,6 +2,7 @@
 title: 面试官：如何设计亿级高并发实时聊天系统？（从单机百万长连接 Epoll 内存模型、惊群重连风暴到消息因果时序与读写扩散）
 description: 深度拆解支撑亿级活跃用户的即时通讯（IM）与实时聊天系统架构设计（参考 Alex Xu 系统设计精要第 12 章及微信、Discord、Slack 真实工业演进）：剖析从 C10K 到 C1000K 的网络 I/O 演进、单机百万 WebSocket/TCP 长连接的 Linux 内核参数与 Socket 缓冲区内存精算；深入探讨机房断网重连时的“惊群风暴与 TLS 握手雪崩”防御体系；推导分布式消息绝对因果时序（Causal Ordering）的设计原理，并对私聊与万人大群的“读扩散 vs 写扩散”架构做出全面权衡。
 publishedAt: 2026-04-29
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "IM", "即时通讯", "WebSocket", "Epoll", "消息时序", "分布式系统"]
 category: 面试深度拆解
 draft: false

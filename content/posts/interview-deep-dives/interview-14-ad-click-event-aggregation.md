@@ -2,6 +2,7 @@
 title: 面试官：如何设计千万级实时广告点击事件聚合系统？（从 Lambda vs Kappa 架构、Event Time 水位线到端到端 Exactly-Once）
 description: 深度拆解支撑千万级广告事件流的实时聚合计费系统设计（参考 Alex Xu 系统设计精要第 21 章及 Google Dataflow / Flink 工业演进）：剖析为何直接入库聚合会遭遇存储与计算雪崩？深入推导从双维护地狱的 Lambda 架构向统一流式的 Kappa 架构的历史演进；从第一性原理讲透 Event Time 与 Processing Time 的时钟断层、Watermark 水位线与迟到数据处理机制；并彻底攻克流处理内部状态与下游数据库（ClickHouse/MySQL）之间的端到端 Exactly-Once 财务级计费一致性。
 publishedAt: 2026-04-30
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "流计算", "Flink", "Kafka", "Kappa架构", "Watermark", "Exactly-Once"]
 category: 面试深度拆解
 draft: false

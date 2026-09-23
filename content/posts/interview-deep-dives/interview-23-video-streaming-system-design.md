@@ -2,6 +2,7 @@
 title: 面试官：如何设计超大规模视频流媒体系统？（从 YouTube 视频分块转码 DAG 流水线、HLS/DASH 自适应码率到 CDN 边缘多级分发）
 description: 深度拆解支撑数亿并发视频播放与每日海量视频上传的超大规模视频流媒体与点播系统架构（参考 Alex Xu 系统设计精要第 14 章及 YouTube、Netflix、Apple HLS 真实工业演进）：剖析大文件断点续传与元数据/视频数据解耦的物理架构；推导基于 GOP/关键帧切片的分布式转码 DAG 异步编排与算力并行化；详解 Apple HLS 与 MPEG-DASH 协议下基于客户端缓冲区与网络感知的自适应码率（ABR）平滑切换；并系统性构建三级 CDN 边缘缓存与源站防穿透策略。
 publishedAt: 2026-05-09
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "视频点播", "流媒体", "YouTube", "HLS", "MPEG-DASH", "CDN", "自适应码率"]
 category: 面试深度拆解
 draft: false

@@ -2,6 +2,7 @@
 title: 面试官：向量数据库中的元数据过滤（Filtered Vector Search）为什么会击穿 HNSW 索引？Pre-filtering、Post-filtering 与单阶段图遍历（Single-Stage / ACORN）如何权衡？
 description: 深度解析现代化 RAG 与向量检索系统的核心面试考点：为何后过滤（Post-filtering）在低选择率下召回率暴跌至 0？为何朴素前过滤（Pre-filtering）会导致小世界图断连与孤岛灾难？详细剖析工业级单阶段图内遍历（ACORN 与 Qdrant 桥接遍历）的位图掩码与自适应跳步机制。
 publishedAt: 2026-04-19
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "向量数据库", "HNSW", "RAG", "ACORN", "Qdrant"]
 category: 面试深度拆解
 draft: false

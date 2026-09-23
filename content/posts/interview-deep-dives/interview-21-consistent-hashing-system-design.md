@@ -2,6 +2,7 @@
 title: 面试官：如何设计一致性哈希系统？（从模数哈希雪崩、Karger 1997 环形映射、虚拟节点方差推导到 Google Maglev 与 Jump Hash）
 description: 深度拆解分布式系统中的一致性哈希（Consistent Hashing）理论与工程演进（参考 Alex Xu 系统设计精要第 5 章及 Akamai、Google Maglev、Jump Consistent Hash 真实工业落地）：剖析传统取模哈希扩缩容引发的 90% 数据雪崩物理根源；数学推导 Karger 1997 开山环形拓扑如何将数据迁移量压制在 1/N；深入推导虚拟节点数量与负载倾斜标准差的收敛方程；并对现代前沿方案做出对比：Google Maglev 的 O(1) 查表置换算法与仅需 5 行 C 语言代码、零内存开销的 Jump Consistent Hash。
 publishedAt: 2026-05-07
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "一致性哈希", "分布式缓存", "负载均衡", "Google Maglev", "JumpHash", "算法推导"]
 category: 面试深度拆解
 draft: false

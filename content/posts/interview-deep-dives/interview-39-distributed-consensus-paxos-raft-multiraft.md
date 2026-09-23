@@ -2,6 +2,7 @@
 title: "分布式共识协议的工业演进：从 Paxos 不可言说的悲剧到 Raft 与 Multi-Raft 分区拓扑"
 description: "深度拆解分布式系统核心基石共识算法（Consensus Algorithms）的理论演进与工业落地。从 Leslie Lamport 兼职国会经典论文 Basic/Multi-Paxos 在工程落地中的断层与“无法言说的复杂性”（Paxos Made Live），到 Ongaro 2014 奠基的 Raft 状态机拆解、随机化选举与日志安全性证明；深入剖析 ReadIndex 线性一致性读与 Lease Read 优化，解构 TiKV/CockroachDB 千万级 Region 下的 Multi-Raft 分区拓扑、心跳风暴抑制与动态分裂合并。"
 publishedAt: "2026-05-25"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式共识", "Raft", "Paxos", "Multi-Raft", "NewSQL"]
 category: "面试深度拆解"
 draft: false

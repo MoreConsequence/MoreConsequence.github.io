@@ -2,6 +2,7 @@
 title: "千万级时序监控与告警系统架构：从 Facebook Gorilla 压缩到倒排索引与降采样引擎"
 description: "深度拆解千万级活跃时间线监控与告警系统的底层架构。从 Facebook Gorilla VLDB 2015 论文的时间戳二阶差分与 IEEE 754 浮点数 XOR 压缩算法，到 Prometheus TSDB 倒排索引与 LSM 块组织，再到多分辨率降采样与防抖告警引擎，解析高基数爆炸与秒级实时告警的工业级解决方案。"
 publishedAt: "2026-05-11"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "时序数据库", "Prometheus", "Gorilla", "监控告警"]
 category: "面试深度拆解"
 draft: false

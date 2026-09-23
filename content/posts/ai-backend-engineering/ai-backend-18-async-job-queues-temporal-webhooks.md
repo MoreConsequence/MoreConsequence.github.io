@@ -4,6 +4,7 @@ description: "针对大模型推理与多步 Agent 任务动辄 30 秒至数分�
 publishedAt: "2026-06-29"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Async Architecture"

@@ -4,6 +4,7 @@ description: "深度剖析生产级 AI 网关的多模型级联路由（Model Ca
 publishedAt: "2026-06-25"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Model Routing"

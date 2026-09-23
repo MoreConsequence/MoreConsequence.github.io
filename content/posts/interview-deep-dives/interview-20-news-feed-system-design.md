@@ -2,6 +2,7 @@
 title: 面试官：如何设计千万级社交动态流（News Feed）系统？（从推拉模式物理极限、大 V 粉丝写放大雪崩到混合模型与游标分页）
 description: 深度拆解支撑千万级日活的社交动态流（News Feed / Timeline）系统架构设计（参考 Alex Xu 系统设计精要第 11 章及 Twitter/X、微博、Instagram 真实工业演进）：剖析推模式（写扩散）在无标度网络幂律分布（Power-Law）下的“大 V 粉丝写放大雪崩”与拉模式（读扩散）的多路归并延迟泥潭；推导现代工业界主流的“冷热分级混合推拉模型”；详解 Redis ZSET 内存精算与活跃用户滑动窗口缓存；并从物理底层彻底攻克传统 OFFSET 深度分页的重复跳步缺陷，给出基于双游标（Cursor-Based Pagination）的高性能分页架构。
 publishedAt: 2026-05-06
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "Feed流", "News Feed", "写扩散", "读扩散", "游标分页", "Redis ZSET"]
 category: 面试深度拆解
 draft: false

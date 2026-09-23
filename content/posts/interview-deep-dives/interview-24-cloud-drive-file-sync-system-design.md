@@ -2,6 +2,7 @@
 title: 面试官：如何设计分布式云盘与文件同步系统？（从 Google Drive 块级分块、Rabin 滚动指纹增量同步到秒传与冲突分支）
 description: 深度拆解支撑海量多端文件秒级同步的分布式云盘系统架构设计（参考 Alex Xu 系统设计精要第 15 章及 Google Drive、Dropbox、Rsync 真实工业演进）：剖析整文件同步在微小修改下的带宽灾难；推导固定大小分块（Fixed-Size Chunking）在字节插入下的“边界偏移失效”，并引入基于 Rabin 指纹的内容定义分块（CDC）；详解基于 SHA-256 内容寻址存储（CAS）的跨租户“零网络传输秒传”机制；并从第一性原理构建客户端差异同步状态机与版本冲突分叉（Conflicted Copy）的兜底闭环。
 publishedAt: 2026-05-10
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "云盘系统", "文件同步", "Google Drive", "Dropbox", "Rsync", "分块去重", "内容寻址"]
 category: 面试深度拆解
 draft: false

@@ -4,6 +4,7 @@ description: "深度剖析智能体（Agent）在真实企业环境调用外部�
 publishedAt: "2026-06-24"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Agent"

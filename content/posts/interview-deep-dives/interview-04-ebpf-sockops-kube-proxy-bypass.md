@@ -2,6 +2,7 @@
 title: 面试官：Cilium 为什么能彻底干掉 kube-proxy？深入 eBPF sockops 与 sk_msg 套接字直通原理
 description: 深度拆解云原生网络与内核高性能转发的核心面试考点：为何传统 iptables 在数万 Service 下遭遇线性 O(N) 规则匹配与 xtables_lock 全局锁雪崩？剖析 Cilium 如何通过 cgroup/connect4 实现系统调用级 L4 负载均衡，以及如何利用 eBPF sockops 与 sk_msg 彻底绕过整个 TCP/IP 协议栈与 veth 网卡驱动，实现近乎 IPC 级的套接字直通。
 publishedAt: 2026-04-20
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "eBPF", "Cilium", "Kubernetes", "内核网络", "sockops"]
 category: 面试深度拆解
 draft: false

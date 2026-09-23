@@ -2,6 +2,7 @@
 title: "毫秒级广告实时竞价系统架构：从 100ms 硬超时到二阶价格拍卖与平滑预算控速"
 description: "深度拆解高吞吐程序化广告实时竞价（Real-Time Bidding, RTB）与广告交易平台（Ad Exchange）的工业级架构。从 OpenRTB 规范下 100ms 端到端硬超时的毫秒级时间预算精算，到千万级出站扇出（Fan-out）与非阻塞异步事件循环；从 William Vickrey 1961 奠基的二阶价格拍卖（GSP）博弈论到现代一阶拍卖平滑出价（Bid Shading）；解构基于 PID 控制理论的平滑预算消耗（Budget Pacing）算法与高并发防刷反作弊防线。"
 publishedAt: "2026-05-28"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "实时竞价", "RTB广告系统", "博弈论", "高并发系统"]
 category: "面试深度拆解"
 draft: false

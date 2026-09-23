@@ -2,6 +2,7 @@
 title: "新一代 LSM-Tree 存储引擎与 SSD 物理调优：从 RUM 猜想到 RocksDB 锁死与 ZNS 破局"
 description: "深度拆解现代分布式数据库（TiKV、CockroachDB、Cassandra）底层通用存储引擎 LSM-Tree 的系统设计与工业级调优。从 1996 年 O'Neil 经典论文到现代 NVMe SSD 闪存物理特性（Erase-before-Write）；深入推导读、写、空间放大三难绝境（RUM 猜想）；详解无锁并发跳表（SkipList）、布隆过滤器数学推导与 Leveled vs Universal 压实状态机；定位写停顿（Write Stall）与墓碑扫描墙（Tombstone Wall）的物理成因；剖析软件与硬件协同设计中通过 Zoned Namespaces (ZNS) 规避 SSD 二次垃圾回收的终极解法。"
 publishedAt: "2026-06-03"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "LSM-Tree", "RocksDB", "存储引擎", "SSD", "数据库内核"]
 category: "面试深度拆解"
 draft: false

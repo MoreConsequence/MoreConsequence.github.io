@@ -2,6 +2,7 @@
 title: "现代大规模湖仓一体架构：从 Hive 目录痛点到 Apache Iceberg 快照与 ACID 事务"
 description: "深度拆解大数据分析从传统数据湖（Hive Metastore）向现代湖仓一体（Lakehouse / Apache Iceberg、Delta Lake）演进的核心系统设计。推导云原生对象存储（AWS S3 / OSS）下传统目录分区模型在数百万分区时的 O(N) LIST 性能崩溃与缺少原子 Rename 的物理死穴；深入剖析 Iceberg 四层树状不可变元数据结构（Catalog -> Table Metadata -> Manifest List -> Manifest File -> Data Files）；详解基于原子 CAS 交换的乐观并发控制（OCC）ACID 事务提交状态机；对比 Copy-on-Write 与 Merge-on-Read（Position/Equality Delete）的读写放大权衡，并给出隐式分区演进（Partition Evolution）与 Z-Order 聚类压实的工业级实践。"
 publishedAt: "2026-06-09"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "湖仓一体", "Apache Iceberg", "大数据", "存储架构", "分布式系统"]
 category: "面试深度拆解"
 draft: false

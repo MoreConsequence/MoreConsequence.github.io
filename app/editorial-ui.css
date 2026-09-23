@@ -4367,3 +4367,687 @@ body::before {
     margin-left: 0.1rem;
   }
 }
+
+/* ==========================================================================
+   全新架构重构：五大技术支柱 (Pillars)、体系化专栏与主题标签重排版
+   ========================================================================== */
+
+/* 1. 首页五大技术支柱网格 (Home Pillars Grid) */
+.pillars-section {
+  padding-bottom: 2rem;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.pillar-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pillar-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.pillar-card[data-pillar="ai-systems"]::before { background: #7c3aed; }
+.pillar-card[data-pillar="distributed-systems"]::before { background: #2563eb; }
+.pillar-card[data-pillar="kernel-performance"]::before { background: #059669; }
+.pillar-card[data-pillar="network-iot"]::before { background: #d97706; }
+.pillar-card[data-pillar="architecture-practice"]::before { background: #dc2626; }
+
+.pillar-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.08);
+}
+
+.pillar-card:hover::before {
+  opacity: 1;
+}
+
+.pillar-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.pillar-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.pillar-count-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--text-secondary);
+}
+
+.pillar-card-body h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.pillar-en {
+  display: block;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.pillar-card-body p {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 1.25rem;
+}
+
+.pillar-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.pillar-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pillar-topic-pill {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  background: color-mix(in srgb, var(--surface-muted, #eee) 70%, transparent);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.pillar-arrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.pillar-card:hover .pillar-arrow {
+  transform: translateX(3px);
+}
+
+/* 2. 文章归档页 (Writing Archive) 技术板块 Tab 筛选 */
+.writing-archive-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.pillar-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pillar-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.pillar-tab-btn:hover {
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+  color: var(--text-primary);
+}
+
+.pillar-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.pillar-tab-btn .tab-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.pillar-tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.archive-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .archive-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.toolbar-info {
+  flex: 1;
+}
+
+.pillar-spotlight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.spotlight-icon {
+  font-size: 1.4rem;
+}
+
+.pillar-spotlight-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.spotlight-en {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.spotlight-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 680px;
+}
+
+.toolbar-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.toolbar-search {
+  position: relative;
+  min-width: 260px;
+}
+
+.filter-search-input {
+  width: 100%;
+  padding: 0.55rem 2rem 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-bg, var(--surface));
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-search-input:focus {
+  border-color: var(--accent);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* 3. 系列专栏页 (Series Hub) 5 大支柱分栏排版 */
+.series-hub-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.pillar-anchor-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.pillar-anchor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.18s ease;
+}
+
+.pillar-anchor-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pillar-anchor-link small {
+  font-family: var(--font-mono, monospace);
+  opacity: 0.7;
+}
+
+.pillar-series-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.pillar-series-section {
+  scroll-margin-top: 5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding-bottom: 2.5rem;
+}
+
+.pillar-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.pillar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pillar-section-icon {
+  font-size: 2rem;
+}
+
+.pillar-title-group h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pillar-subtitle-en {
+  display: block;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pillar-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+
+.pillar-section-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+  max-width: 800px;
+}
+
+.series-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.series-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.series-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.06);
+}
+
+.series-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.series-index-num {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.series-post-count {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.series-card-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.series-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+  padding-top: 0.75rem;
+}
+
+.series-arrow {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* 4. 标签索引页 (Tags Taxonomy) 分层重排版 */
+.tags-page-redesign {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.section-subtitle-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-subtitle-bar h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.curated-pillar-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.curated-pillar-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.curated-box-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.curated-box-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.curated-tags-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.curated-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: color-mix(in srgb, var(--border) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  transition: all 0.16s ease;
+}
+
+.curated-tag-pill:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.curated-tag-pill:hover .pill-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.pill-count {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  color: var(--text-secondary);
+}
+
+/* 全量标签浏览器 */
+.tags-explorer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tags-search-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.tags-search-input {
+  width: 100%;
+  padding: 0.65rem 2.5rem 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-bg, var(--surface));
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.tags-search-input:focus {
+  border-color: var(--accent);
+}
+
+.tags-filter-radios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.filter-label {
+  color: var(--text-muted);
+}
+
+.tag-filter-chip {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tag-filter-chip:hover {
+  background: color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.tag-filter-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.tags-results-header {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.tags-grid-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.6rem;
+}
+
+.tag-pill-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.18s ease;
+}
+
+.tag-pill-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.tag-pill-card .tag-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.tag-pill-card .tag-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}

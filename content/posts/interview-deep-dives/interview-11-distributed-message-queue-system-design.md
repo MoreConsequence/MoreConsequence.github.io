@@ -2,6 +2,7 @@
 title: 面试官：如何设计高吞吐低延迟的分布式消息队列？（从 Zero-Copy sendfile、PageCache 脏页回写到 Kafka 与 Pulsar 存储计算分离演进）
 description: 深度拆解分布式消息队列系统设计面经：从 JVM 堆内存与 GC 停顿的物理极限，剖析 Linux PageCache 顺序写与 DMA 零拷贝（sendfile）底层原理；深入探讨 Kafka 传统存算一体架构在分区重平衡（Rebalance Storm）与本地磁盘绑定的物理痛点，并演进至 Apache Pulsar 基于 BookKeeper 的存储计算分离及分层存储（Tiered Storage）现代云原生架构。
 publishedAt: 2026-04-27
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "消息队列", "Kafka", "Apache Pulsar", "Zero-Copy", "PageCache", "分布式存储"]
 category: 面试深度拆解
 draft: false

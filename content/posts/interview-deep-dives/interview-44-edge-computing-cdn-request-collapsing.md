@@ -2,6 +2,7 @@
 title: "边缘计算与全球 CDN 多级缓存架构：从 BGP Anycast 就近接入到请求折叠与 Edge Serverless 演进"
 description: "深度拆解全球分布式 CDN（Content Delivery Network）与现代边缘计算（Edge Computing）的核心系统设计。从光速物理极限与 BGP Anycast 全球选路机制，到多级屏蔽缓存（Origin Shielding）的扇出收敛数学；推导惊群效应下请求折叠（Request Collapsing / SingleFlight）的并发状态机与 RFC 7233 大文件 Range 切片流水线；剖析 Surrogate-Key 毫秒级全球打标清退与基于 V8 Isolate / Wasm 的边缘可编程 Serverless 架构。"
 publishedAt: "2026-05-30"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "CDN", "边缘计算", "缓存架构", "分布式系统"]
 category: "面试深度拆解"
 draft: false

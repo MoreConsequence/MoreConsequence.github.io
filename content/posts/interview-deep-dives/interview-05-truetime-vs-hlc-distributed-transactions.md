@@ -2,6 +2,7 @@
 title: 面试官：分布式事务中的时钟困境——Google Spanner 的 TrueTime 为什么需要等候 $\pm\epsilon$？混合逻辑时钟（HLC）真的能替代物理时钟吗？
 description: 深度拆解分布式数据库（Spanner、CockroachDB、TiDB）最核心的时间戳与一致性面试难题：为何纯物理 NTP 时钟无法保证因果一致性？深入推导 Spanner TrueTime 置信区间与 Commit-Wait 等候 2ε 窗口的线性一致性（External Consistency）数学证明；剖析混合逻辑时钟（HLC）面对隐式因果（Out-of-band Causality）时的失效边界与 Read Restart 不确定窗口代价。
 publishedAt: 2026-04-21
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式系统", "分布式事务", "Google Spanner", "TrueTime", "HLC"]
 category: 面试深度拆解
 draft: false

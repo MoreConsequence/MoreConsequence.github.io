@@ -2,6 +2,7 @@
 title: "百亿级基数统计与频次估算系统架构：从 HyperLogLog 伯努利试验到 Count-Min Sketch"
 description: "深度拆解大数据与高并发场景下百亿级基数统计（Cardinality Estimation）与重尾频次（Heavy Hitters）估算架构。从 Philippe Flajolet 2007 经典论文的伯努利试验与调和平均数数学推导（12KB 内存统计百亿 UV、0.81% 误差率），到 Cormode 2005 提出的 Count-Min Sketch 频次极值估计与保守更新优化，再到 Redis 稀疏/稠密自适应存储与 Flink 流式多维合并流水线。"
 publishedAt: "2026-05-18"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "大数据", "HyperLogLog", "Count-Min Sketch", "概率数据结构"]
 category: "面试深度拆解"
 draft: false

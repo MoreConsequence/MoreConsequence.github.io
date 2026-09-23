@@ -1,5 +1,6 @@
 import type { PostSource } from "./types";
 import { decodeRouteSegment } from "@/lib/site-links";
+import { TOP_CURATED_TAGS } from "./taxonomy";
 
 export type TagSummary = {
   name: string;
@@ -31,6 +32,48 @@ export function collectTags(posts: PostSource[]): TagSummary[] {
       b.latestPublishedAt.localeCompare(a.latestPublishedAt) ||
       a.name.localeCompare(b.name, "zh-CN"),
   );
+}
+
+export function collectCuratedTags(posts: PostSource[]): TagSummary[] {
+  const allTags = collectTags(posts);
+  const curatedSet = new Set(TOP_CURATED_TAGS.map((t) => t.toLowerCase()));
+  return allTags.filter((t) => curatedSet.has(t.name.toLowerCase()));
+}
+
+export type AlphabeticalTagGroup = {
+  letter: string;
+  tags: TagSummary[];
+};
+
+export function groupTagsAlphabetically(tags: TagSummary[]): AlphabeticalTagGroup[] {
+  const map = new Map<string, TagSummary[]>();
+
+  tags.forEach((tag) => {
+    const firstChar = tag.name.charAt(0).toUpperCase();
+    // 区分字母与非字母（中文等统一归入其拼音或 # 组）
+    let groupKey = "#";
+    if (/[A-Z]/.test(firstChar)) {
+      groupKey = firstChar;
+    } else {
+      if (tag.name.startsWith("Go")) groupKey = "G";
+      else if (tag.name.startsWith("Node")) groupKey = "N";
+      else if (tag.name.startsWith("Type")) groupKey = "T";
+      else if (tag.name.startsWith("Linux")) groupKey = "L";
+      else groupKey = "核心技术";
+    }
+
+    if (!map.has(groupKey)) {
+      map.set(groupKey, []);
+    }
+    map.get(groupKey)!.push(tag);
+  });
+
+  return [...map.entries()]
+    .map(([letter, groupTags]) => ({
+      letter,
+      tags: groupTags.sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => a.letter.localeCompare(b.letter));
 }
 
 export function decodeTag(value: string) {

@@ -2,6 +2,7 @@
 title: "现代高性能 RPC 框架内核解密：从 gRPC HTTP/2 多路复用与 Protobuf 到 FlatBuffers 零反序列化"
 description: "深度拆解微服务大规模拓扑与高并发数据密集型系统下，新一代分布式 RPC 框架的核心底层架构。剖析数据中心中吞噬 30% CPU 算力的“序列化税（Serialization Tax）”；对比 Protobuf Varint/ZigZag 紧凑编码与 FlatBuffers 基于 vtable 偏移指针就地内存访问（Zero-Copy In-Place Read）的代数实现；详解 gRPC 基于 HTTP/2 的二进制分帧、连接/流双级滑窗背压流控与 TCP 队头阻塞缺陷；深入定位 Netty EventLoop 线程饥饿死锁，并给出级联超时传递（Deadline Propagation）与 gRPC Channel 连接池化的生产最佳实践。"
 publishedAt: "2026-06-08"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "RPC", "gRPC", "Protobuf", "FlatBuffers", "网络协议", "微服务"]
 category: "面试深度拆解"
 draft: false

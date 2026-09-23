@@ -2,6 +2,7 @@
 title: "全链路分布式追踪系统架构：从 Google Dapper 论文到 W3C TraceContext 与尾部采样"
 description: "深度拆解微服务全链路分布式追踪（Distributed Tracing）与可观测性系统的底层架构。从 Google Dapper 2010 论文的 Span/Trace 树形抽象与带外低损上报，到 W3C Trace Context 跨进程上下文透传工业标准；深入推导传统头部采样（Head-based）在异常排障中的“漏网死角”，解构基于 OpenTelemetry Collector 的尾部延迟决策采样（Tail-based Sampling）流水线与 ClickHouse 亿级 Span 列式存储引擎。"
 publishedAt: "2026-05-20"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "可观测性", "分布式追踪", "Google Dapper", "OpenTelemetry"]
 category: "面试深度拆解"
 draft: false

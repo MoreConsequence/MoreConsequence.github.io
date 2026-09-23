@@ -4,6 +4,7 @@ description: "专为掌握 SQL、MySQL 与 PostgreSQL 的后端工程师量身�
 publishedAt: "2026-06-30"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "PostgreSQL"

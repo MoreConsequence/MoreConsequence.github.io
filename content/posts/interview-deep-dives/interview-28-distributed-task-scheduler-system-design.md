@@ -2,6 +2,7 @@
 title: "分布式任务调度与工作流编排系统架构：从分层时间轮到 DAG 拓扑执行与租约容灾"
 description: "深度拆解高可用分布式定时任务与工作流编排系统的工业级设计。从 Varghese & Lauck 1987 开山论文的分层时间轮（Hierarchical Timing Wheel）O(1) 调度演进，到分布式调度中心的分布式租约选举与 SKIP LOCKED 无锁抢占，再到复杂 DAG 拓扑依赖编排、分片广播流控与故障转移幂等保障。"
 publishedAt: "2026-05-14"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式调度", "时间轮", "DAG工作流", "高可用架构"]
 category: "面试深度拆解"
 draft: false

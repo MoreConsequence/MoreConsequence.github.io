@@ -22,12 +22,29 @@
 | 资深工程师面试深度拆解 | 55 | 🚀 持续深耕（覆盖分布式、云原生、AI 基础设施、海量存储与高并发，全 55 篇达成） |
 | 面向后端工程师的 AI 架构与工程实战 | 13 | ✅ 全 13 篇圆满竣工（总纲 + 五层架构体系 + 分层记忆系统 + 多智能体共识） |
 | 物联网与网络设备云平台架构实战 | 15 | ✅ 全 15 篇圆满交付（南向协议全景、C10M网关、原子回滚、海量遥测TSDB、NAT反向终端、固件OTA、增量配置同步、设备影子孪生、分布式长连接集群、零信任安全与签名、ZTP零配置上线、YANG/OpenConfig跨厂商建模、LLDP全网物理拓扑图引擎、IBN与Batfish形式化验证、IPFIX流级遥测与微突发诊断） |
+| 面向大模型与 Agent 的 AI 网关实战 | 8 | ✅ 全 8 篇圆满交付（架构总纲、SSE背压、模型动态路由、Prompt Cache亲和、Token限流、语义缓存、MCP工具网关、实时护栏） |
+| 前沿大模型训练与全栈 Infra 解密 | 5 | ✅ 全 5 篇圆满交付（3D并行拓扑、FlashAttention访存平铺、MoE专家并行、万卡无损网络RoCE/IB、2.5秒三级Checkpoint容灾） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
 ---
 
 ## 候选系列（按理解优先级排序）
+
+### S0. 面向大模型与 Agent 的 AI 网关实战【全新系列，全 8 篇圆满交付】
+
+**为什么**：传统网关（Kong/Nginx/Envoy 基础版）基于无状态 Request-Response 与 QPS 指标设计，完全接不住 Agent 长生命周期、SSE 动辄数十秒的流式长连接、Token 成本核算、Prompt Caching 亲和与工具死循环问题。贯穿云原生网关架构（Envoy Agent Router / Higress）与开源 LLM 路由调度（LiteLLM / RouteLLM / GPTCache），直击现代 AI Infra 枢纽。
+
+| 序号与主题 | 核心问题 | 开源拆解对象与验证方式 |
+| --- | --- | --- |
+| ✅ 01. 架构总览与第一性原理（`ai-gateway-01-architecture-first-principles`） | 为什么传统网关接不住 Agent？连接、内存、Token、状态与安全五大本质分水岭；两层网关模式（Tier 1 Ingress vs Tier 2 Serving） | Envoy AI Gateway (Agent Router) 控制面 CRD 与 UDS ExtProc 架构；Higress Wasm 数据面演进 |
+| ✅ 02. SSE 流式传输与长连接背压（`ai-gateway-02-sse-streaming-backpressure`） | 数十秒 Chunked Transfer 导致的缓冲区膨胀与 OOM；客户端断连孤儿请求浪费与连接耗尽 | Higress `ai-proxy` Wasm 插件源码；Envoy 流式 Buffer 水位线与 HTTP/2 Flow Control 调优 |
+| ✅ 03. 动态模型路由与降级级联（`ai-gateway-03-model-routing-fallback-cascade`） | 异构模型提供商的统一抽象；冷却状态机、Context-Window 溢出自动降级与 Pareto 最优路由 | LiteLLM `router.py` Cooldown 状态机；RouteLLM 矩阵分解与 Embedding 路由算法 |
+| ✅ 04. 前缀亲和路由与 Prompt Caching（`ai-gateway-04-prefix-aware-routing-prompt-caching`） | 轮询调度击穿 KV Cache 导致 TTFT 飙升 10 倍；网关层如何做前缀一致性哈希与 Radix Tree 状态感知 | SGLang Router / vLLM Prefix Caching 路由源码；前缀匹配度与冷热缓存迁移权衡 |
+| ✅ 05. Token 双轨自适应限流与 FinOps（`ai-gateway-05-token-aware-rate-limiting`） | QPS 限流彻底失灵；Prompt 预估与 Completion 补齐的两阶段记账；多租户防超卖 | Kong `ai-rate-limiting-advanced` 源码；Redis Lua 原子双轨令牌桶与 429 Retry-After 推算 |
+| ✅ 06. 语义缓存工程实现与假阳性陷阱（`ai-gateway-06-semantic-cache-vector-traps`） | 精确哈希 vs 向量距离的临界阈值；“开户/销户”语义反转与多租户数据泄露隔离 | GPTCache 架构与源码；向量召回相似度边界与轻量重排过滤 |
+| ✅ 07. Agent 工具代理与 MCP 协议网关（`ai-gateway-07-agent-tool-mcp-gateway`） | 网关承担 MCP Host/Proxy 职责；动态工具发现、Schema 校验、SSRF 防御与 ReAct 死循环熔断 | Model Context Protocol (MCP) 规范；Higress MCP Bridge 插件与状态机震荡检测 |
+| ✅ 08. 流式实时安全护栏与防越狱注入（`ai-gateway-08-streaming-guardrails-jailbreak`） | 流式输出中的实时拦截与打断；双层异步过滤（AC 自动机 <1ms + 轻量模型 <15ms）；Prompt Injection 防御 | NeMo Guardrails / Portkey Guardrails；Token 级滑动窗口与流式截断机制 |
 
 ### S1. LLM 应用的地基原理【新系列，最高优先】
 
@@ -212,8 +229,10 @@
 | 主题 | 核心问题 | 验证方式 |
 | --- | --- | --- |
 | ✅ 3D 并行拓扑解密（2026-09-20 `llm-infra-01-3d-parallelism-megatron-deepspeed`） | 怎样把千亿模型切开放进万卡集群？张量并行（TP GEMM 横纵切分）、流水线并行（PP 1F1B 调度气泡消除）与数据并行（ZeRO/FSDP 分片对账） | 溯源 Shoeybi 2019 Megatron-LM 论文、Rajbhandari 2020 ZeRO 论文、NVLink 与 InfiniBand 3D 网格通信映射 |
-| FlashAttention 1/2/3 硬件访存平铺 | 从数学 Softmax 到 GPU 硬件 SRAM/HBM 访存墙。Online Softmax 分块平铺算法如何将 O(N^2) 显存开销压缩至 O(N)，FP8 Tensor Core 异步拷贝指令（TMA）演进 | 溯源 Dao 2022/2023 FlashAttention 论文、Milakov 2018 Online Softmax 算法、GPU 内存层次与硬件指令微架构 |
-| MoE 专家并行与通信隐藏 | 混合专家模型（MoE）路由门控机制、Token 丢弃（Token Drop）与负载不均雪崩、DeepSeek 无辅助损失负载均衡与 All-to-All 算网重叠架构 | 溯源 Shazeer 2017 MoE 论文、DeepSeek-V3 架构白皮书、双缓冲异步通信与重叠流水线 |
+| ✅ FlashAttention 硬件访存平铺（2026-09-23 `llm-infra-02-flashattention-tiling-online-softmax`） | 从数学 Softmax 到 GPU 硬件 SRAM/HBM 访存墙。Online Softmax 分块平铺算法如何将 O(N^2) 显存开销压缩至 O(N)，Hopper TMA 异步拷贝指令演进 | 溯源 Dao 2022/2023 FlashAttention 论文、Milakov 2018 Online Softmax 算法、GPU 内存层次与硬件指令微架构 |
+| ✅ MoE 专家并行与通信隐藏（2026-09-23 `llm-infra-03-moe-expert-parallelism-deepseek-alltoall`） | 混合专家模型（MoE）路由门控机制、Token 丢弃与负载不均雪崩、DeepSeek-V3 无辅助损失负载均衡与 All-to-All 算网 100% 重叠架构 | 溯源 Shazeer 2017 MoE 论文、DeepSeek-V3 架构白皮书、双缓冲异步通信与重叠流水线 |
+| ✅ 万卡超算算力网络（2026-09-23 `llm-infra-04-gpu-cluster-network-roce-infiniband-nccl`） | InfiniBand 信用流控 vs RoCE v2 无损以太网、PFC 拥塞死锁环成因、DCQCN 双门限调优、NCCL Ring/Tree 算法与 Rail-Optimized 导轨拓扑 | 溯源 IBTA 规范、IEEE 802.1Qbb PFC 规范、SIGCOMM DCQCN 论文与 NCCL 导轨网络工程实现 |
+| ✅ 万卡容灾与弹性训练（2026-09-23 `llm-infra-05-checkpoint-resilience-elastic-training`） | MTBF 仅 2.5 小时的物理残酷性、Meta/DeepSeek 2.5秒三级异步 Checkpoint 架构、坏卡原地热备替换与 Loss Spike 自动前向回滚 | 溯源 Meta 24k GPU 集群白皮书、DeepSeek-V3 双向通信容灾、NSDI 2024 MegaScale 论文与 Goodput 优化模型 |
 
 ### S11. 现代内核、eBPF 与万兆高性能 I/O 破局【底层性能天花板】
 

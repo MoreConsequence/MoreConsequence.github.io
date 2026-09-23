@@ -2,6 +2,7 @@
 title: 面试官：如何设计高可用分布式键值（KV）存储系统？（从 Amazon Dynamo 论文、LSM-Tree 物理读写放大到 Quorum NWR 与 Merkle 树反熵修复）
 description: 深度拆解支撑海量高并发读写的分布式键值（Key-Value）存储系统架构（参考 Alex Xu 系统设计精要第 6 章及 Amazon Dynamo、Apache Cassandra、RocksDB 真实工业演进）：剖析从 B+ 树向 LSM-Tree 跨越的存储引擎物理本质；推导 MemTable 内存跳表、SSTable 分层压缩（Compaction）与布隆过滤器（Bloom Filter）消除读放大的第一性原理；深入探讨 Quorum 模型（W+R>N）在并发重叠写下的边界弱点；推导向量时钟（Vector Clock）因果冲突检测，并系统性构建读修复（Read Repair）、提示移交（Hinted Handoff）与 Merkle 树反熵同步的自愈闭环。
 publishedAt: 2026-05-05
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式存储", "KV存储", "Dynamo", "LSM-Tree", "Quorum", "向量时钟", "Merkle树"]
 category: 面试深度拆解
 draft: false

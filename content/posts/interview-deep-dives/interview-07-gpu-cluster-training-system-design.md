@@ -2,6 +2,7 @@
 title: 面试官：万卡 GPU 集群分布式训练系统设计——Gang Scheduling 原子调度、NCCL 通信死锁排查与异步非阻塞 Checkpoint
 description: 深度拆解 16,384 卡超大规模 GPU 预训练基础设施的核心系统设计：为何传统 Kube-Scheduler 会引发灾难性资源死锁？深入剖析 Gang Scheduling 状态机与 Rail-Optimized 拓扑感知放置；剖析 NCCL Ring AllReduce 慢节点（Straggler）木桶效应与静默数据损坏（SDC）排查；以及如何利用三级流水线实现 2.5 秒的异步非阻塞 Checkpoint，将集群有效算力利用率（Goodput）从 56% 挽救至 82% 以上。
 publishedAt: 2026-04-23
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "AI Infra", "GPU 集群", "分布式训练", "Gang Scheduling", "NCCL", "Checkpoint"]
 category: 面试深度拆解
 draft: false

@@ -2,6 +2,7 @@
 title: "大模型长上下文注意力与显存虚拟化：从 FlashAttention 到 PagedAttention 与 DeepSeek MLA"
 description: "深度拆解大语言模型（LLM）与超长上下文（128K ~ 1M Tokens）推理中，算力与显存墙的终极突围架构。推导标准注意力机制 $O(N^2)$ 显存爆炸与 GPU SRAM/HBM 访存瓶颈（Memory-Bound）；剖析 FlashAttention 1/2/3 借助分块平铺（Tiling）与在线 Softmax 消除中间矩阵的数学推导；详解 vLLM PagedAttention 如何将操作系统虚拟内存分页映射至 KV Cache，消除 80% 的内存碎片；深入推导 DeepSeek Multi-Head Latent Attention (MLA) 的低秩隐空间联合投影压缩矩阵与 RoPE 解耦机理。"
 publishedAt: "2026-06-04"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "LLM", "FlashAttention", "PagedAttention", "DeepSeek", "AI基础设施"]
 category: "面试深度拆解"
 draft: false

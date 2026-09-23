@@ -2,6 +2,7 @@
 title: "亿级点对点实时音视频通信架构：从 P2P 拓扑崩溃到 WebRTC SFU 与 GCC 拥塞控制"
 description: "深度拆解跨国万人会议、互动直播与实时通信（RTC）底层的系统设计。从人耳人类听觉交互的 200ms 物理极限，推导 TCP 队头阻塞（HOL）在实时流媒体中的必然死穴；剖析 P2P Mesh 拓扑网络连接 $O(N^2)$ 爆炸与 MCU 集中编解码算力崩溃；详解现代 SFU（Selective Forwarding Unit）选择性转发网关、Simulcast 与 SVC 分层编码路由机制；深入推导 Google GCC 拥塞控制算法（延迟梯度趋势过滤与丢包双驱动带宽估计）；攻克 NACK、FEC、NetEQ 自适应抖动缓冲（Jitter Buffer）在弱网环境下的抗丢包闭环设计。"
 publishedAt: "2026-06-05"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "WebRTC", "音视频", "SFU", "拥塞控制", "网络协议"]
 category: "面试深度拆解"
 draft: false

@@ -2,6 +2,7 @@
 title: 面试官：如何设计分布式全局唯一 ID 生成器？（从 Twitter Snowflake 到 2024 RFC 9562 UUIDv7、时钟回拨容死与 B+ 树页分裂物理本质）
 description: 深度拆解分布式全局唯一 ID（Distributed Unique ID）的技术演进与底层物理考量（参考 Alex Xu 系统设计精要第 7 章及 Twitter Snowflake、百度 UidGenerator、美团 Leaf 与 2024 年正式发布的 IETF RFC 9562）：剖析为何单库自增与 UUIDv4 在大规模分布式下必然撞墙？从 InnoDB 聚簇索引底层推导 UUIDv4 随机插入引发的“B+ 树页分裂与缓存穿透”物理惨剧；推导 Snowflake 64 位空间分配与单机 409 万 QPS 极限；并对 NTP 时钟回拨（Clock Drift）提出毫秒追平与未来借时的容死设计，最终演进至免协调中心、原生趋势递增的现代化 UUIDv7 标准。
 publishedAt: 2026-05-03
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式唯一ID", "Snowflake", "UUIDv7", "RFC 9562", "时钟回拨", "B+树"]
 category: 面试深度拆解
 draft: false

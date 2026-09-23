@@ -2,6 +2,7 @@
 title: "千亿边分布式图数据库与巨节点裂解架构：从 Pregel BSP 模型到点切分与两跳剪枝"
 description: "深度拆解千亿边关系网络、金融风控与社交知识图谱的高并发分布式图数据库（Graph Database）底层架构。从真实世界无标度网络（Scale-Free）幂律分布引发的巨节点（Supernode）遍历爆炸，到 Google Pregel 2010 开山论文的 BSP 大步同步计算模型；推导边切分（Edge Cut）与点切分（Vertex Cut）在图分区中的代数优劣；剖析双向 BFS、度数截断剪枝与 Roaring Bitmap 邻居极速求交的工业级全景实现。"
 publishedAt: "2026-05-29"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "图数据库", "巨节点", "Pregel", "分布式存储"]
 category: "面试深度拆解"
 draft: false

@@ -2,6 +2,7 @@
 title: "云原生 API 网关核心架构：从 Nginx 静态 Reload 到 Envoy xDS 动态控制面与 Wasm 插件沙箱"
 description: "深度拆解现代云原生 API 网关的底层演进逻辑。从传统 Nginx/OpenResty 在大规模微服务频繁扩缩容下 `nginx -s reload` 引发的进程堆积与长连接雪崩，到 Envoy xDS（LDS/RDS/CDS/EDS）控制面与数据面解耦的增量动态流式更新；从 50,000 条路由规则下的基数树（Radix Tree）O(L) 纳秒级路径匹配，到 Proxy-Wasm 轻量级沙箱隔离与多语言插件热加载的工业级实践。"
 publishedAt: "2026-05-24"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "API网关", "Envoy", "xDS", "WebAssembly", "云原生"]
 category: "面试深度拆解"
 draft: false

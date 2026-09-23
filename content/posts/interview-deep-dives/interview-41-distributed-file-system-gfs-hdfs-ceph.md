@@ -2,6 +2,7 @@
 title: "分布式文件系统的物理基石：从 GFS/HDFS 集中式元数据到 Ceph CRUSH 无中心寻址"
 description: "深度拆解 PB/EB 级分布式文件与对象存储系统的底层架构演进。从 Google GFS 2003 开山论文的 64MB 巨型分块与控制面/数据面物理分离，到 HDFS NameNode 亿级小文件遭遇的“JVM 堆内存墙”与 GC 惊群风暴；深入推导 Sage Weil 2006 奠基的 Ceph CRUSH 伪随机数据放置算法如何通过纯数学计算终结中心化查表寻址，并剖析跨故障域副本拓扑容灾与并行极速自愈机制。"
 publishedAt: "2026-05-27"
+series: "资深工程师面试深度拆解"
 tags: ["系统设计", "面试题", "分布式文件系统", "GFS", "HDFS", "Ceph", "CRUSH算法"]
 category: "面试深度拆解"
 draft: false

@@ -4,6 +4,7 @@ description: "深度剖析投机采样（Speculative Decoding）从数学原理�
 publishedAt: "2026-06-23"
 draft: false
 featured: false
+series: "面向后端工程师的 AI 架构与工程实战"
 tags:
   - "AI Engineering"
   - "Speculative Decoding"
