@@ -19,11 +19,12 @@
 | 把原理变成服务 | 7 | ✅ 已发布，有扩展位 |
 | Agent 的方方面面（Pi Agent 架构解析篇） | 9 | ✅ 已发布（全 9 篇底层架构解析） |
 | Pi Agent 通才教程（实战与高阶专题篇） | 16 | ✅ 已发布（9 篇核心手写 + 7 篇高阶生产专题 + 配套 mini-pi 独立工程） |
-| 资深工程师面试深度拆解 | 55 | 🚀 持续深耕（覆盖分布式、云原生、AI 基础设施、海量存储与高并发，全 55 篇达成） |
+| 资深工程师面试深度拆解 | 60 | 🚀 持续深耕（覆盖分布式、云原生、AI 基础设施、海量存储与高并发，全 60 篇达成） |
 | 面向后端工程师的 AI 架构与工程实战 | 13 | ✅ 全 13 篇圆满竣工（总纲 + 五层架构体系 + 分层记忆系统 + 多智能体共识） |
 | 物联网与网络设备云平台架构实战 | 15 | ✅ 全 15 篇圆满交付（南向协议全景、C10M网关、原子回滚、海量遥测TSDB、NAT反向终端、固件OTA、增量配置同步、设备影子孪生、分布式长连接集群、零信任安全与签名、ZTP零配置上线、YANG/OpenConfig跨厂商建模、LLDP全网物理拓扑图引擎、IBN与Batfish形式化验证、IPFIX流级遥测与微突发诊断） |
 | 面向大模型与 Agent 的 AI 网关实战 | 8 | ✅ 全 8 篇圆满交付（架构总纲、SSE背压、模型动态路由、Prompt Cache亲和、Token限流、语义缓存、MCP工具网关、实时护栏） |
 | 前沿大模型训练与全栈 Infra 解密 | 5 | ✅ 全 5 篇圆满交付（3D并行拓扑、FlashAttention访存平铺、MoE专家并行、万卡无损网络RoCE/IB、2.5秒三级Checkpoint容灾） |
+| Kubernetes 架构内核与生产实战 | 10 | ✅ 全 10 篇圆满交付（容器与Pod物理边界、控制面全景、client-go Informer、CFS/cgroups/OOM、调度框架、CNI/eBPF、Service/Gateway API、CSI存储编排、CRD Operator实战、零502与排障决策树） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -189,6 +190,11 @@
 | ✅ 现代高性能 RPC 框架内核解密（2026-09-20 `interview-53-high-performance-rpc-grpc-flatbuffers`） | JSON/Protobuf 反序列化 CPU 内存税、FlatBuffers 零拷贝就地内存访问、gRPC HTTP/2 多路复用流控与级联超时传递 | 溯源 Google FlatBuffers 编码规范、gRPC 线程模型与 Netty EventLoop 阻塞排查、分布式追踪 TraceContext 级联取消（按规范免冗余实验） |
 | ✅ 现代大规模湖仓一体架构（2026-09-20 `interview-54-lakehouse-acid-iceberg-delta-lake`） | Hive 元数据目录模型在数百万分区下的 O(N) LIST 性能崩溃、Apache Iceberg 树状元数据清单（Manifest）、快照隔离与乐观并发控制（OCC） | 溯源 Ryan Blue Apache Iceberg 设计、隐式分区演进、行级更新 Copy-on-Write vs Merge-on-Read 权衡与小文件 Compaction（按规范免冗余实验） |
 | ✅ 大规模异步任务流水线与死信治理（2026-09-20 `interview-55-async-task-pipeline-dead-letter-retry`） | 网络短暂抖动引发千倍重试风暴（Retry Storm）、全抖动指数退避算法（Full Jitter Backoff）数学证明、死信队列（DLQ）毒丸隔离与平滑下线 | 溯源 AWS 指数退避数学模型、RocketMQ/Redis 延时队列时间轮、SIGTERM 优雅停机与飞航任务泄洪排空状态机（按规范免冗余实验） |
+| ✅ 千万级高并发秒杀与秒级库存扣减系统（2026-06-11 `interview-56-seckill-flash-sale-inventory-system-design`） | 单 Key 10 万 QPS 写入锁死瓶颈、动态答题验证码与令牌桶四级流量削峰漏斗、分段库存（Segmented Stock）架构、两阶段扣减防超卖与防少卖状态机与 Commit Batching | 溯源 Helland 2007 最终一致性对账、Karger 1997 一致性哈希分段与淘宝双十一行锁微批聚合实践（按规范免冗余实验） |
+| ✅ 跨国跨地域千亿级分布式日志检索系统（2026-06-12 `interview-57-distributed-log-search-system-design`） | 传统 Elasticsearch 倒排索引膨胀 300% 与 JVM Full GC 锁死雪崩；稀疏主键索引 + 分块压缩（Chunked ZSTD 压降 85% 体积）、时间分段与 SIMD（AVX-512）就地暴力流式扫描 | 溯源 ClickHouse / VictoriaLogs / Grafana Loki 架构哲学、稀疏主键索引与 SIMD 向量化并行子串检索（按规范免冗余实验） |
+| ✅ 超大规模分布式死锁检测与悲观事务引擎（2026-06-13 `interview-58-distributed-deadlock-detection-engine.md`） | 悲观两阶段锁（2PL）跨分片环路死锁、中心化等待图（Wait-For Graph）与 Tarjan 强连通分量算法、死锁预防算法 Wait-Die vs Wound-Wait 数学公理与级联回滚成本精算 | 溯源 Rosenkrantz 1978 TODS 奠基论文、Tarjan 1972 环路算法、Google Spanner Wound-Wait 事务实现（按规范免冗余实验） |
+| ✅ 千万级跨平台分布式配置中心架构设计（2026-06-14 `interview-59-distributed-config-center-system-design`） | 推模式长连接连接风暴 vs 拉模式短轮询带宽浪费冲突；HTTP 30 秒长轮询（Long Polling）挂起与 MD5 脏检查、客户端多级内存缓存与本地磁盘不可变灾备快照、灰度金丝雀与秒级原子回滚 | 溯源 Apollo / Nacos 核心架构、RFC 9110 HTTP 语义规范、本地不可变快照与无锁异步长轮询状态机（按规范免冗余实验） |
+| ✅ 分布式网关全链路熔断限流降级系统（2026-06-15 `interview-60-distributed-circuit-breaker-sentinel-hystrix`） | 边缘慢查询引发微服务级联雪崩；Hystrix 线程池隔离上下文切换代价 vs Sentinel 信号量并发隔离；LeapArray 无锁环形滑动窗口数组、断路器三态机与基于 TCP BBR 思想的自适应系统过载保护 | 溯源 Netflix Hystrix、Alibaba Sentinel 架构白皮书、Cardwell 2016 BBR 拥塞控制与利特尔法则（Little's Law）（按规范免冗余实验） |
 
 
 
@@ -283,6 +289,43 @@
 | ✅ 全网物理拓扑自动发现与链路状态图引擎（2026-07-16 `iot-netdev-13-lldp-network-topology-graph-engine`） | 数据链路层保留组播 MAC `01:80:c2:00:00:0e` 逐跳物理隔离机制、IEEE 802.1AB LLDP TLV 解析、二层端口与设备双层图数据模型、以太聚合（LACP）链路折叠与光纤熔断 BFS 爆炸半径扩散推演 | 溯源 IEEE 802.1AB LLDP 规范、RFC 2863 IF-MIB、网络拓扑图算法与广度优先搜索故障爆炸半径推演（按规范免冗余实验） |
 | ✅ 意图驱动网络（IBN）与 Batfish 静态形式化验证（2026-07-17 `iot-netdev-14-intent-based-networking-batfish-validation`） | 网络分布式协议强耦合变更事故防范、声明式意图（Intent）模型、Batfish 控制面形式化仿真与 BDD 符号执行算法、全网可达性/无环路/单链路熔断/多租户隔离四大断言门禁 | 溯源 Fogel 2015 NSDI Batfish 论文、SMT 约束求解器、RFC 7950、Cisco IBN 白皮书与生产级 NetDevOps CI/CD 自动化阻断流水线（按规范免冗余实验） |
 | ✅ 毫秒级流级遥测（Flow Telemetry）与微突发拥塞诊断（2026-07-18 `iot-netdev-15-flow-telemetry-microburst-monitoring`） | 秒级监控拉平效应盲区、交换机片上包缓存（MMU）微突发（Microburst / Incast）0.8ms 耗尽物理精算、IPFIX 动态模板机制与二进制解耦、Linux recvmmsg 批量系统调用与 Kafka+ClickHouse 稀疏列存全景 | 溯源 RFC 7011/7012 IPFIX 规范、RFC 3176 sFlow 规范、ACM SIGCOMM 微突发论文、Broadcom ASIC MMU 架构与纳秒滑动窗口突发检测引擎（按规范免冗余实验） |
+
+### S15. Kubernetes 架构内核与生产实战【从入门到精通】
+
+**为什么**：响应用户需求，面向资深后端与云原生平台工程研发，打造从单机容器物理边界到大规模分布式控制面、网络（CNI）、存储（CSI）、调度（Scheduler Framework）与二次扩展（Operator）全景，直至生产稳定性护城河的顶级硬核专栏。
+
+| 序号与主题 | 核心问题 | 开源拆解对象与规范依据 |
+| --- | --- | --- |
+| ✅ 01. 容器与 Pod 底层物理边界（2026-06-12 `k8s-01-container-namespaces-cgroups-pod-first-principles`） | 面试官：容器与虚拟机有什么本质区别？K8s 为什么不直接调度容器而要设计 Pod？（从 Linux 6.x Namespaces、cgroups v2 到 Pause 容器底层物理边界） | Linux 6.x `clone(2)`、Pause 源码、OCI Runtime 规范与原子调度模型 |
+| ✅ 02. 控制面全景与声明式调和哲学（2026-06-13 `k8s-02-architecture-declarative-api-control-loop.md`） | 面试官：Kubernetes 为什么放弃 Ansible 这种命令式运维而选择声明式 API？控制面调和循环是如何自愈的？（从 etcd MVCC、Raft 共识到水平触发调和状态机） | Kubernetes 控制器哲学、etcd MVCC / Raft 事务底座、无状态 REST API 设计 |
+| ✅ 03. client-go 核心架构与本地缓存（2026-06-14 `k8s-03-client-go-informer-reflector-deltafifo.md`） | 面试官：如果 10,000 个控制器频繁轮询 API Server，etcd 瞬间被打崩怎么办？（深度拆解 client-go Informer、Reflector 与 DeltaFIFO 零 I/O 读机制） | client-go 核心源码、ResourceVersion 增量断点续传、HTTP Chunked / WebSocket |
+| ✅ 04. 资源模型与内核隔离机制（2026-06-15 `k8s-04-resource-requests-limits-cgroups-oom-killer.md`） | 面试官：为什么线上服务配了 CPU Limits 反而频繁遭遇 P99 延迟暴涨与超时？（从 CFS 完全公平调度、cpu.cfs_quota 到 oom_score_adj 驱逐状态机） | Linux CFS 调度器配额算法、cgroups v2 `memory.high/max`、Kubelet Eviction Manager |
+| ✅ 05. 调度器内核与调度框架（2026-06-16 `k8s-05-kube-scheduler-framework-plugins.md`） | 面试官：面对 5000 台异构节点与海量 Pod，kube-scheduler 如何毫秒级选出最优节点？（从 Predicates/Priorities 到 Scheduling Framework 与抢占算法） | kube-scheduler 源码、两阶段预留与并发绑定、拓扑分布约束与抢占驱逐 |
+| ✅ 06. 网络模型与跨主机通信（2026-06-17 `k8s-06-network-cni-flannel-calico-cilium-ebpf.md`） | 面试官：Flannel、Calico 与 Cilium 底层通信有什么本质区别？为什么 Cilium eBPF 性能远超 iptables？（从 VXLAN 封包、BGP 路由到 sockops 旁路加速） | CNI 规范、Linux veth pair/bridge、VXLAN VTEP、BGP RR、Cilium eBPF sockops |
+| ✅ 07. 服务发现与南北流量接入（2026-06-18 `k8s-07-service-kube-proxy-iptables-ingress-gateway-api.md`） | 面试官：ClusterIP 虚拟 IP 真实存在于哪张网卡上？为什么万级服务下 iptables 模式会发生锁雪崩？（从 kube-proxy IPVS、EndpointSlice 到 Gateway API） | kube-proxy 源码、Netfilter NAT 链、EndpointSlice 切片、Gateway API 规范 |
+| ✅ 08. 持久化存储与 CSI 挂载全链路（2026-06-19 `k8s-08-storage-csi-pv-pvc-volume-mount-internals.md`） | 面试官：Pod 跨节点故障漂移时，底层存储是如何做到数据永不丢失的？（深度拆解 CSI 插件规范、PV/PVC 绑定与挂载内核四部曲） | CSI 插件规范、`mount(2)` 系统调用、共享挂载传播、StatefulSet 存储拓扑 |
+| ✅ 09. 声明式演进与 CRD Operator 实战（2026-06-20 `k8s-09-deployment-crd-operator-reconciliation.md`） | 面试官：原生 Deployment 为什么管不好分布式数据库？如何基于 Kubebuilder 开发生产级 Operator？（从 CRD 架构、Finalizer 到高可用选主） | CustomResourceDefinition 规范、Controller-Runtime 源码、乐观并发控制、租约机制 |
+| ✅ 10. 生产级高可用、优雅停机与排障决策树（2026-06-21 `k8s-10-production-ha-cluster-graceful-shutdown-troubleshooting.md`） | 面试官：生产集群滚动发布频繁爆出 502 报错，如何做到真正‘零 502’发布？（从 preStop 睡眠、etcd 深度调优到故障排查全景决策树） | RFC 9110 HTTP 优雅断连、POSIX 信号传播、etcd 生产调优、排障全景矩阵 |
+| ✅ 11. 容器运行时与 CRI 进阶（2026-06-22 `k8s-11-cri-containerd-shim-v2-process-lifecycle.md`） | 面试官：从 Docker 废弃到 containerd 时代，Pod 启动时 containerd-shim-v2 究竟在干什么？（从 CRI gRPC 接口、OCI runc 到 live-restore 无损热升级） | CRI gRPC 协议规范、OCI Runtime Spec、containerd 源码、进程树解耦与 FIFO 管道 |
+| ✅ 12. 集群 DNS 与 CoreDNS 生产暗礁（2026-06-23 `k8s-12-coredns-5s-delay-ndots-conntrack-race.md`） | 面试官：线上服务偶发遭遇整整 5 秒 DNS 延迟尖刺，怎么排查和彻底根治？（从 resolv.conf ndots:5、内核 conntrack 竞态丢包到 NodeLocal DNSCache 旁路劫持） | Linux glibc 解析器源码、Netfilter conntrack 源码、NodeLocal DNSCache 架构与 TCP 长连接复用 |
+| ✅ 13. 弹性伸缩进阶与容量交付（2026-06-24 `k8s-13-hpa-v2-keda-autoscaling-karpenter.md`） | 面试官：CPU/内存 HPA 为什么无法应对秒杀突发？KEDA 与 Karpenter 是如何实现秒级弹性与即时交付的？（从 HPA 算法公式、Custom Metrics 到 Karpenter 智能装箱） | HPA v2 算法数学推导、KEDA 事件驱动 Scaler、Karpenter 调度绕过与云 API 智能装箱 |
+| ✅ 14. 准入控制与安全守卫（2026-06-25 `k8s-14-admission-webhook-opa-gatekeeper-kyverno.md`） | 面试官：如何从根源杜绝研发提交特权容器与危险配置？如果准入 Webhook 挂了会不会导致全集群瘫痪？（从 Mutating/Validating Webhook、failurePolicy 容灾到 OPA/Kyverno） | API Server 准入管道时序、failurePolicy 容灾逃生设计、OPA Rego 策略引擎、Kyverno 原生声明 |
+| ✅ 15. AI 与大模型算力编排（2026-06-26 `k8s-15-gpu-virtualization-mig-dra-dynamic-resource-allocation.md`） | 面试官：AI 大模型时代，K8s 如何安全高效切分一张 80GB 的 A100/H100 显卡？（从 NVIDIA Device Plugin、CUDA 截获、MIG 硬件切片到 DRA 动态资源分配） | NVIDIA Device Plugin、CUDA 驱动截获、MIG 硬件电路物理隔离、K8s 1.30+ DRA 动态资源分配 |
+| ✅ 16. 服务网格代际革命（2026-06-27 `k8s-16-service-mesh-ambient-sidecarless-cilium-ebpf.md`） | 面试官：给每个 Pod 强行塞一个 Envoy 带来多大内存与延迟灾难？为什么无 Sidecar（Ambient Mesh 与 Cilium）是必然趋势？（从 ztunnel/waypoint 架构到内核级 mTLS 旁路加速） | Sidecar 4次协议栈穿越延迟税、Istio Ambient Mesh 分层解耦架构、ztunnel Rust 隧道、Cilium eBPF 网格 |
+| ✅ 17. 多集群与跨云互通架构（2026-06-28 `k8s-17-multi-cluster-clustermesh-submariner.md`） | 面试官：跨机房、多公有云环境下，数十个 K8s 集群如何跨网互通？（从 Cilium ClusterMesh、Submariner 到 Multi-Cluster Services MCS-API） | KEP-1645 MCS-API 规范、Submariner Globalnet 双向 NAT、Cilium eBPF sockops 全局直通路由 |
+| ✅ 18. 边缘计算与弱网极端自治（2026-06-29 `k8s-18-edge-computing-kubeedge-openyurt.md`） | 面试官：在加油站、高速路等断网脱机极端场景下，K8s 边缘集群如何实现节点自主自治？（从 KubeEdge EdgeHub、OpenYurt 本地代理到双向同步状态机） | KubeEdge EdgeHub / SQLite 持久化、OpenYurt YurtHub 本地反向代理透明缓存、断网冷重启自愈 |
+| ✅ 19. FinOps 算力降本与原地垂直伸缩（2026-06-30 `k8s-19-finops-vpa-in-place-pod-resize.md`） | 面试官：集群整体 CPU 利用率常年不足 15%，老板要求降本 50%，如何做动态资源画像？（从 VPA 推荐算法、Goldilocks 到 K8s 1.27+ In-Place Pod Resize 原地升降配） | KEP-1287 原地升降配规范、cgroups v2 cpu.max/memory.max 热改写、VPA 衰减加权直方图推荐模型 |
+| ✅ 20. 容器逃逸防御与 eBPF 运行时安全（2026-07-01 `k8s-20-security-container-escape-ebpf-falco.md`） | 面试官：黑客突破容器获取 root 权限后，如何逃逸到宿主机？如何基于 eBPF 与内核安全模块实现零信任防御？（从 Capabilities 提权、procfs 泄露到 seccomp 与 Falco 运行时入侵检测） | 经典逃逸链逆向、Linux Capabilities 剪裁、seccomp 系统调用白名单、Falco eBPF 内核零信任探针 |
+| ✅ 21. AI 大模型批调度与算力防死锁（2026-07-02 `k8s-21-ai-llm-batch-scheduling-kueue-gang.md`） | 面试官：千卡集群训练大模型时，如何防止资源死锁？（从 Kubernetes Kueue、Gang Scheduling 到多队列公平借还拓扑） | k8s.io/kueue 核心架构、SchedulingGates 作业准入控制、Cohort 借用归还状态机、PyTorch/Ray 批调度 |
+| ✅ 22. 大模型推理前沿网络与前缀缓存（2026-07-03 `k8s-22-gateway-api-inference-extension-prefix-cache.md`） | 面试官：大模型推理服务如何实现毫秒级首字延迟？（从 Gateway API Inference Extension、Prefix Cache 亲和路由到 LoRA 动态调度） | Gateway API Inference Extension 规范、InferencePool/InferenceModel CRD、Prefix-Cache 亲和性算法、vLLM KV Cache 协同 |
+| ✅ 23. WebAssembly 与 Wasm 运行时革命（2026-07-04 `k8s-23-wasm-webassembly-runwasi-spinkube.md`） | 面试官：WebAssembly 会终结容器吗？K8s 如何纳秒级调度 Wasm 模块？（从 containerd runwasi、WASI Preview 2 到 SpinKube 原生编排） | containerd runwasi 架构、Wasmtime JIT 引擎、RuntimeClass、WASI Preview 2 组件模型、0.5ms 冷启动 |
+| ✅ 24. 企业级多租户与 vCluster 虚拟集群（2026-07-05 `k8s-24-multi-tenancy-virtual-clusters-vcluster.md`） | 面试官：为什么 Namespace 根本做不到真正的多租户？如何基于 vcluster 虚拟集群实现硬隔离与自治？（从控制面虚拟化、Syncer 状态投影到企业级租户治理） | vCluster 虚拟控制面解耦（K3s + SQLite）、Syncer 双向状态投影引擎、CRD 独立隔离、Private Nodes 算力独占 |
+| ✅ 25. GitOps 架构内核与大规模持续交付（2026-07-06 `k8s-25-gitops-argocd-state-reconciliation.md`） | 面试官：当 10,000 个应用同时走 GitOps 持续交付，ArgoCD 为什么会发生状态雪崩与 Out-of-Sync 风暴？（从 3-Way Merge Patch、Sync Waves 到大规模调和引擎逆向） | ArgoCD Application Controller 逆向、Server-Side Apply 字段所有权治理、Sync Waves / Hooks 编排状态机、Monorepo 削峰 |
+| ✅ 26. 混沌工程与内核级韧性验证（2026-07-07 `k8s-26-chaos-engineering-chaos-mesh-kernel-fault-injection.md`） | 面试官：新集群上线前，你如何证明它能在节点宕机、丢包 50% 下实现零中断？（从 Chaos Mesh 内核级故障注入、eBPF 网络劫持到 FUSE I/O 挂起验证） | Chaos Mesh 架构、Linux tc-netem 网络丢包延迟仿真、FUSE I/O 透明挂起劫持、VDSO 时间偏斜、CI/CD 韧性门禁 |
+| ✅ 27. 灰度节点故障自愈与重调度（2026-07-08 `k8s-27-node-problem-detector-draino-descheduler.md`） | 面试官：物理网卡半死、磁盘只读但 Kubelet 心跳正常时，K8s 为什么不会自愈？如何做到秒级无损排空？（从 Node Problem Detector、Draino 到 Descheduler 二次重调度） | NPD 内核日志与自定义脚本探测、NodeCondition 注入、Draino 基于 PDB 安全排空、Descheduler 二次重平衡 |
+| ✅ 28. 控制面过载保护与 APF 流控（2026-07-09 `k8s-28-api-priority-and-fairness-apf-flowcontrol.md`） | 面试官：当 100,000 个 Pod 同时向 API Server 发起冲击，K8s 为什么不会被击垮？（从 API Priority and Fairness、FlowSchema 到公平排队算法内核） | APF 架构内核、FlowSchema 分流、PriorityLevelConfiguration 并发隔离、洗牌分片（Shuffle Sharding）、公平排队（Fair Queueing） |
+| ✅ 29. 安全沙箱容器运行时深度解析（2026-07-10 `k8s-29-sandbox-containers-gvisor-kata.md`） | 面试官：公有云多租户跑不可信代码，如何防止 0-day 内核提权攻陷宿主机？（从 gVisor Sentry 拦截、Kata 微虚拟机到安全沙箱运行时选型） | 共享内核 0-day 逃逸成因、Google gVisor 用户态 Go 内核系统调用拦截、Kata Containers 硬件级微虚机 MMU 隔离、RuntimeClass 混排 |
+| ✅ 30. 百万级流式日志与可观测底盘（2026-07-11 `k8s-30-observability-logging-fluentbit-vector.md`） | 面试官：每天产生 100TB 日志的超大规模集群，为什么不能给每个 Pod 挂 Sidecar？如何基于 Vector / Fluent Bit 实现内核级零拷贝流式采集？ | Sidecar 模式资源与 inotify 崩溃成因、containerd CRI stdout 落盘机制、Fluent Bit / Vector 零拷贝 mmap、Node-Local 缓存富化 |
 
 ---
 

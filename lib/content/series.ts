@@ -85,6 +85,7 @@ export function getPostsForSeries(posts: PostSource[], series: string) {
 }
 
 export function getSeriesIcon(seriesName: string): string {
+  if (/Kubernetes|K8s|云原生/i.test(seriesName)) return "☸️";
   if (/物联网|网络设备/i.test(seriesName)) return "🌐";
   if (/内核|eBPF|Linux/i.test(seriesName)) return "🐧";
   if (/共识|容错|分布式/i.test(seriesName)) return "🏛️";
