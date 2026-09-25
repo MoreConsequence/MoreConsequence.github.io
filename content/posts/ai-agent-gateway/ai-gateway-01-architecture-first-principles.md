@@ -31,7 +31,7 @@ AI 网关（AI Gateway）绝不是在传统网关上加一个 `OpenAI API Key` �
 
 为了看清 AI 网关的必要性，我们必须首先把传统网关建立在经典微服务之上的底层假设，与大模型 / Agent 工作负载做一个彻底的对比剖析：
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        传统 API 网关 vs AI 网关                        │
 ├──────────────────┬──────────────────────┬──────────────────────────────┤
@@ -78,7 +78,7 @@ flowchart LR
 ### 2.2 维度二：资源计量维度的彻底失效（QPS vs Tokens）
 
 在传统微服务中，API 限流的标准范式是基于 **请求数/每秒（QPS / RPS）** 的令牌桶算法：
-```
+```text
 Limit: 100 requests / minute / tenant
 ```
 但在大模型与 Agent 场景下，**“请求”是一个彻底失真的伪度量衡**：
@@ -98,7 +98,7 @@ Limit: 100 requests / minute / tenant
 传统网关对于后端无状态微服务，最经典的负载均衡算法是 **加权轮询（Round Robin）** 或 **最少连接数（Least Connections）**。这种调度假设上游节点是“同质且无状态”的——请求落在哪台机器上，计算成本完全一致。
 
 但在私有化部署的大模型推理服务（如 vLLM、SGLang、TGI）中，这个假设是彻底错误的：
-```
+```text
 大模型推理的 Prefill 成本模型:
 Time(Prefill) = f(Prompt_Tokens)
 若上游 GPU 节点的显存中已缓存了该 Prompt 的 KV Cache:
@@ -110,7 +110,7 @@ Time(Prefill) = f(Prompt_Tokens)
 ```
 
 对于 Agent 场景，这种影响尤其致命。Agent 的工作流是在一个长会话中不断往历史记录追加信息：
-```
+```text
 Round 1: [System Prompt (4k)] + [User Input (1k)]
 Round 2: [System Prompt (4k)] + [User Input (1k)] + [Tool Call 1 (2k)]
 Round 3: [System Prompt (4k)] + [User Input (1k)] + [Tool Call 1 (2k)] + [Tool Call 2 (3k)]
@@ -243,7 +243,7 @@ flowchart TD
 
 为了彻底搞懂 AI 网关如何处理一个 Agent 请求，我们沿着一条请求的完整生命周期，放大网关内部的状态流动：
 
-```
+```text
 [Agent 发起流式推理请求]
        │
        ▼

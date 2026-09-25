@@ -31,7 +31,7 @@ featured: false
 
 在分析网关实现之前，我们必须先理清大模型流式输出在 TCP/IP 协议栈上的真实封装形态。目前大模型 API（如 OpenAI `/v1/chat/completions`）事实上的标准协议是基于 HTTP 的 **Server-Sent Events (SSE)**。
 
-```
+```text
 客户端发起请求:
 POST /v1/chat/completions HTTP/1.1
 Host: api.gateway.local
@@ -41,7 +41,7 @@ Content-Type: application/json
 {"model": "deepseek-v3", "messages": [...], "stream": true}
 ```
 
-```
+```text
 网关与模型服务响应:
 HTTP/1.1 200 OK
 Content-Type: text/event-stream; charset=utf-8
@@ -238,7 +238,7 @@ func (ctx *aiProxyContext) OnHttpResponseBody(bodySize int, endOfStream bool) ty
 
 在 Envoy 底层，C++ 数据面是如何配合 Wasm 插件与操作系统网络栈，将背压层层传递的？核心机制就在于 **Envoy 流式缓冲区的高低水位线（High/Low Watermark Buffer）**。
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        Envoy Stream Buffer 水位线模型                  │
 ├────────────────────────────────────────────────────────────────────────┤

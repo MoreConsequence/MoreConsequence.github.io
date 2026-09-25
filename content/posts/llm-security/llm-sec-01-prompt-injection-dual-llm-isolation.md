@@ -6,6 +6,7 @@ tags: ["大模型安全", "Prompt Injection", "提示词注入", "Dual-LLM", "OW
 draft: true
 featured: true
 series: "大模型安全防御与对抗攻防实战"
+category: "大模型与智能体系统"
 ---
 
 **TL;DR：** 提示词注入（Prompt Injection）并非传统的软件代码缺陷，而是 **Transformer 自回归架构在计算语义层面的物理必然性**：模型将系统提示词（指令）与用户输入（数据）拼接为同一段线性的 Token 序列，并通过注意力机制（Self-Attention）统一计算权重，在硬件与数学表征上天然不存在任何“指令与数据隔离的硬件特权级”。纯文本层面的“无论如何请遵守规则”或 XML 标签包裹（`<data>...</data>`）无法提供图灵机级别的绝对安全边界。彻底终结提示词注入的唯一可靠工程解法是 **双模型隔离架构（Dual-LLM Pattern / Privileged vs Quarantined Architecture）**：将拥有工具调用与外部写权限的“特权模型（Privileged LLM）”与仅负责解析外部不受信数据的“隔离模型（Quarantined LLM）”在网络与上下文物理层彻底解耦，从体系结构层面粉碎间接注入攻击链。
