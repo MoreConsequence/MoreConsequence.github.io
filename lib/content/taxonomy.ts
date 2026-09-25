@@ -29,6 +29,7 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "穿透大模型炒作迷雾，直击显存虚拟化（PagedAttention）、推测解码、高并发流式网关、RAG 混合检索、自动化评估门禁、代码执行沙箱与自主智能体状态机。",
     keyTopics: ["LLM", "Agent", "AI网关", "vLLM", "RAG", "推测解码", "评估门禁", "MCP协议", "Prompt Caching"],
     seriesList: [
+      "Google AX 架构解密与云原生 Agent 编排",
       "前沿大模型训练与全栈 Infra 解密",
       "面向大模型与 Agent 的 AI 网关实战",
       "大模型安全防御与对抗攻防实战",
@@ -134,7 +135,7 @@ export function getPostPillarId(
 
   // 2. 根据 slug 规则匹配
   if (/^iot-netdev-/.test(slug)) return "network-iot";
-  if (/^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-/.test(slug)) return "ai-systems";
+  if (/^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^ax-|^google-ax-/.test(slug)) return "ai-systems";
   if (/^interview-/.test(slug)) return "architecture-practice";
   if (/^k8s-|^kubernetes-/.test(slug)) return "architecture-practice";
   if (/^kernel-|^bpf-|^linux-|^speedtest-/.test(slug)) return "kernel-performance";

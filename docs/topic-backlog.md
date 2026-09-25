@@ -25,6 +25,7 @@
 | 面向大模型与 Agent 的 AI 网关实战 | 8 | ✅ 全 8 篇圆满交付（架构总纲、SSE背压、模型动态路由、Prompt Cache亲和、Token限流、语义缓存、MCP工具网关、实时护栏） |
 | 前沿大模型训练与全栈 Infra 解密 | 5 | ✅ 全 5 篇圆满交付（3D并行拓扑、FlashAttention访存平铺、MoE专家并行、万卡无损网络RoCE/IB、2.5秒三级Checkpoint容灾） |
 | Kubernetes 架构内核与生产实战 | 10 | ✅ 全 10 篇圆满交付（容器与Pod物理边界、控制面全景、client-go Informer、CFS/cgroups/OOM、调度框架、CNI/eBPF、Service/Gateway API、CSI存储编排、CRD Operator实战、零502与排障决策树） |
+| Google AX 架构解密与云原生 Agent 编排 | 10 | ✅ 全 10 篇圆满交付（范式转移、Substrate多路复用、亚秒快照、四大原语、gVisor沙箱、MCP治理、零信任网关、终局选型） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -326,6 +327,23 @@
 | ✅ 28. 控制面过载保护与 APF 流控（2026-07-09 `k8s-28-api-priority-and-fairness-apf-flowcontrol.md`） | 面试官：当 100,000 个 Pod 同时向 API Server 发起冲击，K8s 为什么不会被击垮？（从 API Priority and Fairness、FlowSchema 到公平排队算法内核） | APF 架构内核、FlowSchema 分流、PriorityLevelConfiguration 并发隔离、洗牌分片（Shuffle Sharding）、公平排队（Fair Queueing） |
 | ✅ 29. 安全沙箱容器运行时深度解析（2026-07-10 `k8s-29-sandbox-containers-gvisor-kata.md`） | 面试官：公有云多租户跑不可信代码，如何防止 0-day 内核提权攻陷宿主机？（从 gVisor Sentry 拦截、Kata 微虚拟机到安全沙箱运行时选型） | 共享内核 0-day 逃逸成因、Google gVisor 用户态 Go 内核系统调用拦截、Kata Containers 硬件级微虚机 MMU 隔离、RuntimeClass 混排 |
 | ✅ 30. 百万级流式日志与可观测底盘（2026-07-11 `k8s-30-observability-logging-fluentbit-vector.md`） | 面试官：每天产生 100TB 日志的超大规模集群，为什么不能给每个 Pod 挂 Sidecar？如何基于 Vector / Fluent Bit 实现内核级零拷贝流式采集？ | Sidecar 模式资源与 inotify 崩溃成因、containerd CRI stdout 落盘机制、Fluent Bit / Vector 零拷贝 mmap、Node-Local 缓存富化 |
+
+### S16. Google AX 架构解密与云原生 Agent 编排【全新重磅系列，全 10 篇】
+
+**为什么**：2026 年 9 月谷歌正式开源 AX（Agent Executor，也称 Open Agentic Orchestrator，`github.com/google/ax`），直击云原生演进的核心死穴：经典 Kubernetes 是为无状态微服务（Stateless）或批处理（Batch）设计的，面对 80%~95% 时间在空等 LLM 吐字/人类审批、环境高度状态化且需要任意执行命令的 AI Agent 工作负载彻底失灵。AX 在 K8s 之上构建了面向 Agent Actor 的声明式调度与执行底座，打通高密多路复用、亚秒级挂起唤醒、gVisor 物理沙箱、MCP 长连接管理与零信任出站网关，是云原生跨入 Agentic 时代的划时代之作。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. 序章：第三类工作负载的范式转移（2026-09-26 `ax-01-paradigm-shift-from-k8s-pod-to-agentic-actor.md`） | 为什么 Kubernetes 接不住 AI Agent？第三类工作负载的范式转移 | 微服务、批处理与 Agent Actor 的生命周期断层；一 Pod 一 Agent 的密度与空转灾难；冷启动 30s 困境；AX 架构第一性原理 |
+| ✅ 02. 快速起步与组件剖析（2026-09-27 `ax-02-quickstart-declarative-control-plane-ax-cli.md`） | 声明式 AX 控制面规范与 ax 极客命令行实战 | 对标 kubectl 的设计哲学；`ax.io/v1alpha1` 资源拓扑全景；从零部署首个 Agent：`ax apply`、`ax watch`、`ax logs`、`ax ssh` 排障 |
+| ✅ 03. 核心底座 Agent Substrate（2026-09-28 `ax-03-agent-substrate-actor-multiplexing-resource-pooling.md`） | Agent Substrate 高密度 Actor 多路复用与资源池化 | 解耦 Pod 与 Actor 物理绑定；单个 Worker Pod 承载数百 Agent 会话；协程级事件分发与 cgroups v2 细粒度资源切片 |
+| ✅ 04. 亚秒级 Suspend/Resume 冻结机制（2026-09-29 `ax-04-sub-second-suspend-resume-state-checkpointing.md`） | 亚秒级 Suspend 与 Resume 的内存/磁盘快照第一性原理 | 空闲等待时交出 CPU；内存增量快照、OverlayFS 写时复制（CoW）文件系统冻结；<1s 极速热复苏状态机闭环 |
+| ✅ 05. 声明式核心之 Task 原语（2026-09-30 `ax-05-task-primitive-lifecycle-cgroups-reconcile-loop.md`） | 深入 Task 控制回路、资源配额与生命周期钩子 | Task 原语设计规范；生命周期钩子（preRun/postRun）；配额超卖与防崩溃驱逐；与标准 K8s Reconcile 的异同 |
+| ✅ 06. 声明式核心之 Workspace 原语（2026-10-01 `ax-06-workspace-primitive-git-prewarm-cache-trees.md`） | 代码仓库热装载与环境预热的第一性原理 | 彻底消除依赖下载延迟；Workspace 的 Git 增量绑定（Alternates）、本地树缓存复用与 Python/Node 依赖预热技术 |
+| ✅ 07. 工具生态枢纽与 MCP 治理（2026-10-02 `ax-07-mcp-integration-long-lived-connections-tool-governance.md`） | Model Context Protocol (MCP) 在 AX 中的长连接治理 | 跨会话 MCP 进程长连接复用；动态 Tool Schema 注入；权限沙箱裁剪与防 Agent 工具递归死循环熔断 |
+| ✅ 08. 安全沙箱防线与 gVisor 隔离（2026-10-03 `ax-08-security-gvisor-syscall-interception-sandbox-isolation.md`） | 深入 gVisor 独立内核拦截与防容器逃逸物理隔离 | 不可信 Agent 执行任意命令的安全边界；gVisor runsc Sentry 用户态拦截 300+ 系统调用；特权提权与逃逸的就地掐断 |
+| ✅ 09. 零信任网络 Gateway 出站治理（2026-10-04 `ax-09-gateway-primitive-zero-trust-egress-secret-redaction.md`） | 防范 Prompt 注入与凭据外泄的出站网关架构 | 提示词注入后的秘钥外发风险；透明反向代理、出站域名/端口严格白名单、动态凭据注入与密钥脱敏（Secret Redaction） |
+| ✅ 10. 终局思辨与生产指南（2026-10-05 `ax-10-model-governance-token-finops-production-tradeoffs.md`） | Model 统一治理、Token 成本控制与架构权衡矩阵 | Model 原语统一模型配额与 Fallback 级联；AX vs 原生 K8s Pod vs Ray vs Temporal 多维权衡；千卡级生产 Agent 集群容量规划 |
 
 ---
 

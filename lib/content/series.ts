@@ -100,6 +100,7 @@ export function getSeriesIcon(seriesName: string): string {
   if (/协议|浏览器/i.test(seriesName)) return "📡";
   if (/网关/i.test(seriesName)) return "🛡️";
   if (/安全|防御|护栏|越狱/i.test(seriesName)) return "🔒";
+  if (/AX|Agent Executor/i.test(seriesName)) return "⚡";
   if (/AI|大模型|LLM/i.test(seriesName)) return "🔮";
   return "🏷️";
 }

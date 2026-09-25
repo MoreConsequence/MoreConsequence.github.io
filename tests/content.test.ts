@@ -46,6 +46,16 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "ax-10-model-governance-token-finops-production-tradeoffs",
+      "ax-09-gateway-primitive-zero-trust-egress-secret-redaction",
+      "ax-08-security-gvisor-syscall-interception-sandbox-isolation",
+      "ax-07-mcp-integration-long-lived-connections-tool-governance",
+      "ax-06-workspace-primitive-git-prewarm-cache-trees",
+      "ax-05-task-primitive-lifecycle-cgroups-reconcile-loop",
+      "ax-04-sub-second-suspend-resume-state-checkpointing",
+      "ax-03-agent-substrate-actor-multiplexing-resource-pooling",
+      "ax-02-quickstart-declarative-control-plane-ax-cli",
+      "ax-01-paradigm-shift-from-k8s-pod-to-agentic-actor",
       "node-async-iterators-cleanup",
       "node-cluster-ipc",
       "node-eventemitter-pubsub",
