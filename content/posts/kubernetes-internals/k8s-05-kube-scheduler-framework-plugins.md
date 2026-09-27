@@ -72,29 +72,29 @@ flowchart LR
 Scheduling Framework 将一个 Pod 的调度全生命周期划分为两个截然不同的物理阶段：
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph SchedulingCycle["1. 调度周期 (Scheduling Cycle: 单线程运行 / 保证绝对一致性)"]
         direction TB
-        PreFilter["PreFilter 扩展点: 预计算 Pod 拓扑需求与快速预检"]
-        Filter["Filter 扩展点: 逐一评估 Node 是否满足运行硬条件"]
-        PostFilter["PostFilter 扩展点: 当且仅当所有节点 Filter 失败时触发 (执行抢占 Preemption)"]
-        PreScore["PreScore 扩展点: 为打分插件构建共享的预聚合数据"]
-        Score["Score / NormalizeScore: 逐插件对可用节点打分 (0~100) 并加权归一化"]
-        Reserve["Reserve 扩展点: 乐观锁预留! 内存中扣除 Node 资源并防并发超卖"]
+        PreFilter["PreFilter 扩展点:<br/>预计算 Pod 拓扑需求与快速预检"]
+        Filter["Filter 扩展点:<br/>逐一评估 Node 满足运行硬条件"]
+        PostFilter["PostFilter 扩展点:<br/>过滤全灭时触发抢占 (Preemption)"]
+        PreScore["PreScore 扩展点:<br/>为打分插件构建共享预聚合数据"]
+        Score["Score / NormalizeScore:<br/>逐插件打分 (0~100) 并归一化"]
+        Reserve["Reserve 扩展点:<br/>乐观锁预留! 内存扣减防超卖"]
         
         PreFilter --> Filter
-        Filter -- "过滤后无节点可用" --> PostFilter
-        Filter -- "存在候选节点" --> PreScore
+        Filter -- "无可用节点" --> PostFilter
+        Filter -- "存在候选" --> PreScore
         PreScore --> Score
         Score --> Reserve
     end
 
-    subgraph BindingCycle["2. 绑定周期 (Binding Cycle: 独立 Goroutine 异步并发执行 / 释放主循环)"]
+    subgraph BindingCycle["2. 绑定周期 (Binding Cycle: 独立 Goroutine 异步并发执行)"]
         direction TB
-        Permit["Permit 扩展点: 准入拦截 (支持等待 Wait / 批准 Approve / 拒绝 Reject)"]
-        PreBind["PreBind 扩展点: 绑定前宿主机准备 (如预挂载网络卷 / 预置网络设备)"]
-        Bind["Bind 扩展点: 向 API Server 提交 Binding 对象 (写入 spec.nodeName)"]
-        PostBind["PostBind 扩展点: 绑定成功后的清理与指标上报"]
+        Permit["Permit 扩展点:<br/>准入拦截 (Wait / Approve / Reject)"]
+        PreBind["PreBind 扩展点:<br/>绑定前准备 (挂卷 / 预置网络)"]
+        Bind["Bind 扩展点:<br/>向 API Server 提交 Binding 对象"]
+        PostBind["PostBind 扩展点:<br/>清理与指标上报"]
         
         Permit --> PreBind
         PreBind --> Bind
@@ -102,7 +102,7 @@ flowchart TB
     end
 
     Reserve ==>|"派发异步协程 (go run)"| Permit
-    Reserve -. "若 Permit 拒绝或超时" .-> Unreserve["Unreserve: 回滚内存预留"]
+    Reserve -. "Permit 拒绝或超时" .-> Unreserve["Unreserve:<br/>回滚内存预留"]
 ```
 
 ### 2.1 调度周期扩展点（Scheduling Cycle）
@@ -243,22 +243,23 @@ func (z *ZoneDisasterRecovery) Score(ctx context.Context, state *framework.Cycle
 在众多的 Filter 与 Score 插件中，生产环境最重要的三类算法是：**资源装箱、亲和性/反亲和性、以及拓扑分布约束**。
 
 ```mermaid
-flowchart TD
-    subgraph SchedulingStrategies["生产核心打分策略对比"]
+flowchart LR
+    subgraph BinPack["资源紧凑装箱 (NodeResourcesFit - MostAllocated)"]
         direction TB
-        subgraph BinPack["资源紧凑装箱 (NodeResourcesFit - MostAllocated)"]
-            direction TB
-            BPDesc["优先将 Pod 塞入已有高负载节点<br/>将空闲节点彻底空出来供下电缩容，压降云账单"]
-            N1["Node 1: 85% 已满 (优先调度)"]
-            N2["Node 2: 10% 已满 (保持空闲)"]
-        end
+        BPDesc["优先将 Pod 塞入已有高负载节点<br/>将空闲节点空出供缩容下电，压降成本"]
+        N1["Node 1: 85% 已满 (优先调度)"]
+        N2["Node 2: 10% 已满 (保持空闲)"]
+        BPDesc --> N1
+        BPDesc --> N2
+    end
 
-        subgraph Spread["高可用打散 (NodeResourcesFit - LeastAllocated)"]
-            direction TB
-            SPDesc["优先将 Pod 均匀散落在所有节点<br/>防止单台物理机硬件挂载导致业务多副本同时夭折"]
-            N3["Node 3: 40%"]
-            N4["Node 4: 40%"]
-        end
+    subgraph Spread["高可用打散 (NodeResourcesFit - LeastAllocated)"]
+        direction TB
+        SPDesc["优先将 Pod 均匀散落在所有节点<br/>防止物理机故障导致多副本同时夭折"]
+        N3["Node 3: 40% (均衡分布)"]
+        N4["Node 4: 40% (均衡分布)"]
+        SPDesc --> N3
+        SPDesc --> N4
     end
 ```
 

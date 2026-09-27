@@ -35,26 +35,28 @@ series: "分布式共识与高可用容错"
 ```
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph ClusterOld["老配置多数派: Q_old = {A, B}"]
-        NodeA["Node A (处于 C_old)"]
-        NodeB["Node B (处于 C_old)"]
+        direction TB
+        NodeA["Node A (C_old)"]
+        NodeB["Node B (C_old)"]
         NodeA <--> NodeB
-        Leader1["【合法 Leader 1 被选出】<br/>由 A, B 投票成立 (2/3)"]
+        Leader1["Leader 1 诞生<br/>(A, B 投票 2/3)"]
         NodeA -.-> Leader1
         NodeB -.-> Leader1
     end
 
-    subgraph DisjointGap["【物理交集为空 ∅】<br/>没有任何公共节点，两者彼此完全不可见！"]
+    subgraph DisjointGap["物理交集为空 ∅<br/>无公共节点互不可见 (脑裂!)"]
     end
 
     subgraph ClusterNew["新配置多数派: Q_new = {C, D, E}"]
-        NodeC["Node C (处于 C_new)"]
-        NodeD["Node D (处于 C_new)"]
-        NodeE["Node E (处于 C_new)"]
+        direction TB
+        NodeC["Node C (C_new)"]
+        NodeD["Node D (C_new)"]
+        NodeE["Node E (C_new)"]
         NodeC <--> NodeD
         NodeD <--> NodeE
-        Leader2["【合法 Leader 2 被选出】<br/>由 C, D, E 投票成立 (3/5)"]
+        Leader2["Leader 2 诞生<br/>(C, D, E 投票 3/5)"]
         NodeC -.-> Leader2
         NodeD -.-> Leader2
         NodeE -.-> Leader2

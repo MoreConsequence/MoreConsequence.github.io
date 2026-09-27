@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "语义缓存", "GPTCache", "Redis", "向量检索", "HNSW", "FinOps", "系统设计"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -44,7 +44,7 @@ Prompt 3: "请教一下，排查 Linux 系统 TCP 丢包有哪些步骤？"
 语义缓存的核心思想是：**将 Prompt 映射到连续的高维语义向量空间，用几何距离度量意图等价性**。
 
 ```mermaid
-flowchart TD
+flowchart LR
     Req["用户新请求 Prompt Q_new"] --> PreProcess["1. 预处理 (归一化、去停用词)"]
     PreProcess --> Embedder["2. 文本嵌入模型 (Embedding Model)<br/>生成稠密向量 V_new (e.g. 768维)"]
     Embedder --> VectorSearch["3. 向量索引检索 (Redis VL / Milvus HNSW)<br/>召回最相似历史提问 Q_cached"]
@@ -63,17 +63,13 @@ flowchart TD
 
 开源社区中，Zilliz 推出的 **GPTCache** 是最成熟的语义缓存框架之一。GPTCache 将整个缓存流程清晰解耦为五层模块，我们来深入其源码架构：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        GPTCache 五层解耦流水线                         │
-├───────────────────┬────────────────────────────────────────────────────┤
-│ 1. Pre-process    │ 清洗文本，去除无语义标点、空格、大小写归一化       │
-│ 2. Embedding      │ 调用模型（Onnxruntime/OpenAI）将文本转为浮点向量    │
-│ 3. Similarity     │ 在向量库（FAISS/Milvus/Redis）中检索 Top-K 候选     │
-│ 4. Evaluation     │ 对候选集进行相似度评估、置信度判决与重排（Rerank） │
-│ 5. Post-process   │ 结果后处理（拼装多轮、格式化、动态替换占位符）     │
-└───────────────────┴────────────────────────────────────────────────────┘
-```
+| 流水线阶段 | 核心职责 |
+| :--- | :--- |
+| **1. Pre-process** | 清洗文本，去除无语义标点、空格、大小写归一化 |
+| **2. Embedding** | 调用模型（Onnxruntime/OpenAI）将文本转为浮点向量 |
+| **3. Similarity** | 在向量库（FAISS/Milvus/Redis）中检索 Top-K 候选 |
+| **4. Evaluation** | 对候选集进行相似度评估、置信度判决与重排（Rerank） |
+| **5. Post-process** | 结果后处理（拼装多轮、格式化、动态替换占位符） |
 
 ### 3.1 核心评估器源码解析
 在 GPTCache 中，最核心的判决逻辑位于 `gptcache/similarity_evaluation/`。我们来看其基于余弦距离的距离评估器：
@@ -111,7 +107,7 @@ class SearchDistanceEvaluation:
 为什么单纯依赖向量余弦相似度是极端危险的？因为目前的文本嵌入模型（Embedding Models）是基于上下文共现（Co-occurrence）预训练出来的，它们擅长捕捉“主题相似性”，却对**否定词、时间实体、数值对比以及因果关系极其迟钝**！
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Trap1["陷阱 1: 否定与反义反转 (Negation Trap)"]
         Q1["Q1: '请问如何在平台开户？'"]
         Q2["Q2: '请问如何在平台销户？'"]
@@ -155,7 +151,7 @@ flowchart TD
 面对上述陷阱，工业级 AI 网关绝对不能采用简单的“单层向量距离阈值”。必须在网关层建立 **“粗筛召回 + 精排实体硬核校验” 的两阶段双重防御漏斗**：
 
 ```mermaid
-flowchart TD
+flowchart LR
     Req["用户新提问 Q_new"] --> TenantCheck["阶段 0: 租户强隔离过滤<br/>(仅在 Tenant_ID = 1001 的命名空间内检索)"]
     
     TenantCheck --> AnnSearch["阶段 1: 向量近似最近邻粗筛 (ANN)<br/>Redis VL 召回 Top-3 候选 (阈值 > 0.88)"]

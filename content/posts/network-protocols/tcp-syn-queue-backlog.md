@@ -22,10 +22,10 @@ series: "网络协议"
 
 ```mermaid
 flowchart LR
-    C[客户端] -->|"1. SYN| A[SYN 队列<br/>半连接<br/>等 ACK]
-    A -->|"2. ACK 到达| B[accept 队列<br/>完整连接<br/>等 accept()]
-    B -->|"3. accept()| S[应用<br/>取得已建立连接]
-    A -.容量不够丢包.-> C
+    C["客户端"] -->|"1. SYN"| A["SYN 队列<br/>半连接<br/>等 ACK"]
+    A -->|"2. ACK 到达"| B["accept 队列<br/>完整连接<br/>等 accept()"]
+    B -->|"3. accept()"| S["应用<br/>取得已建立连接"]
+    A -. "容量不够丢包" .-> C
 ```
 
 - **SYN 队列（receive queue, half-open）**：收到 SYN 就放进来（还未分配完整 socket，只占几十字节），同时内核回 SYN+ACK。**等客户端的 ACK**。状态叫 `SYN_RECEIVED`。

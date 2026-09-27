@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "限流算法", "Kong", "Redis", "Lua", "Token计量", "FinOps", "高并发"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -35,19 +35,13 @@ $$\text{集群总负载} \approx \text{并发 QPS} \times \bar{T}_{\text{avg}}$$
 
 在大模型世界中，这个数学模型被物理层粉碎：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        极端工作负载对比：Request A vs B                │
-├──────────────────────────┬────────────────────┬────────────────────────┤
-│ 指标维度                 │ 请求 A: 简单问答   │ 请求 B: Agent 复杂工程 │
-├──────────────────────────┼────────────────────┼────────────────────────┤
-│ 输入 Tokens (Prompt)     │ 15 Tokens          │ 120,000 Tokens (代码库)│
-│ 输出 Tokens (Completion) │ 30 Tokens          │ 4,096 Tokens (多文件)  │
-│ GPU 占用显存 (KV Cache)  │ ~100 KB            │ ~3.8 GB                │
-│ GPU 推理占用时长         │ 40 ms              │ 45,000 ms              │
-│ 实际硬件与云成本         │ $0.00002           │ $0.48 (相差 24,000 倍!)│
-└──────────────────────────┴────────────────────┴────────────────────────┘
-```
+| 指标维度 | 请求 A: 简单问答 | 请求 B: Agent 复杂工程 |
+| :--- | :--- | :--- |
+| **输入 Tokens (Prompt)** | 15 Tokens | 120,000 Tokens (代码库) |
+| **输出 Tokens (Completion)** | 30 Tokens | 4,096 Tokens (多文件) |
+| **GPU 占用显存 (KV Cache)** | ~100 KB | ~3.8 GB |
+| **GPU 推理占用时长** | 40 ms | 45,000 ms |
+| **实际硬件与云成本** | $0.00002 | $0.48 (相差 24,000 倍!) |
 
 **因果灾难**：
 1. **小请求掩盖大洪水**：如果为某租户配置 100 QPS，租户并发发起 10 个请求 B，集群显存立刻打满，上千台 GPU 节点排队挂死；
@@ -66,7 +60,7 @@ $$\text{集群总负载} \approx \text{并发 QPS} \times \bar{T}_{\text{avg}}$$
 任意一个指标触达红线，立即执行安全阻断。
 
 ```mermaid
-flowchart TD
+flowchart LR
     Req["客户端请求到达"] --> Extract["提取租户 ID: tenant_1024<br/>提取目标模型: deepseek-v3"]
 
     subgraph TwoTrackCheck["双轨同时校验 (Two-Track Rate Limiting)"]

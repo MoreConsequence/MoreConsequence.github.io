@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="redis-threaded-io-title redis-threaded-io-desc">
+  <title id="redis-threaded-io-title">Redis 6.0 Threaded I/O 三阶段屏障架构设计</title>
+  <desc id="redis-threaded-io-desc">高对比度架构图：展示 Redis 6.0 多线程网络 I/O 并发读取解析、主线程纯串行命令执行与多线程并发写回的三阶段屏障调度模型。</desc>
+  <defs>
+    <marker id="rd-arr-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f172a" />
+    </marker>
+    <marker id="rd-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#d9531e" />
+    </marker>
+    <marker id="rd-arr-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0284c7" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="960" height="560" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- Header Section -->
+  <g transform="translate(40, 38)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Redis 6.0 Threaded I/O 三阶段屏障架构设计</text>
+    <text x="0" y="26" fill="#475569" font-size="13" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">并发读取与协议解析 (97.6% 开销) ➔ 主线程纯单线程命令执行 (2.4% 核心) ➔ 并发写回响应</text>
+  </g>
+
+  <!-- Connectors Between Stages -->
+  <!-- Phase 1 -> Phase 2 Barrier -->
+  <g>
+    <line x1="315" y1="260" x2="345" y2="260" stroke="#d9531e" stroke-width="2" marker-end="url(#rd-arr-accent)" />
+    <rect x="306" y="226" width="50" height="18" rx="3" fill="#d9531e" />
+    <text x="331" y="239" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">BARRIER 1</text>
+  </g>
+
+  <!-- Phase 2 -> Phase 3 Dispatch -->
+  <g>
+    <line x1="615" y1="260" x2="645" y2="260" stroke="#0284c7" stroke-width="2" marker-end="url(#rd-arr-link)" />
+    <rect x="604" y="226" width="54" height="18" rx="3" fill="#0284c7" />
+    <text x="631" y="239" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">BARRIER 2</text>
+  </g>
+
+  <!-- 3 Stages Columns (y=84..484, h=400) -->
+
+  <!-- Col 1: Phase 1 (x=40..315, w=275) -->
+  <g transform="translate(40, 84)">
+    <rect width="275" height="400" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">PHASE 1</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">并发读与协议解析</text>
+
+    <!-- Sub-block 1: Event Capture -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. 事件捕获与入队</text>
+    <text x="14" y="90" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">aeProcessEvents() 捕获可读事件</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• postponeClientRead() 暂存连接</text>
+    <text x="14" y="132" fill="#475569" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">  clients_pending_read 队列缓冲</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="261" y2="150" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Round Robin & Worker Read -->
+    <text x="14" y="174" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 轮询分发与并行解析</text>
+    <text x="14" y="196" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 主线程 Round-Robin 均分任务</text>
+    <text x="14" y="218" fill="#334155" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">  io_threads_list[id] 私有队列</text>
+    <text x="14" y="240" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• N 个 I/O 线程并发 read(fd)</text>
+    <text x="14" y="262" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  解析二进制 RESP 协议为 client->argv</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="280" x2="261" y2="280" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Spin Wait Barrier -->
+    <text x="14" y="306" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 主线程自旋屏障</text>
+    <text x="14" y="330" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">while(io_threads_pending != 0)</text>
+    <text x="14" y="352" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 主线程忙轮询等待所有解析完成</text>
+    <text x="14" y="374" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">➔ 阻断并发读进入命令执行期</text>
+  </g>
+
+  <!-- Col 2: Phase 2 (x=345..615, w=270) - FOCAL ACCENT -->
+  <g transform="translate(345, 84)">
+    <rect width="270" height="400" rx="8" fill="rgba(217, 83, 30, 0.04)" stroke="#d9531e" stroke-width="2" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#d9531e" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">PHASE 2</text>
+    <text x="92" y="30" fill="#d9531e" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">主线程纯串行命令执行</text>
+
+    <!-- Sub-block 1: Core Execution -->
+    <text x="14" y="66" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. 绝对单线程原子执行</text>
+    <text x="14" y="90" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">processCommandAndResetClient()</text>
+    <text x="14" y="112" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 零全局锁！零缓存行颠簸！</text>
+    <text x="14" y="132" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 纯内存寻址，纳秒级瞬间完成</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="256" y2="150" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 2: Consistency Guarantee -->
+    <text x="14" y="174" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 捍卫核心一致性语义</text>
+    <text x="14" y="196" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• MULTI / EXEC 事务绝对安全</text>
+    <text x="14" y="218" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• Lua 脚本原子执行不受干扰</text>
+    <text x="14" y="240" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• Dict 哈希表渐进式 Rehash 无竞争</text>
+    <text x="14" y="262" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  跳表更新、LRU 驱逐计数零开销</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="280" x2="256" y2="280" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 3: Output Staging -->
+    <text x="14" y="306" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 响应暂存与阶段交接</text>
+    <text x="14" y="330" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 响应写入客户端输出缓冲 client->buf</text>
+    <text x="14" y="352" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">  clients_pending_write 队列</text>
+    <text x="14" y="374" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">➔ 单线程串行执行完毕，进入并发写</text>
+  </g>
+
+  <!-- Col 3: Phase 3 (x=645..920, w=275) -->
+  <g transform="translate(645, 84)">
+    <rect width="275" height="400" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#0f172a" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">PHASE 3</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">并发响应写回</text>
+
+    <!-- Sub-block 1: Write Dispatch -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. 待写任务重新分发</text>
+    <text x="14" y="90" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">handleClientsWithPendingWrites()</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 轮询分配写入任务至各 I/O 线程</text>
+    <text x="14" y="132" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  设置原子待写计数器唤醒工作线程</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="261" y2="150" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Parallel Write -->
+    <text x="14" y="174" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. I/O 线程并发写入 Socket</text>
+    <text x="14" y="196" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">write(client->fd, client->buf)</text>
+    <text x="14" y="218" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 将数据批量推向系统 TCP 发送缓冲</text>
+    <text x="14" y="240" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 彻底释放主线程 Socket I/O 开销</text>
+    <text x="14" y="262" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  避免慢客户端阻塞数据库响应</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="280" x2="261" y2="280" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Final Spin Wait -->
+    <text x="14" y="306" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 第二次自旋屏障与闭环</text>
+    <text x="14" y="330" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">while(io_threads_pending != 0)</text>
+    <text x="14" y="352" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 主线程自旋确保所有写入交付内核</text>
+    <text x="14" y="374" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">➔ 清空队列，重返 aeProcessEvents 循环</text>
+  </g>
+
+  <!-- Legend Strip at Bottom -->
+  <g transform="translate(40, 508)">
+    <line x1="0" y1="0" x2="880" y2="0" stroke="#e2e8f0" stroke-width="1.5" />
+    <text x="0" y="24" fill="#64748b" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">图例规范：</text>
+
+    <rect x="75" y="11" width="14" height="14" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <text x="96" y="23" fill="#334155" font-size="12" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">阶段一/三：多线程并发 I/O (97.6% 消耗，拆解网络瓶颈)</text>
+
+    <rect x="470" y="11" width="14" height="14" rx="3" fill="rgba(217, 83, 30, 0.08)" stroke="#d9531e" stroke-width="1.8" />
+    <text x="491" y="23" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">阶段二：主线程串行命令执行核心 (零锁、零竞态、保障 ACID)</text>
+  </g>
+</svg>

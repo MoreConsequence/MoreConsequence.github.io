@@ -12,24 +12,24 @@
 
   <g transform="translate(30, 20)">
     <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb" />
-    <text x="24" y="18" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" fill="#2d3142">Kubernetes 控制器增量账：Reflector、DeltaFIFO 与 Informer 闭环机制</text>
-    <text x="24" y="36" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" fill="#4f5d75">etcd ──► apiserver ──► Reflector (List-Watch) ──► DeltaFIFO ──► Indexer 本地缓存 ──► WorkQueue ──► Reconcile 驱动状态收敛</text>
+    <text x="24" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="700" fill="#2d3142">Kubernetes 控制器增量账：Reflector、DeltaFIFO 与 Informer 闭环机制</text>
+    <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#4f5d75">etcd ──► apiserver ──► Reflector (List-Watch) ──► DeltaFIFO ──► Indexer 本地缓存 ──► WorkQueue ──► Reconcile 驱动状态收敛</text>
   </g>
 
   <g transform="translate(30, 70)">
     
-    <g transform="translate(20, 15)" font-family="'Geist', 'Noto Sans SC', sans-serif">
+    <g transform="translate(20, 15)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">
       
       <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
       <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">1. Reflector 与 HTTP 长链接 List-Watch (增量流式监听)</text>
-      <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">GET /api/v1/pods?watch=true&amp;resourceVersion=1024 ──► 接收 Added / Modified / Deleted 事件</text>
+      <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">GET /api/v1/pods?watch=true&amp;resourceVersion=1024 ──► 接收 Added / Modified / Deleted 事件</text>
       <text x="15" y="62" font-size="8" fill="#4f5d75">通过 resourceVersion 游标实现断点续传，彻底避免轮询打垮 apiserver 与 etcd！</text>
 
       
       <g transform="translate(0, 83)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">2. DeltaFIFO 增量积压队列与 Indexer 内存索引树</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">DeltaFIFO.Pop() ──► 消费事件 ──► 写入 Indexer 本地只读缓存 (ThreadSafeStore)</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">DeltaFIFO.Pop() ──► 消费事件 ──► 写入 Indexer 本地只读缓存 (ThreadSafeStore)</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">所有业务读操作 100% 命中本地内存 Indexer，保障百节点集群超低查询延迟！</text>
       </g>
 
@@ -37,7 +37,7 @@
       <g transform="translate(0, 166)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="rgba(235,108,54,0.30)" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">3. ResourceEventHandler 与 WorkQueue 延迟去重队列</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">OnAdd / OnUpdate ──► key: "default/my-pod" ──► WorkQueue (带速率限制与去重折叠)</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">OnAdd / OnUpdate ──► key: "default/my-pod" ──► WorkQueue (带速率限制与去重折叠)</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">同一资源短时间内的 10 次微小变动自动折叠为 1 次调谐，消除抖动暴风雨！</text>
       </g>
 
@@ -45,7 +45,7 @@
       <g transform="translate(0, 249)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#d8b4fe" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">4. Reconcile 声明式调谐循环 (期望状态 vs 实际状态)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">Reconcile(key) ──► 比较 Desired State 与 Current State ──► 调用 API 创建/更新 Pod</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">Reconcile(key) ──► 比较 Desired State 与 Current State ──► 调用 API 创建/更新 Pod</text>
         <text x="15" y="62" font-size="8" fill="#2d3142">基于 Level-Triggered 水平触发设计，无论网络丢包还是组件重启，系统永远单调收敛于期望状态！</text>
       </g>
     </g>

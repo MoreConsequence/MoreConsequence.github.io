@@ -27,3 +27,9 @@ export type CompiledPost = PostSource & {
   readingTimeMinutes: number;
   plainText: string;
 };
+
+export type PostSummary = {
+  slug: string;
+  meta: PostMeta;
+  readingTimeMinutes?: number;
+};

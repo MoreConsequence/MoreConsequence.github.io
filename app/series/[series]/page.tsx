@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SeriesCurriculum } from "@/components/post/series-curriculum";
-import { getAllPosts, getPostSources } from "@/lib/content/posts";
+import { getPostSources } from "@/lib/content/posts";
 import { collectSeries, decodeSeries, getPostsForSeries } from "@/lib/content/series";
 import { encodeRouteSegment } from "@/lib/site-links";
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
 export default async function SeriesDetailPage({ params }: PageProps) {
   const name = decodeSeries((await params).series);
-  const posts = getPostsForSeries(await getAllPosts(), name);
+  const posts = getPostsForSeries(getPostSources(), name);
 
   if (!posts.length) notFound();
 

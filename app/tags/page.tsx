@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPosts } from "@/lib/content/posts";
+import { getPostSources } from "@/lib/content/posts";
 import { collectTags } from "@/lib/content/tags";
 import { TagsExplorer } from "@/components/tags/tags-explorer";
 import { tagHref } from "@/lib/site-links";
@@ -40,7 +40,7 @@ const CURATED_PILLAR_TAGS = [
 ];
 
 export default async function TagsPage() {
-  const posts = await getAllPosts();
+  const posts = getPostSources();
   const allTags = collectTags(posts);
 
   // 构造快速查询 Map 获取每个标签的文章数量

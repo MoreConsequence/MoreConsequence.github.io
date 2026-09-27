@@ -38,19 +38,21 @@ series: "Kubernetes 架构内核与生产实战"
 资深稳定性与架构专家在回答该问题时，必须能够清晰呈现**混沌工程的科学实验原则**与**Chaos Mesh 在 Linux 内核空间的四层注入机制拓扑**：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph ChaosPrinciples["混沌工程三大公理"]
-        P1["假设先行：定义稳态指标 (SLO: P99 < 200ms, 错误率 < 0.01%)"]
-        P2["最小爆炸半径：基于 LabelSelector 精确圈定试验受体 Pod"]
-        P3["自动化终止与回滚：一旦稳态突破阈值，纳秒级撤销内核规则"]
+        direction TB
+        P1["1. 假设先行: 明确稳态指标 (SLO)"]
+        P2["2. 最小爆炸半径: 精确圈定试验受体"]
+        P3["3. 自动熔断回滚: 纳秒级撤销规则"]
+        P1 --> P2 --> P3
     end
 
-    subgraph ChaosMeshCore["Chaos Mesh 底层四层注入物理图谱"]
+    subgraph ChaosMeshCore["底层四层注入物理图谱"]
         direction TB
-        L1["网络层故障 (NetworkChaos): Linux Traffic Control (tc-netem) + iptables"]
-        L2["存储层故障 (IOChaos): FUSE 用户态文件系统透明挂载 + eBPF BPF Map"]
-        L3["进程/系统调用层 (KernelChaos/JVMChaos): eBPF 探针注入 + ptrace 字节码动态改写"]
-        L4["时间层故障 (TimeChaos): VDSO (Virtual Dynamic Shared Object) 时间劫持"]
+        L1["网络故障: tc-netem + iptables"]
+        L2["存储故障: FUSE 透明挂载 + eBPF"]
+        L3["系统调用: eBPF 探针 + ptrace"]
+        L4["时间扭曲: VDSO 系统时间劫持"]
     end
 
     ChaosPrinciples ==> ChaosMeshCore
@@ -63,31 +65,28 @@ flowchart TD
 Chaos Mesh 是专门针对 Kubernetes 原生环境构建的声明式故障编排框架，其架构解耦为**全局控制器**与**节点守护进程**：
 
 ```mermaid
-flowchart TB
-    subgraph ControlPlane["Kubernetes 控制面"]
-        UserCRD["用户声明 Chaos CRD (NetworkChaos / IOChaos)"]
-        ChaosController["chaos-controller-manager<br>(Watch CRD 变更，解析目标 Pod 并调度故障)"]
-        UserCRD --> ChaosController
+flowchart LR
+    subgraph ControlPlane["控制面"]
+        direction TB
+        UserCRD["声明 Chaos CRD"] --> ChaosController["chaos-controller-manager<br/>(解析目标与调度)"]
     end
 
     subgraph WorkerNode1["Worker 节点 1"]
         direction TB
-        ChaosDaemon1["chaos-daemon (DaemonSet / 特权特化进程)<br>(直接操作宿主机 Linux 内核、Netns 与文件描述符)"]
-        TargetPodA["目标 Pod A (业务支付服务)"]
-        NormalPodB["普通 Pod B (不受任何影响！)"]
-        
-        ChaosDaemon1 -.->|"通过 setns 切换进入 Pod A 的命名空间"| TargetPodA
+        ChaosDaemon1["chaos-daemon<br/>(特权 DaemonSet)"]
+        TargetPodA["目标 Pod A (受控故障)"]
+        ChaosDaemon1 -.->|"setns 注入"| TargetPodA
     end
 
     subgraph WorkerNode2["Worker 节点 2"]
         direction TB
         ChaosDaemon2["chaos-daemon"]
         TargetPodC["目标 Pod C"]
-        ChaosDaemon2 -.-> TargetPodC
+        ChaosDaemon2 -.->|"setns 注入"| TargetPodC
     end
 
-    ChaosController ==="通过 gRPC 安全下发故障注入指令"===> ChaosDaemon1
-    ChaosController ==="通过 gRPC 下发指令"===> ChaosDaemon2
+    ChaosController == "gRPC 指令" ==> ChaosDaemon1
+    ChaosController == "gRPC 指令" ==> ChaosDaemon2
 ```
 
 1. **`chaos-controller-manager`**：运行在集群控制面，负责监听用户提交的 `NetworkChaos`、`IOChaos` 等 CRD，计算匹配的目标 Pod 列表，并根据配置的生命周期定时器（Duration / Cron）调度实验；

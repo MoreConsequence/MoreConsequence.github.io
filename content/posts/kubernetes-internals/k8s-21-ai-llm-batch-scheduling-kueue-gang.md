@@ -39,27 +39,23 @@ series: "Kubernetes 架构内核与生产实战"
 资深平台架构师在被问及该场景时，必须能够清晰解构**作业级编排与单 Pod 绑定的分层模型**，推导 Kueue 的优雅解耦范式：
 
 ```mermaid
-flowchart TD
-    subgraph Problem["分布式训练的死锁困境 (Deadlock)"]
+flowchart LR
+    subgraph Problem["分布式训练死锁困境 (Deadlock)"]
         direction TB
-        Job1["训练作业 A (申请 512 卡)"]
-        Job2["训练作业 B (申请 512 卡)"]
-        Cluster["物理集群总量：800 卡"]
-        Job1 -->|"抢到 400 卡"| Cluster
-        Job2 -->|"抢到 400 卡"| Cluster
-        Result["结果：双方 NCCL 环路无法闭环，双双挂死在 Pending / 握手阶段！"]
-        Cluster --> Result
+        Job1["作业 A (需 512 卡)"] -->|"占 400 卡"| Cluster["集群总量: 800 卡"]
+        Job2["作业 B (需 512 卡)"] -->|"占 400 卡"| Cluster
+        Cluster --> Result["NCCL 环路无法闭合<br/>双双死锁挂起!"]
     end
 
-    subgraph Solution["Kueue 声明式外挂批调度中枢"]
+    subgraph Solution["Kueue 批调度声明式防线"]
         direction TB
-        KueueQueue["Kueue 作业排队层：作业级准入 (Workload Gating)"]
-        GangCheck["Gang Scheduling 校验：必须 512 卡全部能满足才放行"]
-        Scheduler["原生 kube-scheduler：仅负责原子绑定已就位的 Pod"]
+        KueueQueue["Kueue 作业级门控 (Workload Gating)"]
+        GangCheck["Gang 校验: 512 卡全量齐套才放行"]
+        Scheduler["kube-scheduler: 原子绑定已就位 Pod"]
         KueueQueue --> GangCheck --> Scheduler
     end
 
-    Problem ==> Solution
+    Problem ==>|"架构解法"| Solution
 ```
 
 ---
@@ -93,32 +89,31 @@ sequenceDiagram
 - **底层 kube-scheduler 负责“把具体 Pod 放置在哪台宿主机（Where to bind a Pod）”**。
 
 ```mermaid
-flowchart TB
-    subgraph UserSpace["用户 / 算法团队提交层"]
-        PyTorchJob["Kubeflow PyTorchJob"]
-        RayCluster["KubeRay RayCluster"]
-        StandardJob["Kubernetes Batch Job"]
+flowchart LR
+    subgraph UserSpace["算法作业提交"]
+        direction TB
+        PyTorchJob["PyTorchJob / RayCluster"]
     end
 
-    subgraph KueueControlPlane["Kueue 批调度控制中枢 (CRDs)"]
+    subgraph KueueControlPlane["Kueue 批调度中枢 (CRDs)"]
         direction TB
-        WorkloadCRD["Workload (将不同 Job 统一抽象为通用 Workload)"]
-        LocalQueue["LocalQueue (命名空间维度的团队入口队列)"]
-        ClusterQueue["ClusterQueue (跨命名空间的集群级物理算力池)"]
-        Cohort["Cohort (队列群组：支持不同部门跨集群配额借还)"]
-        
-        LocalQueue --> ClusterQueue --> Cohort
+        WorkloadCRD["Workload 统一抽象"]
+        LocalQueue["LocalQueue (团队队列)"]
+        ClusterQueue["ClusterQueue (算力池)"]
+        Cohort["Cohort (配额借还)"]
+        WorkloadCRD --> LocalQueue --> ClusterQueue --> Cohort
     end
 
     subgraph NativeKube["原生 Kubernetes 体系"]
-        GateWait["Pod SchedulingGate (门控挂起，kube-scheduler 视而不见)"]
-        KubeSched["原生 kube-scheduler (支持 Topology Manager / DRA / NUMA)"]
-        PhysicalNodes["GPU 物理 Worker 节点池 (H100 / A100)"]
+        direction TB
+        GateWait["SchedulingGate 门控拦截"]
+        KubeSched["kube-scheduler 调度器"]
+        PhysicalNodes["GPU 节点池 (H100/A100)"]
+        GateWait --> KubeSched --> PhysicalNodes
     end
 
-    UserSpace --> WorkloadCRD --> LocalQueue
-    ClusterQueue -.->|"满足 Gang 准入条件，移除 SchedulingGate"| GateWait
-    GateWait --> KubeSched --> PhysicalNodes
+    UserSpace --> WorkloadCRD
+    ClusterQueue -.->|"满足 Gang 准入移除 Gate"| GateWait
 ```
 
 ### 3.1 核心原语：SchedulingGates 巧妙化解抢跑

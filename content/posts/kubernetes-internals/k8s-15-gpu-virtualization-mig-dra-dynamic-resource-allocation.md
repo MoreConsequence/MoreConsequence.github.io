@@ -90,12 +90,12 @@ sequenceDiagram
 为了打破整卡独占的限制，各大云厂商和开源界（如阿里 cGPU、腾讯云 qGPU、开源 vGPU）开发了**软件级截获方案**。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph ContainerSpace["业务容器 Pod 内部"]
         direction TB
         AppCode["AI 训练 / 推理代码 (PyTorch / TensorFlow)"]
         HookLib["劫持库: libcuda.so (动态替换注入或 LD_PRELOAD)"]
-        AppCode -->|调用 cudaMalloc(10GB)| HookLib
+        AppCode -->|"调用 cudaMalloc(10GB)"| HookLib
     end
 
     subgraph UserKernelBarrier["用户态 / 内核态边界"]
@@ -197,29 +197,30 @@ spec:
 为了终结这一困境，Kubernetes 在 1.26+ 孵化并在 1.30+ 全面演进推出了 **DRA（Dynamic Resource Allocation）**。
 
 ```mermaid
-flowchart TD
-    subgraph PodManifest["Pod 声明 (业务声明高阶需求)"]
+flowchart LR
+    subgraph PodManifest["Pod 声明"]
         direction TB
-        Pod["Pod: llm-training-worker"]
-        Claim["ResourceClaim: 声明需要 4 张 GPU<br/>约束条件: 必须具备 NVLink Full Mesh 互联<br/>必须与 RoCE v2 网卡位于同一 NUMA Node"]
+        Pod["Pod: training-worker"]
+        Claim["ResourceClaim<br/>(4 卡 + NVLink Mesh + NUMA 同域)"]
         Pod --> Claim
     end
 
-    subgraph K8sSchedulerPlane["kube-scheduler 调度决策大脑"]
+    subgraph K8sSchedulerPlane["调度控制面"]
         direction TB
-        DRAPlugin["DRA 调度插件 (两阶段结构化参数协同)"]
+        DRAPlugin["DRA 调度插件<br/>(两阶段参数协同)"]
+        Bind["选定节点原子绑定"]
+        DRAPlugin --> Bind
     end
 
-    subgraph NodeDriver["物理节点与专有驱动 (NVIDIA DRA Driver)"]
+    subgraph NodeDriver["宿主机物理驱动"]
         direction TB
-        Driver["nvidia-dra-driver (运行在宿主机)"]
-        TopologyDB[("本地拓扑数据库:<br/>记录精确的 NVLink、PCIe Switch<br/>与 NUMA 亲和映射图谱")]
+        Driver["nvidia-dra-driver"]
+        TopologyDB[("拓扑数据库<br/>NVLink / PCIe / NUMA")]
         Driver <--> TopologyDB
     end
 
-    Claim ==>|"1. 提交拓扑约束声明"| DRAPlugin
-    DRAPlugin <== "2. 跨节点实时拓扑协同与打分" ==> Driver
-    DRAPlugin -->|"3. 选定完全满足 NVLink 拓扑的唯一最佳节点"| Bind["原子绑定与设备保留"]
+    Claim ==>|"1. 拓扑约束声明"| DRAPlugin
+    DRAPlugin <== "2. 拓扑协同打分" ==> Driver
 ```
 
 ### 5.1 DRA 的三大核心范式革新

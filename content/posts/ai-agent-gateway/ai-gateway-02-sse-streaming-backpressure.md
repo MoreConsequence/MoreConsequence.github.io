@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "SSE", "Higress", "Envoy", "WebAssembly", "背压管理", "高并发", "网络协议"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -117,7 +117,7 @@ sequenceDiagram
 Alibaba Higress 采用 **Envoy Wasm Filter + `proxy-wasm-go-sdk`**，直接在 Envoy 数据面事件循环中挂载 `ai-proxy` 扩展。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph EnvoyEngine["Envoy Data Plane (C++)"]
         ConnManager["HTTP Connection Manager (HCM)"]
         StreamBuffer["Stream Active Buffer<br/>(High Watermark: 64KB / Low: 16KB)"]
@@ -238,31 +238,27 @@ func (ctx *aiProxyContext) OnHttpResponseBody(bodySize int, endOfStream bool) ty
 
 在 Envoy 底层，C++ 数据面是如何配合 Wasm 插件与操作系统网络栈，将背压层层传递的？核心机制就在于 **Envoy 流式缓冲区的高低水位线（High/Low Watermark Buffer）**。
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Envoy Stream Buffer 水位线模型                  │
-├────────────────────────────────────────────────────────────────────────┤
-│                                                                        │
-│   ▲ 内存积压字节数 (Bytes)                                               │
-│   │                                                                    │
-│   │ [ 上限阈值: 触发 503 / 强制断开连接 ]                                │
-│   │                                                                    │
-│   ├──────────────────────────────────────── High Watermark (e.g. 64KB) │
-│   │  ▲ 达到高水位线!                                                   │
-│   │  │ 1. Envoy 暂停上游读取 (Pause Reading from Upstream)             │
-│   │  │ 2. HTTP/2 停止向下游模型发送 WINDOW_UPDATE 帧                   │
-│   │  │ 3. 上游 GPU 推理节点的 Socket Send Buffer 打满                   │
-│   │  │ 4. 推理引擎检测到不可写，挂起工作协程，暂停产出 Token            │
-│   │                                                                    │
-│   ├──────────────────────────────────────── Low Watermark  (e.g. 16KB) │
-│   │  ▼ 慢客户端网络恢复，数据从 Socket 成功发走，跌破低水位线!         │
-│   │  │ 1. Envoy 恢复上游读取 (Resume Reading)                          │
-│   │  │ 2. 向模型服务发送 WINDOW_UPDATE 恢复信用额度                    │
-│   │  │ 3. 上游推理引擎恢复流式生成                                    │
-│   │                                                                    │
-│   └──────────────────────────────────────── 0 KB (基线状态)            │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph HighWatermark["高水位线触发 (积压 > 64KB)"]
+        direction TB
+        H1["1. Envoy 暂停上游 Socket 读取"]
+        H2["2. HTTP/2 停止发送 WINDOW_UPDATE"]
+        H3["3. 上游 GPU 节点 Send Buffer 打满"]
+        H4["4. 推理引擎挂起工作协程，暂停产出 Token"]
+        H1 --> H2 --> H3 --> H4
+    end
+
+    subgraph LowWatermark["低水位线触发 (数据发走跌破 16KB)"]
+        direction TB
+        L1["1. Envoy 恢复上游 Socket 读事件"]
+        L2["2. 发送 WINDOW_UPDATE 恢复信用额度"]
+        L3["3. 上游 GPU 引擎唤醒工作协程，恢复流式输出"]
+        L1 --> L2 --> L3
+    end
+
+    HighWatermark ==>|"慢客户端消费恢复"| LowWatermark
+    LowWatermark -.->|"下游再度积压"| HighWatermark
 ```
 
 ### 5.1 生产配置：严禁使用默认无限缓冲

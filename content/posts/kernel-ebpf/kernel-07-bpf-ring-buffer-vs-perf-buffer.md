@@ -56,40 +56,39 @@ eBPF 虚拟机的栈空间被严格限制在 **512 字节**。当开发者需要
 为了彻底终结上述缺陷，Linux 5.8 引入了全新的 `BPF_MAP_TYPE_RINGBUF`。它在设计哲学上回归了计算机经典的 **MPSC（Multi-Producer Single-Consumer，多生产者单消费者）** 共享内存队列。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph KernelSpace["内核空间 (多生产者 CPU 0..N)"]
         direction TB
-        E1["CPU 0: bpf_ringbuf_reserve(len)"]
-        E2["CPU 1: bpf_ringbuf_reserve(len)"]
-        
-        AtomicPos["全局原子游标: producer_pos (64-bit atomic)"]
-        E1 -->|"atomic64_add 预留槽位"| AtomicPos
-        E2 -->|"atomic64_add 预留槽位"| AtomicPos
-        
-        SharedPages["全 CPU 共享物理内存页 (例如单份 16MB)"]
-        AtomicPos -->|"直接返回物理显存/内存指针"| SharedPages
-        
-        Submit1["CPU 0: 写入数据 -> bpf_ringbuf_submit()"]
-        Submit2["CPU 1: 写入数据 -> bpf_ringbuf_submit()"]
+        E1["CPU 0: reserve(len)"]
+        E2["CPU 1: reserve(len)"]
+        AtomicPos["全局原子游标<br/>producer_pos (64-bit)"]
+        SharedPages["全 CPU 共享物理页<br/>(单份 16MB)"]
+        Submit1["CPU 0: submit()"]
+        Submit2["CPU 1: submit()"]
+
+        E1 -->|"atomic64_add"| AtomicPos
+        E2 -->|"atomic64_add"| AtomicPos
+        AtomicPos -->|"返回指针"| SharedPages
         SharedPages --> Submit1
         SharedPages --> Submit2
     end
 
-    subgraph MemoryMapping["Linux 虚拟内存黑魔法"]
-        DoubleMmap["双重连续虚拟内存映射 (Double Mmap)<br/>[Page 0..K-1] 映射至 [0..K] 与 [K..2K] 虚拟地址"]
+    subgraph MemoryMapping["Linux 虚拟内存映射"]
+        DoubleMmap["双重连续虚拟内存映射 (Double Mmap)<br/>[Page 0..K-1] 映射至 [0..K] 与 [K..2K]<br/>彻底消除环形回绕 memcpy 惩罚"]
     end
 
     subgraph UserSpace["用户空间 (单消费者 Agent)"]
-        Consumer["用户态消费者 ring_buffer__poll()"]
+        direction TB
         Epoll["单 epoll_fd 阻塞等待唤醒"]
+        Consumer["用户态消费者<br/>ring_buffer__poll()"]
+        Epoll --> Consumer
     end
 
     SharedPages <==> DoubleMmap
-    Submit1 -.->|"smp_store_release (清除 BUSY 位)"| DoubleMmap
-    Submit2 -.->|"smp_store_release (清除 BUSY 位)"| DoubleMmap
+    Submit1 -.->|"smp_store_release (清除 BUSY)"| DoubleMmap
+    Submit2 -.->|"smp_store_release (清除 BUSY)"| DoubleMmap
     DoubleMmap ==>|"smp_load_acquire 零拷贝直读"| Consumer
     Submit1 -.->|"按阈值唤醒"| Epoll
-    Epoll --> Consumer
 ```
 
 ### 2.1 核心收益与物理指标对比
@@ -203,7 +202,7 @@ sequenceDiagram
     Note over RB: 槽位 Header 写入:<br/>len = 32 | BPF_RINGBUF_BUSY_BIT (置忙)
     
     rect rgb(240, 248, 255)
-        Note over BPF,RB: 零拷贝就地构造数据 (In-Place Construction)<br/>ptr->field_a = 123;<br/>ptr->field_b = 456;
+        Note over BPF,RB: 零拷贝就地构造数据 (In-Place Construction)<br/>ptr.field_a = 123<br/>ptr.field_b = 456
     end
     
     alt 正常提交路径

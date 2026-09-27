@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { WritingArchive } from "@/components/post/writing-archive";
-import { getAllPosts } from "@/lib/content/posts";
+import { getPostSummaries } from "@/lib/content/posts";
 
 export const metadata: Metadata = {
   title: "全部文章",
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function WritingPage() {
-  const posts = await getAllPosts();
+  const posts = getPostSummaries();
 
   return (
     <div className="archive-page">

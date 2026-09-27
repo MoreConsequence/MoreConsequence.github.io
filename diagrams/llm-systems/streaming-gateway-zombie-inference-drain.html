@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 560" width="1020" height="560" role="img" aria-labelledby="zombie-drain-title zombie-drain-desc">
+  <title id="zombie-drain-title">传统网关幽灵推理与 GPU 显存盗窃时序</title>
+  <desc id="zombie-drain-desc">时序图展示传统网关因缺乏级联取消机制，在客户端主动断开连接后，GPU 推理集群与 PagedAttention 显存持续为已离线请求空转，造成高达 20% 到 40% 的无效算力与显存浪费。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="560" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">传统网关幽灵推理（Zombie Inference）与显存盗窃时序</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">缺乏级联取消（Cascading Cancel）的算力黑洞：单向断连导致 GPU 与 KV Cache 空转燃烧 30~60 秒</text>
+
+  <!-- Lifelines -->
+  <line x1="120" y1="133" x2="120" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="370" y1="133" x2="370" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="630" y1="133" x2="630" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="890" y1="133" x2="890" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Participants -->
+  <rect x="50" y="95" width="140" height="38" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="120" y="119" fill="#1e40af" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">前端 / 浏览器 APP</text>
+
+  <rect x="300" y="95" width="140" height="38" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="370" y="119" fill="#0f172a" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">传统 API 网关</text>
+
+  <rect x="560" y="95" width="140" height="38" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="630" y="119" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 推理集群 (vLLM)</text>
+
+  <rect x="820" y="95" width="140" height="38" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="890" y="119" fill="#991b1b" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU HBM (KV Cache)</text>
+
+  <!-- Activation Bars -->
+  <!-- Client: active from 150 to 290 -->
+  <rect x="112" y="150" width="16" height="140" rx="3" fill="#bfdbfe" stroke="#2e5aa8" stroke-width="1"/>
+
+  <!-- Gateway: active from 150 to 475 -->
+  <rect x="362" y="150" width="16" height="325" rx="3" fill="#e2e8f0" stroke="#4f5d75" stroke-width="1"/>
+
+  <!-- Inference: active from 175 to 475 -->
+  <rect x="622" y="175" width="16" height="300" rx="3" fill="#ffedd5" stroke="#eb6c36" stroke-width="1"/>
+
+  <!-- HBM: active from 200 to 475 -->
+  <rect x="882" y="200" width="16" height="275" rx="3" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+
+
+  <!-- Message 1: Client -> Gateway -->
+  <line x1="128" y1="155" x2="362" y2="155" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="245" y="147" fill="#1e40af" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. POST /chat/completions (stream=true)</text>
+
+  <!-- Message 2: Gateway -> Inference -->
+  <line x1="378" y1="180" x2="622" y2="180" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="500" y="172" fill="#334155" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 转发请求至上游推理引擎</text>
+
+  <!-- Message 3: Inference -> HBM -->
+  <line x1="638" y1="205" x2="882" y2="205" stroke="#dc2626" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="760" y="197" fill="#991b1b" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 锁定显存物理块 (BlockTable)</text>
+
+  <!-- Message 4: Inference -> Gateway (Tokens 1..5) -->
+  <line x1="622" y1="230" x2="378" y2="230" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="500" y="222" fill="#334155" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">4. Token 1..5 流式输出 chunk</text>
+
+  <!-- Message 5: Gateway -> Client -->
+  <line x1="362" y1="255" x2="128" y2="255" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="245" y="247" fill="#1e40af" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">5. SSE data 逐字推流至浏览器</text>
+
+  <!-- Message 6: Client Abort (Red accent) -->
+  <line x1="128" y1="290" x2="362" y2="290" stroke="#eb6c36" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arrow-accent)"/>
+  <text x="245" y="282" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">6. 用户点击[停止] / 关闭标签页 (TCP FIN / RST)</text>
+
+  <!-- Gateway Stoppage Annotation -->
+  <rect x="230" y="306" width="280" height="42" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="370" y="324" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网关仅关闭下游连接，未向下游发送 RST_STREAM</text>
+  <text x="370" y="340" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">上游 HTTP/TCP 连接维持常开，推理集群毫无感知！</text>
+
+  <!-- Zombie Loop Highlight Box -->
+  <rect x="545" y="358" width="435" height="110" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="560" y="380" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">⚡【幽灵推理空转】持续自回归燃烧显存 30~60 秒</text>
+
+  <!-- Loop step 1 -->
+  <line x1="638" y1="400" x2="882" y2="400" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="760" y="395" fill="#b45309" font-size="11" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">7. GPU 持续计算 Token 6..4096，KV Cache 持续被锁死</text>
+
+  <!-- Loop step 2 -->
+  <line x1="622" y1="435" x2="378" y2="435" stroke="#7a8399" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+  <text x="500" y="428" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">8. 数万无用 Token 涌向网关，被静默丢弃入黑洞</text>
+
+  <!-- Complete message -->
+  <text x="760" y="458" fill="#dc2626" font-size="11" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">直至触发 EOS 或 max_tokens 终结，无效显存与算力浪费高达 20%~40%</text>
+
+
+  <!-- Bottom Summary Callout -->
+  <rect x="40" y="505" width="940" height="38" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="510" y="529" fill="#1e40af" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">架构启示：AI 流式网关必须将下游 TCP 断连事件即时转换为对上游推理引擎的级联取消（RST_STREAM / CANCEL），立即释放物理显存！</text>
+
+</svg>

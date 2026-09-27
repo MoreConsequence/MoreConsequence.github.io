@@ -4,7 +4,7 @@ description: "微服务级联雪崩（Cascading Failure）的终结者。深入�
 publishedAt: "2026-06-15"
 tags: ["系统设计", "面试题", "熔断降级", "Sentinel", "Hystrix", "限流", "自适应保护", "高可用"]
 category: 面试深度拆解
-draft: true
+draft: false
 featured: false
 series: "资深工程师面试深度拆解"
 ---
@@ -67,28 +67,19 @@ sequenceDiagram
 容错系统首先要做的是**舱壁隔离（Bulkhead）**，防止局部故障蔓延。工业界主要存在两大隔离模型：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph ThreadPoolIsolation["线程池隔离 (Netflix Hystrix)"]
         direction TB
-        MainThread1["主处理线程 (Tomcat/Netty)"]
-        HystrixQueue["依赖专属线程池排队队列"]
-        WorkerThread["专属 Worker 线程池 (10~20 线程)"]
-        Downstream1["下游微服务"]
-
-        MainThread1 -->|"异步提交任务 (产生线程切换)"| HystrixQueue
-        HystrixQueue --> WorkerThread
-        WorkerThread -->|"同步阻塞网络 I/O"| Downstream1
+        MainThread1["主处理线程"] -->|"异步提交 (切换开销)"| HystrixQueue["专属线程池队列"]
+        HystrixQueue --> WorkerThread["Worker 线程 (10~20)"]
+        WorkerThread -->|"同步阻塞网络 I/O"| Downstream1["下游服务"]
     end
 
-    subgraph SemaphoreIsolation["信号量 / 原子计数器隔离 (Alibaba Sentinel)"]
+    subgraph SemaphoreIsolation["信号量 / 原子计数器 (Alibaba Sentinel)"]
         direction TB
-        MainThread2["主处理线程 (Tomcat/Netty)"]
-        AtomicCounter["轻量 CAS 原子计数器 (AtomicInteger)\n当前并发度: count.incrementAndGet()"]
-        Downstream2["下游微服务"]
-
-        MainThread2 -->|"判断 count <= MaxConcurrent"| AtomicCounter
-        AtomicCounter -->|"零线程切换，同线程就地执行"| Downstream2
-        Downstream2 -.->|"返回后原子递减: count.decrementAndGet()"| AtomicCounter
+        MainThread2["主处理线程"] -->|"count <= MaxConcurrent"| AtomicCounter["CAS 原子计数器 (AtomicInteger)"]
+        AtomicCounter -->|"零线程切换，就地执行"| Downstream2["下游服务"]
+        Downstream2 -.->|"返回后原子递减"| AtomicCounter
     end
 ```
 
@@ -187,32 +178,33 @@ stateDiagram-v2
 Alibaba Sentinel 引入了基于系统负载的 **自适应过载保护（Adaptive System Overload Protection）**，其算法哲学深度借鉴了 Google TCP BBR 拥塞控制协议。
 
 ```mermaid
-flowchart TD
-    subgraph MetricsCollector["系统综合指标毫秒级采样器"]
-        M1["系统平均负载 System Load1 (单核 > 1.0)"]
-        M2["CPU 使用率 (CPU Usage > 85%)"]
-        M3["最小响应时间 (Min RTT in recent window)"]
-        M4["最大入口吞吐 (Max Inflow QPS)"]
+flowchart LR
+    subgraph Metrics["毫秒级采样器"]
+        direction TB
+        M1["系统负载 Load1 / CPU > 85%"]
+        M2["最小响应时间 Min RTT"]
+        M3["最大入口吞吐 Max QPS"]
     end
 
-    subgraph BBRWatermark["BBR 式系统容量公式 (Little's Law 利特尔法则)"]
-        Formula["最佳系统承载水位 (In-Flight) =\nMax Inflow QPS * Min RTT"]
+    subgraph BBRWatermark["利特尔法则承载水位"]
+        direction TB
+        Formula["最佳水位 (In-Flight) =<br/>Max QPS * Min RTT"]
     end
 
-    subgraph DecisionMaker["动态卸载决策引擎 (Bypass / Drop)"]
-        CondCheck{"System Load1 > 阈值\n且 CPU > 85% ?"}
-        InFlightCheck{"当前处理中的请求数 (In-Flight) > 最佳水位 ?"}
+    subgraph DecisionMaker["动态卸载决策引擎"]
+        direction TB
+        CondCheck{"系统过载？<br/>Load1 / CPU"}
+        InFlightCheck{"在飞请求数<br/>> 最佳水位？"}
         Pass["正常放行"]
-        Drop["自适应快速拒绝 (抛出 SystemBlockException)"]
+        Drop["自适应拒绝 (429/降级)"]
     end
 
     M1 --> CondCheck
-    M2 --> CondCheck
+    M2 --> Formula
     M3 --> Formula
-    M4 --> Formula
     Formula --> InFlightCheck
-    CondCheck -->|"Yes（系统过载）"| InFlightCheck
-    CondCheck -->|"No（系统健康）"| Pass
+    CondCheck -->|"Yes (过载)"| InFlightCheck
+    CondCheck -->|"No (健康)"| Pass
     InFlightCheck -->|"超限"| Drop
     InFlightCheck -->|"未超限"| Pass
 ```

@@ -4,132 +4,214 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>dsh-turn-step-lifecycle-state-machine</title>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f5f5; color: #2d3142; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
     main { width: min(960px, 100%); margin: 0 auto; }
     svg { display: block; width: 100%; height: auto; }
   </style>
 </head>
 <body>
 <main>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="dsh-turn-step-lifecycle-state-machine-title dsh-turn-step-lifecycle-state-machine-desc"><title id="dsh-turn-step-lifecycle-state-machine-title">Turn 与 Step 双层状态机与确定性收敛</title><desc id="dsh-turn-step-lifecycle-state-machine-desc">流程状态机展示 DSH 的 Turn 任务轮次与 Step 微观迭代双层状态拓扑、agent/pre-step 瀑布流前置拦截、工具并发/独占屏障调度，以及任务最终收敛闭环。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="dsh-turn-step-title dsh-turn-step-desc">
+  <title id="dsh-turn-step-title">DSH Turn 与 Step 双层状态机与确定性收敛机制</title>
+  <desc id="dsh-turn-step-desc">高对比度流程状态机：展示 DeepSeek Harness 的 Turn 宏观任务轮次、agent/pre-step 瀑布流拦截裁决、Step 微观模型请求与混合工具调度流水线，以及确定性终止收敛闭环。</desc>
   <defs>
-    <marker id="ts-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+    <marker id="ts-arr-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f172a" />
     </marker>
     <marker id="ts-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#d9531e" />
+    </marker>
+    <marker id="ts-arr-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0284c7" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  <!-- Canvas Background -->
+  <rect width="960" height="560" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
 
-  <!-- Header -->
-  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">DSH SCHEDULER ENGINE · TURN &amp; STEP DUAL-TIER STATE MACHINE</text>
-  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Turn 与 Step 双层状态机与收敛闭环</text>
-  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">IDLE 态 ➔ Turn 认领输入 ➔ agent/pre-step 瀑布裁决 ➔ Step 微观请求 ➔ 独占屏障/并发池 ➔ 优雅收敛</text>
-
-  <!-- 4 Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: Turn Scope (x=40..245, w=205) -->
-  <g transform="translate(40, 136)">
-    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">TURN SCOPE</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">Turn 宏观轮次</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">turn/start Event</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 认领 Inbox 输入与排队消息</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 持有当前 Turn 级 AbortController</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Macro Task Boundary</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">轮次职责：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 包含 1..N 次 Step 微观迭代；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 直至任务彻底解决或无待办；</text>
-    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 确立完整的任务执行闭环。</text>
+  <!-- Header Section -->
+  <g transform="translate(40, 38)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Turn 与 Step 双层状态机与收敛闭环</text>
+    <text x="0" y="26" fill="#475569" font-size="13" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">IDLE 态 ➔ Turn 认领输入 ➔ agent/pre-step 瀑布裁决 ➔ Step 微观请求 ➔ 独占屏障/并发池 ➔ 确定性收敛</text>
   </g>
 
-  <!-- Col 2: Pre-Step Gate (x=260..475, w=215) - Focal -->
-  <g transform="translate(260, 136)">
-    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">PRE-STEP</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">瀑布流前置裁决</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">agent/pre-step</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 洋葱模型拦截 PreStepDecision</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• reject 直接关闭，0 空白 Step 产生</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Waterfall Policy Decision</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="191" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">裁决机制：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 支持动态安全审查与预算检查；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 就地改写 messages 提示词切片；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 保证大模型输入绝对受控。</text>
+  <!-- Connectors Between Stages -->
+  <!-- Link 1 -> 2: Turn Start to Pre-Step -->
+  <g>
+    <line x1="240" y1="260" x2="266" y2="260" stroke="#0284c7" stroke-width="2" marker-end="url(#ts-arr-link)" />
+    <rect x="236" y="226" width="34" height="18" rx="3" fill="#0284c7" />
+    <text x="253" y="239" fill="#ffffff" font-size="10.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">ENTER</text>
   </g>
 
-  <!-- Col 3: Step & Tools (x=490..695, w=205) - Focal -->
-  <g transform="translate(490, 136)">
-    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">STEP &amp; TOOLS</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">微观请求与工具池</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace">executeToolCalls</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• Exclusive 工具建立串行屏障</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Parallel 工具进入 Rolling Pool</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Hybrid Concurrency Pipeline</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">执行流水线：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• pre-execute 权限审批与清洗；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• execute 物理沙箱隔离执行；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• post-execute 输出脱敏与截断。</text>
+  <!-- Link 2 -> 3: Decision to Step Loop -->
+  <g>
+    <line x1="486" y1="260" x2="512" y2="260" stroke="#d9531e" stroke-width="2" marker-end="url(#ts-arr-accent)" />
+    <rect x="480" y="226" width="38" height="18" rx="3" fill="#d9531e" />
+    <text x="499" y="239" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">DECIDE</text>
   </g>
 
-  <!-- Col 4: Convergence (x=710..920, w=210) -->
-  <g transform="translate(710, 136)">
-    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">CONVERGENCE</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">确定性收敛</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">turn/end Event</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• stop_reason === 'stop' 且收件箱空</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 释放 Turn 锁并平滑回归 IDLE 态</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Clean State Finalization</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="186" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">收敛保障：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 不留悬挂协程或死锁句柄；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 随时响应下一次用户 Wake；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成工业级高度稳定的状态循环。</text>
+  <!-- Link 3 -> 4: Convergence to End -->
+  <g>
+    <line x1="732" y1="260" x2="758" y2="260" stroke="#0284c7" stroke-width="2" marker-end="url(#ts-arr-link)" />
+    <rect x="726" y="226" width="44" height="18" rx="3" fill="#0284c7" />
+    <text x="748" y="239" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">CLOSE</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
-  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-  <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">Turn 宏观轮次管理与确定性终止收敛</text>
-  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-  <text x="390" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">agent/pre-step 前置瀑布裁决与混合工具流水线核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+  <!-- 4 Columns Architecture (y=84..484, h=400) -->
+
+  <!-- Col 1: Turn Scope (x=40..240, w=200) -->
+  <g transform="translate(40, 84)">
+    <rect width="200" height="400" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 1</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">Turn 宏观轮次</text>
+
+    <!-- Sub-block 1: turn/start -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. turn/start 事件</text>
+    <text x="14" y="90" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">inbox.wake() 认领消息</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 认领排队输入与环境切片</text>
+    <text x="14" y="132" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 持有当前轮次 AbortController</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="186" y2="150" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Turn Boundary -->
+    <text x="14" y="176" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 宏观轮次边界</text>
+    <text x="14" y="200" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 包含 1..N 次 Step 迭代</text>
+    <text x="14" y="222" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 确立严密的上下文事务</text>
+    <text x="14" y="244" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 外部输入引发新一轮 Turn</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="262" x2="186" y2="262" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Phase Transition -->
+    <text x="14" y="288" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 调度器状态流转</text>
+    <text x="14" y="312" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">IDLE ➔ running</text>
+    <text x="14" y="334" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 建立排他性执行锁</text>
+    <text x="14" y="356" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">保障单实例调度线性一致</text>
+  </g>
+
+  <!-- Col 2: Pre-Step Gate (x=266..486, w=220) - FOCAL ACCENT -->
+  <g transform="translate(266, 84)">
+    <rect width="220" height="400" rx="8" fill="rgba(217, 83, 30, 0.04)" stroke="#d9531e" stroke-width="2" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#d9531e" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 2</text>
+    <text x="92" y="30" fill="#d9531e" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">瀑布流前置裁决</text>
+
+    <!-- Sub-block 1: agent/pre-step -->
+    <text x="14" y="66" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. 洋葱模型中间件拦截</text>
+    <text x="14" y="90" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">agent/pre-step 钩子</text>
+    <text x="14" y="112" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• reject 直接关闭：0 Step 损耗</text>
+    <text x="14" y="132" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 动态前置安全审查与预算把控</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="206" y2="150" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 2: Prompt Rewriting -->
+    <text x="14" y="176" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 提示词就地重写与装配</text>
+    <text x="14" y="200" fill="#334155" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">deriveMessages() 投影</text>
+    <text x="14" y="222" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 纯函数从事件溯源装配上下文</text>
+    <text x="14" y="244" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 注入 Injected 双级收件箱数据</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="262" x2="206" y2="262" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 3: Step Boundary -->
+    <text x="14" y="288" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 确定性裁决放行</text>
+    <text x="14" y="312" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">Decision: "enter" ➔ step/start</text>
+    <text x="14" y="334" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">➔ 事件原子落盘，准予调用 LLM</text>
+  </g>
+
+  <!-- Col 3: Step & Tools (x=512..732, w=220) -->
+  <g transform="translate(512, 84)">
+    <rect width="220" height="400" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#0f172a" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 3</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">Step 请求与工具池</text>
+
+    <!-- Sub-block 1: LLM Stream -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. 流式响应与工具析出</text>
+    <text x="14" y="90" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">agent/request ➔ llm/stream</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 流式分发 text / reasoning</text>
+    <text x="14" y="132" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 动态流式解析 tool_calls</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="206" y2="150" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Tool Concurrency -->
+    <text x="14" y="176" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 混合并发调度流水线</text>
+    <text x="14" y="200" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• Exclusive 独占工具: 串行屏障</text>
+    <text x="14" y="222" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• Parallel 并发工具: Rolling Pool</text>
+    <text x="14" y="244" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  pre-execute ➔ execute ➔ post</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="262" x2="206" y2="262" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Step Loopback -->
+    <text x="14" y="288" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. step/end 与循环决策</text>
+    <text x="14" y="312" fill="#334155" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">tool_use ➔ 回环进入 Step N+1</text>
+    <text x="14" y="334" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">stop_reason == "stop" ➔ 终止</text>
+  </g>
+
+  <!-- Col 4: Convergence (x=758..920, w=162) -->
+  <g transform="translate(758, 84)">
+    <rect width="162" height="400" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 4</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">确定性收敛</text>
+
+    <!-- Sub-block 1: Stopping -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">1. turn-stopping</text>
+    <text x="14" y="90" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 模型正常停发</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 收件箱排队已清空</text>
+    <text x="14" y="132" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">无挂起等待任务</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="150" x2="148" y2="150" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: turn/end -->
+    <text x="14" y="176" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">2. 资源安全释放</text>
+    <text x="14" y="200" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">turn/end 事件</text>
+    <text x="14" y="222" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 释放当前 Turn 锁</text>
+    <text x="14" y="244" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 平滑回归 IDLE 态</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="262" x2="148" y2="262" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Finality -->
+    <text x="14" y="288" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">3. 工业级稳定性</text>
+    <text x="14" y="312" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 杜绝悬挂协程</text>
+    <text x="14" y="334" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 随时候命新任务</text>
+  </g>
+
+  <!-- Legend Strip at Bottom -->
+  <g transform="translate(40, 508)">
+    <line x1="0" y1="0" x2="880" y2="0" stroke="#e2e8f0" stroke-width="1.5" />
+    <text x="0" y="24" fill="#64748b" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">图例规范：</text>
+
+    <rect x="75" y="11" width="14" height="14" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <text x="96" y="23" fill="#334155" font-size="12" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">Turn 宏观轮次与确定性收敛边界</text>
+
+    <rect x="360" y="11" width="14" height="14" rx="3" fill="rgba(217, 83, 30, 0.08)" stroke="#d9531e" stroke-width="1.8" />
+    <text x="381" y="23" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">agent/pre-step 瀑布流拦截裁决核心 (零空白 Step 保证)</text>
+
+    <rect x="720" y="11" width="14" height="14" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+    <text x="741" y="23" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">混合并发工具调度流水线</text>
+  </g>
+</svg>
 </main>
 </body>
 </html>

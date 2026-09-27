@@ -3,7 +3,7 @@ title: "提示词注入（Prompt Injection）第一性原理：从冯·诺依曼
 description: "深度拆解大模型安全头号威胁提示词注入（Prompt Injection）的本质物理成因：为什么 Transformer 无法区分“控制指令”与“输入数据”？直接注入 vs 间接注入（RAG 知识库与网页投毒）渗透路径；从脆弱的 XML 标签定界沙箱，到 Simon Willison 双模型隔离架构（Privileged vs Quarantined LLM）的确定性工程落地。"
 publishedAt: "2026-09-23"
 tags: ["大模型安全", "Prompt Injection", "提示词注入", "Dual-LLM", "OWASP", "AI网关"]
-draft: true
+draft: false
 featured: true
 series: "大模型安全防御与对抗攻防实战"
 category: "大模型与智能体系统"
@@ -18,7 +18,7 @@ category: "大模型与智能体系统"
 要理解为什么大模型防不住提示词注入，必须先回到经典计算机体系结构的物理演进。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Classic["经典计算机体系结构"]
         CPU["CPU 指令指针 (EIP/RIP)"]
         NX["NX/DEP 内存不可执行位"]

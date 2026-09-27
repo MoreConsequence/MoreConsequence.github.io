@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 530" width="1020" height="530" role="img" aria-labelledby="cow-title cow-desc">
+  <title id="cow-title">PagedAttention 写时复制 (CoW) 与采样分支零拷贝共享</title>
+  <desc id="cow-desc">展示同一 Prompt 派生多个输出分支时，如何通过引用计数共享历史物理块，并在生成新词时通过写时复制分配独占物理块，节约 55% 以上显存。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="530" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">写时复制 (Copy-on-Write) 与并行采样零拷贝共享</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Beam Search 与多分支并行采样时：共享前缀零内存拷贝，独占词段触发 CoW 按需隔离</text>
+
+  <!-- Top Shared Prompt Banner -->
+  <rect x="230" y="95" width="560" height="50" rx="8" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="510" y="117" fill="#1e40af" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">原始公共 Prompt：“请为一家新能源公司起 3 个响亮的名字...” (逻辑块 0, 1)</text>
+  <text x="510" y="134" fill="#3b82f6" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">物理块 100 (Ref=2)  +  物理块 101 (Ref=2)  ·  显存物理单份存储，零冗余拷贝！</text>
+
+  <!-- Branching Connectors from Top to Branch A and Branch B -->
+  <line x1="370" y1="145" x2="250" y2="185" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="650" y1="145" x2="770" y2="185" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+
+  <!-- Left: Candidate Branch A -->
+  <rect x="40" y="190" width="450" height="235" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="190" width="450" height="32" rx="8" fill="#eff6ff"/>
+  <text x="56" y="212" fill="#2e5aa8" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">候选分支 A · Block Table (生成目标: "光驰能源")</text>
+
+  <!-- Branch A Shared Rows -->
+  <rect x="56" y="232" width="418" height="38" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="72" y="255" fill="#0f172a" font-size="12" font-weight="600" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 0 ➔ 物理块 100 (引用计数 Ref=2 · 共享)</text>
+
+  <rect x="56" y="278" width="418" height="38" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="72" y="301" fill="#0f172a" font-size="12" font-weight="600" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 1 ➔ 物理块 101 (引用计数 Ref=2 · 共享)</text>
+
+  <!-- Branch A Exclusive Row -->
+  <rect x="56" y="324" width="418" height="42" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="72" y="342" fill="#c2410c" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 2 ➔ 物理块 201 (全新独占分配! Ref=1)</text>
+  <text x="72" y="358" fill="#ea580c" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">分支 A 开始生成自己的字：“光”、“驰”，独享物理块 201</text>
+
+  <text x="56" y="398" fill="#16a34a" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">收益：前缀 2 个 Block 完全未做任何物理内存拷贝，直接引用！</text>
+
+
+  <!-- Right: Candidate Branch B -->
+  <rect x="530" y="190" width="450" height="235" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="530" y="190" width="450" height="32" rx="8" fill="#eff6ff"/>
+  <text x="546" y="212" fill="#2e5aa8" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">候选分支 B · Block Table (生成目标: "绿脉动力")</text>
+
+  <!-- Branch B Shared Rows -->
+  <rect x="546" y="232" width="418" height="38" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="562" y="255" fill="#0f172a" font-size="12" font-weight="600" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 0 ➔ 物理块 100 (引用计数 Ref=2 · 共享)</text>
+
+  <rect x="546" y="278" width="418" height="38" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="562" y="301" fill="#0f172a" font-size="12" font-weight="600" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 1 ➔ 物理块 101 (引用计数 Ref=2 · 共享)</text>
+
+  <!-- Branch B Exclusive Row -->
+  <rect x="546" y="324" width="418" height="42" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="562" y="342" fill="#c2410c" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 2 ➔ 物理块 305 (全新独占分配! Ref=1)</text>
+  <text x="562" y="358" fill="#ea580c" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">分支 B 开始生成自己的字：“绿”、“脉”，独享物理块 305</text>
+
+  <text x="546" y="398" fill="#16a34a" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">收益：分支间显存开销降低 55% 以上，彻底杜绝历史 KV 副本！</text>
+
+
+  <!-- Bottom CoW Lifecycle Explanation Card -->
+  <rect x="40" y="442" width="940" height="66" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <text x="56" y="468" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">写时复制 (CoW) 触发状态机：</text>
+  <text x="56" y="490" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 派生时仅让页表指向旧物理块，Ref++（零内存拷贝）；2. 写入时检测 Ref &gt; 1 则申请新块、拷贝旧块数据、原块 Ref--；3. 释放时 Ref--，降为 0 即归还全局显存池。</text>
+</svg>

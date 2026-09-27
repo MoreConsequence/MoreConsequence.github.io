@@ -9,36 +9,36 @@
 
   <g transform="translate(30, 20)">
     <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb" />
-    <text x="24" y="18" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" fill="#2d3142">向量时钟 (Vector Clock) 并发分支检测与合并模型 (Dynamo Style)</text>
-    <text x="24" y="36" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" fill="#4f5d75">V_A = [2, 1] vs V_B = [1, 2] (互不覆盖，精准识别为并发冲突分支) ──► 客户端合并 (Merge) ──► 产出 V_C = [2, 2, 1] 达成因果收敛</text>
+    <text x="24" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="700" fill="#2d3142">向量时钟 (Vector Clock) 并发分支检测与合并模型 (Dynamo Style)</text>
+    <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#4f5d75">V_A = [2, 1] vs V_B = [1, 2] (互不覆盖，精准识别为并发冲突分支) ──► 客户端合并 (Merge) ──► 产出 V_C = [2, 2, 1] 达成因果收敛</text>
   </g>
 
   <g transform="translate(30, 70)">
     
-    <g transform="translate(20, 15)" font-family="'Geist', 'Noto Sans SC', sans-serif">
+    <g transform="translate(20, 15)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">
       <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
       <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">1. 初始基准向量时钟 (Base Version: V0 = [S1: 1, S2: 0])</text>
-      <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">节点 S1 写入初始购物车数据 Data_0 ──► 生成向量时钟 [S1: 1, S2: 0] ──► 此时处于因果单向主干</text>
+      <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">节点 S1 写入初始购物车数据 Data_0 ──► 生成向量时钟 [S1: 1, S2: 0] ──► 此时处于因果单向主干</text>
       <text x="15" y="62" font-size="8" fill="#4f5d75">共同的历史祖先节点！</text>
 
       <g transform="translate(0, 83)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="rgba(235,108,54,0.30)" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">2. 网络分区引发独立并发分叉 (Concurrent Divergence: V1 vs V2)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">客户端 A 在 S1 写入: V1 = [S1: 2, S2: 0] ｜ 客户端 B 同时在 S2 写入: V2 = [S1: 1, S2: 1]</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">客户端 A 在 S1 写入: V1 = [S1: 2, S2: 0] ｜ 客户端 B 同时在 S2 写入: V2 = [S1: 1, S2: 1]</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">V1 与 V2 既非大于也非小于，数学上判定为并发冲突 (Concurrent)！</text>
       </g>
 
       <g transform="translate(0, 166)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">3. 读修复与兄弟版本并存 (Read Repair &amp; Siblings Return)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">网络恢复后读请求到达 ──► 数据库拒绝野蛮覆盖 ──► 同时将 V1 与 V2 两个 Sibling 数据回传客户端</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">网络恢复后读请求到达 ──► 数据库拒绝野蛮覆盖 ──► 同时将 V1 与 V2 两个 Sibling 数据回传客户端</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">杜绝 Last-Write-Wins (LWW) 丢数据的严重缺陷！</text>
       </g>
 
       <g transform="translate(0, 249)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#d8b4fe" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">4. 业务层显式合并与因果收敛 (Application Merge: V_merged = [S1: 2, S2: 1])</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">客户端将两份购物车商品执行并集合并 ──► 写回数据库 ──► 向量时钟演进为 [S1: 2, S2: 1] 彻底收敛！</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">客户端将两份购物车商品执行并集合并 ──► 写回数据库 ──► 向量时钟演进为 [S1: 2, S2: 1] 彻底收敛！</text>
         <text x="15" y="62" font-size="8" fill="#2d3142">Amazon Dynamo 与 Riak 数据库的精髓核心！</text>
       </g>
     </g>

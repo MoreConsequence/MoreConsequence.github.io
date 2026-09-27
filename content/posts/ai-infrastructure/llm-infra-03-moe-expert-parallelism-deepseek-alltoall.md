@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI Infrastructure", "MoE", "DeepSeek", "Expert Parallelism", "All-to-All", "NCCL", "分布式训练"]
 category: "大模型与智能体系统"
 series: "前沿大模型训练与全栈 Infra 解密"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -41,7 +41,7 @@ Dense 模型的算力公式:
 MoE 的核心哲学非常纯粹：**将单个庞大的 FFN 拆分为 $E$ 个独立的小型 FFN（称为专家，Experts），并在前面挂载一个轻量级的门控网络（Router / Gating Network）。对于每一个输入的 Token，门控网络从 $E$ 个专家中只挑选最匹配的 Top-$K$ 个专家进行激活计算：**
 
 ```mermaid
-flowchart TD
+flowchart LR
     TokenIn["输入 Token 向量 x"] --> Gating["轻量门控网络 Router<br/>计算权重: s = Softmax(TopK(W_g * x))"]
     
     subgraph ExpertPool["专家池 (共 E=256 个专家，仅激活 Top-K=8 个)"]
@@ -85,20 +85,27 @@ flowchart TD
 
 这意味着：**每一张 GPU 上产生的数据，都必须根据门控决策，被打散分发到集群中的任意其他 GPU 上；计算完成后，又必须原路收集回来！**
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        MoE 专家并行 All-to-All 通信时序                │
-├────────────────────────────────────────────────────────────────────────┤
-│                                                                        │
-│   GPU 0  ───(Token A)───►  [ 网络 Fabric: 跨机交换机 ]  ───►  GPU 1    │
-│   GPU 1  ───(Token B)───►   InfiniBand / RoCE v2      ───►  GPU 0    │
-│   GPU 2  ───(Token C)───►   全对全跨节点双向对射       ───►  GPU 3    │
-│                                                                        │
-│   1. Dispatch 阶段: All-to-All 将 Token 打散投递到对应专家物理卡        │
-│   2. Compute  阶段: 各 GPU 并行计算分配给自己的本地 Expert FFN         │
-│   3. Combine  阶段: All-to-All 将计算结果逆向跨机收集并加权还原       │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Dispatch["1. Dispatch 阶段"]
+        direction TB
+        D1["GPU 0 (Token A)"] --> SW["跨节点网络 Fabric<br/>InfiniBand / RoCE"]
+        D2["GPU 1 (Token B)"] --> SW
+        SW --> E1["GPU 1 本地专家处理"]
+        SW --> E0["GPU 0 本地专家处理"]
+    end
+
+    subgraph Compute["2. Compute 阶段"]
+        direction TB
+        C1["本地 Expert FFN 矩阵乘计算"]
+    end
+
+    subgraph Combine["3. Combine 阶段"]
+        direction TB
+        R1["All-to-All 逆向跨机收集并加权还原"]
+    end
+
+    Dispatch --> Compute --> Combine
 ```
 
 ### 3.1 All-to-All 通信的物理带宽瓶颈
@@ -113,7 +120,7 @@ flowchart TD
 在 DeepSeek-V3 之前，以 Google Switch Transformer 和 GShard 为代表的早期 MoE 架构在实际生产中频频遭遇翻车：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph TrapA["陷阱 1: 专家路由塌陷 (Routing Collapse)"]
         Tokens["大量 Token 输入"] --> G1["Router 初始微小偏好"]
         G1 --> SuperE["明星专家 (Star Expert)<br/>接收 90% 的流量 (过载排队!)"]
@@ -214,23 +221,21 @@ DeepSeek 发现，有些通用的语法连接词、标点和基础句式是所�
 
 如何解决跨机 All-to-All 的通信延迟？DeepSeek 设计了一套精巧的 **双缓冲异步流水线（Dual-Buffer Software Pipelining）**：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                   DeepSeek-V3 双缓冲全重叠执行时序                     │
-├────────────────────────────────────────────────────────────────────────┤
-│                                                                        │
-│ 时间轴 ──►                                                             │
-│                                                                        │
-│ [计算流水线] │ GEMM 计算 (Chunk 1) │ GEMM 计算 (Chunk 2) │ ...         │
-│             └─────────────────────┴─────────────────────┘              │
-│                          ▲                       ▲                     │
-│               两者在物理硬件上完全重叠并发执行!    │                     │
-│                          ▼                       ▼                     │
-│ [通信流水线] │ All-to-All 传输     │ All-to-All 传输     │ ...         │
-│             │ (针对 Chunk 2 数据) │ (针对 Chunk 3 数据) │              │
-│             └─────────────────────┴─────────────────────┘              │
-│                                                                        │
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Step1["微步 1: 启动流水"]
+        direction TB
+        C1["计算: Chunk 1 GEMM"]
+        T1["通信: Chunk 2 All-to-All 传输"]
+    end
+
+    subgraph Step2["微步 2: 推进流水"]
+        direction TB
+        C2["计算: Chunk 2 GEMM"]
+        T2["通信: Chunk 3 All-to-All 传输"]
+    end
+
+    Step1 ==>|"双缓冲 100% 算网重叠"| Step2
 ```
 
 1. 将当前 Batch 的 Token 切分为两个微批次（Chunk 1 与 Chunk 2）；

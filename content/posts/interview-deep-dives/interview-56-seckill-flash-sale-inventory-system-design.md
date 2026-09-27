@@ -4,7 +4,7 @@ description: "深度拆解大厂系统设计最经典、连环追问最致命的
 publishedAt: "2026-06-11"
 tags: ["系统设计", "面试题", "高并发", "秒杀系统", "库存扣减", "Redis", "分布式事务"]
 category: 面试深度拆解
-draft: true
+draft: false
 featured: false
 series: "资深工程师面试深度拆解"
 ---
@@ -49,35 +49,38 @@ series: "资深工程师面试深度拆解"
 面对千万级瞬时流量，没有任何单点存储系统能够直接硬抗。**秒杀系统的核心哲学是“把 99.9% 的无效流量在距离数据越远的地方过滤掉”**。
 
 ```mermaid
-flowchart TD
-    subgraph Client["用户端 (千万级 QPS)"]
-        User["1000 万用户点击抢购"]
+flowchart LR
+    User["1000 万用户<br/>点击抢购"]
+
+    subgraph Layer1["第 1 层: 端与 CDN 削峰 (滤 90%)"]
+        direction TB
+        Debounce["客户端防抖 (3s 单击)"]
+        EdgeCDN["静态资源 CDN 缓存"]
+        Debounce --> EdgeCDN
     end
 
-    subgraph Layer1["第一层：端与 CDN 边缘削峰 (过滤 90%)"]
-        Debounce["客户端防抖与灰度禁用 (3秒仅允许点击一次)"]
-        EdgeCDN["静态资源 CDN 缓存 (HTML/CSS/JS 全边缘下发)"]
+    subgraph Layer2["第 2 层: 动态答题与验签 (滤 8%)"]
+        direction TB
+        Captcha["动态算术题/滑块验证码"]
+        URLSalting["秒杀 URL 动态下发与加盐"]
+        Captcha --> URLSalting
     end
 
-    subgraph Layer2["第二层：动态答题与验签网关 (过滤 8%)"]
-        Captcha["动态算术题/滑块验证码 (打散 1~3 秒流量峰值)"]
-        URLSalting["秒杀接口 URL 动态下发与 Token 加盐"]
+    subgraph Layer3["第 3 层: 网关限流 (滤 1.9%)"]
+        direction TB
+        TokenBucket["集群自适应令牌桶限流"]
+        Blacklist["黑产 IP / 设备指纹 / WAF"]
+        TokenBucket --> Blacklist
     end
 
-    subgraph Layer3["第三层：API 网关与集群限流 (过滤 1.9%)"]
-        TokenBucket["集群自适应令牌桶限流 (放行 10,000 * 2 = 20,000 请求)"]
-        Blacklist["黑产 IP / 设备指纹 / WAF 拦截"]
-    end
-
-    subgraph Layer4["第四层：核心库存预扣引擎 (精确命中)"]
-        RedisCluster["分段库存 Redis 集群 (原子 Lua 预扣)"]
+    subgraph Layer4["第 4 层: 库存预扣 (精准命中)"]
+        direction TB
+        RedisCluster["分段库存 Redis (Lua 预扣)"]
         DB["MySQL 批量提交写入"]
+        RedisCluster --> DB
     end
 
-    User --> Debounce --> EdgeCDN
-    EdgeCDN --> Captcha --> URLSalting
-    URLSalting --> TokenBucket --> Blacklist
-    Blacklist --> RedisCluster --> DB
+    User --> Layer1 --> Layer2 --> Layer3 --> Layer4
 ```
 
 ### 2.1 边缘分流与静态化隔绝
@@ -111,7 +114,7 @@ flowchart LR
     subgraph Segmented["分段库存模型 (Segmented Stock)"]
         Reqs2["并发扣减请求 50,000 QPS"]
         HashRouter{"分段路由算法\nhash(userId) % 8"}
-        
+
         Shard0["Redis 节点 1: item_101_seg_0 (1250 件)"]
         Shard1["Redis 节点 2: item_101_seg_1 (1250 件)"]
         Shard2["Redis 节点 3: item_101_seg_2 (1250 件)"]
@@ -164,7 +167,7 @@ $$\text{Slot} = \text{CRC16}(\text{Key}) \pmod{16384}$$
 stateDiagram-v2
     [*] --> Available: 商品初始化 (可用库存 S_avail)
     Available --> Reserved: 用户抢购成功 (S_avail - 1, S_frozen + 1)
-    
+
     state Reserved {
         [*] --> WaitingForPayment
         WaitingForPayment --> Paid: 用户在 5 分钟内完成支付
@@ -210,8 +213,8 @@ end
 
 虽然 Redis 预扣了库存，但最终订单与库存变更必须持久化写入关系型数据库（MySQL）。在 MySQL InnoDB 中：
 ```sql
-UPDATE item_inventory 
-SET available = available - 1, frozen = frozen + 1 
+UPDATE item_inventory
+SET available = available - 1, frozen = frozen + 1
 WHERE item_id = 101 AND available >= 1;
 ```
 这条 SQL 会在聚簇索引记录上加 **排他行锁（X Record Lock）**。如果有 10,000 个事务在 1 秒内同时更新这一行，MySQL 的事务等待队列会发生严重锁阻塞（Lock Contention）。
@@ -223,24 +226,29 @@ WHERE item_id = 101 AND available >= 1;
 ### 5.2 解决方案：内存微批聚合与 Commit Batching
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph KafkaQueue["Kafka 削峰缓冲池"]
+        direction TB
         Msg1["下单消息 1"]
         Msg2["下单消息 2"]
         MsgN["下单消息 N (累积中...)"]
     end
 
     subgraph BatchWorker["批量聚合工作进程 (Batch Worker)"]
-        Buffer["本地内存缓冲区 (Micro-Batching)\n- 时间窗口: 100 毫秒\n- 数量上限: 200 条"]
-        Aggregator{"按商品 ID 聚合\nCOUNT = sum(orders)"}
+        direction TB
+        Buffer["内存缓冲区 (100ms / 200条)"]
+        Aggregator{"按商品 ID 聚合<br/>COUNT = sum(orders)"}
+        Buffer --> Aggregator
     end
 
     subgraph MySQL["MySQL 关系数据库 (持久化)"]
-        BatchSQL["单次合并 SQL 执行:\nUPDATE item_inventory\nSET available = available - 200,\n    frozen = frozen + 200\nWHERE item_id = 101;"]
-        BatchInsert["批量插入 200 条订单记录:\nINSERT INTO orders (...) VALUES (...), (...);"]
+        direction TB
+        BatchSQL["合并单条 SQL 扣减:<br/>UPDATE item_inventory ..."]
+        BatchInsert["批量插入 200 条订单:<br/>INSERT INTO orders ..."]
     end
 
-    KafkaQueue --> Buffer --> Aggregator --> BatchSQL
+    KafkaQueue --> Buffer
+    Aggregator --> BatchSQL
     Aggregator --> BatchInsert
 ```
 

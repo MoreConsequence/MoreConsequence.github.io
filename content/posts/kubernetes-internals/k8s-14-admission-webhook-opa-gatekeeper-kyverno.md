@@ -53,34 +53,21 @@ series: "Kubernetes 架构内核与生产实战"
 当客户端（kubectl 或 CI/CD）向 `kube-apiserver` 发起一个写请求（`POST/PUT/DELETE`）时，请求在落盘进入 etcd 之前，必须在 API Server 内部穿过三道精密的安全闸门。
 
 ```mermaid
-flowchart TD
-    subgraph ClientReq["客户端写请求 (POST /api/v1/pods)"]
-        Req["提交包含业务声明的 Pod YAML"]
-    end
+flowchart LR
+    Req["客户端写请求<br/>(POST Pod YAML)"] --> AuthN["1. 认证 (AuthN)<br/>X.509 / OIDC"]
+    AuthN --> AuthZ["2. 鉴权 (AuthZ)<br/>RBAC 校验"]
 
-    subgraph APIServerPipeline["kube-apiserver 内部处理管道"]
+    subgraph AdmissionPhase["3. 准入控制流水线"]
         direction TB
-        AuthN["1. 认证阶段 (Authentication)<br/>X.509 客户端证书 / OIDC Token 确认身份: 'Who are you?'"]
-        AuthZ["2. 鉴权阶段 (Authorization)<br/>RBAC / Node 鉴权确认权限: 'Can you create Pods?'"]
-        
-        subgraph AdmissionPhase["3. 准入控制阶段 (Admission Control)"]
-            direction TB
-            Mutating["Phase A: 变更准入 (Mutating Webhooks)<br/>按顺序执行: 允许修改/注入字段<br/>(如注入 Envoy Sidecar, 强制非 Root 用户)"]
-            SchemaValidation["Phase B: 严格 Schema 结构与规范校验"]
-            Validating["Phase C: 验证准入 (Validating Webhooks)<br/>并行执行: 只读评估, 做出终审裁决<br/>(拒绝特权容器, 检查标签完整性)"]
-            
-            Mutating --> SchemaValidation --> Validating
-        end
-
-        AuthN --> AuthZ --> Mutating
+        Mutating["Phase A: 变异准入 (Mutating)<br/>顺序执行修改/注入 Sidecar"]
+        Schema["Phase B: Schema 结构校验"]
+        Validating["Phase C: 验证准入 (Validating)<br/>并行执行只读合规裁决"]
+        Mutating --> Schema --> Validating
     end
 
-    subgraph Storage["持久化底座"]
-        ETCD[("etcd 集群: 正式写入持久化存储")]
-    end
-
-    Validating -- "全部准入通过 (Allowed)" --> ETCD
-    Validating -- "任一策略拒绝 (Denied)" --> Reject["403 Forbidden: 拒绝写入并向客户端报错返回原因"]
+    AuthZ --> Mutating
+    Validating -- "全部通过" --> ETCD[("etcd 持久化")]
+    Validating -- "任一拒绝" --> Reject["403 Forbidden 拦截"]
 ```
 
 ### 2.1 为什么 Mutating 必须在 Validating 之前？
@@ -107,7 +94,7 @@ sequenceDiagram
 
     Note over Hook: 灾难爆发: security-webhook 自身因 OOM 或物理节点宕机崩溃!
     Admin->>API: kubectl apply -f fix-bug.yaml (尝试拉起修复 Pod / 部署新服务)
-    
+
     API->>API: 认证鉴权通过，进入 ValidatingAdmissionWebhook
     API->>Hook: 发送 HTTPS POST https://security-webhook.svc:443/validate
     Hook--xAPI: 连接超时 (Connection Refused / Timeout 30s)!
@@ -228,20 +215,20 @@ API Server 规定：**任何向外发起的准入 Webhook 调用，必须通过�
 - 若恰好配了 `failurePolicy: Fail`，全集群所有业务在几秒内无法发版、无法弹性扩容，酿成一级重大生产事故！
 
 ```mermaid
-flowchart TD
-    subgraph CertManagerLoop["基于 cert-manager 的自愈证书轮换闭环"]
-        direction TB
-        Issuer["ClusterIssuer (集群内部自签名根 CA)"]
-        CertResource["Certificate 资源: 声明需要签发的域名<br/>security-webhook.security-system.svc"]
-        Secret["Secret 存放: tls.crt 与 tls.key (90 天有效, 每 60 天自动提前轮换)"]
-        CAInjector["cainjector 控制器: 自动提取 Secret 中的 CA 证书公钥"]
-        WebhookConfig["ValidatingWebhookConfiguration 中的 caBundle 字段"]
+flowchart LR
+    Issuer["ClusterIssuer<br/>(集群自签名根 CA)"] --> CertResource["Certificate 资源<br/>(声明签发域名)"]
+    CertResource --> Secret["Secret 证书密钥<br/>(tls.crt / tls.key)"]
 
-        Issuer --> CertResource --> Secret
-        Secret -.->|"读取最新公钥"| CAInjector
-        CAInjector ==>|"动态自动 PATCH 刷入"| WebhookConfig
-        Secret ==>|"热挂载注入"| WebhookPod["Webhook 服务容器 (内存动态加载新证书，零重启)"]
+    subgraph Injection["证书自动化注入与挂载"]
+        direction TB
+        CAInjector["cainjector 控制器<br/>(提取 CA 证书公钥)"]
+        WebhookConfig["WebhookConfiguration<br/>(caBundle 字段)"]
+        WebhookPod["Webhook 服务容器<br/>(热挂载内存动态加载)"]
+        CAInjector ==>|"自动 PATCH 刷入"| WebhookConfig
     end
+
+    Secret -.->|"读取公钥"| CAInjector
+    Secret ==>|"热挂载"| WebhookPod
 ```
 
 通过部署标准的 **`cert-manager`** 并利用注解 `cert-manager.io/inject-ca-from: security-system/security-webhook-cert`，`cainjector` 控制器会在后台监听证书轮换，自动把最新的根 CA 编码为 Base64 刷入 API Server 的配置中，彻底抹平人工维护证书的人为灾难。

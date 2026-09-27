@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "Agent", "MCP协议", "ToolUse", "SSRF", "死循环熔断", "系统安全", "Higress"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -67,25 +67,25 @@ Anthropic 开源的 **Model Context Protocol (MCP)** 正在迅速统一 Agent �
 在企业级部署中，网关扮演着 **MCP 统一代理（MCP Gateway / Proxy）** 的核心角色：
 
 ```mermaid
-flowchart TD
-    AgentApp["Agent 应用程序"] -->|"1. /v1/chat/completions (无冗余工具上下文)"| GW["AI 网关 (MCP Host & Proxy)"]
+flowchart LR
+    AgentApp["Agent 应用"] -->|"1. chat/completions"| GW["AI 网关 (MCP Proxy)"]
 
     subgraph MCPGateway["AI 网关 MCP 治理中枢"]
         direction TB
-        Registry["1. 工具注册表 (Tool Registry)<br/>聚合企业内部所有 MCP Servers"]
-        Filter["2. 意图剪枝 (Tool Pruning)<br/>根据用户意图轻量召回相关 Tools (5个)"]
-        SchemaInject["3. 动态组装 OpenAI 标准 tools 字段"]
-        Sandbox["4. 工具执行安全沙箱 (SSRF / 注入过滤)"]
+        Registry["1. 工具注册表"]
+        Filter["2. 意图剪枝召回相关 Tools"]
+        SchemaInject["3. 动态注入 tools Schema"]
+        Sandbox["4. 工具执行安全沙箱 (SSRF过滤)"]
+        Registry --> Filter --> SchemaInject
     end
 
-    GW --> Registry --> Filter --> SchemaInject
-    SchemaInject -->|"2. 携带精准工具 Schema"| LLM["大模型推理 (vLLM / SaaS)"]
-
-    LLM -.->|"3. 流式返回: tool_calls (name: 'query_user', args: {...})"| GW
+    GW --> Registry
+    SchemaInject -->|"2. 携带工具 Schema"| LLM["大模型推理"]
+    LLM -.->|"3. tool_calls"| GW
     GW --> Sandbox
-    Sandbox -->|"4. JSON-RPC 2.0 (tools/call)"| TargetServer["内部 MCP Server (用户中心)"]
-    TargetServer -->|"5. 工具执行结果"| Sandbox
-    Sandbox -->|"6. 将结果喂回大模型下一轮推理"| LLM
+    Sandbox -->|"4. JSON-RPC (tools/call)"| TargetServer["企业 MCP Server"]
+    TargetServer -->|"5. 执行结果"| Sandbox
+    Sandbox -->|"6. 回传下一轮"| LLM
 ```
 
 ### 3.1 阿里 Higress MCP Bridge 插件架构解密
@@ -102,26 +102,11 @@ flowchart TD
 ### 4.1 绝对防御：生产级 SSRF 防御双重防线
 当 Agent 调用“网页抓取工具（Web Scraper）”或“Webhook 触发器”时，网关必须执行极其严格的防逃逸检查：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        网关层 SSRF 严格防御流水线                      │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. URL 解析与协议白名单:                                               │
-│    - 仅允许 http:// 与 https:// 协议; 严禁 file://, gopher://, dict:// │
-│                                                                        │
-│ 2. 域名解析与重绑定防御 (DNS Rebinding):                               │
-│    - 发起 DNS 查询获取所有解析 IP                                     │
-│    - 强制校验每一个目标 IP:                                            │
-│      * 127.0.0.0/8 (本机环回)                                          │
-│      * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (私有内网)          │
-│      * 169.254.169.254 (云厂商链路本地元数据地址)                      │
-│      * ::1 (IPv6 环回)                                                 │
-│    - 命中黑名单: 立即 403 阻断，记录告警日志                          │
-│                                                                        │
-│ 3. 物理连接钉死 (Socket Pinning):                                      │
-│    - 发起实际 HTTP 请求时，强制连接到校验通过的原始 IP, 严防二次解析漂移│
-│    - 禁止无限制跟随 HTTP 302 重定向 (Redirect Limit <= 2)             │
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    P1["1. 协议白名单校验<br/>• 仅允许 http/https<br/>• 严格阻断 file/gopher/dict"] -->
+    P2["2. DNS 重绑定防御<br/>• 解析目标 IP 并校验白名单<br/>• 拦截 127.0.0.0/8 与 169.254.169.254"] -->
+    P3["3. Socket 物理钉死<br/>• 直连校验通过的原始 IP<br/>• 限制 HTTP 重定向 <= 2 次"]
 ```
 
 ---
@@ -143,31 +128,24 @@ flowchart TD
 **AI 网关必须在网络层提取会话的“调用拓扑指纹”，做模式匹配（Pattern Matching）！**
 
 ```mermaid
-flowchart TD
-    subgraph StreamTap["网络层实时捕获工具调用帧"]
-        Call["检测到 tool_call 声明: (Name, Args)"]
-    end
+flowchart LR
+    Call["实时捕获 tool_call"] --> Hash["计算特征哈希<br/>H = Hash(Tool + Args)"]
+    Hash --> Append["追加时序链表<br/>[H1, H2, ...]"]
 
-    subgraph Fingerprint["拓扑指纹提取"]
-        Hash["计算调用特征哈希:<br/>H = Hash(ToolName + NormalizedArgsKeys)"]
-        Append["追加至会话调用时序链表: [H1, H2, H3, ...]"]
-    end
-
-    StreamTap --> Hash --> Append
-
-    subgraph LoopDetection["死循环检测状态机"]
-        CheckRepeat{"1. 相同工具连续失败三次?<br/>(H_n == H_n-1 == H_n-2)"}
-        CheckOscillate{"2. 双步震荡循环?<br/>(A -> B -> A -> B)"}
-        CheckCycle{"3. K 周期子序列重复?<br/>Floyd / 自相关算法"}
+    subgraph LoopDetection["死循环判定状态机"]
+        direction TB
+        CheckRepeat{"连败三次？"}
+        CheckOscillate{"双步震荡？"}
+        CheckCycle{"K 周期循环？"}
+        CheckRepeat -- "否" --> CheckOscillate
+        CheckOscillate -- "否" --> CheckCycle
     end
 
     Append --> CheckRepeat
-    CheckRepeat -->|"命中"| TriggerFuse["触发熔断级联!"]
-    CheckRepeat -->|"否"| CheckOscillate
+    CheckRepeat -->|"命中"| TriggerFuse["触发熔断截断!"]
     CheckOscillate -->|"命中"| TriggerFuse
-    CheckOscillate -->|"否"| CheckCycle
     CheckCycle -->|"命中"| TriggerFuse
-    CheckCycle -->|"未发现循环"| Allow["放行执行"]
+    CheckCycle -->|"合规"| Allow["放行执行"]
 ```
 
 ### 5.3 生产级死循环熔断器源码实现

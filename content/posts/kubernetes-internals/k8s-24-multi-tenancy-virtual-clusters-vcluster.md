@@ -39,33 +39,36 @@ series: "Kubernetes 架构内核与生产实战"
 资深平台架构师在回答该问题时，必须能够清晰呈现**单体物理集群、Namespace 软隔离与控制面虚拟化（vCluster）的三代架构演进矩阵**：
 
 ```mermaid
-flowchart TD
-    subgraph Gen1["第一代：软隔离 (Namespaces 共享集群)"]
+flowchart LR
+    subgraph Gen1["第一代: 软隔离 (命名空间)"]
         direction TB
-        HostAPIS1["单一宿主机 API Server (全局 CRD 冲突 / 权限越权 / 互相踩踏)"]
+        HostAPIS1["单 API Server (CRD冲突/权限混杂)"]
         NS1["Namespace Team A"]
         NS2["Namespace Team B"]
         HostAPIS1 --> NS1
         HostAPIS1 --> NS2
     end
 
-    subgraph Gen2["第二代：硬隔离 (物理独立集群)"]
+    subgraph Gen2["第二代: 硬隔离 (独立物理集群)"]
         direction TB
-        ClusterA["物理集群 A (独立 Master / 独立 etcd)"]
-        ClusterB["物理集群 B (独立 Master / 独立 etcd)"]
-        Waste["成本高昂：80 套集群底噪烧穿预算，资源碎片化严重"]
+        ClusterA["物理集群 A (独立 Master/etcd)"]
+        ClusterB["物理集群 B (独立 Master/etcd)"]
+        Waste["成本高昂: 底噪开销与资源碎片"]
         ClusterA -.-> Waste
         ClusterB -.-> Waste
     end
 
-    subgraph Gen3["第三代：控制面虚拟化 (vCluster 架构)"]
+    subgraph Gen3["第三代: 控制面虚拟化 (vCluster)"]
         direction TB
-        HostCluster["底层宿主机共享算力集群 (共享物理节点、网络与存储池)"]
-        vClusterA["vCluster A (独立虚拟 API Server + 独立 CRD)"]
-        vClusterB["vCluster B (独立虚拟 API Server + 独立 CRD)"]
+        HostCluster["宿主集群共享物理节点与网络池"]
+        vClusterA["vCluster A (独立 API / CRD)"]
+        vClusterB["vCluster B (独立 API / CRD)"]
         HostCluster --> vClusterA
         HostCluster --> vClusterB
     end
+
+    Gen1 ==>|"成本与冲突妥协"| Gen2
+    Gen2 ==>|"架构突破"| Gen3
 ```
 
 ---
@@ -91,32 +94,34 @@ flowchart TD
 vCluster（由 Loft Labs 开源并被广泛采纳）的核心哲学是：**“虚拟控制面常驻租户 Namespace，真实工作负载投影至物理底座”**。
 
 ```mermaid
-flowchart TB
+flowchart LR
+    TenantUser["租户研发 / 运维<br/>(独立 kubeconfig)"]
+
     subgraph HostCluster["底层物理宿主集群 (Host Cluster)"]
         direction TB
-        HostKubelet["物理 Worker 节点池 (Kubelet / CNI / CSI / 物理网络)"]
-        HostAPIServer["宿主机 kube-apiserver"]
-
-        subgraph TenantNamespace["租户命名空间 (Namespace: team-alpha)"]
+        subgraph TenantNamespace["租户命名空间 (team-alpha)"]
             direction TB
             subgraph vClusterPod["vCluster 虚拟集群 Pod"]
-                vAPIServer["虚拟 API Server (基于 K3s 裁剪)"]
-                vStorage["虚拟存储 (内置嵌入式 SQLite / 独立 etcd)"]
-                SyncerEngine["核心大脑：Syncer 状态投影引擎"]
+                direction LR
+                vAPIServer["虚拟 API Server<br/>(K3s 裁剪)"]
+                vStorage["虚拟存储<br/>(SQLite / etcd)"]
+                SyncerEngine["Syncer 状态投影引擎"]
                 vAPIServer <--> vStorage
                 vAPIServer <--> SyncerEngine
             end
             
-            RealPod1["真实执行 Pod 1<br>(由 Syncer 在宿主机创建，名字带前缀)"]
-            RealPod2["真实执行 Pod 2<br>(由 Syncer 在宿主机创建)"]
+            RealPod["真实执行 Pod (宿主机隔离运行)"]
         end
+
+        HostAPIServer["宿主机 kube-apiserver"]
+        HostKubelet["物理 Worker 节点池 (Kubelet/CNI/CSI)"]
 
         SyncerEngine -->|"同步调度请求"| HostAPIServer
         HostAPIServer -->|"实际编排运行"| HostKubelet
+        HostKubelet -.-> RealPod
     end
 
-    TenantUser["租户研发 / 运维 (持有独立的 kubeconfig)"]
-    TenantUser ==="使用 cluster-admin 直连虚拟集群"===> vAPIServer
+    TenantUser ==>|"cluster-admin 直连"| vAPIServer
 ```
 
 ### 3.1 核心大脑：Syncer 双向状态投影引擎

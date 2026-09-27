@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 440" width="1020" height="440" role="img" aria-labelledby="mcp-hitl-title mcp-hitl-desc">
+  <title id="mcp-hitl-title">人机协同确认环（Human-in-the-Loop Confirmation）与安全拦截</title>
+  <desc id="mcp-hitl-desc">展示 MCP 客户端与大模型交互时的安全沙箱拦截流程：大模型生成高危工具调用后被客户端规则引擎挂起，弹出受信任 UI 供人类审查授权，支持放行执行与阻断反思双分支。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="440" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">人机协同确认环（Human-in-the-Loop Confirmation）与安全拦截</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">杜绝 Prompt 注入导致的不可逆物理破坏：高危工具调用强制挂起、UI 原生确认与审计票据闭环</text>
+
+  <!-- Phase 1: LLM Tool Call Decision -->
+  <rect x="40" y="95" width="250" height="135" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="250" height="32" rx="8" fill="#eff6ff"/>
+  <text x="54" y="116" fill="#1e40af" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 大模型生成 Tool Call 决策</text>
+  <text x="54" y="146" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">模型完成意图推导，发出工具调用：</text>
+  <rect x="54" y="156" width="222" height="62" rx="4" fill="#f1f5f9" stroke="#4f5d75" stroke-width="1"/>
+  <text x="64" y="174" fill="#0f172a" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">create_order_refund({</text>
+  <text x="74" y="192" fill="#2563eb" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">order_id: "ORD-9921",</text>
+  <text x="74" y="208" fill="#eb6c36" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">amount_cents: 100000 })</text>
+
+  <!-- Phase 1.2: Client Rule Engine -->
+  <rect x="40" y="250" width="250" height="150" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="250" width="250" height="32" rx="8" fill="#fef2f2"/>
+  <text x="54" y="271" fill="#991b1b" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 客户端风控策略拦截</text>
+  <text x="54" y="302" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 目标动作: 涉及资金退款 (高危写操作)</text>
+  <text x="54" y="324" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 判定规则: 金额 ¥1,000 ≥ ¥500 阈值</text>
+  <text x="54" y="346" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 阻断动作: 挂起当前 RPC 线程</text>
+  <text x="54" y="368" fill="#dc2626" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">状态迁移: WAITING_USER_APPROVAL</text>
+
+  <line x1="165" y1="230" x2="165" y2="250" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+
+  <!-- Phase 2: Host Interactive Confirmation Modal (Center) -->
+  <rect x="325" y="95" width="370" height="305" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="325" y="95" width="370" height="34" rx="8" fill="#fff7ed"/>
+  <text x="341" y="118" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. MCP Host 弹出受信任系统确认对话框</text>
+
+  <!-- Dialog Box Mockup -->
+  <rect x="341" y="140" width="338" height="150" rx="6" fill="#fffbeb" stroke="#eb6c36" stroke-width="1"/>
+  <text x="357" y="164" fill="#b45309" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">⚠️【高危操作授权核验】</text>
+  <text x="357" y="186" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">AI Agent 试图发起一笔具有物理资金影响的操作：</text>
+  
+  <rect x="357" y="196" width="306" height="52" rx="4" fill="#ffffff" stroke="#4f5d75" stroke-width="1"/>
+  <text x="367" y="215" fill="#0f172a" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">执行动作: <tspan font-weight="700" fill="#c2410c">全额退款 1,000.00 元</tspan></text>
+  <text x="367" y="235" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">关联单据: 订单号 ORD-9921 | 目标用户: User_8802</text>
+
+  <text x="357" y="274" fill="#78350f" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">请确认是否授权该 Agent 执行此不可逆操作？</text>
+
+  <!-- Action Buttons -->
+  <rect x="341" y="304" width="162" height="80" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="422" y="330" fill="#115e59" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">[ 同意执行 ]</text>
+  <text x="422" y="352" fill="#0f766e" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">签发审核 Token 放行</text>
+  <text x="422" y="370" fill="#64748b" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">发起真实 tools/call</text>
+
+  <rect x="517" y="304" width="162" height="80" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="598" y="330" fill="#991b1b" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">[ 拒绝并指引 ]</text>
+  <text x="598" y="352" fill="#b91c1c" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">物理阻断调用链条</text>
+  <text x="598" y="370" fill="#64748b" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">反馈错误给模型重新推理</text>
+
+
+  <!-- Phase 3: Bifurcated Outcomes (Right) -->
+  <!-- Branch A: Approved -->
+  <rect x="730" y="95" width="250" height="145" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="730" y="95" width="250" height="32" rx="8" fill="#f0fdf4"/>
+  <text x="744" y="116" fill="#115e59" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">分支 A · 授权通过与落库</text>
+  <text x="744" y="146" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 客户端附带 approval_token</text>
+  <text x="744" y="168" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 发起 tools/call -> MCP Server</text>
+  <text x="744" y="190" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 调用微服务完成核心交易退款</text>
+  <text x="744" y="212" fill="#0d9488" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">落库防篡改全链路审计日志</text>
+
+  <!-- Branch B: Rejected -->
+  <rect x="730" y="255" width="250" height="145" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="730" y="255" width="250" height="32" rx="8" fill="#fef2f2"/>
+  <text x="744" y="276" fill="#991b1b" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">分支 B · 阻断拦截与重思</text>
+  <text x="744" y="306" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 物理拦截请求，不触达微服务</text>
+  <text x="744" y="328" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 回送 JSON-RPC 拒绝响应</text>
+  <text x="744" y="350" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• "User denied: 超过单日退款限额"</text>
+  <text x="744" y="372" fill="#dc2626" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">大模型获取原因重新制定 Plan</text>
+
+
+  <!-- Connectors -->
+  <!-- Left to Center -->
+  <line x1="290" y1="325" x2="325" y2="325" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Center Buttons to Right Branches -->
+  <line x1="503" y1="344" x2="710" y2="344" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="710" y1="344" x2="710" y2="167" stroke="#4f5d75" stroke-width="1"/>
+  <line x1="710" y1="167" x2="730" y2="167" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <line x1="679" y1="344" x2="730" y2="344" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+</svg>

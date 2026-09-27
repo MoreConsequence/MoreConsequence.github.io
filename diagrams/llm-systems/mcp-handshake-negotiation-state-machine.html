@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 530" width="1020" height="530" role="img" aria-labelledby="sm-title sm-desc">
+  <title id="sm-title">MCP JSON-RPC 2.0 握手协商时序与全生命周期状态机</title>
+  <desc id="sm-desc">展示 MCP 客户端与服务端的初始化版本与能力协商时序，以及 UNINITIALIZED、INITIALIZING、READY 与 IN_PROGRESS 核心状态机流转。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="530" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">MCP 握手协议时序与全生命周期状态机</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">严格基于 JSON-RPC 2.0 契约：版本对齐、双向能力协商与长耗时任务 ProgressToken 流转</text>
+
+  <!-- Left: Handshake Sequence (520px wide) -->
+  <rect x="40" y="95" width="500" height="400" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="500" height="34" rx="8" fill="#eff6ff"/>
+  <text x="56" y="118" fill="#2e5aa8" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">阶段 1 · JSON-RPC 2.0 初始握手协商时序 (Handshake)</text>
+
+  <!-- Lifeline Headers -->
+  <rect x="60" y="145" width="130" height="26" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="125" y="162" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">MCP Client</text>
+  <line x1="125" y1="171" x2="125" y2="435" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <rect x="390" y="145" width="130" height="26" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="455" y="162" fill="#115e59" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">MCP Server</text>
+  <line x1="455" y1="171" x2="455" y2="435" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Step 1: initialize -->
+  <line x1="125" y1="205" x2="455" y2="205" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="290" y="196" fill="#2e5aa8" font-size="11" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">1. method: "initialize"</text>
+  <text x="290" y="222" fill="#475569" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">带入 protocolVersion, capabilities, clientInfo</text>
+
+  <!-- Step 2: result capabilities -->
+  <line x1="455" y1="260" x2="125" y2="260" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="290" y="252" fill="#115e59" font-size="11" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">2. result: {capabilities, serverInfo}</text>
+  <text x="290" y="278" fill="#475569" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">声明支持的 tools, resources, prompts 列表</text>
+
+  <!-- Step 3: notifications/initialized -->
+  <line x1="125" y1="315" x2="455" y2="315" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="290" y="307" fill="#c2410c" font-size="11" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">3. notifications/initialized</text>
+  <text x="290" y="333" fill="#ea580c" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">单向通知 (Notification · 契约中绝对无 id 字段)</text>
+
+  <!-- Completion Banner inside Sequence -->
+  <rect x="60" y="360" width="460" height="42" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="290" y="386" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">✓ 握手圆满完成！正式进入 NORMAL_RUNNING 就绪工作态</text>
+
+  <text x="60" y="426" fill="#64748b" font-size="10" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">注：未完成 initialize 协商前，Server 必须拒绝所有业务工具调用请求！</text>
+
+
+  <!-- Right: Lifecycle State Machine (400px wide) -->
+  <rect x="560" y="95" width="420" height="400" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="560" y="95" width="420" height="34" rx="8" fill="#f8fafc"/>
+  <text x="576" y="118" fill="#0f172a" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">阶段 2 · 连接全生命周期状态机模型</text>
+
+  <!-- State 1: UNINITIALIZED -->
+  <rect x="650" y="145" width="240" height="38" rx="6" fill="#f1f5f9" stroke="#4f5d75" stroke-width="1"/>
+  <text x="770" y="169" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">UNINITIALIZED (未就绪态)</text>
+
+  <!-- Arrow down to INITIALIZING -->
+  <line x1="770" y1="183" x2="770" y2="215" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="830" y="202" fill="#2e5aa8" font-size="10" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">收到 initialize 请求</text>
+
+  <!-- State 2: INITIALIZING -->
+  <rect x="650" y="215" width="240" height="38" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="770" y="239" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">INITIALIZING (版本能力协商)</text>
+
+  <!-- Arrow down to READY -->
+  <line x1="770" y1="253" x2="770" y2="285" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="840" y="272" fill="#c2410c" font-size="10" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">收到 initialized 通知</text>
+
+  <!-- State 3: READY / ACTIVE -->
+  <rect x="650" y="285" width="240" height="44" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="770" y="306" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">READY / ACTIVE (就绪作业)</text>
+  <text x="770" y="322" fill="#0d9488" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">允许 tools/call, resources/read 业务链路</text>
+
+  <!-- Loop State: IN_PROGRESS -->
+  <rect x="650" y="365" width="240" height="48" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="770" y="386" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">IN_PROGRESS (长任务处理中)</text>
+  <text x="770" y="403" fill="#ea580c" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">周期性向客户端推送 progressToken 进度条</text>
+
+  <!-- Bi-directional arrows between READY and IN_PROGRESS -->
+  <line x1="720" y1="329" x2="720" y2="365" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="690" y="349" fill="#c2410c" font-size="9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">触发长任务</text>
+
+  <line x1="820" y1="365" x2="820" y2="329" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="855" y="349" fill="#115e59" font-size="9" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">任务完成返回</text>
+
+  <text x="576" y="450" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">状态机防护铁律：状态机杜绝乱序调用，异常断开时平滑进入资源清理与安全注销。</text>
+</svg>

@@ -38,23 +38,23 @@ series: "Kubernetes 架构内核与生产实战"
 资深云原生安全架构师在回答该问题时，会直接拆解**传统容器、用户态内核沙箱（gVisor）与硬件级微虚机沙箱（Kata）的三层物理隔离拓扑**：
 
 ```mermaid
-flowchart TD
-    subgraph Traditional["1. 传统容器 (runc): 共享宿主机内核 (零物理边界)"]
+flowchart LR
+    subgraph Traditional["1. 传统容器 (runc)"]
         direction TB
-        App1["不可信用户代码"] -->|"直接发起系统调用 (syscall)"| SharedKernel["共享宿主机物理内核 (一旦有0-day直接沦陷！)"]
+        App1["不可信代码"] -->|"直接 syscall"| SharedKernel["共享宿主机物理内核<br/>(零隔离物理边界)"]
     end
 
-    subgraph gVisorArch["2. gVisor (runsc): 拦截层架构 (系统调用用户态虚拟化)"]
+    subgraph gVisorArch["2. gVisor (runsc)"]
         direction TB
-        App2["不可信用户代码"] -->|"拦截所有 syscall"| Sentry["Sentry 用户态内核 (纯 Go 重写)"]
-        Sentry -->|"过滤后受限调用"| HostKernel1["宿主机物理内核 (攻击面收敛99%)"]
+        App2["不可信代码"] -->|"拦截 syscall"| Sentry["Sentry 用户态内核<br/>(纯 Go 300+ 调用虚拟化)"]
+        Sentry -->|"收敛 99% 攻击面"| HostKernel1["宿主机内核"]
     end
 
-    subgraph KataArch["3. Kata Containers: 硬件虚拟化 (独立 Guest 内核)"]
+    subgraph KataArch["3. Kata Containers"]
         direction TB
-        App3["不可信用户代码"] --> GuestKernel["独立 Guest OS 内核"]
-        GuestKernel --> Hypervisor["轻量级 Hypervisor (Cloud-Hypervisor / KVM)"]
-        Hypervisor --> HostHW["宿主机 CPU 硬件虚拟化扩展 (Intel VT-x / AMD-V)"]
+        App3["不可信代码"] --> GuestKernel["独立 Guest OS 内核"]
+        GuestKernel --> Hypervisor["轻量 Hypervisor (KVM)"]
+        Hypervisor --> HostHW["硬件级虚拟化扩展"]
     end
 ```
 
@@ -65,29 +65,25 @@ flowchart TD
 gVisor 是 Google 内部用来运行 Google Cloud Run 和 App Engine 的核心基石。它的终极目标是：**“彻底不给不可信代码直接接触宿主机物理内核的机会！”**
 
 ```mermaid
-flowchart TB
-    subgraph SandboxBoundary["gVisor 安全沙箱沙盒边界"]
-        App["不可信用户应用 (如 Python 脚本)"]
-        
-        subgraph SentryEngine["Sentry 核心引擎 (运行在普通非特权用户态)"]
-            SyscallTable["实现 300+ Linux 系统调用的 Go 语言逻辑 (内存管理、调度、网络栈)"]
-            Netstack["Go 语言重写的用户态 TCP/IP 协议栈"]
+flowchart LR
+    subgraph SandboxBoundary["gVisor 安全沙箱边界"]
+        direction TB
+        App["不可信应用"]
+        subgraph SentryEngine["Sentry 核心 (非特权用户态)"]
+            SyscallTable["300+ 虚拟系统调用"]
+            Netstack["用户态协议栈"]
         end
-
-        subgraph GoferEngine["Gofer 文件访问代理 (隔离进程)"]
-            FileAccess["受控的 9P / virtio-fs 文件操作"]
-        end
-
-        App ==="所有的系统调用被 ptrace / KVM 陷入 Sentry"===> SentryEngine
+        GoferEngine["Gofer 文件代理 (9P/virtio-fs)"]
+        App == "ptrace/KVM 拦截" ==> SentryEngine
         SentryEngine <--> GoferEngine
     end
 
-    subgraph HostLinuxKernel["物理宿主机 Linux 内核"]
-        HostSyscall["宿主机极少数基础调用 (futex, epoll, madvise)"]
+    subgraph HostLinuxKernel["宿主机 Linux 物理内核"]
+        HostSyscall["白名单调用 (futex/epoll)"]
     end
 
-    SentryEngine -->|"仅发起安全的白名单系统调用"| HostSyscall
-    GoferEngine -->|"安全代读宿主机文件"| HostLinuxKernel
+    SentryEngine -->|"极少数安全调用"| HostSyscall
+    GoferEngine -->|"代读文件"| HostLinuxKernel
 ```
 
 ### 2.1 核心组件分工

@@ -13,104 +13,104 @@
   <rect width="960" height="600" fill="#f5f5f5" />
 
   
-  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">INTERFACE INTERNALS · EFACE VS IFACE, ITAB VIRTUAL TABLE &amp; DYNAMIC DISPATCH</text>
-  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Go 接口底层结构与动态分派机理</text>
-  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">eface (空接口 any) vs iface (带方法接口) ➔ itab 虚表对缓存 ➔ 2ns 动态分派 ➔ typed nil 陷阱</text>
+  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="500" letter-spacing="0.18em">INTERFACE INTERNALS · EFACE VS IFACE, ITAB VIRTUAL TABLE &amp; DYNAMIC DISPATCH</text>
+  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="400">Go 接口底层结构与动态分派机理</text>
+  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="400">eface (空接口 any) vs iface (带方法接口) ➔ itab 虚表对缓存 ➔ 2ns 动态分派 ➔ typed nil 陷阱</text>
 
   
   
   <g transform="translate(40, 136)">
     <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">EFACE</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">空接口结构体</text>
+    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="600" text-anchor="middle">EFACE</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">空接口结构体</text>
 
     
     <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">eface {_type, data} (16B)</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 存放 any / interface{} 空接口值</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• _type 记录动态类型，data 存值指针</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Empty Interface Representation</text>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">eface {_type, data} (16B)</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 存放 any / interface{} 空接口值</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• _type 记录动态类型，data 存值指针</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Empty Interface Representation</text>
 
     
     <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">结构特征：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅包含类型描述符，无方法表；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 标量值 (int/指针) 直接写入 data 槽位；</text>
-    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 达成零堆分配轻量封装。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">结构特征：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 仅包含类型描述符，无方法表；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 标量值 (int/指针) 直接写入 data 槽位；</text>
+    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 达成零堆分配轻量封装。</text>
   </g>
 
   
   <g transform="translate(260, 136)">
     <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">IFACE &amp; ITAB</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">带方法接口与 itab</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">IFACE &amp; ITAB</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">带方法接口与 itab</text>
 
     
     <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">iface {tab *ITab, data}</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• ITab 包含 Inter, Type, Fun[1] 方法表</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 全局哈希表按 (接口, 实体类型) 缓存</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Cached Virtual Method Table</text>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">iface {tab *ITab, data}</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• ITab 包含 Inter, Type, Fun[1] 方法表</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">• 全局哈希表按 (接口, 实体类型) 缓存</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Cached Virtual Method Table</text>
 
     
     <rect x="12" y="148" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">itab 价值：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 首次装箱时惰性生成，后续全局复用；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 静态校验并绑定方法实现入口；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 消除重复反射开销。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">itab 价值：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 首次装箱时惰性生成，后续全局复用；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">• 静态校验并绑定方法实现入口；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 消除重复反射开销。</text>
   </g>
 
   
   <g transform="translate(490, 136)">
     <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">DISPATCH</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">2ns 动态分派</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">DISPATCH</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">2ns 动态分派</text>
 
     
     <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">tab.Fun[i](data) (2.07ns)</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 一次指针间接跳转，耗时与直接调用持平</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 劣势在于打断编译器内联优化链条</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Fast Indirect Jump &amp; Inlining Tax</text>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">tab.Fun[i](data) (2.07ns)</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 一次指针间接跳转，耗时与直接调用持平</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">• 劣势在于打断编译器内联优化链条</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Fast Indirect Jump &amp; Inlining Tax</text>
 
     
     <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">性能真相：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 接口调用本身极速，绝非慢 10 倍；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 真正损耗来自高频热调用被打断内联；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 适度去虚拟化可完全消除该税。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">性能真相：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 接口调用本身极速，绝非慢 10 倍；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">• 真正损耗来自高频热调用被打断内联；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 适度去虚拟化可完全消除该税。</text>
   </g>
 
   
   <g transform="translate(710, 136)">
     <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">TYPED NIL</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">typed nil 语义陷阱</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">TYPED NIL</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">typed nil 语义陷阱</text>
 
     
     <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">(*Type)(nil) != nil</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 仅当 tab == nil &amp;&amp; data == nil 才为 nil</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 将 nil 指针赋给 error 将导致 err != nil</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Interface Nil Comparison Bug</text>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">(*Type)(nil) != nil</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 仅当 tab == nil &amp;&amp; data == nil 才为 nil</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 将 nil 指针赋给 error 将导致 err != nil</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Interface Nil Comparison Bug</text>
 
     
     <rect x="12" y="148" width="186" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">工程防线：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 返回 error 必须显式写 return nil；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 杜绝将未初始化具体指针返回为接口；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 维护绝对严谨的接口类型契约。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">工程防线：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 返回 error 必须显式写 return nil；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 杜绝将未初始化具体指针返回为接口；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 维护绝对严谨的接口类型契约。</text>
   </g>
 
   
   <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
-  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
   <rect x="120" y="436.0" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">eface 空接口结构与 typed nil 语义陷阱防护</text>
+  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">eface 空接口结构与 typed nil 语义陷阱防护</text>
   <rect x="370" y="436.0" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
-  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">iface 带方法接口、ITab 虚表与 2ns 极速分派核心</text>
+  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">iface 带方法接口、ITab 虚表与 2ns 极速分派核心</text>
 <defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

@@ -66,7 +66,7 @@ flowchart TD
 要理解大规模雪崩，首先必须剖析 ArgoCD 核心守护进程的物理分工：
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph GitRepo["单一真实来源 (Git Repositories)"]
         Repo1["GitLab / GitHub (Helm Charts / Kustomize / Raw YAML)"]
     end
@@ -90,8 +90,8 @@ flowchart TB
     end
 
     GitRepo -->|"Webhook 触发或定时轮询"| RepoServer
-    AppController ==="Watch 实时集群事件 (Informers 双向长连)"===> Cluster1
-    AppController ==="Watch 实时集群事件"===> Cluster2
+    AppController == "Watch 实时集群事件 (Informers 双向长连)" ==> Cluster1
+    AppController == "Watch 实时集群事件" ==> Cluster2
 ```
 
 1. **`argocd-repo-server`**：纯无状态计算组件。它负责将 Git 仓库拉取到本地，并执行 `helm template` 或 `kustomize build` 将模板转化为纯粹的 Kubernetes JSON/YAML 声明。当有万级应用共用同一个 Monorepo 时，该进程会发生严重的多进程 CPU 争用与内存暴涨；

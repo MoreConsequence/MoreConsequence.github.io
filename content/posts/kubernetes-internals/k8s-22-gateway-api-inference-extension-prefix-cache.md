@@ -39,31 +39,25 @@ series: "Kubernetes 架构内核与生产实战"
 资深云原生与 AI 架构师必须能够画出**从网络数据包解析到 GPU PagedAttention 显存池的端到端调用链**：
 
 ```mermaid
-flowchart TD
-    subgraph Traditional["传统负载均衡的缓存击穿困境"]
+flowchart LR
+    subgraph Traditional["传统负载均衡: 缓存击穿困境"]
         direction TB
-        ClientReq["携带相同 8K System Prompt 的请求"]
-        L7Proxy["传统网关 (Round-Robin 轮询)"]
-        Pod1["vLLM 实例 1 (显存重新计算 8K Token Prefill)"]
-        Pod2["vLLM 实例 2 (显存重新计算 8K Token Prefill)"]
-        Pod3["vLLM 实例 3 (显存重新计算 8K Token Prefill)"]
-        
-        ClientReq --> L7Proxy
-        L7Proxy -->|"请求 A"| Pod1
-        L7Proxy -->|"请求 B"| Pod2
-        L7Proxy -->|"请求 C"| Pod3
-        Miss["结果：KV Cache 命中率 0%，每个实例都在干重复的脏活，TTFT > 3s！"]
+        ClientReq["相同 8K System Prompt 请求"] --> L7Proxy["传统网关 (Round-Robin)"]
+        L7Proxy -->|"请求 A"| Pod1["vLLM 实例 1 (重算 8K Prefill)"]
+        L7Proxy -->|"请求 B"| Pod2["vLLM 实例 2 (重算 8K Prefill)"]
+        L7Proxy -->|"请求 C"| Pod3["vLLM 实例 3 (重算 8K Prefill)"]
+        Miss["结果: 命中率 0%，重复算力浪费，TTFT > 3s！"]
         Pod1 -.-> Miss
         Pod2 -.-> Miss
         Pod3 -.-> Miss
     end
 
-    subgraph InferenceExt["Gateway API Inference Extension 智能亲和路由"]
+    subgraph InferenceExt["Gateway API Inference Extension: 智能亲和路由"]
         direction TB
-        SmartGW["Inference Gateway (解析 Prompt 前缀哈希 / LoRA ID)"]
-        Pool1["实例 A (命中已有 KV Cache，直接复用显存，免计算！)"]
-        SmartGW ==>|"定向路由至已缓存前缀的 Pod"| Pool1
-        Hit["结果：KV Cache 命中率 95%，跳过 Prefill，TTFT 压降至 150ms！"]
+        SmartGW["Inference Gateway<br/>(解析 Prompt 前缀哈希 / LoRA ID)"]
+        Pool1["实例 A (复用已有 KV Cache，免计算！)"]
+        SmartGW ==>|"定向路由至已缓存前缀 Pod"| Pool1
+        Hit["结果: 命中率 95%，跳过 Prefill，TTFT 压至 150ms！"]
         Pool1 -.-> Hit
     end
 ```
@@ -106,33 +100,35 @@ sequenceDiagram
 为了终结各个大模型推理框架各自为政开发专用反向代理的混乱局面，Kubernetes 官方联合 Google、Microsoft、Red Hat 等社区巨头，在 **Gateway API（`gateway.networking.k8s.io`）** 体系下推出了官方标准扩展——**Inference Extension**。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph ClientLayer["客户端接入层"]
-        OpenAIClient["OpenAI 兼容协议客户端 (/v1/chat/completions)"]
+        OpenAIClient["OpenAI 兼容协议客户端<br/>(/v1/chat/completions)"]
     end
 
-    subgraph InferenceGatewayControlPlane["Gateway API 推理扩展控制面"]
+    subgraph DataPlane["数据面智能转发引擎 (Envoy / Cilium)"]
         direction TB
-        InferenceModel["InferenceModel (CRD: 声明逻辑模型服务，如 qwen-72b)"]
-        InferencePool["InferencePool (CRD: 聚合后端同构/异构推理 Pod 实例)"]
-        ModelMetrics["EndpointSlice + 扩展元数据 (实时感知 Pod KV 缓存水位与排队深度)"]
-        
-        InferenceModel --> InferencePool --> ModelMetrics
-    end
-
-    subgraph DataPlane["数据面智能转发引擎 (Envoy / Cilium / Envoy-AI)"]
-        TokenRouter["Prompt 前缀分词与哈希提取器 (Token-level Hash)"]
+        TokenRouter["Prompt 前缀分词与哈希提取器"]
         LoRAMapper["LoRA 适配器动态分流器"]
-        SmartScheduler["亲和性评分器 (Score = CacheMatch * α - QueueDepth * β)"]
-        
+        SmartScheduler["亲和性评分器<br/>(Score = CacheMatch*α - QueueDepth*β)"]
+
         TokenRouter --> SmartScheduler
         LoRAMapper --> SmartScheduler
     end
 
+    subgraph InferenceGatewayControlPlane["Gateway API 推理扩展控制面"]
+        direction TB
+        InferenceModel["InferenceModel (CRD: 声明模型服务)"]
+        InferencePool["InferencePool (CRD: 聚合推理 Pod)"]
+        ModelMetrics["EndpointSlice + 扩展元数据 (实时感知 KV 缓存与排队)"]
+
+        InferenceModel --> InferencePool --> ModelMetrics
+    end
+
     subgraph BackendPods["vLLM / SGLang GPU 推理集群"]
+        direction TB
         Pod1["Pod 1: H100 (缓存了知识库 A)"]
         Pod2["Pod 2: H100 (缓存了知识库 B)"]
-        Pod3["Pod 3: H100 (加载了 LoRA 财务微调包)"]
+        Pod3["Pod 3: H100 (加载了 LoRA 财务包)"]
     end
 
     ClientLayer --> DataPlane
@@ -189,17 +185,8 @@ spec:
 数据面网关在收到一个 POST 请求时，其底层路由不再是简单的加权轮询，而是执行精密的多维评分函数：
 
 ```mermaid
-flowchart TD
-    ReqIn["1. 拦截 HTTP Body，提取 Prompt 与 target_model"]
-    ExtractHash["2. 对 Prompt 前 N 个 Token 计算局部敏感哈希 (LSH / MinHash)"]
-    QueryCache["3. 查找本地路由表：哪一个 Pod 曾处理过该前缀哈希？"]
-    CheckHealth["4. 综合健康感知：该 Pod 当前排队请求数（KEDA metrics）是否爆满？"]
-    
-    ScoreCalc["5. 综合打分：Score = W1 * CacheAffinity - W2 * QueueDepth - W3 * MemoryPressure"]
-    
-    Decision["6. 命中最佳 Pod，发起零拷贝流式转发 (SSE Streaming)"]
-
-    ReqIn --> ExtractHash --> QueryCache --> CheckHealth --> ScoreCalc --> Decision
+flowchart LR
+    ReqIn["1. 拦截 HTTP Body<br/>提取 Prompt"] --> ExtractHash["2. 计算前缀哈希<br/>(LSH / MinHash)"] --> QueryCache["3. 查本地路由表<br/>感知前缀亲和 Pod"] --> CheckHealth["4. 综合健康感知<br/>排队与显存利用率"] --> ScoreCalc["5. 多维动态打分<br/>Score 计算"] --> Decision["6. 命中最佳 Pod<br/>零拷贝流式转发"]
 ```
 
 ### 4.1 综合决策评分方程
@@ -230,7 +217,7 @@ $$\text{Score}_i = \alpha \cdot \text{CacheHitRatio}_i - \beta \cdot \frac{\text
 ### 6.1 现场 2 分钟极速电梯演讲
 
 > “面试官，在大模型长文本与 RAG 场景下，接入通用七层网关导致首字延迟（TTFT）从 200ms 暴涨至 3.5s，本质是因为**通用负载均衡完全忽略了大模型推理的计算特性，将请求随机打散，摧毁了后端 vLLM 实例的 PagedAttention KV Cache 局部性**，导致每个实例都在重复执行昂贵的 Prefill 计算。
-> 
+>
 > 在 2025/2026 年现代 AI 基础设施建设中，我们全面引入 Kubernetes 官方标准 **Gateway API Inference Extension** 进行破局：
 > 1. **在模型服务层采用 InferenceModel / InferencePool CRD**：取代传统的模糊 Service 抽象，直接将模型元数据（Model Name、Criticality、LoRA ID）升格为 Kubernetes 网络路由的一等公民；
 > 2. **在数据面落地 Prefix-Cache 亲和路由**：网关在解析 Prompt 前缀哈希后，定向路由至已持有对应 KV 显存缓存的特定 Pod，将全集群 Cache 命中率从不足 10% 提升至 85% 以上，使得 Prefill 计算耗时瞬间缩短 80%；

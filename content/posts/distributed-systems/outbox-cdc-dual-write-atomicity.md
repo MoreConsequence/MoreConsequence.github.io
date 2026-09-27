@@ -37,7 +37,7 @@ sequenceDiagram
     participant App as 应用
     participant DB as 业务库
     participant MQ as 消息队列
-    App->>DB: BEGIN; INSERT orders; COMMIT
+    App->>DB: BEGIN, INSERT orders, COMMIT
     Note over DB: ① 订单已支付
     App->>App: (publish 前崩溃 / 超时后退出)
     Note over MQ: ② 事件永远没到 —— 丢失

@@ -39,22 +39,22 @@ series: "Kubernetes 架构内核与生产实战"
 而在 Linux 容器世界中，**所有容器内的进程，物理上都直接运行在宿主机的同一个内核之上**。你在宿主机执行 `ps -ef`，能够毫无阻碍地看到容器内跑着的 Go 二进制程序或 JVM 进程。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph VM["虚拟机架构 (Hardware Virtualization)"]
         direction TB
         AppVM["业务应用 A / B"]
-        GuestOS["完整 Guest OS 内核 (Kernel)"]
-        Hypervisor["Hypervisor (Type 1/2: KVM / Xen)"]
-        HostHW1["物理硬件 (CPU / RAM / NIC)"]
+        GuestOS["完整 Guest OS 内核"]
+        Hypervisor["Hypervisor (KVM / Xen)"]
+        HostHW1["物理硬件 (CPU/RAM/NIC)"]
         AppVM --> GuestOS --> Hypervisor --> HostHW1
     end
 
     subgraph Container["容器与 Pod 物理架构 (OS Process Isolation)"]
         direction TB
-        AppCont["业务进程 (PID 24521) / Sidecar (PID 24522)"]
-        Isol["Linux 隔离边界 (Namespaces 障眼法 + cgroups v2 资源配额)"]
-        HostKernel["统一宿主机内核 (Host Linux Kernel 6.x)"]
-        HostHW2["物理硬件 (CPU / RAM / NIC)"]
+        AppCont["业务进程 (PID) / Sidecar"]
+        Isol["隔离边界 (Namespaces + cgroups v2)"]
+        HostKernel["统一宿主机内核 (Host Linux Kernel)"]
+        HostHW2["物理硬件 (CPU/RAM/NIC)"]
         AppCont --> Isol --> HostKernel --> HostHW2
     end
 ```
@@ -92,7 +92,7 @@ static int container_main(void* arg) {
 int main() {
     printf("[宿主机] 准备基于 clone(2) 创建隔离进程...\n");
     char stack[1024 * 1024]; // 分配 1MB 栈空间
-    
+
     // 传入 6 大 Namespace 隔离标记
     int clone_flags = CLONE_NEWPID  | // 独立 PID 空间
                       CLONE_NEWNET  | // 独立网络栈 (网卡/路由/iptables)
@@ -157,14 +157,14 @@ classDiagram
 在 Linux 工业生产中，容器使用 **OverlayFS** 联合文件系统与 **`pivot_root(2)`** 系统调用：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph OverlayFS["OverlayFS 联合挂载物理层级 (Union Mount)"]
         direction TB
         Merged["merged 视图目录 (/var/lib/containerd/io.containerd.runtime.v2.task/...)<br/>容器进程看到的统一根文件系统 (/)"]
-        
+
         Upper["upperdir (读写层 / Read-Write Layer)<br/>存储容器运行期间发生的所有新增、修改与删除标记 (Whiteout)"]
         Work["workdir (内核临时工作目录 / 原子事务保证)"]
-        
+
         subgraph Lower["lowerdir (只读镜像层 / Read-Only Layers)"]
             direction TB
             L3["Layer 3: 业务 Go 应用二进制 (40MB)"]
@@ -173,8 +173,8 @@ flowchart TD
             L3 --> L2 --> L1
         end
 
-        Merged <== "联合呈现" == Upper
-        Merged <== "联合呈现" == Lower
+        Upper == "联合呈现" ==> Merged
+        Lower == "联合呈现" ==> Merged
         Upper -. "事务依赖" .-> Work
     end
 ```
@@ -198,31 +198,36 @@ flowchart TD
 Linux 4.5+ 引入并在 5.x/6.x 中成为标准基线（也是 Kubernetes 1.25+ 默认推荐并逐步强制）的 **cgroups v2**，打破了这种割裂，建立了**单一统一层次结构**。
 
 ```mermaid
-flowchart TD
-    Root["/sys/fs/cgroup (Root Cgroup)"]
-    Kubelet["kubepods.slice (Kubelet 顶层切片)"]
-    BestEffort["kubepods-besteffort.slice"]
-    Burstable["kubepods-burstable.slice"]
-    Guaranteed["kubepods-guaranteed.slice"]
-    
-    Pod1["pod_c83d71... (Pod 目录)"]
-    Cont1["container_nginx (容器 A)"]
-    Cont2["container_sidecar (容器 B)"]
+flowchart LR
+    Root["/sys/fs/cgroup<br/>(Root)"] --> Kubelet["kubepods.slice<br/>(Kubelet)"]
 
-    Root --> Kubelet
+    subgraph QoS["QoS 层级切片"]
+        direction TB
+        BestEffort["besteffort.slice"]
+        Burstable["burstable.slice"]
+        Guaranteed["guaranteed.slice"]
+    end
+
     Kubelet --> BestEffort
     Kubelet --> Burstable
     Kubelet --> Guaranteed
-    Burstable --> Pod1
+
+    Burstable --> Pod1["pod_c83d71...<br/>(Pod 级 cgroup)"]
+
+    subgraph Containers["容器级进程控制"]
+        direction TB
+        Cont1["container_nginx"]
+        Cont2["container_sidecar"]
+    end
+
     Pod1 --> Cont1
     Pod1 --> Cont2
 
-    subgraph Controllers["单目录聚合多控制器控制接口 (cgroups v2)"]
+    subgraph Controllers["cgroups v2 控制接口"]
         direction TB
-        c1["cpu.max (硬限流) / cpu.weight (权重)"]
-        c2["memory.max (硬限流) / memory.high (节流线)"]
-        c3["io.max (IOPS/BPS 硬限流)"]
-        c4["pids.max (进程数防 Fork 炸弹)"]
+        c1["cpu.max / cpu.weight"]
+        c2["memory.max / memory.high"]
+        c3["io.max / pids.max"]
     end
 
     Pod1 -.-> Controllers
@@ -411,7 +416,7 @@ stateDiagram-v2
     [*] --> Pending: 1. API Server 准入持久化 / etcd 记账
     Pending --> Scheduled: 2. kube-scheduler 算法选定宿主机 Node
     Scheduled --> ContainerCreating: 3. Kubelet 监听到调度结果，调 CRI 运行时
-    
+
     state ContainerCreating {
         [*] --> PauseRunning: 3.1 拉起 Pause 容器 (创建 Net/IPC Namespace)
         PauseRunning --> CNIConfigured: 3.2 CNI 插件插上网卡并分配 IP

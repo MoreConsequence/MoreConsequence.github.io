@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 540" width="1020" height="540" role="img" aria-labelledby="cube-title cube-desc">
+  <title id="cube-title">3D 并行拓扑与算网硬件物理分级映射</title>
+  <desc id="cube-desc">展示万卡大模型训练中张量并行(TP)、流水线并行(PP)与数据并行(DP)如何与单机NVLink、跨机InfiniBand及跨机房交换网络进行物理映射。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="540" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3D 并行三维超立方体拓扑与硬件网络带宽分级</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">物理网络硬件决定软件拓扑：单机 NVLink (900 GB/s) ↔ 跨机 InfiniBand (400 Gbps) ↔ 跨集群数据并行</text>
+
+  <!-- Left Side: 3D Parallelism Coordinate Stack -->
+  <rect x="40" y="95" width="460" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="460" height="34" rx="8" fill="#eff6ff"/>
+  <text x="56" y="118" fill="#2e5aa8" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3D 并行三维分级正交网格 (3D Mesh Dimension)</text>
+
+  <!-- Dimension 1: TP -->
+  <rect x="56" y="142" width="428" height="80" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="72" y="166" fill="#1e40af" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">X 轴 · 张量并行 (Tensor Parallelism, TP ≤ 8)</text>
+  <text x="72" y="188" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">硬件载体：单机 8 卡内部 NVLink 总线 (900 GB/s 极速直连)</text>
+  <text x="72" y="208" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信特性：每层两次 All-Reduce，高频且严禁跨机穿透，锁死单节点。</text>
+
+  <!-- Dimension 2: PP -->
+  <rect x="56" y="234" width="428" height="80" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="72" y="258" fill="#115e59" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Y 轴 · 流水线并行 (Pipeline Parallelism, PP)</text>
+  <text x="72" y="280" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">硬件载体：机架内 / 邻近交换机 InfiniBand 400/800 Gbps 极速网络</text>
+  <text x="72" y="300" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信特性：仅在相邻 Stage 传递激活值与梯度，P2P 点对点小包通信。</text>
+
+  <!-- Dimension 3: DP -->
+  <rect x="56" y="326" width="428" height="80" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="72" y="350" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Z 轴 · 数据并行与零冗余分片 (DP / ZeRO / FSDP)</text>
+  <text x="72" y="372" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">硬件载体：Spine-Leaf 集群网络 / 跨核心交换机 (DC Fabric)</text>
+  <text x="72" y="392" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信特性：分片参数聚合与梯度同步，通过异步重叠掩盖在计算耗时中。</text>
+
+
+  <!-- Right Side: Production Hardware Topology Map -->
+  <rect x="520" y="95" width="460" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="520" y="95" width="460" height="34" rx="8" fill="#f8fafc"/>
+  <text x="536" y="118" fill="#0f172a" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">硬件因式分解铁律与 LLaMA-3 真实生产案例</text>
+
+  <!-- Formula Card -->
+  <rect x="536" y="142" width="428" height="66" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="552" y="165" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">全集群总显卡数必须满足因式分解：</text>
+  <text x="552" y="190" fill="#eb6c36" font-size="14" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">N_GPUs = TP × PP × DP</text>
+
+  <!-- LLaMA 3 405B Case Study -->
+  <rect x="536" y="220" width="428" height="186" rx="6" fill="#f8fafc" stroke="#2d3142" stroke-width="1"/>
+  <text x="552" y="244" fill="#0f172a" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Meta LLaMA-3-405B 万卡级实战配置：</text>
+
+  <text x="552" y="272" fill="#2e5aa8" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">TP = 8</text>
+  <text x="615" y="272" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">满配单物理机 8 卡 NVLink，消灭跨机通信。</text>
+
+  <text x="552" y="298" fill="#0d9488" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">PP = 16</text>
+  <text x="615" y="298" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">跨 16 台物理机组装 126 层深度网络流水线。</text>
+
+  <text x="552" y="324" fill="#c2410c" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">DP = 128</text>
+  <text x="615" y="324" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">全集群 128 路数据并行分片，海量吞吐。</text>
+
+  <rect x="552" y="344" width="396" height="46" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="568" y="364" fill="#1e40af" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">集群规模: 8 × 16 × 128 = 16,384 张 H100 GPU</text>
+  <text x="568" y="380" fill="#3b82f6" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">达成近 40% 的全集群模型算力利用率 (MFU)。</text>
+
+
+  <!-- Bottom Summary Banner -->
+  <rect x="40" y="450" width="940" height="66" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <text x="56" y="476" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">生产级算网亲和铁律：</text>
+  <text x="56" y="498" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信越频繁的并行模式（TP），其物理距离必须越近（NVLink）；通信量稀疏或能异步掩盖的模式（PP / DP），方可跨越物理机架与交换机。</text>
+</svg>

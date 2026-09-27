@@ -38,18 +38,21 @@ series: "Kubernetes 架构内核与生产实战"
 资深平台架构师在回答该问题时，必须能够清晰解构**调度占座与物理消耗的割裂模型**，并给出一整套**“画像评估 $\to$ 原地热更新 $\to$ 运行环境协同”**的完整破局闭环：
 
 ```mermaid
-flowchart TD
-    subgraph ProblemSpace["利用率低迷的物理根源"]
-        P1["研发过度悲观预估：配额按历史超大洪峰申请"]
-        P2["调度器占座逻辑：只认 Request，不认真实消耗"]
-        P3["静态不可变约束：原生容器 Spec 冻结，修改必杀 Pod"]
+flowchart LR
+    subgraph ProblemSpace["利用率低迷物理根源"]
+        direction TB
+        P1["过度悲观预估 (洪峰申请)"]
+        P2["调度器只认 Request 占座"]
+        P3["原生 Spec 冻结修改必杀 Pod"]
+        P1 --> P2 --> P3
     end
 
-    subgraph SolutionSpace["资深架构师系统化降本三部曲"]
+    subgraph SolutionSpace["系统化降本三部曲"]
         direction TB
-        S1["第一阶段：Goldilocks + VPA 推荐模式（离线画像，生成建议）"]
-        S2["第二阶段：K8s 1.27+ In-Place Pod Resize（原地无感热升降）"]
-        S3["第三阶段：运行时协同（JVM 动态堆感知与内核 cgroups v2 穿透）"]
+        S1["1. VPA 推荐模式 (离线画像建议)"]
+        S2["2. In-Place Resize (原地热升降)"]
+        S3["3. 运行时协同 (JVM 堆与 cgroups v2)"]
+        S1 --> S2 --> S3
     end
 
     ProblemSpace ==> SolutionSpace
@@ -62,29 +65,29 @@ flowchart TD
 要解决集群利用率倒挂，首先必须看清 Kubernetes 节点调度容量计算的底层算术真相：
 
 ```mermaid
-flowchart TB
-    subgraph HostPhysical["物理节点 (32 Core / 64GB RAM)"]
+flowchart LR
+    subgraph HostPhysical["物理节点 (32 Core)"]
         direction TB
-        SystemReserved["系统预留 (kubelet, OS): 2 Core / 4GB"]
-        Allocatable["K8s 可分配容量 (Node Allocatable): 30 Core / 60GB"]
+        Allocatable["可分配容量<br/>30 Core"]
     end
 
-    subgraph PodAllocation["调度器视角：根据 Request 严格累加占座"]
+    subgraph PodAllocation["调度器占座 (Request 累加)"]
         direction TB
-        Pod1Req["Pod A (Request: 8 Core, 真实跑 0.5 Core)"]
-        Pod2Req["Pod B (Request: 8 Core, 真实跑 0.8 Core)"]
-        Pod3Req["Pod C (Request: 12 Core, 真实跑 1.2 Core)"]
-        TotalReq["已占满 28 Core (剩余仅 2 Core 可供调度)"]
-        Pod1Req --> TotalReq
-        Pod2Req --> TotalReq
-        Pod3Req --> TotalReq
+        PodA["Pod A (Req: 8 Core, 跑 0.5)"]
+        PodB["Pod B (Req: 8 Core, 跑 0.8)"]
+        PodC["Pod C (Req: 12 Core, 跑 1.2)"]
+        TotalReq["已锁定 28 Core (仅剩 2 Core)"]
+        PodA & PodB & PodC --> TotalReq
     end
 
-    Allocatable -.->|"绑定占座"| TotalReq
-
-    subgraph RealUsage["宿主机物理内核真实负载 (仅 2.5 Core，利用率 8.3%)"]
-        RealIdle["闲置物理算力：27.5 Core (白白烧钱浪费！)"]
+    subgraph RealUsage["物理真实负载 (利用率 8.3%)"]
+        direction TB
+        Actual["真实运行: 2.5 Core"]
+        Waste["闲置浪费: 27.5 Core"]
     end
+
+    Allocatable -.-> TotalReq
+    TotalReq -.-> RealUsage
 ```
 
 如上图所示：
@@ -102,22 +105,13 @@ flowchart TB
 社区的 Vertical Pod Autoscaler (VPA) 包含三个独立解耦的控制组件：
 
 ```mermaid
-flowchart TB
-    subgraph VPAArchitecture["VPA 核心三组件拓扑"]
-        direction TB
-        VPARecommender["1. VPA Recommender<br>(拉取历史时序指标，计算画像建议)"]
-        VPAUpdater["2. VPA Updater<br>(根据推荐值，决策是否驱逐线上 Pod)"]
-        VPAAdmission["3. VPA Admission Webhook<br>(拦截 Pod 创建请求，在未落地前重写 Spec)"]
-    end
-
-    MetricsServer["Prometheus / Metrics Server"] -->|"拉取 8 天 CPU/内存滑动数据"| VPARecommender
-    VPARecommender -->|"写入 VPA 资源 Status 推荐字段"| VPACRD["VPA CRD (Recommendation)"]
-    
-    VPACRD -->|"读取推荐值"| VPAUpdater
-    VPAUpdater -->|"调用 Eviction API 强制杀死 Pod"| VictimPod["线上业务 Pod (被杀掉)"]
-    
-    VictimPod -->|"Deployment 重新拉起新 Pod"| NewPodReq["新 Pod 创建请求"]
-    NewPodReq -->|"拦截注入推荐值"| VPAAdmission
+flowchart LR
+    Metrics["Metrics Server<br/>(拉取时序数据)"] --> Recommender["1. Recommender<br/>(计算画像推荐)"]
+    Recommender --> VPACRD["VPA CRD<br/>(Status)"]
+    VPACRD --> Updater["2. Updater<br/>(决策驱逐)"]
+    Updater -->|"Eviction 杀死"| VictimPod["旧 Pod"]
+    VictimPod -->|"重建触发"| Admission["3. Admission<br/>(重写 Spec)"]
+    Admission -->|"拉起就绪"| NewPod["新推荐 Pod"]
 ```
 
 ### 3.1 Recommender 的指数衰减加权推荐算法

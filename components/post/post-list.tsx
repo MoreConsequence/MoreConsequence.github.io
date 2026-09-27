@@ -1,7 +1,7 @@
-import type { CompiledPost, PostSource } from "@/lib/content/types";
+import type { CompiledPost, PostSource, PostSummary } from "@/lib/content/types";
 import { PostCard } from "./post-card";
 
-type ListPost = PostSource | CompiledPost;
+type ListPost = PostSource | CompiledPost | PostSummary;
 
 export function groupPostsByYear(posts: ListPost[]) {
   const groups = new Map<string, ListPost[]>();

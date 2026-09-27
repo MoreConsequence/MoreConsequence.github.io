@@ -4,132 +4,208 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>tcp-socket-backpressure-buffer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; padding: 40px; background: #f5f5f5; color: #2d3142; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
     main { width: min(960px, 100%); margin: 0 auto; }
     svg { display: block; width: 100%; height: auto; }
   </style>
 </head>
 <body>
 <main>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="100%" height="100%" role="img" aria-labelledby="tcp-socket-backpressure-buffer-title tcp-socket-backpressure-buffer-desc"><title id="tcp-socket-backpressure-buffer-title">TCP Socket 背压传导链路与零窗口探测</title><desc id="tcp-socket-backpressure-buffer-desc">网络传输层架构图展示慢消费导致 SO_RCVBUF 堆满、TCP 通告 rwnd=0 零窗口、发送端零窗口探测定时器、SO_SNDBUF 堆满与上游写入 EAGAIN 阻断的全链路背压传导模型。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" width="100%" height="100%" role="img" aria-labelledby="tcp-socket-backpressure-buffer-title tcp-socket-backpressure-buffer-desc">
+  <title id="tcp-socket-backpressure-buffer-title">TCP Socket 背压传导链路与零窗口探测机制</title>
+  <desc id="tcp-socket-backpressure-buffer-desc">高对比度网络架构图：慢消费导致接收缓冲区堆满、TCP 通告 win=0 零窗口、发送端零窗口探测定时器、发送缓冲区打满直到上游写入返回 EAGAIN 阻断的全链路背压传导模型。</desc>
   <defs>
-    <marker id="sb-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/>
+    <marker id="sb-arr-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f172a" />
     </marker>
     <marker id="sb-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/>
+      <polygon points="0 0, 8 3, 0 6" fill="#d9531e" />
+    </marker>
+    <marker id="sb-arr-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0284c7" />
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="600" fill="#f5f5f5"/>
+  <!-- Canvas Background -->
+  <rect width="960" height="570" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
 
-  <!-- Header -->
-  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">SOCKET BACKPRESSURE · SO_RCVBUF, ZERO WINDOW PROBE &amp; EAGAIN CASCADE</text>
-  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">TCP Socket 背压链路与零窗口探测</text>
-  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">慢消费 ➔ SO_RCVBUF 满 ➔ TCP 通告 rwnd=0 ➔ 发送端零窗口探测 ➔ SO_SNDBUF 阻断上游</text>
-
-  <!-- 4 Columns Architecture (y=136..506, h=370) -->
-  <!-- Col 1: Slow Consumer (x=40..245, w=205) -->
-  <g transform="translate(40, 136)">
-    <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">RECEIVER</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">接收端慢消费</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">SO_RCVBUF Filling Up</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 应用 GC、锁竞争或慢数据库阻塞</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• Recv-Q 持续上升直到接收缓冲打满</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Consumer Starvation Origin</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">现象本质：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 生产速度大于消费速度；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 缓冲区是解耦速度差的物理容器；</text>
-    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 满溢时必须向发送端施加反作用力。</text>
+  <!-- Header Section -->
+  <g transform="translate(40, 38)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">TCP Socket 慢消费反压与全链路阻断机制</text>
+    <text x="0" y="26" fill="#475569" font-size="13" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">接收端消费停滞 ➔ SO_RCVBUF 打满 ➔ 通告 rwnd=0 ➔ 发送端堆积 ➔ 上游 write() 抛出 EAGAIN</text>
   </g>
 
-  <!-- Col 2: Zero Window (x=260..475, w=215) - Focal -->
-  <g transform="translate(260, 136)">
-    <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">FLOW CTRL</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">TCP 零窗口通告</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">ACK (win = 0)</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 接收方对外公布可用信用归零</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 触发发送端 Zero Window Probe 探测</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Hard Traffic Backpressure Gate</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="191" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">协议保护机制：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 强制要求对端停发一切新业务包；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 杜绝接收端内存溢出与静默丢包；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 定时探测窗口恢复时机。</text>
+  <!-- Stage Connectors (Backpressure Chain: Left to Right across columns) -->
+  <!-- Link 1 -> 2: win=0 ACK -->
+  <g>
+    <line x1="234" y1="265" x2="260" y2="265" stroke="#d9531e" stroke-width="2" marker-end="url(#sb-arr-accent)" />
+    <rect x="232" y="231" width="34" height="18" rx="3" fill="#d9531e" />
+    <text x="249" y="244" fill="#ffffff" font-size="10.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">ACK</text>
   </g>
 
-  <!-- Col 3: Sender Backlog (x=490..695, w=205) - Focal -->
-  <g transform="translate(490, 136)">
-    <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">SENDER</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">发送缓冲积压</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">SO_SNDBUF Stacking</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 发送端无法发包，数据堆在 SNDBUF</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• Send-Q 水位暴涨，可用空间耗尽</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Reverse Pressure Transmission</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="181" height="212" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">传导恶果：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 发送端内存被下游连接牢牢锁死；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 压力沿着 TCP 链路完全逆传；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 迫使上游生产者做出反应。</text>
+  <!-- Link 2 -> 3: ZWP Stall -->
+  <g>
+    <line x1="486" y1="265" x2="512" y2="265" stroke="#d9531e" stroke-width="2" marker-end="url(#sb-arr-accent)" />
+    <rect x="481" y="231" width="38" height="18" rx="3" fill="#d9531e" />
+    <text x="500" y="244" fill="#ffffff" font-size="10.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STALL</text>
   </g>
 
-  <!-- Col 4: Upstream Blocked (x=710..920, w=210) -->
-  <g transform="translate(710, 136)">
-    <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142"/>
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">UPSTREAM</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">上游写入阻断</text>
-
-    <!-- Box -->
-    <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">EAGAIN or Blocking</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 阻塞 Socket: 写线程挂起等待</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 非阻塞: 立即返回 EAGAIN 报错</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Self-Preserving System Safety</text>
-
-    <!-- Details -->
-    <rect x="12" y="148" width="186" height="212" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">终极闭环：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 阻止上游无休止生产数据；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 避免整条链路因 OOM 崩溃；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 证明背压是系统健康的基石。</text>
+  <!-- Link 3 -> 4: Buffer Full EAGAIN -->
+  <g>
+    <line x1="738" y1="265" x2="764" y2="265" stroke="#0284c7" stroke-width="2" marker-end="url(#sb-arr-link)" />
+    <rect x="733" y="231" width="38" height="18" rx="3" fill="#0284c7" />
+    <text x="752" y="244" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">FULL</text>
   </g>
 
-  <!-- Legend Strip -->
-  <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
-  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="552" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-  <text x="140" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">接收端慢消费与上游写入 EAGAIN 阻断保护</text>
-  <rect x="370" y="552" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-  <text x="390" y="564" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">TCP 零窗口通告与发送端缓冲区积压核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker></defs></svg>
+  <!-- 4 Columns Architecture (y=84..494, h=410) -->
+
+  <!-- Col 1: Receiver Slow Consumer (x=40..234, w=194) -->
+  <g transform="translate(40, 84)">
+    <rect width="194" height="410" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 1</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">接收端慢消费</text>
+
+    <!-- Sub-block 1: Root Cause -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">消费瓶颈源头</text>
+    <text x="14" y="90" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 应用 GC 停顿或慢 SQL 阻塞</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 业务层处理速度急剧跌落</text>
+    <text x="14" y="134" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">• Recv-Q 水位持续飙升</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="180" y2="154" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: SO_RCVBUF Full -->
+    <text x="14" y="180" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">SO_RCVBUF 耗尽</text>
+    <text x="14" y="204" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">tcp_rmem 水位打满</text>
+    <text x="14" y="226" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 内核无法再分配 skb 空间</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 缓冲区作为物理容灾容器</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="268" x2="180" y2="268" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Reaction -->
+    <text x="14" y="294" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">触发自我保护机制</text>
+    <text x="14" y="318" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 生产速度 &gt; 消费速度失衡</text>
+    <text x="14" y="340" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 必须向发送端施加反作用力</text>
+    <text x="14" y="362" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">向网络层下发零信用宣告</text>
+  </g>
+
+  <!-- Col 2: TCP Zero Window (x=260..486, w=226) - Focal Point -->
+  <g transform="translate(260, 84)">
+    <rect width="226" height="410" rx="8" fill="rgba(217, 83, 30, 0.04)" stroke="#d9531e" stroke-width="2" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#d9531e" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 2</text>
+    <text x="92" y="30" fill="#d9531e" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">TCP 零窗口通告</text>
+
+    <!-- Sub-block 1: win = 0 ACK -->
+    <text x="14" y="66" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">协议级硬限流闸门</text>
+    <text x="14" y="90" fill="#d9531e" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">ACK (win = 0 / rwnd = 0)</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 接收方通告可用滑动窗口归零</text>
+    <text x="14" y="134" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 强制对端立即停发一切新数据</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="212" y2="154" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 2: Zero Window Probe -->
+    <text x="14" y="180" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">零窗口探测定时器 (ZWP)</text>
+    <text x="14" y="204" fill="#0284c7" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">TCP Persist Timer 激活</text>
+    <text x="14" y="226" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 指数退避发送 1 字节探测报文</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 防止窗口更新 ACK 丢失死锁</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="268" x2="212" y2="268" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 3: Protocol Safety -->
+    <text x="14" y="294" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">协议安全硬红线保证</text>
+    <text x="14" y="318" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 杜绝接收端内核静默丢包</text>
+    <text x="14" y="340" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 将接收端压力转移至网络与对端</text>
+    <text x="14" y="362" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">优雅降速，维持连接生命体征</text>
+  </g>
+
+  <!-- Col 3: Sender Backlog (x=512..738, w=226) -->
+  <g transform="translate(512, 84)">
+    <rect width="226" height="410" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#0f172a" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 3</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">发送缓冲积压</text>
+
+    <!-- Sub-block 1: Stacking -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">SO_SNDBUF 持续灌水</text>
+    <text x="14" y="90" fill="#d9531e" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">Send-Q 水位极速暴涨</text>
+    <text x="14" y="112" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 对端窗口为 0，数据无法出网卡</text>
+    <text x="14" y="134" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 上游程序继续调用 write() 写入</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="212" y2="154" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Memory Lock -->
+    <text x="14" y="180" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">发送端内存被套牢</text>
+    <text x="14" y="204" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">sk_wmem_alloc &gt;= sk_sndbuf</text>
+    <text x="14" y="226" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 发送缓冲区配额全部占满</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 内核无法再为新数据分配空间</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="268" x2="212" y2="268" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 3: Final Mile -->
+    <text x="14" y="294" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">反压逆传最后一公里</text>
+    <text x="14" y="318" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 下游慢消费完成跨网络逆传</text>
+    <text x="14" y="340" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 压力直接抵达应用层系统调用入口</text>
+    <text x="14" y="362" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">迫使上游写进程踩下刹车</text>
+  </g>
+
+  <!-- Col 4: Upstream Blocking (x=764..920, w=156) -->
+  <g transform="translate(764, 84)">
+    <rect width="156" height="410" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- Col Header Badge -->
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STAGE 4</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">上游写入阻断</text>
+
+    <!-- Sub-block 1: Syscall Block -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">系统调用行为</text>
+    <text x="14" y="90" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">阻塞模式 (Blocking)</text>
+    <text x="14" y="112" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 写线程挂起休眠</text>
+    <text x="14" y="134" fill="#d9531e" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">非阻塞 (Non-block)</text>
+    <text x="14" y="156" fill="#d9531e" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="600">EAGAIN / EWOULDBLOCK</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="174" x2="142" y2="174" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Ultimate Closed-Loop -->
+    <text x="14" y="200" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">系统级健康闭环</text>
+    <text x="14" y="224" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 强行截断生产洪流</text>
+    <text x="14" y="246" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 杜绝无界堆积 OOM</text>
+    <text x="14" y="268" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 倒逼业务层排队限流</text>
+    <text x="14" y="292" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 端到端自适应平衡</text>
+    <text x="14" y="314" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">背压是高可用基石</text>
+  </g>
+
+  <!-- Legend Strip at Bottom -->
+  <g transform="translate(40, 524)">
+    <line x1="0" y1="0" x2="880" y2="0" stroke="#e2e8f0" stroke-width="1.5" />
+    <text x="0" y="24" fill="#64748b" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">图例规范：</text>
+
+    <rect x="75" y="11" width="14" height="14" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <text x="96" y="23" fill="#334155" font-size="12" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">接收端慢消费与上游写入 EAGAIN 阻断保护</text>
+
+    <rect x="375" y="11" width="14" height="14" rx="3" fill="rgba(217, 83, 30, 0.08)" stroke="#d9531e" stroke-width="1.8" />
+    <text x="396" y="23" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">TCP 零窗口通告核心限流与发送缓冲区积压 (SO_SNDBUF)</text>
+  </g>
+</svg>
 </main>
 </body>
 </html>

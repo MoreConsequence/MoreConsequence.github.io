@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import mermaid from "mermaid";
 
@@ -132,7 +133,7 @@ const kamiThemeVars = (dark: boolean) =>
 const kamiFontStack =
   'Charter, Georgia, "TsangerJinKai02", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", serif';
 const defaultFontStack =
-  'ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif';
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
 
 function escHtml(text: string) {
   const d = document.createElement("div");
@@ -141,6 +142,7 @@ function escHtml(text: string) {
 }
 
 export function MermaidRenderer() {
+  const pathname = usePathname();
   const [modal, setModal] = useState<{
     type: "svg" | "image";
     content: string;
@@ -149,6 +151,7 @@ export function MermaidRenderer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
+  const pending = useRef(false);
 
   const openModal = (next: { type: "svg" | "image"; content: string }) => {
     setZoom(1);
@@ -178,7 +181,10 @@ export function MermaidRenderer() {
 
   useEffect(() => {
     const render = async () => {
-      if (busy.current) return;
+      if (busy.current) {
+        pending.current = true;
+        return;
+      }
       busy.current = true;
       try {
         const theme =
@@ -191,6 +197,7 @@ export function MermaidRenderer() {
           startOnLoad: false,
           theme: "base",
           securityLevel: "loose",
+          suppressErrorRendering: true,
           fontFamily: isKami ? kamiFontStack : defaultFontStack,
           themeVariables: isKami ? kamiThemeVars(dark) : themeVars(dark),
         });
@@ -203,6 +210,16 @@ export function MermaidRenderer() {
             await mermaid.run({ nodes: [el] });
           } catch (err) {
             console.warn("Mermaid diagram render error:", err);
+            el.dataset.processed = "error";
+            const src = el.getAttribute("data-src") || el.textContent || "";
+            el.innerHTML = [
+              `<div class="mt-bar" role="toolbar" aria-label="Mermaid 图示工具">`,
+              `<div class="mt-tabs">`,
+              `<button type="button" class="mt-tab active" data-v="c">Source (渲染异常)</button>`,
+              `</div>`,
+              `</div>`,
+              `<div class="mt-view mt-cd"><pre>${escHtml(src)}</pre></div>`,
+            ].join("");
           }
         }
 
@@ -256,6 +273,10 @@ export function MermaidRenderer() {
           });
       } finally {
         busy.current = false;
+        if (pending.current) {
+          pending.current = false;
+          void render();
+        }
       }
     };
 
@@ -287,7 +308,7 @@ export function MermaidRenderer() {
       attributeFilter: ["data-theme"],
     });
     return () => obs.disconnect();
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const onFullscreenChange = () => {

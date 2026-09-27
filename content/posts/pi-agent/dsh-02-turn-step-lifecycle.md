@@ -15,49 +15,11 @@ series: "DeepSeek DSH 架构全解"
 
 ---
 
-![DeepSeek Harness (DSH) 生命周期解密：Turn 与 Step 双层状态机与确定性收敛](../../../public/images/dsh-turn-step-lifecycle-state-machine.svg)
-
 ## 一、心智模型：Turn 与 Step 的精确状态拓扑
 
 在 `dsh` 中，调度驱动器 `ReactLoopAgent` 的核心状态机流转如下图所示：
 
-```mermaid
-flowchart TD
-    subgraph TurnLevel["Turn 宏观轮次 (从用户输入到任务完全收敛)"]
-        TStart["1. turn/start: 认领 Inbox 输入与排队上下文"]
-        
-        subgraph StepLevel["Step 微观循环 (1..N 次迭代)"]
-            PreStep{"2. agent/pre-step 瀑布流<br/>(Prompt 装配与安全审查)"}
-            
-            PreStep -->|"Decision: reject / empty"| TurnClose["关闭 Turn (0 Step 消耗)"]
-            
-            PreStep -->|"Decision: enter"| SStart["3. step/start (事件落盘)"]
-            
-            SStart --> Derive["4. deriveMessages() 从只读事件流投影模型上下文"]
-            
-            Derive --> StreamReq["5. agent/request ➔ llm/stream<br/>(流式输出 text / thinking / tool_call)"]
-            
-            subgraph ToolDispatchPipeline["6. executeToolCalls 工具并发调度流水线"]
-                TBarrier["Exclusive 独占工具 ➔ 建立串行屏障"]
-                TParallel["Parallel 并发工具 ➔ 滑动并发池 (Rolling Pool)"]
-                TPolicy["tools/pre-execute ➔ 权限审批与参数清洗"]
-                TExec["tools/execute ➔ 沙箱物理执行"]
-                TPost["tools/post-execute ➔ 输出截断与脱敏"]
-                
-                TBarrier --> TPolicy --> TExec --> TPost
-                TParallel --> TPolicy --> TExec --> TPost
-            end
-            
-            StreamReq -->|"解析出 Tool Calls"| ToolDispatchPipeline
-            ToolDispatchPipeline --> SEnd["7. step/end: 写入 tool/result 与 step 审计"]
-        end
-        
-        TStart --> PreStep
-        SEnd -->|"模型返回 stop_reason == 'tool_use' 或新输入到达"| PreStep
-        SEnd -->|"模型返回 stop_reason == 'stop' 且 Inbox 为空"| TurnStopping["8. agent/turn-stopping"]
-        TurnStopping --> TEnd["9. turn/end: 释放 Turn 锁，回归 IDLE 态"]
-    end
-```
+![DeepSeek Harness (DSH) 生命周期解密：Turn 与 Step 双层状态机与确定性收敛](../../../public/images/dsh-turn-step-lifecycle-state-machine.svg)
 
 ### 1.1 Phase 状态机内部定义
 

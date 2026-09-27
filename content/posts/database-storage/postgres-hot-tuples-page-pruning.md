@@ -50,31 +50,32 @@ series: "数据库原理手记"
 要搞清楚 HOT 的运作机制，必须先拆开 PostgreSQL 单个 8KB 数据页（Page）的内部内存解剖图。
 
 ```mermaid
-flowchart TD
-    subgraph PageHeader["页头: PageHeaderData (24 字节)"]
-        LSN["pd_lsn (WAL 检查点)"]
-        LowerUpper["pd_lower / pd_upper 指针"]
+flowchart LR
+    subgraph PageHeader["页头 (24B)"]
+        direction TB
+        LSN["pd_lsn"]
+        LowerUpper["pd_lower / pd_upper"]
     end
 
-    subgraph LinePointers["行指针数组: ItemIdData[] (从前往后增长)"]
-        LP1["Line Pointer 1 (4 字节)"]
-        LP2["Line Pointer 2 (4 字节)"]
-        LP3["Line Pointer 3 (4 字节)"]
+    subgraph LinePointers["行指针数组 (正向增长 ──►)"]
+        direction TB
+        LP1["LP 1"]
+        LP2["LP 2"]
+        LP3["LP 3"]
     end
 
-    subgraph FreeSpace["未分配连续可用空间 (pd_lower 至 pd_upper 之间)"]
-        Hole["空闲内存孔洞 (Free Space)"]
+    subgraph FreeSpace["可用空间 (Free Space)"]
+        Hole["pd_lower ────► ◄──── pd_upper"]
     end
 
-    subgraph TuplesData["物理元组数据区 (从页底向后倒退增长)"]
-        T3["Tuple 3 (新版本)"]
-        T2["Tuple 2 (历史版本)"]
-        T1["Tuple 1 (根版本)"]
+    subgraph TuplesData["元组数据区 (◄── 逆向增长)"]
+        direction TB
+        T3["Tuple 3 (最新)"]
+        T2["Tuple 2 (旧版)"]
+        T1["Tuple 1 (根版)"]
     end
 
-    PageHeader --> LinePointers
-    LinePointers --> FreeSpace
-    FreeSpace --> TuplesData
+    PageHeader --> LinePointers --> FreeSpace --> TuplesData
 ```
 
 每个行指针 `ItemIdData` 占用恰好 **4 个字节**（32 位）。其定义在内核源码 `src/include/storage/itemid.h` 中：

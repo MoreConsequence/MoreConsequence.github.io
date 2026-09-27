@@ -38,17 +38,22 @@ series: "Kubernetes 架构内核与生产实战"
 系统级架构师在被问及该场景时，必须能够从**控制面抽象解耦**、**数据面网络拓扑演进**与**地址冲突消解算法**三个维度自顶向下剖析：
 
 ```mermaid
-flowchart TD
-    subgraph MultiClusterMatrix["跨集群多云网络互联技术选型矩阵"]
+flowchart LR
+    subgraph MultiClusterMatrix["跨集群网络三大技术流派"]
         direction TB
-        NodeL7["L7 边界网关反向代理<br>(Ingress / API Gateway / Gateway API)"]
-        TunnelL3["L3 Overlay 加密隧道派<br>(Submariner / WireGuard / IPsec)"]
-        MeshL3eBPF["L3/L4 eBPF 原生直连派<br>(Cilium ClusterMesh / BGP 扁平网)"]
+        NodeL7["1. L7 边界网关代理 (Ingress/API GW)"]
+        TunnelL3["2. L3 Overlay 加密隧道 (Submariner)"]
+        MeshL3eBPF["3. L3/L4 eBPF 直连 (ClusterMesh)"]
     end
 
-    MultiClusterMatrix --> PerfComparison["性能与时延对比：eBPF 原生 > L3 隧道 > L7 网关代理"]
-    MultiClusterMatrix --> IPConflict["地址冲突消解：Globalnet NAT 映射 vs 统一前缀规划"]
-    MultiClusterMatrix --> ServiceDiscovery["统一服务发现：Kube-Federation vs MCS-API (clusterset.local)"]
+    subgraph Metrics["评估与选型维度"]
+        direction TB
+        Perf["时延吞吐: eBPF 直连 > L3 隧道 > L7 代理"]
+        IPConflict["网段冲突: Globalnet NAT vs 统一规划"]
+        ServiceDisc["服务发现: MCS-API (clusterset.local)"]
+    end
+
+    MultiClusterMatrix --> Metrics
 ```
 
 ---
@@ -103,30 +108,26 @@ Submariner 是 CNCF 旗下专门解决跨 Kubernetes 集群网络互联与服务
 ### 3.1 核心组件与数据面流向
 
 ```mermaid
-flowchart TB
-    subgraph BrokerCluster["Central Broker (中心协调集群)"]
-        CRDStore["etcd: 存储 Endpoint / Cluster 注册信息"]
-    end
-
-    subgraph Cluster1["集群 1 (Node Pod 网段: 10.244.0.0/16)"]
+flowchart LR
+    subgraph Cluster1["集群 1 (10.244.0.0/16)"]
         direction TB
-        App1["业务 Pod A"]
-        RouteAgent1["Route Agent (每个 Worker 节点 DaemonSet)"]
-        GW1["Submariner Gateway Node<br>(主动选主 Leader 节点)"]
-        App1 --> RouteAgent1 --> GW1
+        App1["Pod A"] --> Agent1["Route Agent"]
+        Agent1 --> GW1["Gateway Node (Leader)"]
     end
 
-    subgraph Cluster2["集群 2 (Node Pod 网段: 10.245.0.0/16)"]
+    subgraph BrokerCluster["Central Broker"]
+        CRDStore["etcd 拓扑注册表"]
+    end
+
+    subgraph Cluster2["集群 2 (10.245.0.0/16)"]
         direction TB
-        App2["后端 Pod B"]
-        RouteAgent2["Route Agent (DaemonSet)"]
-        GW2["Submariner Gateway Node<br>(主动选主 Leader 节点)"]
-        GW2 --> RouteAgent2 --> App2
+        GW2["Gateway Node (Leader)"] --> Agent2["Route Agent"]
+        Agent2 --> App2["Pod B"]
     end
 
-    GW1 <-.->|"IPsec ESP (UDP 4500) 或 WireGuard (UDP 51820)"| GW2
-    GW1 ---|"Watch 跨集群拓扑"| CRDStore
-    GW2 ---|"Watch 跨集群拓扑"| CRDStore
+    GW1 <-.->|"IPsec / WireGuard 隧道"| GW2
+    GW1 ---|"Watch"| CRDStore
+    GW2 ---|"Watch"| CRDStore
 ```
 
 1. **Central Broker**：依托于某一个集群的 API Server，存放各集群导出的 `Cluster` 和 `Endpoint` 自定义资源（CRD）；
@@ -166,25 +167,26 @@ sequenceDiagram
 Submariner 的架构中，所有跨集群流量必须经过 Gateway 节点做集中汇聚与路由转发，容易形成单点带宽瓶颈与多跳抖动。而 Cilium ClusterMesh 彻底消除了“专用 Gateway 节点”：
 
 ```mermaid
-flowchart TB
-    subgraph ControlPlane["ClusterMesh 控制面 (kvstore mesh)"]
-        etcdMesh["各集群 Cilium etcd 实例建立互信双向拉取 (TLS mTLS)"]
+flowchart LR
+    subgraph ClusterWest["集群 West (10.200.0.0/16)"]
+        direction TB
+        NodeW1["Node W1 (eBPF)"]
+        NodeW2["Node W2 (eBPF)"]
     end
 
-    subgraph ClusterWest["集群 West (Pod: 10.200.0.0/16)"]
-        NodeW1["Worker Node W1 (eBPF)"]
-        NodeW2["Worker Node W2 (eBPF)"]
+    subgraph ControlPlane["ClusterMesh 控制面"]
+        etcdMesh["Cilium etcd mTLS 双向同步"]
     end
 
-    subgraph ClusterEast["集群 East (Pod: 10.201.0.0/16)"]
-        NodeE1["Worker Node E1 (eBPF)"]
-        NodeE2["Worker Node E2 (eBPF)"]
+    subgraph ClusterEast["集群 East (10.201.0.0/16)"]
+        direction TB
+        NodeE1["Node E1 (eBPF)"]
+        NodeE2["Node E2 (eBPF)"]
     end
 
-    ControlPlane -.->|"实时同步 Endpoints 与 Service 拓扑"| NodeW1
-    ControlPlane -.->|"实时同步 Endpoints 与 Service 拓扑"| NodeE1
-
-    NodeW1 ==="底层专线直接建立 eBPF 路由通道 (Pod 到 Pod 纯直连)"=== NodeE1
+    ControlPlane -.->|"同步拓扑"| NodeW1
+    ControlPlane -.->|"同步拓扑"| NodeE1
+    NodeW1 == "底层专线 eBPF 直连 (Pod-to-Pod 纯直连)" === NodeE1
 ```
 
 ### 4.2 eBPF 内核级短路：跨集群负载均衡实现

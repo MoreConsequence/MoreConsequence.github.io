@@ -4,7 +4,7 @@ description: "深度拆解微服务架构的核心基石：分布式配置中心
 publishedAt: "2026-06-14"
 tags: ["系统设计", "面试题", "配置中心", "Apollo", "Nacos", "长轮询", "灰度发布", "微服务"]
 category: 面试深度拆解
-draft: true
+draft: false
 featured: false
 series: "资深工程师面试深度拆解"
 ---
@@ -35,29 +35,23 @@ series: "资深工程师面试深度拆解"
 在客户端与配置中心的通信设计上，存在推（Push）与拉（Pull）两大流派的物理权衡。
 
 ```mermaid
-flowchart TD
-    subgraph PushModel["推模式 (Pure Push: WebSocket / gRPC Streaming)"]
+flowchart LR
+    subgraph PushModel["推模式 (WebSocket/gRPC)"]
         direction TB
-        Server1["配置中心服务端 (维持长连接)"]
-        Client1["20,000 个微服务 Pod 客户端"]
-        Server1 -->|"1. 强力维持 20,000 个长连接 (巨大句柄开销)"| Client1
-        Server1 -->|"2. 变更时瞬间群发广播 (网络微突发丢包)"| Client1
-        Server1 -->|"3. 客户端假死检测心跳风暴"| Client1
+        S1["服务端"] -->|"维持 20k 长连接句柄"| C1["客户端"]
+        S1 -->|"群发突发广播丢包"| C1
     end
 
-    subgraph PullModel["定时拉模式 (Pure Short Pull: 定时 HTTP GET)"]
+    subgraph PullModel["短轮询 (HTTP GET 5s)"]
         direction TB
-        Client2["客户端每隔 5 秒轮询一次"]
-        Server2["配置中心服务端"]
-        Client2 -->|"99.9% 的请求返回 304 Not Modified"| Server2
-        Client2 -->|"延迟高达 5 秒，QPS 高达 4,000 空请求"| Server2
+        C2["客户端"] -->|"4000 QPS 空轮询 (304)"| S2["服务端"]
+        C2 -->|"5s 延迟高开销"| S2
     end
 
-    subgraph LongPolling["最佳平衡：HTTP 长轮询 (Long Polling 30s 挂起)"]
+    subgraph LongPolling["长轮询 (Long Polling 30s)"]
         direction TB
-        Client3["客户端发起带 MD5 的长轮询"]
-        Server3["服务端检查 MD5:\n若无变化，挂起连接 30 秒;\n若有变化或 30s 到期，立即返回"]
-        Client3 <-->|"兼顾毫秒级实时响应与极低 CPU 开销"| Server3
+        C3["客户端 (带 MD5)"] <-->|"无变动挂起 30s / 变更即返"| S3["服务端"]
+        C3 -->|"毫秒级响应 / 极低 CPU"| S3
     end
 ```
 
@@ -134,22 +128,20 @@ public void handleLongPolling(HttpServletRequest req, HttpServletResponse resp) 
 配置中心挂了，整个公司的微服务就要跟着陪葬吗？资深架构师的设计底线是：**“配置中心宕机，必须对在线运行的业务服务造成零影响，且必须允许新服务实例无障碍冷启动！”**
 
 ```mermaid
-flowchart TD
-    subgraph ClientProcess["微服务进程内部多级安全保护网"]
-        App["业务业务逻辑代码\n(@Value / @ConfigurationProperties)"]
-        MemCache["第一级：进程内部 ConcurrentHashMap\n(零耗时，全内存就地读取)"]
-        DiskSnapshot["第二级：本地不可变磁盘快照文件\n(/data/config-cache/app.properties)\n- 每次热更新成功后原子 fsync 写入\n- 服务端失联时直接从本地快照读取启动"]
-        
-        App --> MemCache
-        MemCache -.->|未命中或服务初始化冷启动| DiskSnapshot
+flowchart LR
+    subgraph ClientProcess["客户端多级容灾保护网"]
+        direction TB
+        App["业务代码"] --> MemCache["第 1 级: 内存 ConcurrentHashMap (零耗时)"]
+        MemCache -.->|"冷启动/未命中"| DiskSnapshot["第 2 级: 本地不可变磁盘快照 (fsync)"]
     end
 
-    subgraph ConfigCenterCluster["配置中心集群 (全部宕机灾难场景)"]
-        ServerDown["配置中心节点全挂 (502 / 504 / Connection Refused)"]
-        DBDown["配置持久库 MySQL 宕机"]
+    subgraph ConfigCenterCluster["配置中心集群宕机场景"]
+        direction TB
+        ServerDown["配置中心服务宕机 (502/Refused)"]
+        DBDown["持久层 MySQL 宕机"]
     end
 
-    DiskSnapshot -.->|阻断外链依赖| ServerDown
+    DiskSnapshot -.->|"隔离外部依赖直接启动"| ServerDown
 ```
 
 ### 4.1 客户端冷启动的容灾三步梯

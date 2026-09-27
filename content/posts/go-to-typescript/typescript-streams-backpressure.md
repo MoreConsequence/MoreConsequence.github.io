@@ -85,10 +85,10 @@ C Readable.from HWM=2  → pipe → 慢 Writable:    produced=2000 consumed=2000
 
 ```mermaid
 flowchart LR
-  generator["async generator"] -->|next() / yield| readable["Readable.from\n有限缓冲"]
+  generator["async generator"] -->|"next() / yield"| readable["Readable.from<br/>有限缓冲"]
   readable --> consumer["for await consumer"]
   consumer --> writable["Writable / SSE / socket"]
-  writable -."drain / ready / write backpressure".-> consumer
+  writable -. "drain / ready / write backpressure" .-> consumer
 ```
 
 图中最后一条虚线很重要：本地 `for await` 消费得慢，只能约束它前面的队列；如果 `emitToUI()` 把 chunk 放进另一个无界数组，积压只是换了地址。

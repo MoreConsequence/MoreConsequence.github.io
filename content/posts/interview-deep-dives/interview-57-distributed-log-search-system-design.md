@@ -4,7 +4,7 @@ description: "深度拆解高频核心系统设计题：海量分布式日志收
 publishedAt: "2026-06-12"
 tags: ["系统设计", "面试题", "日志检索", "Elasticsearch", "ClickHouse", "VictoriaLogs", "列式存储", "高并发"]
 category: 面试深度拆解
-draft: true
+draft: false
 featured: false
 series: "资深工程师面试深度拆解"
 ---
@@ -51,24 +51,27 @@ series: "资深工程师面试深度拆解"
 要设计出更高效的日志系统，必须从第一性原理上拆解 Lucene 倒排索引为什么在日志工作负载（Log Workload）下走向破产。
 
 ```mermaid
-flowchart TD
-    subgraph LogInput["原始日志流 (100TB / Day)"]
-        RawLog["[2026-06-12 10:00:00] ERROR order-srv trace=9981 Connection reset by peer"]
-    end
+flowchart LR
+    RawLog["原始日志流<br/>(100TB / Day)"]
 
-    subgraph ElasticModel["传统 Elasticsearch 倒排模型 (写时爆炸)"]
-        Tokenizer["Grok 正则切词 (极耗 CPU)"]
-        FST["FST 词典加载进 JVM 堆\n(ERROR, order-srv, 9981, reset, peer)"]
-        Postings["倒排链表磁盘文件 (膨胀 300%)\n每个单词记录包含该词的所有 DocID"]
-        RawLog --> Tokenizer --> FST --> Postings
+    subgraph ElasticModel["传统 ES 倒排模型 (写时爆炸)"]
+        direction TB
+        Tokenizer["Grok 正则切词 (耗 CPU)"]
+        FST["FST 词典加载入 JVM"]
+        Postings["倒排链表 (体积膨胀 300%)"]
+        Tokenizer --> FST --> Postings
     end
 
     subgraph ColumnarModel["现代列存模型 (读时计算)"]
-        LabelExtract["仅提取低基数标量元数据\n(Service=order-srv, Env=prod)"]
-        Chunker["时间块切片 (5分钟为一个 Block)\n连续追加压缩 (ZSTD)"]
-        SparseIndex["稀疏主键索引 (仅记录 Block 首末时间戳与位置)"]
-        RawLog --> LabelExtract --> Chunker --> SparseIndex
+        direction TB
+        LabelExtract["仅提取低基数标量元数据"]
+        Chunker["时间块切片 + ZSTD 压缩"]
+        SparseIndex["稀疏索引 (仅记录块边界)"]
+        LabelExtract --> Chunker --> SparseIndex
     end
+
+    RawLog --> ElasticModel
+    RawLog --> ColumnarModel
 ```
 
 ### 2.1 倒排索引的物理开销公式
@@ -155,31 +158,28 @@ flowchart LR
 ## 五、 端到端全链路高吞吐数据流拓扑与多级缓存
 
 ```mermaid
-flowchart TD
-    subgraph Pods["业务集群容器 (数万节点)"]
-        Agent["轻量 DaemonSet Agent (Vector / Otel Collector)\n- 零重试内存堆积\n- 纯 C/Rust 实现，单核 <1% CPU"]
+flowchart LR
+    subgraph Ingestion["采集与削峰"]
+        direction TB
+        Agent["DaemonSet Agent<br/>(Vector / Otel)"] --> Kafka["Kafka 集群<br/>(按 service 散列)"]
     end
 
-    subgraph Transport["传输层削峰 (动态负载均衡)"]
-        Kafka["分布式 Kafka 集群\n- 按 service_name 散列分区\n- 批量写入 (Batch Size 1MB, Linger 50ms)"]
-    end
-
-    subgraph StorageNodes["存储与索引计算集群 (ClickHouse / VictoriaLogs)"]
-        IngestBuffer["内存写入缓冲区 (Memory Buffer)\n- 攒批 100,000 行或 10 秒"]
-        ColdStorage["对象存储 (AWS S3 / 阿里云 OSS)\n- 超过 3 天的数据自动转冷归档\n- 采用分层冷热存储，降低 70% 成本"]
-        LocalNVMe["本地高速 NVMe 盘 (热数据存 3 天)"]
-        
+    subgraph Storage["存储分层 (ClickHouse)"]
+        direction TB
+        IngestBuffer["内存写入缓冲 (100k 行/10s)"]
+        LocalNVMe["本地 NVMe (热数据 3 天)"]
+        ColdStorage["对象存储 S3/OSS (冷归档)"]
         IngestBuffer --> LocalNVMe
-        LocalNVMe -.->|后台沉淀与 Compaction| ColdStorage
+        LocalNVMe -.->|Compaction| ColdStorage
     end
 
-    subgraph QueryEngine["查询与网关层 (Query Federation)"]
-        WebUI["Grafana / 内部排障平台"]
-        QueryRouter["分布式查询路由器 (Query Coordinator)\n- 查询拆分 (Map-Reduce 模式)\n- 局部结果汇总与游标归并"]
+    subgraph Query["联邦查询与路由"]
+        direction TB
+        WebUI["Grafana / 查询 UI"] --> QueryRouter["分布式查询路由 (Coordinator)"]
     end
 
-    Agent --> Kafka --> IngestBuffer
-    WebUI --> QueryRouter --> IngestBuffer
+    Kafka --> IngestBuffer
+    QueryRouter --> IngestBuffer
     QueryRouter --> LocalNVMe
     QueryRouter --> ColdStorage
 ```

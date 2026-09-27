@@ -5,7 +5,7 @@ publishedAt: "2026-09-19"
 tags: ["Kafka", "Redpanda", "多活", "系统设计", "Raft", "分布式系统"]
 series: "系统设计手记"
 category: "系统架构设计与资深实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -36,7 +36,7 @@ featured: false
 为了清晰展现数据流向与容灾机制的本质差异，我们将两种模式的控制面与数据面拓扑对比如下：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph AsyncPattern["模式 A：传统异步双集群镜像 (MirrorMaker 2)"]
         direction TB
         P1["生产者"] -->|"1. 本地极速写入 (1ms)"| Leader1["Region A 主集群 (Leader)"]
@@ -79,20 +79,25 @@ $$T_{\text{produce}} = T_{\text{client-leader}} + \max(T_{\text{local-fsync}}, T
 - 假设同城两可用区间 $T_{\text{local}} \approx 2\text{ms}$，跨国/跨区间 $T_{\text{WAN-RTT}} \approx 40\text{ms}$；
 - 无论本地 NVMe SSD 的 `fsync` 写入有多快（通常 < 0.5ms），**只要多数派中必须包含远程 Region 的 ACK，客户端观察到的单次阻塞延迟下限就被锁死在跨域 WAN RTT**！
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        网络往返与 Raft 多数派时间线                      │
-├────────────────────────────────────────────────────────────────────────┤
-│ Client 发送请求 ──▶ Broker Leader (Region A)                          │
-│                      │                                                 │
-│                      ├─▶ 写入本地磁盘 (0.5ms) ──────▶ 本地已完成       │
-│                      │                                                 │
-│                      └─▶ 发送 Raft RPC ──(WAN 30ms)──▶ Region B 节点   │
-│                                                          │             │
-│                                                  落盘并返回 (30ms)     │
-│                                                          ▼             │
-│ Client 收到写入成功 ◀── Quorum 达成 (总耗时: ~61ms) ◀───────────────────┘
-└────────────────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as 客户端 (Client)
+    participant L as Broker Leader (Region A)
+    participant Disk as 本地 NVMe 磁盘
+    participant R as 远程节点 (Region B)
+
+    Client->>L: 生产请求 (acks=all)
+    par 并行落盘与跨域 RPC
+        L->>Disk: 本地 fsync (0.5ms)
+        Disk-->>L: 本地落盘 ACK
+    and
+        L->>R: Raft AppendEntries (WAN 30ms)
+        R->>R: 远程 fsync (0.5ms)
+        R-->>L: 远程确认 ACK (WAN 30ms)
+    end
+    Note over L,R: 多数派 Quorum 达成 (总耗时 ~61ms)
+    L-->>Client: 写入成功 ACK (RPO=0)
 ```
 
 ### 3.2 吞吐保全之道：流水线与批处理（Pipeline & Commit Batching）

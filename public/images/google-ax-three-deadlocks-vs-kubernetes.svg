@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 520" width="1020" height="520" role="img" aria-labelledby="ax-deadlock-title ax-deadlock-desc">
+  <title id="ax-deadlock-title">原生 Kubernetes 承载 AI Agent 的三大致命死穴</title>
+  <desc id="ax-deadlock-desc">深入剖析经典 Kubernetes 在托管自主 AI Agent 时遭遇的密度崩溃、状态漂移与冷启动、以及不可信代码容器逃逸三大物理限制与根因。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="520" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">原生 Kubernetes 承载 AI Agent 的三大致命死穴</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">经典容器模型围绕“无状态微服务”与“跑满算力批处理”建立，面对第三类工作负载遭遇体系性崩溃</text>
+
+  <!-- Deadlock 1: 密度危机 -->
+  <rect x="40" y="105" width="300" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="105" width="300" height="38" rx="8" fill="#fef2f2"/>
+  <text x="56" y="129" fill="#991b1b" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">死穴一 · 算力密度坍塌危机</text>
+
+  <rect x="56" y="155" width="268" height="70" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="68" y="178" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">物理模型：1 Pod 绑定 1 Agent</text>
+  <text x="68" y="198" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 独占独立 Namespace 与 cgroups 树</text>
+  <text x="68" y="214" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 保守分配 2 Core 4GiB 防止 OOM</text>
+
+  <rect x="56" y="235" width="268" height="75" rx="6" fill="#fef2f2" stroke="#eb6c36" stroke-width="1"/>
+  <text x="68" y="258" fill="#991b1b" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">现实运行：80%~95% 极端空闲</text>
+  <text x="68" y="278" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 漫长等待 LLM 吐字或人类审批交互</text>
+  <text x="68" y="294" fill="#eb6c36" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• CPU 利用率长期徘徊在 3%~5%</text>
+
+  <rect x="56" y="320" width="268" height="110" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="68" y="343" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">恶果与财务账单：</text>
+  <text x="68" y="365" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 64 核主机仅能塞 <tspan font-weight="600" fill="#0f172a">30~50 个 Agent</tspan></text>
+  <text x="68" y="385" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 万级并发需几百台服务器，算力全浪费</text>
+  <text x="68" y="405" fill="#eb6c36" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 单月云主机闲置开销高达数百万</text>
+
+  <!-- Deadlock 2: 状态漂移与冷启动 -->
+  <rect x="360" y="105" width="300" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="360" y="105" width="300" height="38" rx="8" fill="#eff6ff"/>
+  <text x="376" y="129" fill="#2e5aa8" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">死穴二 · 状态漂移与冷启动</text>
+
+  <rect x="376" y="155" width="268" height="70" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="388" y="178" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">弹性缩容陷阱 (Serverless 悖论)</text>
+  <text x="388" y="198" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 若空闲缩容 Pod，局部代码修改丢失</text>
+  <text x="388" y="214" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• Agent 无法像 HTTP Handler 无感复位</text>
+
+  <rect x="376" y="235" width="268" height="75" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="388" y="258" fill="#2e5aa8" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">动态唤醒拉起：15~30s 毁灭性延迟</text>
+  <text x="388" y="278" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 重新 git clone 几百兆代码仓库 (5~10s)</text>
+  <text x="388" y="294" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 安装 Python/Node 虚拟环境依赖 (5~15s)</text>
+
+  <rect x="376" y="320" width="268" height="110" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="388" y="343" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">MCP 生态长连接通道断裂：</text>
+  <text x="388" y="365" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 销毁 Pod 导致外部 MCP Server 强行 RST</text>
+  <text x="388" y="385" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 唤醒时重新鉴权、重拉工具 Schema</text>
+  <text x="388" y="405" fill="#eb6c36" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 交互体验全面白屏溃败</text>
+
+  <!-- Deadlock 3: 安全逃逸黑洞 -->
+  <rect x="680" y="105" width="300" height="340" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="680" y="105" width="300" height="38" rx="8" fill="#fffbeb"/>
+  <text x="696" y="129" fill="#b45309" font-size="14" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">死穴三 · 不可信代码安全逃逸</text>
+
+  <rect x="696" y="155" width="268" height="70" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="708" y="178" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">权限倒置：Agent 拥有自主执行权</text>
+  <text x="708" y="198" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 编码智能体必须执行 Bash/Python 脚本</text>
+  <text x="708" y="214" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 任意命令执行无法通过静态白名单封死</text>
+
+  <rect x="696" y="235" width="268" height="75" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1"/>
+  <text x="708" y="258" fill="#b45309" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">间接提示词注入 (Indirect Injection)</text>
+  <text x="708" y="278" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 恶意代码藏在开源依赖或 Pull Request 中</text>
+  <text x="708" y="294" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 诱导 Agent 读取宿主机 /proc 或凭据文件</text>
+
+  <rect x="696" y="320" width="268" height="110" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="708" y="343" fill="#0f172a" font-size="13" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">宿主机共享内核穿透危机：</text>
+  <text x="708" y="365" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 经典 Docker/K8s 容器共享 Linux 内核</text>
+  <text x="708" y="385" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 内核提权 0-day 直接穿透宿主机操作系统</text>
+  <text x="708" y="405" fill="#eb6c36" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 传统 NetworkPolicy 拦不住出站数据外泄</text>
+
+  <!-- Bottom Resolution Hint Strip -->
+  <line x1="40" y1="465" x2="980" y2="465" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="492" fill="#2d3142" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Google AX 解题矩阵：</text>
+  <text x="175" y="492" fill="#2e5aa8" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">① Substrate 高密多路复用（单Pod承载500+Actor）</text>
+  <text x="470" y="492" fill="#eb6c36" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">② 亚秒级 Suspend/Resume 挂起冻结（&lt;150ms 唤醒）</text>
+  <text x="770" y="492" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">③ gVisor 独立内核沙箱物理隔离</text>
+</svg>

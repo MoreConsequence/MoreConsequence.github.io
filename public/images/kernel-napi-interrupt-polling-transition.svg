@@ -1,123 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="kernel-napi-interrupt-polling-transition-title kernel-napi-interrupt-polling-transition-desc"><title id="kernel-napi-interrupt-polling-transition-title">Linux NAPI 状态机：硬中断拉起与软中断批量轮询自适应流转</title><desc id="kernel-napi-interrupt-polling-transition-desc">状态机图展示 Linux NAPI 机制在低负载时中断响应与高负载时自适应关闭硬中断、批量软中断轮询消费的完整状态流转。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="100%" height="100%" role="img" aria-labelledby="kernel-napi-interrupt-polling-transition-title kernel-napi-interrupt-polling-transition-desc">
+  <title id="kernel-napi-interrupt-polling-transition-title">Linux NAPI 状态机：硬中断拉起与软中断批量轮询自适应流转</title>
+  <desc id="kernel-napi-interrupt-polling-transition-desc">高对比度工程状态机图：展示 Linux NAPI 机制在低负载时中断响应与高负载时自适应关闭硬中断、批量软中断轮询消费的完整状态流转。</desc>
   <defs>
-    <marker id="np-arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#4f5d75" />
+    <marker id="np-arr-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f172a" />
     </marker>
     <marker id="np-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#eb6c36" />
+      <polygon points="0 0, 8 3, 0 6" fill="#d9531e" />
+    </marker>
+    <marker id="np-arr-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0284c7" />
     </marker>
   </defs>
 
-  
-  <rect width="960" height="560" fill="#f5f5f5" />
+  <!-- Canvas Background -->
+  <rect width="960" height="560" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
 
-  
-  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">NAPI STATE MACHINE · ADAPTIVE INTERRUPT MERGING</text>
-  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux NAPI 状态机：硬中断拉起与软中断轮询</text>
-  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">数据包到达 ➔ 硬中断拉起并立即关中断 ➔ 挂入 Poll 列表 ➔ 批量轮询消费 ➔ 队列清空重开中断</text>
-
-  
-  
-  <g transform="translate(40, 136)">
-    <rect width="240" height="334" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#2d3142" stroke-width="1" />
-    <text x="52" y="25" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 1</text>
-    <text x="100" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">中断监听空闲态</text>
-
-    
-    <rect x="14" y="42" width="212" height="74" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="24" y="64" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">网卡硬件中断状态</text>
-    <text x="24" y="84" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Hard IRQ: ENABLED ✓</text>
-    <text x="24" y="102" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">网卡硬件中断已就绪使能</text>
-
-    <rect x="14" y="126" width="212" height="110" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="24" y="148" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">运行特性</text>
-    <text x="24" y="168" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 队列为空或处于低负载</text>
-    <text x="24" y="186" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 无软中断轮询消耗 CPU</text>
-    <text x="24" y="204" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 首个网络包保证微秒级响应</text>
-    <text x="24" y="222" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Zero Idle CPU Waste</text>
-
-    <rect x="14" y="246" width="212" height="74" rx="4" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="24" y="268" fill="#2d3142" font-size="9.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">触发转移事件</text>
-    <text x="24" y="288" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Packet Arrived ➔ 触发硬中断</text>
-    <text x="24" y="306" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Transition ➔ State 2</text>
+  <!-- Header Section -->
+  <g transform="translate(40, 42)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Linux NAPI 状态机：硬中断拉起与软中断批量轮询</text>
+    <text x="0" y="26" fill="#475569" font-size="13" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">首包硬中断 ➔ 立即关闭网卡中断 ➔ 挂入 Poll 列表 ➔ 批量轮询消费 ➔ 队列清空重开中断</text>
   </g>
 
-  
-  <text x="320" y="192" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">1st Packet</text>
-  <line x1="280" y1="200" x2="360" y2="200" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#np-arr-accent)" />
-
-  
-  <g transform="translate(360, 136)">
-    <rect width="240" height="334" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#2d3142" stroke-width="1" />
-    <text x="52" y="25" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 2</text>
-    <text x="100" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">调度挂起排队态</text>
-
-    
-    <rect x="14" y="42" width="212" height="110" rx="4" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
-    <text x="24" y="64" fill="#eb6c36" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">硬中断处理程序 (Top Half)</text>
-    <text x="24" y="84" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">1. 立即禁用网卡硬中断！</text>
-    <text x="24" y="102" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace">   irq_disable() 封锁后续中断</text>
-    <text x="24" y="120" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">2. napi_schedule(napi)</text>
-    <text x="24" y="138" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">挂入当前 CPU 的 poll_list 链表</text>
-
-    <rect x="14" y="162" width="212" height="158" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="24" y="184" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">核心防灾价值</text>
-    <text x="24" y="204" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">杜绝 1400w PPS 中断风暴</text>
-    <text x="24" y="222" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">硬中断耗时低于 1μs，迅速退出</text>
-    <text x="24" y="240" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">拉起软中断线程：</text>
-    <text x="24" y="258" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace">raise_softirq(NET_RX_SOFTIRQ)</text>
-    <line x1="24" y1="270" x2="216" y2="270" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
-    <text x="24" y="290" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">由 ksoftirqd 或中断返回处理</text>
-    <text x="24" y="308" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">Transition ➔ State 3</text>
+  <!-- Transitions Between States (Forward) -->
+  <!-- 1 -> 2: First Packet Arrived -->
+  <g>
+    <line x1="300" y1="210" x2="348" y2="210" stroke="#d9531e" stroke-width="2" marker-end="url(#np-arr-accent)" />
+    <rect x="296" y="174" width="56" height="22" rx="4" fill="#ffffff" stroke="#d9531e" stroke-width="1.2" />
+    <text x="324" y="189" fill="#d9531e" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700" text-anchor="middle">首包到达</text>
   </g>
 
-  
-  <text x="640" y="192" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SoftIRQ</text>
-  <line x1="600" y1="200" x2="680" y2="200" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#np-arr-accent)" />
-
-  
-  <g transform="translate(680, 136)">
-    <rect width="240" height="334" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
-    <rect x="14" y="12" width="76" height="18" rx="2" fill="none" stroke="#eb6c36" stroke-width="1" />
-    <text x="52" y="25" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">STATE 3</text>
-    <text x="100" y="26" fill="#2d3142" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">软中断批量轮询态</text>
-
-    
-    <rect x="14" y="42" width="212" height="120" rx="4" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="24" y="64" fill="#eb6c36" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">net_rx_action() 批量轮询</text>
-    <text x="24" y="84" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">work_done = dev-&gt;poll(budget)</text>
-    <text x="24" y="102" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 连续从 Ring Buffer 取包</text>
-    <text x="24" y="120" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">• 预算约束: budget = 64 (防饿死)</text>
-    <text x="24" y="138" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 封装 SKB 并调用 GRO 合并</text>
-    <text x="24" y="154" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">napi_gro_receive()</text>
-
-    
-    <rect x="14" y="172" width="212" height="148" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="24" y="194" fill="#2d3142" font-size="10" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">状态退出分支判定</text>
-
-    <text x="24" y="214" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">1. 队列已清空 (work_done &lt; budget):</text>
-    <text x="24" y="230" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="600">napi_complete_done()</text>
-    <text x="24" y="246" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace">➔ 重新使能硬中断 ➔ 回到 State 1</text>
-
-    <line x1="24" y1="256" x2="216" y2="256" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
-
-    <text x="24" y="274" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">2. 预算耗尽但仍有数据 (work == budget):</text>
-    <text x="24" y="292" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">保持关中断，让出 CPU 重新排队</text>
-    <text x="24" y="308" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace">➔ 本地循环 ➔ 再次进入 State 3</text>
+  <!-- 2 -> 3: SoftIRQ Scheduled -->
+  <g>
+    <line x1="610" y1="210" x2="658" y2="210" stroke="#0284c7" stroke-width="2" marker-end="url(#np-arr-link)" />
+    <rect x="606" y="174" width="56" height="22" rx="4" fill="#ffffff" stroke="#0284c7" stroke-width="1.2" />
+    <text x="634" y="189" fill="#0284c7" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700" text-anchor="middle">拉起轮询</text>
   </g>
 
-  
-  <text x="480" y="482" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">队列清空 ➔ napi_complete_done() ➔ 重新开启网卡硬中断</text>
-  <path d="M 800,470 V 490 Q 800,500 790,500 H 170 Q 160,500 160,490 V 470" fill="none" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#np-arr-accent)" />
+  <!-- 3 Main State Cards (y=96..440, h=344) -->
 
-  
-  <line x1="40" y1="520" x2="920" y2="520" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
-  <text x="40" y="546" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
-  <rect x="120" y="534" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-  <text x="140" y="546" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">硬中断与调度阶段</text>
-  <rect x="280" y="534" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
-  <text x="300" y="546" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">NAPI 批量软中断轮询核心</text>
-<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>
+  <!-- State 1: IRQ Enabled (x=40..300, w=260) -->
+  <g transform="translate(40, 96)">
+    <rect width="260" height="344" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <!-- State Header Badge -->
+    <rect x="14" y="14" width="94" height="22" rx="4" fill="#334155" />
+    <text x="61" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STATE 1 · IDLE</text>
+    <text x="118" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">中断监听空闲态</text>
+
+    <!-- Sub-block 1: Status -->
+    <text x="14" y="66" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">网卡硬件中断：ENABLED (开启)</text>
+    <text x="14" y="90" fill="#334155" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 队列为空或处于极低负载</text>
+    <text x="14" y="112" fill="#334155" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 无软中断后台轮询消耗 CPU</text>
+    <text x="14" y="134" fill="#0f172a" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 首个网络包保证微秒级响应</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="246" y2="154" stroke="#cbd5e1" stroke-width="1" />
+
+    <!-- Sub-block 2: Trigger Event -->
+    <text x="14" y="180" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">状态跃迁触发：</text>
+    <text x="14" y="204" fill="#0f172a" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">网卡 DMA 完成写入主存</text>
+    <text x="14" y="226" fill="#d9531e" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">➔ 触发 1 次 MSI-X 硬件中断！</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">CPU 暂停当前任务，进入 State 2</text>
+
+    <!-- Bottom Status Note -->
+    <rect x="14" y="278" width="232" height="50" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+    <text x="24" y="298" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">资源开销：</text>
+    <text x="24" y="316" fill="#0284c7" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">0 CPU Polling Waste (极省电)</text>
+  </g>
+
+  <!-- State 2: Scheduled & IRQ Disabled (x=350..610, w=260) - Focal Point -->
+  <g transform="translate(350, 96)">
+    <rect width="260" height="344" rx="8" fill="rgba(217, 83, 30, 0.04)" stroke="#d9531e" stroke-width="2" />
+    <!-- State Header Badge -->
+    <rect x="14" y="14" width="128" height="22" rx="4" fill="#d9531e" />
+    <text x="78" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STATE 2 · TOP-HALF</text>
+    <text x="152" y="30" fill="#d9531e" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">硬中断上半部</text>
+
+    <!-- Sub-block 1: Top Half Actions -->
+    <text x="14" y="66" fill="#d9531e" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">关键动作：立即屏蔽硬中断！</text>
+    <text x="14" y="90" fill="#d9531e" font-size="12.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">1. napi_schedule_prep() 关中断</text>
+    <text x="14" y="112" fill="#0f172a" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">2. 挂入当前 CPU 的 poll_list 队列</text>
+    <text x="14" y="134" fill="#334155" font-size="12.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">3. __raise_softirq_irqoff()</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="246" y2="154" stroke="rgba(217, 83, 30, 0.25)" stroke-width="1" />
+
+    <!-- Sub-block 2: Engineering Safety -->
+    <text x="14" y="180" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">核心防灾机制：</text>
+    <text x="14" y="204" fill="#d9531e" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 杜绝万兆 1400w PPS 中断风暴</text>
+    <text x="14" y="226" fill="#334155" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 硬中断处理极快 (耗时 &lt; 1μs)</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 迅速退出中断上下文交出控制权</text>
+
+    <!-- Bottom Status Note -->
+    <rect x="14" y="278" width="232" height="50" rx="6" fill="#ffffff" stroke="#d9531e" stroke-width="1.2" />
+    <text x="24" y="298" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">状态转换：</text>
+    <text x="24" y="316" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">拉起内核软中断线程进入 State 3</text>
+  </g>
+
+  <!-- State 3: SoftIRQ Batch Polling (x=660..920, w=260) -->
+  <g transform="translate(660, 96)">
+    <rect width="260" height="344" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+    <!-- State Header Badge -->
+    <rect x="14" y="14" width="118" height="22" rx="4" fill="#0f172a" />
+    <text x="73" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">STATE 3 · POLL</text>
+    <text x="144" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">软中断批量轮询态</text>
+
+    <!-- Sub-block 1: Polling Action -->
+    <text x="14" y="66" fill="#0f172a" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">net_rx_action() 批量消费</text>
+    <text x="14" y="90" fill="#334155" font-size="12.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">work_done = dev-&gt;poll(budget)</text>
+    <text x="14" y="112" fill="#0f172a" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 预算约束：netdev_budget = 64</text>
+    <text x="14" y="134" fill="#334155" font-size="12.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 连续从 Ring 取包并 GRO 大包合并</text>
+
+    <!-- Divider -->
+    <line x1="14" y1="154" x2="246" y2="154" stroke="#e2e8f0" stroke-width="1" />
+
+    <!-- Sub-block 2: Exit Branches -->
+    <text x="14" y="180" fill="#0284c7" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">状态退出分支判定：</text>
+    <text x="14" y="204" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">分支 A：队列已清空 (work &lt; budget)</text>
+    <text x="14" y="224" fill="#0284c7" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">➔ napi_complete_done() 重开硬中断</text>
+    <text x="14" y="248" fill="#475569" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">分支 B：预算耗尽但仍有包 (work == budget)</text>
+    <text x="14" y="268" fill="#d9531e" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">➔ 保持关中断，让出 CPU 本地循环</text>
+
+    <!-- Bottom Status Note -->
+    <rect x="14" y="284" width="232" height="44" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+    <text x="24" y="304" fill="#0f172a" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">保护机制：</text>
+    <text x="24" y="320" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">防饥饿机制，避免软中断占满 CPU</text>
+  </g>
+
+  <!-- Backward Loop: State 3 -> State 1 (Queue Drained -> Re-enable IRQ) -->
+  <g>
+    <path d="M 790,440 v 28 q 0,10 -10,10 H 180 q -10,0 -10,-10 v -28" fill="none" stroke="#0284c7" stroke-width="2" marker-end="url(#np-arr-link)" />
+    <!-- Loop Text Banner with white background mask -->
+    <rect x="290" y="466" width="380" height="24" rx="4" fill="#ffffff" stroke="#0284c7" stroke-width="1.2" />
+    <text x="480" y="482" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700" text-anchor="middle">队列已清空 ➔ napi_complete_done() ➔ 重新开启网卡硬中断</text>
+  </g>
+
+  <!-- Legend Strip at Bottom -->
+  <g transform="translate(40, 516)">
+    <line x1="0" y1="0" x2="880" y2="0" stroke="#e2e8f0" stroke-width="1.5" />
+    <text x="0" y="24" fill="#64748b" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">图例规范：</text>
+
+    <rect x="75" y="11" width="14" height="14" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <text x="96" y="23" fill="#334155" font-size="12" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">低负载中断使能态</text>
+
+    <rect x="245" y="11" width="14" height="14" rx="3" fill="rgba(217, 83, 30, 0.08)" stroke="#d9531e" stroke-width="1.8" />
+    <text x="266" y="23" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">硬中断引路与关中断控制核心 (Top Half)</text>
+
+    <rect x="565" y="11" width="14" height="14" rx="3" fill="#ffffff" stroke="#0f172a" stroke-width="1.8" />
+    <text x="586" y="23" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">软中断预算制批量轮询态 (Bottom Half)</text>
+  </g>
+</svg>

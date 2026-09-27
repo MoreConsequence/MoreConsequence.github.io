@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 530" width="1020" height="530" role="img" aria-labelledby="zero-title zero-desc">
+  <title id="zero-title">ZeRO 零冗余分片的三重境界与 FSDP 显存通信权衡</title>
+  <desc id="zero-desc">对比传统数据并行、ZeRO-1优化器分片、ZeRO-2梯度分片与 ZeRO-3模型权重分片在单卡显存占用和集合通信算子上的架构演进。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="530" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">ZeRO 零冗余分片的三重境界与 FSDP 显存通信权衡</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">像数据库分片一样把优化器、梯度与权重分摊到全集群：从单卡显存爆炸到线性无上限扩展</text>
+
+  <!-- 4 Columns Container -->
+  <!-- Col 1: 传统数据并行 Baseline DP -->
+  <rect x="40" y="95" width="220" height="400" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="220" height="34" rx="8" fill="#f1f5f9"/>
+  <text x="150" y="118" fill="#0f172a" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">传统数据并行 (DP)</text>
+
+  <rect x="56" y="142" width="188" height="30" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="150" y="162" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">模型权重 2B (每卡 100% 完整)</text>
+
+  <rect x="56" y="178" width="188" height="30" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="150" y="198" fill="#115e59" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">反向梯度 2B (每卡 100% 完整)</text>
+
+  <rect x="56" y="214" width="188" height="70" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="150" y="244" fill="#c2410c" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">AdamW 状态 12B</text>
+  <text x="150" y="264" fill="#ea580c" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">(每卡 100% 独立保存)</text>
+
+  <rect x="56" y="296" width="188" height="60" rx="4" fill="#fef2f2" stroke="#eb6c36" stroke-width="1"/>
+  <text x="150" y="320" fill="#991b1b" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">单参数占用：16 Bytes</text>
+  <text x="150" y="340" fill="#b91c1c" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存冗余极高，大模型无法装下</text>
+
+  <text x="56" y="380" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信算子：</text>
+  <text x="56" y="398" fill="#475569" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">All-Reduce(Gradients)</text>
+  <text x="56" y="420" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信通信量倍数：</text>
+  <text x="56" y="438" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1.0 × (基准通信量 2Ψ)</text>
+  <text x="56" y="468" fill="#64748b" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">限制：70B+ 模型直接 OOM</text>
+
+
+  <!-- Col 2: ZeRO-1 (Pos) -->
+  <rect x="280" y="95" width="220" height="400" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="280" y="95" width="220" height="34" rx="8" fill="#eff6ff"/>
+  <text x="390" y="118" fill="#2e5aa8" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">ZeRO-Stage 1 (Pos)</text>
+
+  <rect x="296" y="142" width="188" height="30" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="390" y="162" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">模型权重 2B (保留完整副本)</text>
+
+  <rect x="296" y="178" width="188" height="30" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="390" y="198" fill="#115e59" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">反向梯度 2B (保留完整副本)</text>
+
+  <rect x="296" y="214" width="188" height="30" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="390" y="234" fill="#c2410c" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">优化器分片 12B / Nd (降至 0!)</text>
+
+  <rect x="296" y="256" width="188" height="100" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="390" y="300" fill="#16a34a" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">优化器释放 75% 显存</text>
+  <text x="390" y="322" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">单卡静态显存暴降 4 倍！</text>
+
+  <text x="296" y="380" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信算子：</text>
+  <text x="296" y="398" fill="#2e5aa8" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Reduce-Scatter + All-Gather</text>
+  <text x="296" y="420" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信额外开销：</text>
+  <text x="296" y="438" fill="#16a34a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">0% (通信量与基准完全一致!)</text>
+  <text x="296" y="468" fill="#64748b" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">评价：性价比最高，开箱必用</text>
+
+
+  <!-- Col 3: ZeRO-2 (Pos+g) -->
+  <rect x="520" y="95" width="220" height="400" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="520" y="95" width="220" height="34" rx="8" fill="#eff6ff"/>
+  <text x="630" y="118" fill="#2e5aa8" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">ZeRO-Stage 2 (Pos+g)</text>
+
+  <rect x="536" y="142" width="188" height="30" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="630" y="162" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">模型权重 2B (保留完整副本)</text>
+
+  <rect x="536" y="178" width="188" height="24" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="630" y="194" fill="#115e59" font-size="10" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">梯度分片 2B / Nd (边算边散发)</text>
+
+  <rect x="536" y="208" width="188" height="24" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="630" y="224" fill="#c2410c" font-size="10" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">优化器分片 12B / Nd</text>
+
+  <rect x="536" y="244" width="188" height="112" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="630" y="295" fill="#16a34a" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">优化器 + 梯度双重分片</text>
+  <text x="630" y="318" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存暴降 8 倍，仅余权重 2B</text>
+
+  <text x="536" y="380" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信算子：</text>
+  <text x="536" y="398" fill="#2e5aa8" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Reduce-Scatter (仅汇聚分片)</text>
+  <text x="536" y="420" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信额外开销：</text>
+  <text x="536" y="438" fill="#16a34a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">0% (通信量仍与基准完全一致)</text>
+  <text x="536" y="468" fill="#64748b" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">评价：大幅降低反向传播显存毛刺</text>
+
+
+  <!-- Col 4: ZeRO-3 / FSDP (Pos+g+p) -->
+  <rect x="760" y="95" width="220" height="400" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="760" y="95" width="220" height="34" rx="8" fill="#fff7ed"/>
+  <text x="870" y="118" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">ZeRO-3 / FSDP (Pos+g+p)</text>
+
+  <rect x="776" y="142" width="188" height="20" rx="3" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="870" y="156" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">权重分片 2B / Nd (用完即销毁)</text>
+
+  <rect x="776" y="168" width="188" height="20" rx="3" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="870" y="182" fill="#115e59" font-size="10" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">梯度分片 2B / Nd</text>
+
+  <rect x="776" y="194" width="188" height="20" rx="3" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="870" y="208" fill="#c2410c" font-size="10" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">优化器分片 12B / Nd</text>
+
+  <rect x="776" y="222" width="188" height="134" rx="4" fill="#fef2f2" stroke="#eb6c36" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="870" y="275" fill="#eb6c36" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">全量参数极致切碎</text>
+  <text x="870" y="296" fill="#0f172a" font-size="11" font-weight="600" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Mem ≈ 16 Bytes / Nd → 0</text>
+  <text x="870" y="318" fill="#475569" font-size="10" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存随卡数线性无上限缩容！</text>
+
+  <text x="776" y="380" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信算子：</text>
+  <text x="776" y="398" fill="#c2410c" font-size="10" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逐层 All-Gather 借参数 + 即刻释放</text>
+  <text x="776" y="420" fill="#0f172a" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">通信额外开销：</text>
+  <text x="776" y="438" fill="#eb6c36" font-size="11" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">+50% (通信量增至 1.5 倍)</text>
+  <text x="776" y="468" fill="#64748b" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">评价：超千亿大模型全参训练基石</text>
+</svg>

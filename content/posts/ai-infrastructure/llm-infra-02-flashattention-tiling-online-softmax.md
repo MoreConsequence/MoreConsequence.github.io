@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI Infrastructure", "FlashAttention", "GPU", "CUDA", "Online Softmax", "显存优化", "Hopper"]
 category: "大模型与智能体系统"
 series: "前沿大模型训练与全栈 Infra 解密"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -31,31 +31,25 @@ featured: false
 
 要看懂 FlashAttention 的必要性，必须先直面现代顶级 GPU（以 NVIDIA A100 / H100 为例）内部极其悬殊的存储层次结构：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        NVIDIA H100 GPU 存储金字塔                      │
-├───────────────────┬──────────────┬───────────────┬─────────────────────┤
-│ 存储层级          │ 容量上限     │ 物理带宽      │ 相对延迟            │
-├───────────────────┼──────────────┼───────────────┼─────────────────────┤
-│ 1. 寄存器 (Regs)  │ ~256 KB / SM │ ~30 TB/s      │ 1 个时钟周期 (~0.5ns)│
-│ 2. 共享内存 (SRAM)│ ~228 KB / SM │ ~19 TB/s      │ ~10-20 个周期 (~5ns) │
-│ 3. 二级缓存 (L2)  │ 50 MB (全局) │ ~12 TB/s      │ ~100-200 个周期     │
-│ 4. 高带宽显存(HBM)│ 80 GB (全局) │ 3.35 TB/s     │ ~500-1000 个周期    │
-└───────────────────┴──────────────┴───────────────┴─────────────────────┘
-```
+| 存储层级 | 容量上限 | 物理带宽 | 相对延迟 |
+| :--- | :--- | :--- | :--- |
+| **1. 寄存器 (Regs)** | ~256 KB / SM | ~30 TB/s | 1 个时钟周期 (~0.5ns) |
+| **2. 共享内存 (SRAM)** | ~228 KB / SM | ~19 TB/s | ~10-20 个周期 (~5ns) |
+| **3. 二级缓存 (L2)** | 50 MB (全局) | ~12 TB/s | ~100-200 个周期 |
+| **4. 高带宽显存 (HBM)** | 80 GB (全局) | 3.35 TB/s | ~500-1000 个周期 |
 
 ```mermaid
-flowchart TD
-    subgraph ComputeCore["GPU 计算核心 (Tensor Cores: 1979 TFLOPS FP16)"]
-        SM["流式多处理器 (Streaming Multiprocessors - SM)"]
+flowchart LR
+    subgraph ComputeCore["GPU 计算核心 (Tensor Cores)"]
+        SM["流式多处理器 (SM)"]
     end
 
-    subgraph SRAMBlock["片上高速 SRAM (Shared Memory & L1)"]
-        SRAM["极高带宽: 19 TB/s<br/>容量微小: 单 SM 仅 228 KB!"]
+    subgraph SRAMBlock["片上高速 SRAM (Shared Memory / L1)"]
+        SRAM["带宽: 19 TB/s<br/>容量: 单 SM 约 228 KB"]
     end
 
     subgraph HBMPool["片外高带宽显存 (HBM3)"]
-        HBM["带宽相对极慢: 3.35 TB/s (慢 6 倍!)<br/>容量巨大: 80 GB"]
+        HBM["带宽: 3.35 TB/s (慢 6 倍)<br/>容量: 80 GB"]
     end
 
     SM <===>|"极速访问 (< 5ns)"| SRAM
@@ -133,26 +127,33 @@ $$O^{\text{new}} = \text{diag}\left(e^{m^{(1)} - m^{\text{new}}}\right) O^{(1)} 
 有了 Online Softmax，FlashAttention-1 的物理分块平铺（Tiling）管线得以成立：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph HBM_Inputs["片外 HBM (输入数据)"]
+        direction TB
         Q["矩阵 Q (N x d)"]
         K["矩阵 K (N x d)"]
         V["矩阵 V (N x d)"]
     end
 
     subgraph SRAM_Tiles["片上 SRAM (极速分块平铺)"]
-        Q_block["Q 块 (B_r x d)<br/>常驻 SRAM 寄存器"]
-        K_block["K 块 (B_c x d)"]
-        V_block["V 块 (B_c x d)"]
+        direction TB
+        subgraph Blocks["分块加载"]
+            direction LR
+            Q_block["Q 块 (B_r x d)<br/>常驻寄存器"]
+            K_block["K 块 (B_c x d)"]
+            V_block["V 块 (B_c x d)"]
+        end
         
-        GEMM1["计算 S_block = Q_block @ K_block^T<br/>(大小仅 B_r x B_c, 纯片上!)"]
-        OnlineSM["Online Softmax 动态更新:<br/>m_new = max(m_old, max(S_block))<br/>更新分母 l_new 与输出累加 O"]
-        GEMM2["计算 O_block = S_block @ V_block<br/>直接累加到输出寄存器 O"]
-        
+        subgraph Pipeline["片上计算流水线"]
+            direction TB
+            GEMM1["计算 S_block = Q_block @ K_block^T<br/>(大小仅 B_r x B_c, 纯片上!)"]
+            OnlineSM["Online Softmax 动态更新:<br/>m_new = max(m_old, max(S_block))<br/>更新分母 l_new 与输出累加 O"]
+            GEMM2["计算 O_block = S_block @ V_block<br/>直接累加到输出寄存器 O"]
+            GEMM1 --> OnlineSM --> GEMM2
+        end
+
         Q_block --> GEMM1
         K_block --> GEMM1
-        GEMM1 --> OnlineSM
-        OnlineSM --> GEMM2
         V_block --> GEMM2
     end
 
@@ -160,10 +161,10 @@ flowchart TD
         O_final["矩阵 O (N x d)<br/>(全程无 N x N 矩阵落地!)"]
     end
 
-    Q -->|"加载一个块"| Q_block
+    Q -->|"加载行块"| Q_block
     K -->|"流式加载分块"| K_block
     V -->|"流式加载分块"| V_block
-    GEMM2 -->|"整行处理完毕后一次性写回"| O_final
+    GEMM2 -->|"整行完成写回"| O_final
 ```
 
 ### 4.1 算法复杂度对比
@@ -195,20 +196,11 @@ FlashAttention-1 证明了算法的可行性，但在 GPU 硬件微架构层面�
 
 随着 2024 年 NVIDIA Hopper 架构（H100/H800）的普及，FlashAttention-3 进一步将优化下潜到了**硬件指令集与专用加速芯片级别**：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                   FlashAttention-3 的三大 Hopper 硬件杀手锏             │
-├───────────────────┬────────────────────────────────────────────────────┤
-│ 1. TMA 硬件引擎   │ Tensor Memory Accelerator: 专用的硬件拷贝引擎，     │
-│                   │ 线程无需参与循环计算地址，硬件自动将 HBM 数据搬进 SRAM│
-├───────────────────┼────────────────────────────────────────────────────┤
-│ 2. WGMMA 指令     │ Warp Group MMA: 允许 128 个线程（4个 Warp）作为一个 │
-│                   │ 整体协作，直接从 Shared Memory 读取数据执行矩阵乘   │
-├───────────────────┼────────────────────────────────────────────────────┤
-│ 3. 软件流水双缓冲 │ Ping-Pong Buffering: 计算第 k 块矩阵乘的同时，      │
-│                   │ TMA 硬件异步加载第 k+1 块，实现 100% 算网/访存重叠 │
-└───────────────────┴────────────────────────────────────────────────────┘
-```
+| Hopper 硬件特性 | 机制说明与工程价值 |
+| :--- | :--- |
+| **1. TMA 硬件引擎** | Tensor Memory Accelerator: 专用硬件拷贝引擎，线程无需参与循环寻址，自动将 HBM 数据搬入 SRAM |
+| **2. WGMMA 指令** | Warp Group MMA: 允许 128 个线程（4 个 Warp）作为一个整体协作，直接从 Shared Memory 读取数据执行矩阵乘 |
+| **3. 软件流水双缓冲** | Ping-Pong Buffering: 计算第 $k$ 块矩阵乘的同时，TMA 硬件异步加载第 $k+1$ 块，实现 100% 算网/访存重叠 |
 
 ### 6.1 TMA（Tensor Memory Accelerator）带来的革命
 在传统的 CUDA 编程中，要想把数据从全局显存搬进共享内存，必须让 32 个线程组成的 Warp 齐刷刷地执行 `ld.global` 指令，算地址、读显存、再执行 `st.shared` 写入 SRAM。这占用了宝贵的计算发射槽位。

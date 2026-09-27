@@ -68,51 +68,7 @@ antirez 在设计 Redis 6.0 时极其坚决地否定了这一路线。原因在�
 
 翻开 Redis 6.0 的核心网络源码 `src/networking.c`，整个多线程 I/O 调度由一个极其精密的**阶段执行屏障（Phase Barrier）状态机**所驱动。
 
-```mermaid
-flowchart TD
-    subgraph Phase1["【阶段一：并发读与协议解析】"]
-        direction TB
-        MainEventLoop["主线程: aeProcessEvents() 捕获客户端可读事件"]
-        PendingReadQueue["将可读 client 追加进 clients_pending_read 队列"]
-        
-        RoundRobinRead["主线程通过 Round-Robin 将 clients 均匀分发给 N 个 I/O 线程"]
-        
-        IOThreadRead1["I/O 线程 0: 并发 read(fd) + 解析 RESP -> client->argv"]
-        IOThreadRead2["I/O 线程 1: 并发 read(fd) + 解析 RESP -> client->argv"]
-        
-        SpinWaitRead["主线程自旋等待屏障: while(io_threads_pending != 0)"]
-        
-        MainEventLoop --> PendingReadQueue
-        PendingReadQueue --> RoundRobinRead
-        RoundRobinRead --> IOThreadRead1
-        RoundRobinRead --> IOThreadRead2
-        IOThreadRead1 -.-> SpinWaitRead
-        IOThreadRead2 -.-> SpinWaitRead
-    end
-
-    subgraph Phase2["【阶段二：主线程纯串行命令执行】"]
-        direction TB
-        SequentialExec["主线程严格单线程按序执行命令: processCommandAndResetClient()<br/>零全局锁！零缓存行颠簸！绝对线程安全！"]
-    end
-
-    subgraph Phase3["【阶段三：并发响应写回】"]
-        direction TB
-        PendingWriteQueue["响应数据写入 client->buf，加入 clients_pending_write 队列"]
-        RoundRobinWrite["主线程将写入任务均匀分发给 I/O 线程"]
-        IOThreadWrite1["I/O 线程 0: 并发 write(fd) 将数据推向 TCP 发送缓冲"]
-        IOThreadWrite2["I/O 线程 1: 并发 write(fd) 将数据推向 TCP 发送缓冲"]
-        SpinWaitWrite["主线程再次自旋等待全部写操作完成"]
-        
-        PendingWriteQueue --> RoundRobinWrite
-        RoundRobinWrite --> IOThreadWrite1
-        RoundRobinWrite --> IOThreadWrite2
-        IOThreadWrite1 -.-> SpinWaitWrite
-        IOThreadWrite2 -.-> SpinWaitWrite
-    end
-
-    Phase1 ==> Phase2
-    Phase2 ==> Phase3
-```
+![Redis 6.0 Threaded I/O 三阶段屏障架构设计](../../../public/images/redis-threaded-io-three-phase-barrier.svg)
 
 ### 3.1 阶段一：`clients_pending_read` 与分发
 

@@ -107,28 +107,24 @@ CNI 规范本质上极其纯粹，核心只有四个标准的动作：
 为了跨越不同物理机之间可能存在的二层不可达障碍，以 **Flannel** 为代表的 Overlay（覆盖网络）方案诞生了。
 
 ```mermaid
-flowchart TD
-    subgraph Pod1["Node 1: Pod 1 (10.244.1.5)"]
-        Raw["原始 IP 报文 (Source: 10.244.1.5, Dest: 10.244.2.8)"]
+flowchart LR
+    subgraph Host1["Node 1: 始发端"]
+        direction TB
+        Pod1["Pod 1<br/>(10.244.1.5)"] --> Raw["原始 IP 报文"]
+        Raw --> Encap["flannel.1 (VTEP)<br/>VXLAN UDP 8472 封装"]
     end
 
-    subgraph Host1["Node 1 宿主机内核 (VTEP 设备: flannel.1)"]
-        Encapsulation["VXLAN 封装 (8472 UDP 端口):<br/>[ 外层物理以太网头 (MAC 1 -> MAC 2) ]<br/>[ 外层 IP 头 (192.168.1.10 -> 192.168.1.20) ]<br/>[ 外层 UDP 头 (SrcPort -> DstPort: 8472) ]<br/>[ VXLAN 标志头 (VNI: 1) ]<br/>[ 原始完整 IP 报文 ]"]
+    subgraph Underlay["Underlay 物理网络"]
+        Switch["物理以太网交换机<br/>(标准 UDP 流量转发)"]
     end
 
-    subgraph PhysicalNetwork["物理交换机网络 (Underlay L2/L3 基础架构)"]
-        Switch["普通以太网交换机 (仅看到标准的 UDP 8472 数据流)"]
+    subgraph Host2["Node 2: 目的端"]
+        direction TB
+        Decap["flannel.1 (VTEP)<br/>解包剥离外层 UDP 头"] --> Delivered["原始报文送达 eth0"]
+        Delivered --> Pod2["Pod 2<br/>(10.244.2.8)"]
     end
 
-    subgraph Host2["Node 2 宿主机内核 (flannel.1)"]
-        Decap["解封包: 剥离外层 UDP/IP 头，还原原始报文"]
-    end
-
-    subgraph Pod2["Node 2: Pod 2 (10.244.2.8)"]
-        Delivered["原始报文送达 eth0 网卡"]
-    end
-
-    Pod1 --> Raw --> Encapsulation --> Switch --> Decap --> Delivered --> Pod2
+    Encap --> Switch --> Decap
 ```
 
 ### 3.1 VXLAN 的工作机制与 VTEP 转发
@@ -211,31 +207,27 @@ Calico 将每台物理机变成了一个标准的 **BGP 虚拟路由器（Virtua
 **Cilium 彻底颠覆了这一切，它利用 Linux 内核的 eBPF（Extended Berkeley Packet Filter）黑科技，发动了一场云原生网络的“降维打击”。**
 
 ```mermaid
-flowchart TD
-    subgraph Traditional["传统 Linux 网络链路 (Flannel / Calico + iptables)"]
+flowchart LR
+    subgraph Traditional["传统链路 (iptables O(N))"]
         direction TB
-        App1["业务应用 (User Space)"] --> Socket1["Socket Layer"]
-        Socket1 --> TCP1["TCP/IP 协议栈"]
-        TCP1 --> VethA["veth 网卡"]
-        VethA --> SoftIRQ["内核软中断调度"]
-        SoftIRQ --> IPTables["iptables 线性规则扫描 (O(N) 性能衰减)"]
-        IPTables --> Route1["内核路由表查找"]
-        Route1 --> Eth1["物理网卡"]
+        App1["业务应用"] --> Sock1["Socket Layer"]
+        Sock1 --> TCP1["TCP/IP 协议栈"]
+        TCP1 --> VethA["veth + 软中断"]
+        VethA --> IPT["iptables 线性扫描"]
+        IPT --> Eth1["物理网卡"]
     end
 
-    subgraph CiliumeBPF["Cilium eBPF 革命 (XDP + tc + sockops 旁路)"]
+    subgraph CiliumeBPF["Cilium eBPF (sockops 旁路)"]
         direction TB
-        App2["业务应用 (User Space)"]
-        SockLayer["Socket Layer (套接字层)"]
-        
-        subgraph eBPFBypass["eBPF sockops 短路重定向"]
-            BPF_Map[("BPF SockMap 内存映射哈希表<br/>[IP:Port -> Target Socket 指针]")]
-            ShortCircuit["bpf_msg_redirect_hash()<br/>直接将数据从发送端 Socket 内存队列<br/>DMA 拷贝至接收端 Socket 队列!"]
+        App2["业务应用"] --> SockLayer["Socket Layer"]
+        subgraph Bypass["eBPF sockops 短路重定向"]
+            direction TB
+            BPF_Map[("SockMap 哈希表<br/>[IP:Port -> Socket 指针]")]
+            ShortCircuit["bpf_msg_redirect_hash()<br/>内存队列就地直连复制"]
+            BPF_Map <--> ShortCircuit
         end
-
-        App2 --> SockLayer
-        SockLayer <==> eBPFBypass
-        eBPFBypass -. "完全越过整个底层协议栈!" .-> Done["零协议栈损耗 / 毫秒级直达对端"]
+        SockLayer <==> Bypass
+        Bypass -. "越过底层协议栈" .-> Done["零软中断 / 纳秒级直达"]
     end
 ```
 

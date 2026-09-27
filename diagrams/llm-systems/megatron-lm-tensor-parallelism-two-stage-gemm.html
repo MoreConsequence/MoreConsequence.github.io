@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 540" width="1020" height="540" role="img" aria-labelledby="tp-title tp-desc">
+  <title id="tp-title">Megatron-LM 张量并行两刀对消与零通信 GeLU 机制</title>
+  <desc id="tp-desc">展示张量并行如何通过第1刀列切分、本地非线性激活与第2刀行切分实现数学对消，将两层 MLP 矩阵乘法的通信压缩至仅一次 All-Reduce。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="540" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Megatron-LM 张量并行两刀对消与零通信 GeLU 机制</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 1 刀列切分 + 本地逐元素激活 + 第 2 刀行切分：整整两层巨大 GEMM 仅需在末尾触发一次 All-Reduce</text>
+
+  <!-- Top Input Layer -->
+  <rect x="360" y="95" width="300" height="44" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="510" y="122" fill="#1e40af" font-size="14" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">输入张量 X (各卡本地保留完整复制副本)</text>
+
+  <!-- Branching Connectors from X to GPU 0 and GPU 1 -->
+  <line x1="430" y1="139" x2="270" y2="175" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="590" y1="139" x2="750" y2="175" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+
+  <!-- Left: GPU 0 Column/Row Stack -->
+  <rect x="60" y="180" width="420" height="235" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="60" y="180" width="420" height="32" rx="8" fill="#f1f5f9"/>
+  <text x="76" y="202" fill="#0f172a" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 0 (持有分片权重 W₁ 左半 &amp; W₂ 上半)</text>
+
+  <!-- GPU 0: Step 1 Column Gemm -->
+  <rect x="76" y="222" width="388" height="42" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="90" y="240" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 1 刀·按列切分 (Column Parallel)：</text>
+  <text x="90" y="256" fill="#3b82f6" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Z₁ = X · W₁_left  (输出维度 [B, S, H/2])</text>
+
+  <!-- GPU 0: Local GeLU (No communication) -->
+  <rect x="76" y="274" width="388" height="42" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="90" y="292" fill="#115e59" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逐元素非线性激活 (Zero-Communication GeLU)：</text>
+  <text x="90" y="308" fill="#0d9488" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">h₁ = GeLU(Z₁)  (纯本地计算，零跨卡通信！)</text>
+
+  <!-- GPU 0: Step 2 Row Gemm -->
+  <rect x="76" y="326" width="388" height="42" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="90" y="344" fill="#c2410c" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 2 刀·按行切分 (Row Parallel)：</text>
+  <text x="90" y="360" fill="#ea580c" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Y₀ = h₁ · W₂_top  (产生局部求和分量 Y₀)</text>
+
+  <text x="76" y="398" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">准备参与集合通信求和：Y₀ 维度已对齐最终输出维度 [B, S, H]</text>
+
+
+  <!-- Right: GPU 1 Column/Row Stack -->
+  <rect x="540" y="180" width="420" height="235" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="540" y="180" width="420" height="32" rx="8" fill="#f1f5f9"/>
+  <text x="556" y="202" fill="#0f172a" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 1 (持有分片权重 W₁ 右半 &amp; W₂ 下半)</text>
+
+  <!-- GPU 1: Step 1 Column Gemm -->
+  <rect x="556" y="222" width="388" height="42" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="570" y="240" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 1 刀·按列切分 (Column Parallel)：</text>
+  <text x="570" y="256" fill="#3b82f6" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Z₂ = X · W₁_right  (输出维度 [B, S, H/2])</text>
+
+  <!-- GPU 1: Local GeLU (No communication) -->
+  <rect x="556" y="274" width="388" height="42" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="570" y="292" fill="#115e59" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逐元素非线性激活 (Zero-Communication GeLU)：</text>
+  <text x="570" y="308" fill="#0d9488" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">h₂ = GeLU(Z₂)  (纯本地计算，零跨卡通信！)</text>
+
+  <!-- GPU 1: Step 2 Row Gemm -->
+  <rect x="556" y="326" width="388" height="42" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="570" y="344" fill="#c2410c" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 2 刀·按行切分 (Row Parallel)：</text>
+  <text x="570" y="360" fill="#ea580c" font-size="12" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Y₁ = h₂ · W₂_bottom  (产生局部求和分量 Y₁)</text>
+
+  <text x="556" y="398" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">准备参与集合通信求和：Y₁ 维度已对齐最终输出维度 [B, S, H]</text>
+
+  <!-- Convergence Connectors from GPU 0 & 1 to All-Reduce -->
+  <line x1="270" y1="415" x2="430" y2="445" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <line x1="750" y1="415" x2="590" y2="445" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Bottom: All-Reduce Sum Container -->
+  <rect x="250" y="445" width="520" height="70" rx="8" fill="#ffffff" stroke="#eb6c36" stroke-width="1"/>
+  <text x="510" y="472" fill="#c2410c" font-size="14" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">集合通信算子 · All-Reduce Sum (高带宽 NVLink 极速聚合)</text>
+  <text x="510" y="496" fill="#0f172a" font-size="13" font-weight="600" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">最终输出 Y = Y₀ + Y₁  (两卡完全同步，输出完整连续表征)</text>
+</svg>

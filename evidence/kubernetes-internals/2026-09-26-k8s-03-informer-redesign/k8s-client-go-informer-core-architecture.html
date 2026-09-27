@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>k8s-client-go-informer-core-architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    main { width: min(960px, 100%); margin: 0 auto; }
+    svg { display: block; width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+<main>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="100%" height="100%" role="img" aria-labelledby="k8s-informer-arch-title k8s-informer-arch-desc">
+  <title id="k8s-informer-arch-title">client-go Informer 核心拓扑与事件流转机制</title>
+  <desc id="k8s-informer-arch-desc">高对比度架构图：展示 client-go Informer 核心组件交互，涵盖 Reflector List-Watch 协议流、DeltaFIFO 增量去重、Indexer 本地内存缓存与 WorkQueue 驱动 Reconcile 调和的完整生命周期。</desc>
+  <defs>
+    <marker id="inf-arr-main" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0f172a" />
+    </marker>
+    <marker id="inf-arr-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#d9531e" />
+    </marker>
+    <marker id="inf-arr-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#0284c7" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="960" height="580" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+
+  <!-- Header Section -->
+  <g transform="translate(40, 38)">
+    <text x="0" y="0" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">client-go Informer 核心拓扑与事件流转机制</text>
+    <text x="0" y="26" fill="#475569" font-size="13" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">List-Watch 持续同步 ➔ DeltaFIFO 增量折叠 ➔ Indexer 零 I/O 内存缓存 ➔ WorkQueue 调和闭环</text>
+  </g>
+
+  <!-- Zone 1: Control Plane (kube-apiserver) (x=40..170, w=130) -->
+  <g transform="translate(40, 84)">
+    <rect width="130" height="420" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <rect x="12" y="14" width="60" height="22" rx="4" fill="#334155" />
+    <text x="42" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">PLANE</text>
+    <text x="12" y="58" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">控制面中心</text>
+
+    <!-- Apiserver Card -->
+    <rect x="12" y="76" width="106" height="110" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" />
+    <text x="65" y="102" fill="#0f172a" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" text-anchor="middle">kube-</text>
+    <text x="65" y="118" fill="#0f172a" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" text-anchor="middle">apiserver</text>
+    <text x="65" y="142" fill="#0284c7" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" text-anchor="middle">REST / Watch</text>
+    <text x="65" y="160" fill="#475569" font-size="10.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" text-anchor="middle">HTTP/2 流式帧</text>
+
+    <!-- Sub note -->
+    <text x="12" y="218" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 权威状态中心</text>
+    <text x="12" y="238" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 全量 List 同步</text>
+    <text x="12" y="258" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 增量 Watch 流</text>
+    <text x="12" y="280" fill="#d9531e" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 杜绝高频轮询</text>
+  </g>
+
+  <!-- Connector: apiserver to Reflector -->
+  <g>
+    <line x1="170" y1="180" x2="200" y2="180" stroke="#0284c7" stroke-width="2" marker-end="url(#inf-arr-link)" />
+    <rect x="168" y="148" width="34" height="18" rx="3" fill="#0284c7" />
+    <text x="185" y="161" fill="#ffffff" font-size="9.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">HTTP</text>
+  </g>
+
+  <!-- Zone 2: Ingestion & Deduplication (Reflector & DeltaFIFO) (x=200..420, w=220) -->
+  <g transform="translate(200, 84)">
+    <rect width="220" height="420" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">INGEST</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">事件摄取与去重</text>
+
+    <!-- Sub-block 1: Reflector -->
+    <rect x="14" y="48" width="192" height="135" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+    <text x="22" y="72" fill="#0284c7" font-size="13" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">Reflector (反射器)</text>
+    <text x="22" y="94" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 维持 List-Watch 状态机</text>
+    <text x="22" y="114" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• HTTP 410 Gone 自动重新全量 List</text>
+    <text x="22" y="134" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 断线指数退避平滑重连</text>
+    <text x="22" y="156" fill="#0284c7" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">➔ Push(Delta) 压入队列</text>
+
+    <!-- Arrow between Reflector and DeltaFIFO -->
+    <line x1="110" y1="183" x2="110" y2="218" stroke="#0f172a" stroke-width="2" marker-end="url(#inf-arr-main)" />
+    <rect x="86" y="192" width="48" height="16" rx="3" fill="#0f172a" />
+    <text x="110" y="204" fill="#ffffff" font-size="9" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">PUSH</text>
+
+    <!-- Sub-block 2: DeltaFIFO -->
+    <rect x="14" y="222" width="192" height="180" rx="6" fill="#ffffff" stroke="#d9531e" stroke-width="1.8" />
+    <text x="22" y="246" fill="#d9531e" font-size="13" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">DeltaFIFO (增量队列)</text>
+    <text x="22" y="268" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 增量类型: Added / Updated /</text>
+    <text x="22" y="286" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">  Deleted / Sync / Replaced</text>
+    <text x="22" y="310" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 同 Key 增量折叠 (Deduplication):</text>
+    <text x="22" y="330" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  高频更新只在队列中排队一个 Key</text>
+    <text x="22" y="350" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 阻断下游因突发风暴打爆</text>
+    <text x="22" y="374" fill="#d9531e" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">➔ Pop() 提供增量调度</text>
+  </g>
+
+  <!-- Connector: DeltaFIFO to Controller -->
+  <g>
+    <line x1="420" y1="312" x2="450" y2="312" stroke="#d9531e" stroke-width="2" marker-end="url(#inf-arr-accent)" />
+    <rect x="422" y="280" width="30" height="18" rx="3" fill="#d9531e" />
+    <text x="437" y="293" fill="#ffffff" font-size="9.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">POP</text>
+  </g>
+
+  <!-- Zone 3: Storage & Distribution (x=450..690, w=240) - FOCAL ACCENT -->
+  <g transform="translate(450, 84)">
+    <rect width="240" height="420" rx="8" fill="rgba(217, 83, 30, 0.04)" stroke="#d9531e" stroke-width="2" />
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#d9531e" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">CORE</text>
+    <text x="92" y="30" fill="#d9531e" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">调和循环与本地索引</text>
+
+    <!-- Sub-block 1: Informer Controller -->
+    <rect x="14" y="48" width="212" height="96" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+    <text x="22" y="72" fill="#0f172a" font-size="13" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">Informer Controller</text>
+    <text x="22" y="94" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• processLoop() 持续消费 DeltaFIFO</text>
+    <text x="22" y="114" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 步骤一：先同步更新本地 Indexer 缓存</text>
+    <text x="22" y="132" fill="#0284c7" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 步骤二：再广播派发给 SharedProcessor</text>
+
+    <!-- Sub-block 2: Indexer (ThreadSafeStore) -->
+    <rect x="14" y="156" width="212" height="135" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="1.8" />
+    <text x="22" y="180" fill="#0284c7" font-size="13" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">Indexer (ThreadSafeStore)</text>
+    <text x="22" y="202" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 线程安全本地只读缓存 (sync.RWMutex)</text>
+    <text x="22" y="222" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 支持 Namespace / Node 多维索引</text>
+    <text x="22" y="242" fill="#d9531e" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">• 零网络 I/O 查询，微秒级极速返回</text>
+    <text x="22" y="262" fill="#475569" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  彻底消灭对 apiserver 的读穿透！</text>
+
+    <!-- Sub-block 3: SharedProcessor -->
+    <rect x="14" y="302" width="212" height="100" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+    <text x="22" y="326" fill="#0f172a" font-size="13" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">SharedProcessor</text>
+    <text x="22" y="348" fill="#334155" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 遍历所有注册的监听器 (Listeners)</text>
+    <text x="22" y="368" fill="#0284c7" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">  distribute(notification) 广播</text>
+    <text x="22" y="388" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">  无锁非阻塞快速派发</text>
+  </g>
+
+  <!-- Connector: SharedProcessor to Listener -->
+  <g>
+    <line x1="690" y1="352" x2="720" y2="352" stroke="#0284c7" stroke-width="2" marker-end="url(#inf-arr-link)" />
+    <rect x="688" y="320" width="34" height="18" rx="3" fill="#0284c7" />
+    <text x="705" y="333" fill="#ffffff" font-size="9" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">EVENT</text>
+  </g>
+
+  <!-- Zone 4: WorkQueue & Worker Reconcile (x=720..920, w=200) -->
+  <g transform="translate(720, 84)">
+    <rect width="200" height="420" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <rect x="14" y="14" width="70" height="22" rx="4" fill="#334155" />
+    <text x="49" y="29" fill="#ffffff" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">WORKER</text>
+    <text x="92" y="30" fill="#0f172a" font-size="14.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">工作队列与调和</text>
+
+    <!-- Sub-block 1: ProcessorListener -->
+    <rect x="14" y="48" width="172" height="76" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" />
+    <text x="22" y="70" fill="#0f172a" font-size="12" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">ProcessorListener</text>
+    <text x="22" y="88" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">带缓冲 channel 隔离慢消费</text>
+    <text x="22" y="106" fill="#0284c7" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">ResourceEventHandler</text>
+
+    <!-- Sub-block 2: WorkQueue -->
+    <rect x="14" y="136" width="172" height="110" rx="6" fill="#ffffff" stroke="#0f172a" stroke-width="1.5" />
+    <text x="22" y="158" fill="#0f172a" font-size="12.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">RateLimitingQueue</text>
+    <text x="22" y="178" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 仅存放 objKey (无全量对象)</text>
+    <text x="22" y="198" fill="#d9531e" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="600">• 故障指数退避重试机制</text>
+    <text x="22" y="218" fill="#475569" font-size="11" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">  key = "default/my-pod"</text>
+
+    <!-- Sub-block 3: Business Worker -->
+    <rect x="14" y="258" width="172" height="144" rx="6" fill="#ffffff" stroke="#d9531e" stroke-width="1.8" />
+    <text x="22" y="280" fill="#d9531e" font-size="12.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">业务 Worker 协程</text>
+    <text x="22" y="302" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">执行 Reconcile() 调和</text>
+    <text x="22" y="324" fill="#334155" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">• 声明式期望状态对比</text>
+    <text x="22" y="344" fill="#0284c7" font-size="11.5" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700">indexer.GetByKey(key)</text>
+    <text x="22" y="364" fill="#d9531e" font-size="11.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif" font-weight="700">➔ 零网络 I/O 读本地缓存</text>
+    <text x="22" y="384" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">只向 apiserver 写变更结果</text>
+  </g>
+
+  <!-- Backward Query Arc: Worker -> Indexer -->
+  <path d="M 734 430 Q 640 450 630 300" fill="none" stroke="#0284c7" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#inf-arr-link)" />
+  <rect x="635" y="440" width="115" height="18" rx="3" fill="#0284c7" />
+  <text x="692" y="453" fill="#ffffff" font-size="10" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">零 I/O 本地缓存查</text>
+
+  <!-- Legend Strip at Bottom -->
+  <g transform="translate(40, 524)">
+    <line x1="0" y1="0" x2="880" y2="0" stroke="#e2e8f0" stroke-width="1.5" />
+    <text x="0" y="24" fill="#64748b" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace">图例规范：</text>
+
+    <rect x="75" y="11" width="14" height="14" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="1.5" />
+    <text x="96" y="23" fill="#334155" font-size="12" font-weight="500" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">控制面交互与事件摄取流程 (Reflector &amp; DeltaFIFO)</text>
+
+    <rect x="420" y="11" width="14" height="14" rx="3" fill="rgba(217, 83, 30, 0.08)" stroke="#d9531e" stroke-width="1.8" />
+    <text x="441" y="23" fill="#d9531e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif">核心调和与本地内存只读缓存 (Indexer 零网络 I/O 根基)</text>
+  </g>
+</svg>
+</main>
+</body>
+</html>

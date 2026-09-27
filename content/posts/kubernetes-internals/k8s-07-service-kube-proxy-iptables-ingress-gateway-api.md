@@ -313,15 +313,15 @@ sequenceDiagram
 ```mermaid
 mindmap
   root((Kubernetes 服务发现与流量接入))
-    东西向服务发现 (ClusterIP)
-      物理本质: 无实体网卡, 纯 Netfilter 规则劫持
-      iptables 模式: 随机概率匹配, 存在锁雪崩与 O(N) 性能瓶颈
-      IPVS 模式: ipset 哈希表 O(1) 查询, 高性能生产标配
-      EndpointSlice: 分片机制粉碎广播风暴
-    南北向外部接入 (Ingress -> Gateway API)
-      经典 Ingress 缺陷: 单体配置, Reload 频繁, 注解方言割裂
-      Gateway API 革命: 三权分立 (GatewayClass, Gateway, Route)
-      无损 xDS 动态更新, 原生灰度权重
+    ["东西向服务发现 (ClusterIP)"]
+      ["物理本质: 无实体网卡, 纯 Netfilter 规则劫持"]
+      ["iptables 模式: 随机概率匹配, 存在锁雪崩与 O(N) 性能瓶颈"]
+      ["IPVS 模式: ipset 哈希表 O(1) 查询, 高性能生产标配"]
+      ["EndpointSlice: 分片机制粉碎广播风暴"]
+    ["南北向外部接入 (Ingress -> Gateway API)"]
+      ["经典 Ingress 缺陷: 单体配置, Reload 频繁, 注解方言割裂"]
+      ["Gateway API 革命: 三权分立 (GatewayClass, Gateway, Route)"]
+      ["无损 xDS 动态更新, 原生灰度权重"]
 ```
 
 ### 6.1 现场 2 分钟极速电梯演讲（高分答题模板）

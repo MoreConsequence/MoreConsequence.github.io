@@ -67,7 +67,7 @@ flowchart TD
 **Node Problem Detector（NPD）** 是 Kubernetes 官方孵化用于专门捕获宿主机不可见故障的守护进程。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph HostOperatingSystem["物理宿主机 Linux 内核与硬件"]
         Dmesg["1. 内核环形缓冲区 (/dev/kmsg, journald)"]
         SysFS["2. 系统状态 (/proc, /sys, cgroups)"]
@@ -86,7 +86,7 @@ flowchart TB
     end
 
     HostOperatingSystem --> NPDAgent
-    ConditionGenerator ==="向 API Server 注入 NodeCondition 或 NodeEvent"===> KubeAPIServer["kube-apiserver"]
+    ConditionGenerator == "向 API Server 注入 NodeCondition 或 NodeEvent" ==> KubeAPIServer["kube-apiserver"]
 ```
 
 ### 2.1 NPD 如何捕获“磁盘只读”？

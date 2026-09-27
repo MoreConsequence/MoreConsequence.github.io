@@ -205,7 +205,7 @@ spec:
 上述客户端方案需要每个业务方配合改造，容易遗漏。**平台工程的最强终极解法，是在每台 Kubernetes 工作节点上部署 NodeLocal DNSCache**！
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph WorkerNode["Kubernetes 物理工作节点 (Worker Node)"]
         direction TB
         
@@ -230,7 +230,7 @@ flowchart TD
         PublicDNS["公网 DNS 解析服务"]
     end
 
-    NodeCache ==="2. 缓存未命中时: 强制采用可靠 TCP 协议复用长连接 (零丢包 / 彻底根绝 conntrack 竞态)"===> MasterCoreDNS
+    NodeCache == "2. 缓存未命中时: 强制采用可靠 TCP 协议复用长连接 (零丢包 / 彻底根绝 conntrack 竞态)" ==> MasterCoreDNS
     MasterCoreDNS === InternetDNS
 ```
 

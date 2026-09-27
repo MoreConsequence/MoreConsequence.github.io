@@ -60,7 +60,7 @@ flowchart TB
 
     subgraph ModernArch["现代 Kubernetes (v1.24+ 生产标配): 极致轻量的纯 CRI 架构"]
         direction TB
-        Klet2["Kubelet"] -->|CRI gRPC (/run/containerd/containerd.sock)| Ctrd2["containerd (唯一高级运行时)"]
+        Klet2["Kubelet"] -->|"CRI gRPC (/run/containerd/containerd.sock)"| Ctrd2["containerd (唯一高级运行时)"]
         Ctrd2 -->|启动| Shim2["containerd-shim-v2 (每个 Pod 独立常驻)"]
         Shim2 -->|短命调用| Runc2["runc (创建完成后瞬时退出)"]
         Shim2 ==>|父子进程守护与 IO 管道| C2["业务容器进程"]

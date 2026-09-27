@@ -1,4 +1,5 @@
 import type { PostMeta as PostMetaData } from "@/lib/content/types";
+import { Badge } from "@/components/ui/badge";
 
 export function formatPostDate(date: string) {
   return date.replaceAll("-", ".");
@@ -21,7 +22,9 @@ export function PostMeta({
       {meta.series ? (
         <>
           <span aria-hidden="true">/</span>
-          <span>{meta.series}</span>
+          <Badge variant="series" size="sm" dot>
+            {meta.series}
+          </Badge>
         </>
       ) : null}
     </div>

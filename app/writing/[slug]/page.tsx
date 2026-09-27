@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/post/article-body";
 import { PostMeta } from "@/components/post/post-meta";
 import { ReadingProgress } from "@/components/post/reading-progress";
+import { ArticleSidebar } from "@/components/post/article-sidebar";
 import { getSeriesIcon } from "@/lib/content/series";
-import { TableOfContents } from "@/components/post/table-of-contents";
-import { getAllPosts, getPostSources } from "@/lib/content/posts";
+import { getPostBySlug, getPostSources } from "@/lib/content/posts";
 import { getPostsForSeries } from "@/lib/content/series";
 import { seriesHref } from "@/lib/site-links";
 import {
@@ -26,7 +26,7 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = (await getAllPosts()).find((item) => item.slug === slug);
+  const post = getPostSources().find((item) => item.slug === slug);
   if (!post) return {};
 
   return {
@@ -49,13 +49,13 @@ export async function generateMetadata({
 
 export default async function ArticlePage({ params }: PageProps) {
   const { slug } = await params;
-  const posts = await getAllPosts();
-  const post = posts.find((item) => item.slug === slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) notFound();
 
+  const allPosts = getPostSources();
   const seriesPosts = post.meta.series
-    ? getPostsForSeries(posts, post.meta.series)
+    ? getPostsForSeries(allPosts, post.meta.series)
     : [];
   const isSeries = seriesPosts.length > 1;
   const currentSeriesIndex = isSeries
@@ -69,8 +69,8 @@ export default async function ArticlePage({ params }: PageProps) {
     : undefined;
 
   // 非系列文章走通用按发布时间翻页
-  const neighbors = !isSeries ? getArticleNeighbors(posts, slug) : { newer: undefined, older: undefined };
-  const related = getRelatedPosts(posts, post, 3);
+  const neighbors = !isSeries ? getArticleNeighbors(allPosts, slug) : { newer: undefined, older: undefined };
+  const related = getRelatedPosts(allPosts, post, 3);
 
   return (
     <>
@@ -108,50 +108,18 @@ export default async function ArticlePage({ params }: PageProps) {
           </div>
         </header>
 
+        <ReadingProgress />
+
         <div className="article-layout">
-          <aside className="article-aside">
-            <TableOfContents items={post.toc} />
-            {seriesPosts.length > 1 ? (
-              <div className="article-fact sidebar-panel" aria-label="专栏连载">
-                <div className="sidebar-panel-header">
-                  <Link href={seriesHref(post.meta.series!)} className="sph-title" title={`查看《${post.meta.series}》专栏全部目录`}>
-                    {getSeriesIcon(post.meta.series!)} {post.meta.series}
-                  </Link>
-                  <span className="sph-badge">
-                    {currentSeriesIndex + 1}/{seriesPosts.length}
-                  </span>
-                </div>
-                <ol className="sidebar-panel-list series-list">
-                  {seriesPosts.map((item, index) => {
-                    const isCurrent = item.slug === post.slug;
-                    return (
-                      <li
-                        key={item.slug}
-                        data-active={isCurrent || undefined}
-                      >
-                        <span className="af-index">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        {isCurrent ? (
-                          <span className="af-title" title={item.meta.title}>
-                            {item.meta.title}
-                          </span>
-                        ) : (
-                          <Link
-                            className="af-title"
-                            href={`/writing/${item.slug}`}
-                            title={item.meta.title}
-                          >
-                            {item.meta.title}
-                          </Link>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            ) : null}
-          </aside>
+          <ArticleSidebar
+            items={post.toc}
+            series={post.meta.series}
+            seriesPosts={seriesPosts}
+            currentSlug={post.slug}
+            currentSeriesIndex={currentSeriesIndex}
+            seriesIcon={post.meta.series ? getSeriesIcon(post.meta.series) : "📚"}
+            seriesHrefUrl={post.meta.series ? seriesHref(post.meta.series) : ""}
+          />
           <ArticleBody html={post.html} />
         </div>
 

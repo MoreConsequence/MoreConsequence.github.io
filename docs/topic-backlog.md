@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 网络协议（TCP/IP·Nagle·QUIC 等） | 55 | ✅ 已发布 |
 | Go 的设计边界 | 25 | ✅ 已发布 |
-| Linux 内核网络与 eBPF 性能工程 | 9 | ✅ 5 篇已发布 + 4 篇新草稿（内存分页、Ring Buffer、脏页回写、EEVDF 调度器） |
+| Linux 内核网络与 eBPF 性能工程 | 13 | ✅ 全 13 篇圆满交付（从协议栈NAPI、JIT、RingBuffer、脏页回写、EEVDF到io_uring零拷贝、AF_XDP软交换、sched_ext自定义调度与THP排障） |
 | 分布式共识与高可用容错 | 7 | ✅ 5 篇已发布 + 2 篇新草稿（两将军问题与成员变更 Joint Consensus） |
 | 大模型后端架构与推理加速 | 6 | ✅ 5 篇已发布 + 1 篇新草稿（Chunked Prefill 与 PD 分离） |
 | 网络测速与极限吞吐工程 | 7 | ✅ 已发布（全 7 篇第一性原理与万兆架构实战） |
@@ -26,6 +26,8 @@
 | 前沿大模型训练与全栈 Infra 解密 | 5 | ✅ 全 5 篇圆满交付（3D并行拓扑、FlashAttention访存平铺、MoE专家并行、万卡无损网络RoCE/IB、2.5秒三级Checkpoint容灾） |
 | Kubernetes 架构内核与生产实战 | 10 | ✅ 全 10 篇圆满交付（容器与Pod物理边界、控制面全景、client-go Informer、CFS/cgroups/OOM、调度框架、CNI/eBPF、Service/Gateway API、CSI存储编排、CRD Operator实战、零502与排障决策树） |
 | Google AX 架构解密与云原生 Agent 编排 | 10 | ✅ 全 10 篇圆满交付（范式转移、Substrate多路复用、亚秒快照、四大原语、gVisor沙箱、MCP治理、零信任网关、终局选型） |
+| 大模型安全防御与对抗攻防实战 | 5 | ✅ 全 5 篇圆满交付（双模型隔离、MCP工具投毒、RAG间接注入、多轮会话语义漂移、流式实时安全护栏） |
+| 多智能体协同协议与 A2A 分布式编排 | 6 | ✅ 全 6 篇圆满交付（多智能体拓扑学、A2A能力卡协议、有向等待图死锁熔断、孔多塞辩论共识、MVCC共享记忆、Durable工作流状态机） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -241,15 +243,16 @@
 | ✅ 万卡超算算力网络（2026-09-23 `llm-infra-04-gpu-cluster-network-roce-infiniband-nccl`） | InfiniBand 信用流控 vs RoCE v2 无损以太网、PFC 拥塞死锁环成因、DCQCN 双门限调优、NCCL Ring/Tree 算法与 Rail-Optimized 导轨拓扑 | 溯源 IBTA 规范、IEEE 802.1Qbb PFC 规范、SIGCOMM DCQCN 论文与 NCCL 导轨网络工程实现 |
 | ✅ 万卡容灾与弹性训练（2026-09-23 `llm-infra-05-checkpoint-resilience-elastic-training`） | MTBF 仅 2.5 小时的物理残酷性、Meta/DeepSeek 2.5秒三级异步 Checkpoint 架构、坏卡原地热备替换与 Loss Spike 自动前向回滚 | 溯源 Meta 24k GPU 集群白皮书、DeepSeek-V3 双向通信容灾、NSDI 2024 MegaScale 论文与 Goodput 优化模型 |
 
-### S11. 现代内核、eBPF 与万兆高性能 I/O 破局【底层性能天花板】
+### S11. 现代内核、eBPF 与万兆高性能 I/O 破局【全 4 篇压轴圆满交付】
 
 **为什么**：打破传统后端应用与 Linux 操作系统的“黑盒隔离”。吸取 Brendan Gregg、Cloudflare 架构团队与 Linux 内核顶级维护者的实战精髓，直击单机千万级吞吐背后的内核原语。
 
-| 主题 | 核心问题 | 验证方式 |
+| 序号与主题 | 核心问题 | 规范依据与架构解法 |
 | --- | --- | --- |
-| io_uring 的终极零拷贝哲学 | 终结 Linux 50 年 read/write 系统调用开销！提交队列（SQ）与完成队列（CQ）双无锁环形缓冲区、内核异步 Polling（IORING_SETUP_SQPOLL）压榨千万 IOPS | 溯源 Jens Axboe 2019 io_uring 内核白皮书、Epoll 系统调用上下文切换开销对比、纯用户态环形队列无锁并发 |
-| XDP 与 eBPF 驱动层线速包处理 | 传统网络协议栈 sk_buff 内存分配的沉重代价。网卡驱动层（Driver Layer）零拷贝就地截获数据包，单机硬抗 100Gbps DDoS 洪峰与 L4 极速负载均衡 | 溯源 Hoeiland-Jorgensen 2018 XDP 论文、Linux 驱动层 ring buffer 内存模型与 eBPF JIT 字节码验证 |
-| 内存黑洞：Transparent Huge Pages（THP）与内存紧缩卡顿 | 为什么 Redis/Postgres 官方强烈建议关闭 THP？2MB 大页跨区域分配触发 Direct Compaction 锁死 CPU 数百毫秒的内核机理与排查全链路 | 溯源 Linux 虚拟内存伙伴系统（Buddy System）、页迁移（Page Migration）与 vmstat 关键指标排障 |
+| ✅ 10. io_uring 终极零拷贝与异步驱动（2026-09-20 `kernel-10-io-uring-zero-copy-and-sqpoll.md`） | 终结 Linux 50 年 read/write 系统调用开销！提交队列（SQ）与完成队列（CQ）双无锁环形缓冲区、内核异步轮询（`IORING_SETUP_SQPOLL`）压榨千万 IOPS 与网络零拷贝发送（`IORING_OP_SEND_ZC`） | 溯源 Jens Axboe 2019 io_uring 内核白皮书、SPSC 无锁环形队列、Fixed Buffers 预注册物理页与两阶段 CQE 完成机制 |
+| ✅ 11. AF_XDP 驱动层无锁队列软交换机（2026-09-21 `kernel-11-af-xdp-high-performance-soft-switch.md`） | 为什么通用内核协议栈的 sk_buff 分配与 ksoftirqd 在 1500万 PPS 下死锁？UMEM 内存池、Fill/Rx/Tx/Comp 四环协同与 eBPF XDP_REDIRECT 直通 | 溯源 Intel AF_XDP 白皮书、网卡驱动零拷贝模式（XDP_ZEROCOPY）、UMEM Chunk 物理连续映射与二层线速包交换 |
+| ✅ 12. Linux 6.12 sched_ext 革命（2026-09-22 `kernel-12-sched-ext-bpf-custom-cpu-scheduler.md`） | 通用 CFS/EEVDF 调度器在 AI 大模型分布式训练（Gang Scheduling）与低延迟撮合下的失灵；用 eBPF 动态插拔 CPU 调度器与看门狗自动秒级回退 | 溯源 Meta sched_ext (SCX) 架构规范、`ops.select_cpu`/`ops.enqueue`/`ops.dispatch` 状态机、分派队列（DSQ）与任务防饥饿看门狗自愈 |
+| ✅ 13. 物理内存黑洞 THP 与直接紧缩卡顿（2026-09-23 `kernel-13-transparent-hugepage-direct-compaction-stall.md`） | 为什么 Redis/Postgres 官方强烈建议禁用 THP？伙伴系统 Order 9 碎片化、Direct Compaction 挂起业务线程数秒与 CoW 512 倍写放大惨案 | 溯源 Linux 伙伴系统与页紧缩算法、`zone->lock` 自旋锁争用、TLB Shootdown 广播中断、vmstat 监控指标与 madvise 协同调优 |
 
 ### S12. 复杂系统重构与架构考古【资深架构演进破局】
 
@@ -260,14 +263,17 @@
 | 绞杀者模式（Strangler Fig）零停机重构实战 | 如何在十万 QPS 不停机的前提下，将庞大单体平滑替换为微服务？流量染色分流、CDC 增量双跑对账与一键瞬时回滚兜底防线 | 溯源 Martin Fowler 绞杀者模式规范、双写（Dual-Write）一致性状态机与灰度金丝雀流量网关 |
 | Stripe 式不可变 API 版本演进网关 | 为什么对外 API 永远不能轻易破坏向下兼容？如何让 10 年前的客户端依旧正常调用，数据层无感双向转换的 AST 与门面网关（Gatekeeper）设计 | 溯源 Stripe API 版本演进白皮书、声明式字段转换管道与向后兼容性契约测试矩阵 |
 
-### S13. 大模型信息安全与越狱红蓝对抗【生产级安全防护】
+### S13. 大模型安全防御与对抗攻防实战【全 5 篇圆满交付】
 
-**为什么**：大模型把非确定性输入当成了执行代码，打开了前所未有的安全攻击面。吸收 OWASP Top 10 for LLMs、Anthropic Red Teaming 与前沿安全实验室的攻防精华。
+**为什么**：大模型把非确定性自然语言当成控制流与执行代码，打开了前所未有的安全攻击面。伴随 Google AX、MCP 与生产级 Agent 落地，安全与权限边界已成为资深后端架构师的刚性护城河。涵盖提示词注入、MCP 工具投毒、RAG 数据静默外发、长会话语义漂移与毫秒级流式截断微内核。
 
-| 主题 | 核心问题 | 验证方式 |
+| 序号与主题 | 核心问题 | 规范依据与架构解法 |
 | --- | --- | --- |
-| 提示词注入（Prompt Injection）物理本质与双模型隔离 | 为什么大模型天然分不清“指令”与“数据”？直接注入 vs 间接注入（通过网页/RAG），双 LLM 隔离（Dual LLM）与语义围栏架构 | 溯源 Simon Willison 提示词注入分析、OWASP LLM01 规范、沙箱隔离与内容安全过滤管道 |
-| Token 走私与多模态对抗样本越狱防御 | 攻击者如何利用 Base64、ASCII 艺术字、Unicode 特殊字符或罕见 Token 绕过安全对齐？多层语义防火墙与输入归一化对抗防御工程 | 溯源 Wei 2023 Jailbroken 论文、Token 归一化清洗算法与 Llama Guard 安全分类器集成 |
+| ✅ 01. 提示词注入第一性原理（2026-09-23 `llm-sec-01-prompt-injection-dual-llm-isolation.md`） | 为什么 Transformer 无法区分“控制指令”与“输入数据”？直接注入 vs 间接注入渗透路径；XML 标签沙箱与 Simon Willison 双模型隔离架构（Dual-LLM） | 溯源 Simon Willison 双模型隔离设计、OWASP Top 10 LLM01、全连接注意力点积数学推导与 Quarantined 上下文物理围栏 |
+| ✅ 02. MCP 工具投毒与特权劫持（2026-09-24 `llm-sec-02-mcp-tool-poisoning-privilege-hijacking.md`） | 第三方 MCP Server 的 Tool Description 如何篡改 Agent 决策？工具投毒（Tool Poisoning）、影子工具（Tool Shadowing）与混淆代理（Confused Deputy）防御 | MCP 协议规范、命名空间硬隔离、破坏半径四象限矩阵、人机协同（HITL）审批门禁与 gVisor/eBPF 细粒度运行时沙箱 |
+| ✅ 03. RAG 知识库间接注入与数据静默外发（2026-09-25 `llm-sec-03-rag-indirect-injection-data-exfiltration.md`） | 为什么纯只读无工具的 RAG 会泄露机密？Markdown 图片信标（Image Beacon `![leak](url)`）免工具数据外发与向量对抗投毒（Adversarial Embeddings） | OWASP LLM02、入库端语义困惑度（PPL）异常检测、双向 PII 脱敏、严格 CSP 与 DOMPurify 渲染沙箱 |
+| ✅ 04. 多轮长会话语义漂移与上下文诱导（2026-09-26 `llm-sec-04-multi-turn-session-guardrails-and-drift.md`） | 单轮安全分类器为何在第 20 轮被渐进式诱导击穿？长文本注意力稀释（Attention Dilution）与自回归自洽动量累积机理 | 增量分层滑动窗口安全打分（减少 90% 延迟开销）、角色基线余弦偏离度（Persona Drift）监测与确定性会话状态机（FSM）主动重锚定熔断 |
+| ✅ 05. 企业级流式实时安全护栏引擎架构（2026-09-27 `llm-sec-05-streaming-guardrails-engine-architecture.md`） | 首字延迟（TTFT < 200ms）下，如何做跨 Chunk 敏感词拦截与中途截断？覆水难收不可逆传输困境 | 双轨异步微内核架构（同步 AC 自动机多模式滑动微缓冲 <1ms + 异步轻量模型旁路打分）、SSE 中途断裂信令（Mid-Stream Rupture）与上游 GPU 级联取消 |
 
 ### S14. 物联网与网络设备云平台架构实战【网络设备制造与云网协同】
 
@@ -344,6 +350,58 @@
 | ✅ 08. 安全沙箱防线与 gVisor 隔离（2026-10-03 `ax-08-security-gvisor-syscall-interception-sandbox-isolation.md`） | 深入 gVisor 独立内核拦截与防容器逃逸物理隔离 | 不可信 Agent 执行任意命令的安全边界；gVisor runsc Sentry 用户态拦截 300+ 系统调用；特权提权与逃逸的就地掐断 |
 | ✅ 09. 零信任网络 Gateway 出站治理（2026-10-04 `ax-09-gateway-primitive-zero-trust-egress-secret-redaction.md`） | 防范 Prompt 注入与凭据外泄的出站网关架构 | 提示词注入后的秘钥外发风险；透明反向代理、出站域名/端口严格白名单、动态凭据注入与密钥脱敏（Secret Redaction） |
 | ✅ 10. 终局思辨与生产指南（2026-10-05 `ax-10-model-governance-token-finops-production-tradeoffs.md`） | Model 统一治理、Token 成本控制与架构权衡矩阵 | Model 原语统一模型配额与 Fallback 级联；AX vs 原生 K8s Pod vs Ray vs Temporal 多维权衡；千卡级生产 Agent 集群容量规划 |
+
+### S17. 生产级 Coding Agent 架构与自主执行引擎【GitHub 现象级前沿】
+
+**为什么**：对标 GitHub 现象级爆款项目（Cline、Roo Code、Aider、OpenHands、SWE-bench）。在所有 Agent 赛道中，Coding Agent 是技术壁垒最高、工程最硬核、也是工程师最关注的生产力工具。深度拆解 Tree-sitter AST 解析、Diff 精准编辑、PTY 伪终端多路复用与 LSP 语言服务器穿透。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| 01. 语法树增量解析与 Repo Map 压缩（`coding-agent-01-ast-tree-sitter-repo-map.md`） | 超长代码库如何在几千 Token 内完成符号图谱索引？Tree-sitter 增量 AST 解析、PageRank 依赖图权重与启发式上下文压缩 | Tree-sitter C/Wasm 绑定、PageRank 节点权重算法、Repo Map 紧凑拓扑与文件依赖图修剪 |
+| 02. 代码精准差异编辑（Diff & Patch）（`coding-agent-02-exact-diff-patch-fuzzy-match.md`） | 为什么让大模型输出完整文件必然崩塌？Search/Replace 块匹配算法、Levenshtein 模糊编辑距离容错与 AST 节点保护 | GNU Patch / Myers Diff 算法、统一差分格式、模糊匹配滑动窗口与未修改代码零膨胀 |
+| 03. Linux 伪终端（PTY）多路复用（`coding-agent-03-pty-multiplexing-interactive-cli.md`） | 如何像人类工程师一样与 Bash 终端交互？Linux PTY 伪终端主从架构、ANSI 逃逸码清洗与交互式输入捕获 | Linux `posix_openpt(3)`、xterm.js 协议、终端无锁环形缓冲区与超时死循环熔断 |
+| 04. Language Server Protocol 深度穿透（`coding-agent-04-lsp-protocol-type-diagnostics.md`） | 终结纯文本盲猜！通过 JSON-RPC 桥接真实语言服务器（gopls / tsserver / pyright），实现编译期红线诊断与跨文件跳转 | LSP 3.17 规范、`textDocument/diagnostic` 增量同步、声明跳转与类型定义 AST 穿透 |
+| 05. 测试驱动自愈与上下文精简（`coding-agent-05-test-driven-self-healing-loop.md`） | 捕获单测崩溃堆栈、过滤海量日志噪音并将有效错误喂回大模型的确定性闭环 | JUnit / Vitest 结构化结果抽取、错误堆栈清洗压缩、失败用例定向重放与回滚策略 |
+| 06. 虚拟工作区与亚秒级快照回滚（`coding-agent-06-virtual-workspace-git-alternates.md`） | 智能体写错代码如何一键原子还原？Git Alternates 对象借用、OverlayFS 写时复制（CoW）与沙箱分支隔离 | Git Alternates 零开销仓库克隆、Linux OverlayFS 联合挂载与失败试验一键瞬时回滚 |
+
+### S18. 多智能体协同协议与 A2A 分布式编排【全 6 篇圆满交付】
+
+**为什么**：承接 Google AX、Pi Agent 与 AI 后端系列。随着单体 Agent 成熟，企业全面迈向“多 Agent 协作系统”。深入拓扑学演进、A2A 通信协议、死锁环路检测、孔多塞多轮辩论博弈、MVCC 共享记忆与确定性工作流图执行引擎。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. 多智能体拓扑学第一性原理（2026-09-24 `multi-agent-01-topology-hierarchical-vs-blackboard.md`） | 单体 Agent 认知极限；中心化层级编排（Supervisor，O(N) 线性通信）vs 事件驱动去中心化黑板（Blackboard，O(N^2) 风险）适用边界与爆炸半径 | 溯源 Hearsay-II 语音识别黑板、LangGraph 拓扑、串行临界路径与选型决策树 |
+| ✅ 02. A2A 分布式通信协议（2026-09-25 `multi-agent-02-a2a-protocol-agent-cards.md`） | 为什么 gRPC/REST 承载不了自主协作？Agent Card 能力卡自省、零请求本地过滤与三阶段契约协商状态机（Propose/Counter-Offer/Commit） | A2A 协议规范、本地能力卡缓存剪枝、负载自适应协商与临时会话租约（Lease） |
+| ✅ 03. 通信死锁与循环震荡熔断（2026-09-26 `multi-agent-03-deadlock-detection-loop-breaker.md`） | 阻塞依赖死锁（A->B->C->A）与互相踢皮球语义活锁（Semantic Ping-Pong）；有向等待图（Wait-For Graph）与 Tarjan 强连通分量微秒级破环 | 溯源 Tarjan 1972 环路检测、Wait-Die 牺牲者算法与滑动窗口 N-gram 语义震荡指纹熔断 |
+| ✅ 04. 多轮辩论共识博弈（2026-09-27 `multi-agent-04-debate-consensus-condorcet-jury.md`） | 为什么投票会引发群体迷思（Groupthink）？孔多塞陪审团定理二项分布数学推导、独立性假设崩塌与异构基座混排盲投（Blind Voting） | 溯源 Condorcet 1785 陪审团定理、信息熵动态权重加权、时间惩罚衰减与盲评提前退出 |
+| ✅ 05. 分层共享记忆与并发隔离（2026-09-28 `multi-agent-05-shared-memory-concurrency-isolation.md`） | 传统互斥锁导致推理卡死；三层记忆金字塔（L1工作记忆/L2协作流/L3事实库）、MVCC 快照隔离、CAS 乐观锁与跨 Agent 污点数据扩散拦截（Taint Tracking） | 溯源 Kung-Robinson 1981 OCC 规范、不可变历史版本链、三路归并与写安全 Sink 门禁 |
+| ✅ 06. 确定性工作流图执行引擎（2026-09-29 `multi-agent-06-durable-execution-dag-state-machine.md`） | 进程崩溃导致状态全失；事件溯源（Event Sourcing）重放、StateGraph 检查点（Checkpoints）、时间旅行调试与人机审批（HITL）零消耗挂起唤醒 | 溯源 Temporal / LangGraph 持久化执行哲学、状态快照原子提交与无阻塞挂起恢复 |
+
+### S19. 超低延迟与金融级高性能交易系统架构【前沿新系列】
+
+**为什么**：后端的“性能天花板”——将系统响应时间从 100ms 压缩到 100ns（纳秒级）。大厂资深架构师面试中最具技术辨识度的领域，深入 CPU 缓存、内存屏障、网络旁路与并发无锁编程。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| 01. 纯内存撮合引擎哲学（`hft-01-memory-matching-engine-sequencer.md`） | 为什么加锁和多线程反而在交易系统中成为毒瘤？确定性定序器（Sequencer）与价格时间优先撮合 | 单核绑定、流水线指令级并行 (ILP)、FIFO 确定性状态机与零锁内存模型 |
+| 02. LMAX Disruptor 深度剖析（`hft-02-disruptor-ringbuffer-false-sharing.md`） | 环形缓冲区（RingBuffer）、CPU 伪共享（False Sharing）、缓存行填充（Padding）与内存屏障 | MESI 缓存一致性协议、CPU 乱序执行、`@Contended` 内存布局与 CAS 无锁无阻塞队列 |
+| 03. 内核旁路与极速网络（`hft-03-kernel-bypass-dpdk-solarflare-onload.md`） | Solarflare Onload、DPDK 与物理网卡硬件时间戳（Hardware Timestamping）打破网络协议栈税 | 用户态网络栈直通网卡、大页内存分配、无拷贝包处理与零中断轮询驱动 (PMD) |
+| 04. 零 GC 内存工程（`hft-04-zero-gc-off-heap-memory-engineering.md`） | 内存预分配、对象池（Object Pool）、堆外直接内存（Off-Heap）与免逃逸分析代码设计 | JVM 停顿消除、直接内存指针操作、结构体内存紧凑对齐与环形复用池 |
+| 05. 状态机复制与确定性容灾（`hft-05-smr-wal-deterministic-replay.md`） | 基于状态机复制（SMR）、WAL 环形日志与 DFA 自动机 100% 确定性回放容灾 | 非易失性内存 (NVDIMM/CXL)、异步双写复制、微秒级主备热切与状态机同态校验 |
+| 06. 资金复式记账与风控流控（`hft-06-double-entry-bookkeeping-risk-control.md`） | Pat Helland 最终一致性对账、热点账户分段锁与单微秒级动态穿透风控规则引擎 | 1494 年 Pacioli 复式记账公理、内存位图动态穿透风控、热点分段账户与无死锁记账 |
+
+### S20. 企业级分布式存储内核与 NVMe 硬件调优【前沿新系列】
+
+**为什么**：存储系统是分布式系统的根基。深入 LSM-Tree、B+Tree、Ceph、SPDK 与 NVMe-oF，打通从用户态到固态硬盘物理闪存通道的全链路。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| 01. RUM 猜想与现代存储权衡（`storage-01-rum-conjecture-rocksdb-pebble.md`） | 读放大、写放大、空间放大三难困境在 RocksDB / Pebble / WiredTiger 中的工程平衡 | 溯源 Athanassoulis 2016 RUM 猜想、Leveled vs Tiered 压实拓扑与布隆过滤器假阳性位级推导 |
+| 02. SSD 物理闪存与 ZNS 存储（`storage-02-nvme-ssd-zns-zoned-storage.md`） | FTL 闪存转换层、GC 写入放大（WA）、TRIM 指令与 ZNS 绕过内部 GC 消除 P99 抖动 | NAND Flash 擦写物理特性、Zoned Namespaces 规范、内核驱动协同与 P99 延迟暴降 80% 实测 |
+| 03. SPDK 用户态无锁存储引擎（`storage-03-spdk-nvme-user-space-driver.md`） | 轮询模式驱动（UIO/VFIO）、异步轮询彻底终结传统同步 I/O 系统调用与上下文切换 | Intel SPDK 架构、NVMe 命令队列 (SQ/CQ) 用户态直投、无锁线程模型与百万 IOPS 压榨 |
+| 04. NVMe-oF 极速远程块存储（`storage-04-nvme-over-fabrics-rdma-roce.md`） | RDMA RoCEv2 穿透网络，万兆网络下实现本地 SSD 级的超低延迟访问 | NVMe-oF 协议规范、RDMA 零拷贝读写 (READ/WRITE)、无损队列流控与跨机架共享块存储 |
+| 05. 纠删码（EC）与网络修复（`storage-05-erasure-coding-reed-solomon-lrc.md`） | Reed-Solomon 编码数学矩阵推导、LRC 局部重构码与节点宕机修复带宽优化 | 伽罗华域 (Galois Field GF(2^8)) 矩阵乘法、SIMD 硬件加速指令与网络修复流重构 |
+| 06. Ceph CRUSH 算法几何原理（`storage-06-ceph-crush-algorithm-mathematics.md`） | 通过纯数学哈希计算消除中心元数据寻址表，权重加权、故障域拓扑与数据重平衡震荡规避 | Sage Weil 2006 OSDI 论文推导、Straw2 算法数学证明、机架/机房多级故障域隔离 |
 
 ---
 

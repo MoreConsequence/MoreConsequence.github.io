@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 560" width="1020" height="560" role="img" aria-labelledby="prod-arch-title prod-arch-desc">
+  <title id="prod-arch-title">生产级结构化输出与约束解码完整端到端架构拓扑</title>
+  <desc id="prod-arch-desc">端到端架构图展示微服务客户端携带 JSON Schema 请求、网关层 LRU 缓存与动态编译、vLLM/SGLang 连续批处理中的 Logits 掩码处理器，以及下游数据库直接无损解析的全闭环链路。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="560" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">生产级结构化输出（Structured Outputs）端到端架构</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网关 Schema LRU 预编译缓存与推理集群 Continuous Batching 语法掩码协同全闭环</text>
+
+  <!-- Tier 1: Client Microservices -->
+  <rect x="40" y="95" width="940" height="58" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="220" height="58" rx="8" fill="#eff6ff"/>
+  <text x="56" y="120" fill="#1e40af" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">企业下游微服务生态</text>
+  <text x="56" y="138" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">订单 / 用户 / 交易中枢</text>
+
+  <text x="280" y="128" fill="#0f172a" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">发起请求: <tspan font-family="ui-monospace, monospace" font-weight="700" fill="#2563eb">POST /v1/chat/completions</tspan>，携带 Pydantic / JSON Schema 契约元数据</text>
+
+  <!-- Downward Arrow 1 -->
+  <line x1="510" y1="153" x2="510" y2="175" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+
+
+  <!-- Tier 2: AI Backend Gateway -->
+  <rect x="40" y="175" width="940" height="120" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="175" width="940" height="30" rx="6" fill="#fff7ed"/>
+  <text x="56" y="195" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 2 层 · AI 原生网关编译与缓存（AI Backend Gateway）</text>
+
+  <rect x="56" y="215" width="280" height="66" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="70" y="236" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. Schema 提取与规范化签名</text>
+  <text x="70" y="254" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">提取 response_format 结构体</text>
+  <text x="70" y="270" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">计算 Canonical JSON 规范哈希签名</text>
+
+  <rect x="350" y="215" width="290" height="66" rx="6" fill="#fffbeb" stroke="#eb6c36" stroke-width="1"/>
+  <text x="364" y="236" fill="#b45309" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. DFA 状态机 LRU 缓存池</text>
+  <text x="364" y="254" fill="#0d9488" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 缓存命中: 直接提取预编译 DFA (0.01ms)</text>
+  <text x="364" y="270" fill="#dc2626" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 未命中: 异步多线程编译并回填 (~2ms)</text>
+
+  <rect x="654" y="215" width="312" height="66" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="668" y="236" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 协议封装与内部下发</text>
+  <text x="668" y="254" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">将 DFA 上下文注入推理调度参数</text>
+  <text x="668" y="270" fill="#2563eb" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">基于内部双向 gRPC 管道高速直连推理集群</text>
+
+  <!-- Downward Arrow 2 -->
+  <line x1="510" y1="295" x2="510" y2="315" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+
+  <!-- Tier 3: Inference Cluster (vLLM / SGLang) -->
+  <rect x="40" y="315" width="940" height="150" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="315" width="940" height="30" rx="6" fill="#f0fdf4"/>
+  <text x="56" y="335" fill="#115e59" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 3 层 · 生产级推理引擎（vLLM / SGLang Continuous Batching 约束采样）</text>
+
+  <rect x="56" y="355" width="280" height="96" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="70" y="377" fill="#0f766e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">动态批处理调度器</text>
+  <text x="70" y="397" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 为当前流绑定专属 Grammar Processor</text>
+  <text x="70" y="415" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 隔离异构并发请求的独立状态机游标</text>
+  <text x="70" y="433" fill="#115e59" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• Jump-Forward 直写固定语法键名</text>
+
+  <rect x="350" y="355" width="290" height="96" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="364" y="377" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 显存并行掩码过滤 (SIMD)</text>
+  <text x="364" y="397" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. GPU 产出当前 Step 的 12.8 万维 Logits</text>
+  <text x="364" y="415" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 调用 Bitset[State] 并行写入 -∞</text>
+  <text x="364" y="433" fill="#eb6c36" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 过滤后词表仅保留语法绝对合规项</text>
+
+  <rect x="654" y="355" width="312" height="96" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="668" y="377" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">合规子集采样与状态机步进</text>
+  <text x="668" y="397" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 在过滤后子集执行 Softmax 采样</text>
+  <text x="668" y="415" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 步进状态机游标: S_next = DFA.Next(S, tok)</text>
+  <text x="668" y="433" fill="#2563eb" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 实时向客户端流式输出 SSE 数据块</text>
+
+  <!-- Downward Arrow 3 -->
+  <line x1="510" y1="465" x2="510" y2="485" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+
+
+  <!-- Tier 4: Downstream Zero-Retry Delivery -->
+  <rect x="40" y="485" width="940" height="55" rx="8" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="510" y="508" fill="#115e59" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">✓ 下游零重试安全交付：100% 格式合规且满足字段约束的结构化数据流</text>
+  <text x="510" y="528" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">杜绝“重试循环”与 JSON 解析异常崩溃，端到端 P99 延迟缩短 60%，直接落库 MySQL / PG / Elasticsearch</text>
+
+</svg>

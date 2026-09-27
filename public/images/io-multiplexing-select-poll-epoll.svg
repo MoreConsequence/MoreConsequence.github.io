@@ -13,104 +13,104 @@
   <rect width="960" height="600" fill="#f5f5f5" />
 
   
-  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="'Geist Mono', 'Noto Sans Mono SC', monospace" font-weight="500" letter-spacing="0.18em">I/O MULTIPLEXING EVOLUTION · SELECT, POLL &amp; EPOLL READINESS CONTRACT</text>
-  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="'Instrument Serif', 'Noto Serif SC', serif" font-weight="400">Linux I/O 多路复用机制演进与架构本质</text>
-  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="400">select (位图全拷贝) ➔ poll (数组线性扫描) ➔ epoll (红黑树长驻 + 就绪链表增量交付)</text>
+  <text x="40" y="48" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="500" letter-spacing="0.18em">I/O MULTIPLEXING EVOLUTION · SELECT, POLL &amp; EPOLL READINESS CONTRACT</text>
+  <text x="40" y="84" fill="#2d3142" font-size="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="400">Linux I/O 多路复用机制演进与架构本质</text>
+  <text x="40" y="112" fill="#4f5d75" font-size="12" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="400">select (位图全拷贝) ➔ poll (数组线性扫描) ➔ epoll (红黑树长驻 + 就绪链表增量交付)</text>
 
   
   
   <g transform="translate(40, 136)">
     <rect width="205" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SELECT</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">select 位图全量</text>
+    <text x="62" y="25" fill="#2d3142" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="600" text-anchor="middle">SELECT</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">select 位图全量</text>
 
     
     <rect x="12" y="42" width="181" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">fd_set (1024 Max)</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每轮调用全量传入 read/write 位图</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 内核重写位图，应用必须全量遍历</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">O(N) Full Bitmap Scan</text>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">fd_set (1024 Max)</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 每轮调用全量传入 read/write 位图</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 内核重写位图，应用必须全量遍历</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">O(N) Full Bitmap Scan</text>
 
     
     <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">局限性：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• FD_SETSIZE 硬性限制 1024；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 用户态与内核态频繁全量拷位图；</text>
-    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 难以支撑高并发大连接网络。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">局限性：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• FD_SETSIZE 硬性限制 1024；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 用户态与内核态频繁全量拷位图；</text>
+    <text x="20" y="226" fill="#4f5d75" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 难以支撑高并发大连接网络。</text>
   </g>
 
   
   <g transform="translate(260, 136)">
     <rect width="215" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">POLL</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">poll 数组结构</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">POLL</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">poll 数组结构</text>
 
     
     <rect x="12" y="42" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">struct pollfd Array</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 解除 1024 描述符数量上限约束</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 依然每轮传递数组，内核逐项扫描</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">Linear Array Iteration</text>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">struct pollfd Array</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 解除 1024 描述符数量上限约束</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">• 依然每轮传递数组，内核逐项扫描</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Linear Array Iteration</text>
 
     
     <rect x="12" y="148" width="191" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">未解之痛：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 每次系统调用仍需拷贝全量数组；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• 万级连接下 O(N) 检查开销沉重；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 并未解决关注关系保存的问题。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">未解之痛：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 每次系统调用仍需拷贝全量数组；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">• 万级连接下 O(N) 检查开销沉重；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 并未解决关注关系保存的问题。</text>
   </g>
 
   
   <g transform="translate(490, 136)">
     <rect width="205" height="376" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#eb6c36" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">EPOLL</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">epoll 内核长驻</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">EPOLL</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">epoll 内核长驻</text>
 
     
     <rect x="12" y="42" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">RBTree + Ready List</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• epoll_ctl 在内核红黑树持久保存关注</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700">• 中断回调增量挂载就绪链表 rdllist</text>
-    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="'Geist Mono', monospace">O(K) Incremental Delivery</text>
+    <text x="20" y="62" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">RBTree + Ready List</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• epoll_ctl 在内核红黑树持久保存关注</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700">• 中断回调增量挂载就绪链表 rdllist</text>
+    <text x="20" y="110" fill="#eb6c36" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">O(K) Incremental Delivery</text>
 
     
     <rect x="12" y="148" width="181" height="96" rx="3" fill="#ffffff" stroke="#eb6c36" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">架构突破：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 0 重复全量关注集拷贝；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="700">• epoll_wait 耗时仅与就绪数 K 相关；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 铸就现代高并发 Linux 网络基石。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">架构突破：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 0 重复全量关注集拷贝；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="700">• epoll_wait 耗时仅与就绪数 K 相关；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 铸就现代高并发 Linux 网络基石。</text>
   </g>
 
   
   <g transform="translate(710, 136)">
     <rect width="210" height="376" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
     <rect x="12" y="12" width="100" height="18" rx="2" fill="#2d3142" />
-    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">ESSENCE</text>
-    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">多路复用本质</text>
+    <text x="62" y="25" fill="#ffffff" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="700" text-anchor="middle">ESSENCE</text>
+    <text x="118" y="26" fill="#2d3142" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">多路复用本质</text>
 
     
     <rect x="12" y="42" width="186" height="96" rx="3" fill="#f5f5f5" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="'Geist Mono', monospace">Interest vs Readiness</text>
-    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 谁保存关注集？用户态 vs 内核态</text>
-    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 谁交付就绪？全量扫描 vs 事件回调</text>
-    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="'Geist Mono', monospace">Core State Ownership</text>
+    <text x="20" y="62" fill="#2d3142" font-size="8.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Interest vs Readiness</text>
+    <text x="20" y="78" fill="#2d3142" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 谁保存关注集？用户态 vs 内核态</text>
+    <text x="20" y="94" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 谁交付就绪？全量扫描 vs 事件回调</text>
+    <text x="20" y="110" fill="#4f5d75" font-size="7.5" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Core State Ownership</text>
 
     
     <rect x="12" y="148" width="186" height="96" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">演进规律：</text>
-    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="'Geist', 'Noto Sans SC', sans-serif">• 从“轮询检查”到“事件注册订阅”；</text>
-    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif" font-weight="600">• 再到 io_uring 完成度模型；</text>
-    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="'Geist', 'Noto Sans SC', sans-serif">• 推动系统 I/O 架构持续精进。</text>
+    <text x="20" y="170" fill="#2d3142" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">演进规律：</text>
+    <text x="20" y="190" fill="#4f5d75" font-size="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 从“轮询检查”到“事件注册订阅”；</text>
+    <text x="20" y="208" fill="#eb6c36" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-weight="600">• 再到 io_uring 完成度模型；</text>
+    <text x="20" y="226" fill="#2d3142" font-size="8.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 推动系统 I/O 架构持续精进。</text>
   </g>
 
   
   <line x1="40" y1="536" x2="920" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8" />
-  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
+  <text x="40" y="564" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-weight="500" letter-spacing="0.14em">LEGEND</text>
   <rect x="120" y="436.0" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1" />
-  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">select 位图全量扫描与多路复用本质演进规律</text>
+  <text x="140" y="448.0" fill="#4f5d75" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">select 位图全量扫描与多路复用本质演进规律</text>
   <rect x="370" y="436.0" width="12" height="12" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1" />
-  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="'Geist', 'Noto Sans SC', sans-serif">poll 数组结构与 epoll 内核红黑树持久保存核心</text>
+  <text x="390" y="448.0" fill="#4f5d75" font-size="9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">poll 数组结构与 epoll 内核红黑树持久保存核心</text>
 <defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75" /></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36" /></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8" /></marker></defs></svg>

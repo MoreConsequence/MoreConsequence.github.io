@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPosts } from "@/lib/content/posts";
+import { getPostSources } from "@/lib/content/posts";
 import { collectSeries, collectSeriesByPillar, getSeriesIcon } from "@/lib/content/series";
 import { seriesHref } from "@/lib/site-links";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SeriesPage() {
-  const posts = await getAllPosts();
+  const posts = getPostSources();
   const allSeries = collectSeries(posts);
   const pillarGroups = collectSeriesByPillar(posts);
 

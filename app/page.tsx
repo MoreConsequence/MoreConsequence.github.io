@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { PostCard } from "@/components/post/post-card";
-import { getAllPosts } from "@/lib/content/posts";
+import { getPostSources } from "@/lib/content/posts";
 import { getAllPillars, getPostPillarId } from "@/lib/content/taxonomy";
 import { tagHref } from "@/lib/site-links";
 
 export default async function Home() {
-  const posts = await getAllPosts();
+  const posts = getPostSources();
   const featured = posts.filter((post) => post.meta.featured).slice(0, 2);
   const latest = posts.slice(0, 4);
 
@@ -23,7 +23,7 @@ export default async function Home() {
   const seriesCount = new Set(
     posts.map((post) => post.meta.series).filter(Boolean),
   ).size;
-  const charCount = posts.reduce((sum, post) => sum + post.plainText.length, 0);
+  const charCount = posts.reduce((sum, post) => sum + post.body.length, 0);
 
   const stats = [
     { value: String(posts.length), label: "POSTS" },

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
+import "./design-tokens.css";
 import "./kami-global-layer.css";
 import "./editorial-ui.css";
 import "./sandboxes.css";

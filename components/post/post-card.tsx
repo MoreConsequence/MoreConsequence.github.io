@@ -1,13 +1,19 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { PostMeta } from "./post-meta";
-import type { CompiledPost, PostSource } from "@/lib/content/types";
+import type { CompiledPost, PostSource, PostSummary } from "@/lib/content/types";
 import { tagHref } from "@/lib/site-links";
 
-function estimateReadingMinutes(post: PostSource | CompiledPost) {
-  if ("readingTimeMinutes" in post) {
+type CardPost = PostSource | CompiledPost | PostSummary;
+
+export function estimateReadingMinutes(post: CardPost) {
+  if ("readingTimeMinutes" in post && typeof post.readingTimeMinutes === "number") {
     return post.readingTimeMinutes;
   }
-  return Math.max(1, Math.ceil(post.body.length / 500));
+  if ("body" in post && typeof post.body === "string") {
+    return Math.max(1, Math.ceil(post.body.length / 500));
+  }
+  return 5;
 }
 
 export function PostCard({
@@ -15,7 +21,7 @@ export function PostCard({
   index,
   featured = false,
 }: {
-  post: PostSource | CompiledPost;
+  post: CardPost;
   index: number;
   featured?: boolean;
 }) {
@@ -34,15 +40,20 @@ export function PostCard({
         </h2>
         <p>{post.meta.description}</p>
         <ul className="tag-list" aria-label="文章标签">
-          {post.meta.tags.map((tag) => (
-           <li key={tag}>
+          {post.meta.tags.slice(0, 4).map((tag) => (
+            <li key={tag}>
               <Link href={tagHref(tag)}>{tag}</Link>
-           </li>
+            </li>
           ))}
+          {post.meta.tags.length > 4 && (
+            <li className="tag-more" title={`还有 ${post.meta.tags.slice(4).join("、")}`}>
+              <span>+{post.meta.tags.length - 4}</span>
+            </li>
+          )}
         </ul>
       </div>
       <span className="post-card-arrow" aria-hidden="true">
-        ↗
+        <ArrowUpRight size={16} />
       </span>
     </article>
   );

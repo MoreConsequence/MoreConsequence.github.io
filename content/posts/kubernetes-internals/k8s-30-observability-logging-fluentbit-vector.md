@@ -41,7 +41,7 @@ series: "Kubernetes 架构内核与生产实战"
 资深平台架构师在回答该问题时，会清晰解构**业务进程、CRI 运行时、宿主机文件系统、DaemonSet 采集引擎与集中式检索集群的端到端数据流动管道**：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph ContainerRuntime["1. 容器内与 CRI 物理落盘"]
         App["业务进程 (fmt.Println / console.log)"] --> Pipe["stdout/stderr FIFO 管道"]
         Pipe --> Shim["containerd-shim-v2"]
@@ -57,7 +57,7 @@ flowchart TD
     end
 
     subgraph StoragePipeline["3. 集中式管道与下游存储"]
-        Batcher ==="高性能长连接 (HTTP/2 / gRPC)"===> Kafka["Kafka / Pulsar 消息缓冲削峰池"]
+        Batcher == "高性能长连接 (HTTP/2 / gRPC)" ==> Kafka["Kafka / Pulsar 消息缓冲削峰池"]
         Kafka --> Engine["ClickHouse / Elasticsearch / VictoriaLogs"]
     end
 ```

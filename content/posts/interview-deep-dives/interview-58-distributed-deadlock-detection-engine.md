@@ -4,7 +4,7 @@ description: "深入剖析分布式数据库（如 TiDB、CockroachDB、Google S
 publishedAt: "2026-06-13"
 tags: ["系统设计", "面试题", "分布式数据库", "死锁检测", "Wound-Wait", "两阶段锁", "事务引擎", "高并发"]
 category: 面试深度拆解
-draft: true
+draft: false
 featured: false
 series: "资深工程师面试深度拆解"
 ---
@@ -76,28 +76,29 @@ sequenceDiagram
 事后检测流派（Deadlock Detection）的核心理念是：**允许死锁在运行时发生，但通过独立的检测引擎，在数十毫秒内快速发现环路并精准杀掉代价最小的事务**。
 
 ```mermaid
-flowchart TD
-    subgraph LocalNodes["各物理数据分片节点 (Region Nodes)"]
-        N1["Node 1 本地等待事件\n(T2 等待 T1 on KeyA)"]
-        N2["Node 2 本地等待事件\n(T3 等待 T2 on KeyB)"]
-        N3["Node 3 本地等待事件\n(T1 等待 T3 on KeyC)"]
+flowchart LR
+    subgraph LocalNodes["数据分片节点 (Region Nodes)"]
+        direction TB
+        N1["Node 1 (T2 等 T1)"]
+        N2["Node 2 (T3 等 T2)"]
+        N3["Node 3 (T1 等 T3)"]
     end
 
-    subgraph Collector["中心化死锁收集器 (Deadlock Detector Leader)"]
-        Queue["高吞吐异步事件队列 (gRPC Stream)"]
-        WFG["内存全局等待图 (Wait-For Graph)\n有向图结构: V={T1, T2, T3}, E={T2->T1, T3->T2, T1->T3}"]
-        Tarjan["Tarjan / DFS 强连通分量检测算法\n(每隔 50ms 触发一次全图扫描)"]
-        VictimChooser["牺牲者评估器 (Victim Selection)\n评估启动时间、修改行数、撤回代价"]
+    subgraph Collector["中心化死锁收集器 (Leader)"]
+        direction TB
+        Queue["gRPC 异步事件队列"]
+        WFG["全局等待图 (Wait-For Graph)"]
+        Tarjan["Tarjan / DFS 环路检测 (50ms)"]
+        Victim["牺牲者评估器 (Victim Selection)"]
+        Queue --> WFG --> Tarjan --> Victim
     end
 
     subgraph Resolution["解除死锁"]
-        Abort["向特定节点下发强制中止指令:\nABORT Transaction T3 (Rollback)"]
+        Abort["下发强制中止 (Rollback T3)"]
     end
 
-    N1 -->|"Push 等待边"| Queue
-    N2 -->|"Push 等待边"| Queue
-    N3 -->|"Push 等待边"| Queue
-    Queue --> WFG --> Tarjan --> VictimChooser --> Abort
+    N1 & N2 & N3 -->|"Push 等待边"| Queue
+    Victim --> Abort
 ```
 
 ### 3.1 集中式等待图（Centralized WFG）构建
@@ -125,23 +126,23 @@ flowchart TD
 两大开山算法由 Rosenkrantz、Stearns 和 Lewis 于 1978 年在 ACM TODS 奠基论文中提出，核心依托是：**每个事务在启动时被授予一个单调递增的全局唯一时间戳 $TS(T)$。时间戳越小，代表事务启动越早，优先级（Priority）越高（Older is Higher）**。
 
 ```mermaid
-flowchart TD
-    subgraph WaitDie["Wait-Die 算法 (非抢占式 / 怯懦老者)"]
+flowchart LR
+    subgraph WaitDie["Wait-Die 算法 (非抢占 / 怯懦老者)"]
         direction TB
-        WD_Cond{"事务 T_req 请求 T_hold 持有的锁\nTS(T_req) < TS(T_hold) ?"}
-        WD_Yes["老事务请求新事务的锁:\n允许老事务等待 (Wait)"]
-        WD_No["新事务请求老事务的锁:\n直接杀死新事务并回滚 (Die)"]
-        WD_Cond -->|"Yes（老要新）"| WD_Yes
-        WD_Cond -->|"No（新要老）"| WD_No
+        WD_Cond{"TS(req) < TS(hold)？"}
+        WD_Yes["老要新: 允许老者等待 (Wait)"]
+        WD_No["新要老: 直接杀死新者 (Die)"]
+        WD_Cond -->|"Yes (老要新)"| WD_Yes
+        WD_Cond -->|"No (新要老)"| WD_No
     end
 
-    subgraph WoundWait["Wound-Wait 算法 (抢占式 / 霸道老者 - 工业界首选)"]
+    subgraph WoundWait["Wound-Wait 算法 (抢占式 / 霸道老者)"]
         direction TB
-        WW_Cond{"事务 T_req 请求 T_hold 持有的锁\nTS(T_req) < TS(T_hold) ?"}
-        WW_Yes["老事务请求新事务的锁:\n老者抢占! 强制击伤并中止新者 (Wound/Abort)"]
-        WW_No["新事务请求老事务的锁:\n允许新事务排队等待 (Wait)"]
-        WW_Cond -->|"Yes（老要新）"| WW_Yes
-        WW_Cond -->|"No（新要老）"| WW_No
+        WW_Cond{"TS(req) < TS(hold)？"}
+        WW_Yes["老要新: 抢占杀死新者 (Wound)"]
+        WW_No["新要老: 允许排队等待 (Wait)"]
+        WW_Cond -->|"Yes (老要新)"| WW_Yes
+        WW_Cond -->|"No (新要老)"| WW_No
     end
 ```
 
@@ -167,29 +168,24 @@ flowchart TD
 当在事后检测（WFG）中发现死锁环路时，选择“杀掉哪个事务”至关重要。一个糟糕的牺牲者选择器会导致系统性能暴跌。
 
 ```mermaid
-flowchart TD
-    subgraph DeadlockRing["检测到死锁闭环: T1 -> T2 -> T3 -> T1"]
-        Ring["三方循环等待"]
-    end
+flowchart LR
+    Ring["检测到死锁闭环<br/>T1 ➔ T2 ➔ T3 ➔ T1"]
 
-    subgraph CostModel["多维权重损失代价评估方程 (Victim Cost Function)"]
-        F1["1. 事务已消耗的写操作数 W_ops (回滚代价)"]
-        F2["2. 事务已持有的锁数量 N_locks"]
-        F3["3. 事务的启动时间生存期 (Age)"]
-        F4["4. 事务已重试的次数 (RetryCount - 防饥饿)"]
-        Formula["Cost = alpha * W_ops + beta * N_locks - gamma * Age + delta * RetryCount"]
-        F1 --> Formula
-        F2 --> Formula
-        F3 --> Formula
-        F4 --> Formula
+    subgraph CostModel["代价评估 (Victim Cost Function)"]
+        direction TB
+        Factors["考量指标:<br/>• 写操作数 W_ops (回滚代价)<br/>• 持有锁数量 N_locks<br/>• 事务年龄 Age<br/>• 重试次数 RetryCount"]
+        Formula["Cost = α*W + β*N - γ*Age + δ*Retry"]
+        Factors --> Formula
     end
 
     subgraph Decision["决策执行"]
-        PickMin["挑选 Cost 得分最小的事务作为牺牲者 (Victim)"]
-        Ring --> CostModel --> PickMin
-        AbortVictim["下发 ABORT 指令并返回可重试错误码 (ErrDeadlockRetryable)"]
+        direction TB
+        PickMin["选 Cost 最小事务为牺牲者"]
+        AbortVictim["下发 ABORT 指令 (可重试)"]
         PickMin --> AbortVictim
     end
+
+    Ring --> CostModel --> Decision
 ```
 
 ### 5.1 智能回滚惩罚函数

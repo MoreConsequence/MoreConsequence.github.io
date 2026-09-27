@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 560" width="1020" height="560" role="img" aria-labelledby="cancel-seq-title cancel-seq-desc">
+  <title id="cancel-seq-title">AI 流式网关级联取消与 GPU 显存毫秒级自愈释放时序</title>
+  <desc id="cancel-seq-title">展示从客户端断连事件触发、网关捕捉 EPOLLRDHUP、发送 HTTP/2 RST_STREAM 到 vLLM 终止迭代并即时释放 PagedAttention 显存物理块的完整级联时序闭环。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="560" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">AI 流式网关级联取消（Cascading Cancel）与显存即刻自愈</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">从客户端 TCP 断连到 GPU KV Cache 物理块 5ms 释放：全链路协同规避 40% 无效算力空转</text>
+
+  <!-- Lifelines -->
+  <line x1="120" y1="133" x2="120" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="370" y1="133" x2="370" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="630" y1="133" x2="630" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="890" y1="133" x2="890" y2="495" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Participants -->
+  <rect x="50" y="95" width="140" height="38" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="120" y="119" fill="#1e40af" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">前端 / 浏览器 APP</text>
+
+  <rect x="300" y="95" width="140" height="38" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="370" y="119" fill="#0f172a" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">AI 流式网关 (Go/epoll)</text>
+
+  <rect x="560" y="95" width="140" height="38" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="630" y="119" fill="#c2410c" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">推理引擎 (vLLM / Triton)</text>
+
+  <rect x="820" y="95" width="140" height="38" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="890" y="119" fill="#115e59" font-size="13" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">PagedAttention 显存池</text>
+
+  <!-- Activation Bars -->
+  <!-- Client: active from 145 to 225 -->
+  <rect x="112" y="145" width="16" height="80" rx="3" fill="#bfdbfe" stroke="#2e5aa8" stroke-width="1"/>
+
+  <!-- Gateway: active from 145 to 400 -->
+  <rect x="362" y="145" width="16" height="255" rx="3" fill="#e2e8f0" stroke="#4f5d75" stroke-width="1"/>
+
+  <!-- Inference: active from 170 to 400 -->
+  <rect x="622" y="170" width="16" height="230" rx="3" fill="#ffedd5" stroke="#eb6c36" stroke-width="1"/>
+
+  <!-- PagedAttention: active from 195 to 370 -->
+  <rect x="882" y="195" width="16" height="175" rx="3" fill="#ccfbf1" stroke="#0d9488" stroke-width="1"/>
+
+
+  <!-- Message 1: Client -> Gateway -->
+  <line x1="128" y1="150" x2="362" y2="150" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <text x="245" y="142" fill="#1e40af" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. POST /chat/completions (stream=true)</text>
+
+  <!-- Message 2: Gateway -> Inference -->
+  <line x1="378" y1="175" x2="622" y2="175" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="500" y="167" fill="#334155" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 转发流式会话 (seq_id=892)</text>
+
+  <!-- Message 3: Inference -> PagedAttention -->
+  <line x1="638" y1="200" x2="882" y2="200" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="760" y="192" fill="#0f766e" font-size="12" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 初始分配 KV Cache 物理块 (Blocks #402, #403)</text>
+
+  <!-- Message 4: Client Cancels (Red accent) -->
+  <line x1="128" y1="225" x2="362" y2="225" stroke="#eb6c36" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arrow-accent)"/>
+  <text x="245" y="217" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">4. 用户主动点击“停止” / 关标签 (TCP FIN / RST)</text>
+
+  <!-- Gateway epoll Detection Box -->
+  <rect x="235" y="240" width="270" height="42" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="370" y="258" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网关 epoll 触发 EPOLLRDHUP / EOF</text>
+  <text x="370" y="274" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">Go 运行时关闭 ctx.Done()，立即触发取消钩子</text>
+
+  <!-- Message 5: Gateway -> Inference (H2 RST_STREAM) -->
+  <line x1="378" y1="298" x2="622" y2="298" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <text x="500" y="290" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">5. 发送 HTTP/2 RST_STREAM 或 gRPC CANCEL 帧</text>
+
+  <!-- Message 6: Inference -> PagedAttention (Free memory) -->
+  <line x1="638" y1="332" x2="882" y2="332" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="760" y="324" fill="#0f766e" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">6. Scheduler 剥离队列，BlockSpaceManager.free()</text>
+
+  <!-- Self recovery annotation in PagedAttention -->
+  <rect x="750" y="345" width="220" height="38" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="860" y="361" fill="#115e59" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">7. 物理显存块归还 FreeList 顶部</text>
+  <text x="860" y="375" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">下个 Iteration 立即分配给新用户！</text>
+
+  <!-- Message 8: Inference -> Gateway ACK -->
+  <line x1="622" y1="395" x2="378" y2="395" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+  <text x="500" y="388" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">8. 上游返回 STREAM_CANCELLED 确认 (耗时 &lt; 8ms)</text>
+
+  <!-- Green Highlight Result Banner -->
+  <rect x="545" y="420" width="435" height="54" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="762" y="442" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">✓ 算力与显存毫秒级自愈释放闭环</text>
+  <text x="762" y="462" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 算力耗费被及时截断，KV Cache 物理块 5ms 内全额归还，零幽灵开销！</text>
+
+  <!-- Bottom Summary Callout -->
+  <rect x="40" y="505" width="940" height="38" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="510" y="529" fill="#1e40af" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">核心收益：通过全链路级联取消，生产环境平均节省 25%~40% 的 GPU 算力浪费，将并发容量提升 1.4 倍！</text>
+
+</svg>

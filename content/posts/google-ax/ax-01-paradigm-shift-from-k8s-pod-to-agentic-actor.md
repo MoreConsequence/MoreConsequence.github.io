@@ -22,26 +22,7 @@ featured: true
 
 2025 至 2026 年，随着多智能体协作（Multi-Agent System）与自主软件工程师（如 Devin、Cursor Agent、Pi Agent）的大规模商用落地，几乎所有云原生平台团队都经历了如下典型事故路径：
 
-```
-[ 用户下发开发任务 ]
-         │
-         ▼
-[ K8s API Server 创建 Pod ]
-   ├── 调度绑卡/绑核 (1~2s)
-   ├── 镜像拉取与启动 (3~5s)
-   ├── 克隆海量代码仓库 (5~10s)
-   └── 启动 Python/Node 依赖与 MCP Server (5~15s)
-         │
-         ▼ (已耗时近 30 秒，Agent 正式进入就绪)
-[ Agent 发送 Prompt 到 LLM ] ──┐
-   ▲                           │
-   │   【漫长等待 LLM 吐字】    │  挂钟时间：15 秒 ~ 2 分钟
-   │   CPU 利用率：0.1%        │  GPU/内存：死锁保留不可挪用
-   └── 【收到流式 Token 响应】 ──┘
-         │
-         ▼ (Agent 尝试调用 Bash 运行测试)
-   执行测试脚本 ──> 遭遇 Prompt 注入 ──> 恶意代码尝试读取宿主机 `/proc` 逃逸
-```
+![经典 Kubernetes 托管 AI Agent 的生命周期事故链](../../../public/images/k8s-agent-pod-coldstart-sequence.svg)
 
 平台工程师面临着一个前所未有的生死权衡抉择：
 1. **策略 A：一 Pod 一 Agent，生命周期全程保留**
@@ -59,17 +40,7 @@ featured: true
 
 要理解 Google 为何在 2026 年 9 月开源 **AX（Agent Executor，也称 Open Agentic Orchestrator）**，我们必须从第一性原理审视计算工作负载的代际迁移：
 
-```
-【第一代：无状态微服务】 (Stateless Service)
-请求到达 ──> [ CPU/内存密集成工作 ] (10~500ms) ──> 响应返回 ──> 立即复位
-
-【第二代：批处理与分布式训练】 (Batch / ML Training)
-启动 ──> [ 跑满 CPU/GPU/网卡 Run-to-Completion ] (数小时~数天) ──> 任务退出
-
-【第三代：AI Agent 有状态突发 Actor】 (Stateful Bursty Actor)
-启动 ──> [极短突发计算 (50ms)] ──> 【漫长等待外部I/O/模型/人类 (10s~1h)】 ──> [突发执行]
-         └── 伴随重型环境状态 (Git、本地变更、文件树、活跃 MCP 长连接) ──┘
-```
+![三代计算工作负载演进史与特征对比](../../../public/images/three-workload-paradigms-evolution.svg)
 
 ### 三代计算工作负载对比矩阵
 
@@ -93,18 +64,7 @@ featured: true
 
 ## 三、 原生 Kubernetes 接不住 Agent 的三大核心死穴
 
-```
-                      ┌────────────────────────────────────────┐
-                      │    原生 Kubernetes 承载 Agent 三大死穴   │
-                      └────────────────────────────────────────┘
-                                     │
-         ┌───────────────────────────┼───────────────────────────┐
-         ▼                           ▼                           ▼
-  【死穴一：密度危机】          【死穴二：状态漂移与冷启动】        【死穴三：安全逃逸黑洞】
-  • 1 Pod 对应 1 Agent         • 每次重拉代码耗时 15~30s         • Agent 拥有 Shell 执行权
-  • 空等模型导致 CPU 仅 3%      • MCP Server 频繁重建握手        • 提示词注入引发特权逃逸
-  • 单节点仅能撑 50~100 个      • 本地暂存文件丢失中断执行        • 传统 NetworkPolicy 防不住外发
-```
+![原生 Kubernetes 承载 AI Agent 的三大致命死穴](../../../public/images/google-ax-three-deadlocks-vs-kubernetes.svg)
 
 ### 1. 密度危机（The Density & Cost Crisis）
 在标准 Linux 容器模型中，每个 Pod 拥有独立的 Network Namespace、Mount Namespace 以及绑定在宿主机 cgroups 的资源控制树。
@@ -137,29 +97,7 @@ featured: true
 
 AX 的设计哲学可以凝结为三大第一性原理突破：
 
-```
-                    ┌──────────────────────────────────────────────┐
-                    │          Google AX 架构全景分层图             │
-                    └──────────────────────────────────────────────┘
-                                           │
-  [ 上层开发者 / Agent 框架 ] ──> 使用 `ax` CLI (ax apply / ax watch / ax ssh)
-                                           │
-  ═════════════════════════════════════════╪═══════════════════════════════════════
-  [ AX 声明式控制平面: ax.io/v1alpha1 ]   │  (Kubernetes 自定义控制器回路)
-    ├── Task        : 定义执行边界、生命周期钩子与计算配额
-    ├── Workspace   : 预拉取 Git 仓库、预装依赖、预挂载 MCP 服务
-    ├── Gateway     : 零信任出站流量白名单与动态凭据剥离
-    └── Model       : 统一大模型路由、Token 配额与审计治理
-  ═════════════════════════════════════════╪═══════════════════════════════════════
-                                           │
-  [ Agent Substrate 密集运行时 ]          │  (Actor 复用与超融合调度)
-    ├── 高密多路复用调度器                  │  单个宿主 Pod 承载 500+ Agent Actor
-    └── 亚秒级挂起/唤醒引擎 (Suspend/Resume)│  等待模型时零 CPU 冻结，<1s 瞬间复苏
-                                           │
-  ═════════════════════════════════════════╪═══════════════════════════════════════
-  [ 底层内核与沙箱防御: gVisor (runsc) ]   │  (零信任独立内核级安全边界)
-    └── Sentry 用户态内核                  │  接管 300+ 系统调用，杜绝容器逃逸与凭据窃取
-```
+![Google AX 体系级解题架构总览](../../../public/images/google-ax-holistic-architecture-stack.svg)
 
 ### 1. 从“Pod 绑定”到“Actor 运行时多路复用”（Agent Substrate）
 - AX 引入了专为 Agent 打造的核心运行时底座 —— **Agent Substrate**。

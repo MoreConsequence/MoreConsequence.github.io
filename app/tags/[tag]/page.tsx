@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostList } from "@/components/post/post-list";
-import { getAllPosts, getPostSources } from "@/lib/content/posts";
+import { getPostSources } from "@/lib/content/posts";
 import { collectTags, decodeTag, getPostsForTag } from "@/lib/content/tags";
 import { encodeRouteSegment } from "@/lib/site-links";
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 
 export default async function TagPage({ params }: PageProps) {
   const tag = decodeTag((await params).tag);
-  const posts = getPostsForTag(await getAllPosts(), tag);
+  const posts = getPostsForTag(getPostSources(), tag);
 
   if (!posts.length) notFound();
 

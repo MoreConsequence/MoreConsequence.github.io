@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "LiteLLM", "RouteLLM", "模型路由", "故障级联", "FinOps", "系统架构"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -31,19 +31,13 @@ AI 网关承担着大模型世界中的 **“流量调度司令部”** 职责�
 
 在经典微服务中，所有同类服务的接口签名完全一致。但大模型供应商之间存在严重的**碎片化与语义鸿沟**：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                      大模型供应商异构调用裂痕                          │
-├──────────────────┬──────────────────────┬──────────────────────────────┤
-│ 厂商 / 引擎      │ 请求格式与参数差异   │ 典型故障与限流形态          │
-├──────────────────┼──────────────────────┼──────────────────────────────┤
-│ OpenAI           │ messages, stream     │ 429 TPM 限制, 400 窗口超限    │
-│ Anthropic Claude │ system 分离, max_tok │ 529 Overloaded, 429 降频     │
-│ Google Gemini    │ contents/parts 结构  │ 资源耗尽 ResourceExhausted   │
-│ AWS Bedrock      │ 平台封装与原生 SDK    │ 权限与配额多级拦截           │
-│ vLLM (私有集群)  │ OpenAI 兼容层        │ 显存 OOM, 队列排队导致 504   │
-└──────────────────┴──────────────────────┴──────────────────────────────┘
-```
+| 厂商 / 引擎 | 请求格式与参数差异 | 典型故障与限流形态 |
+| :--- | :--- | :--- |
+| **OpenAI** | messages, stream | 429 TPM 限制, 400 窗口超限 |
+| **Anthropic Claude** | system 分离, max_tokens | 529 Overloaded, 429 降频 |
+| **Google Gemini** | contents/parts 结构 | 资源耗尽 ResourceExhausted |
+| **AWS Bedrock** | 平台封装与原生 SDK | 权限与配额多级拦截 |
+| **vLLM (私有集群)** | OpenAI 兼容层 | 显存 OOM, 队列排队导致 504 |
 
 传统微服务熔断器（如基于滑动窗口错误率的 Circuit Breaker）如果直接照搬，会遭遇三大难题：
 1. **错误码与错误原因深度交织**：返回 400 不一定是客户端错误，很可能是因为历史对话追加导致 `context_length_exceeded`，此时换同规格模型依然报错，必须降级给超大上下文窗口模型；
@@ -57,27 +51,30 @@ AI 网关承担着大模型世界中的 **“流量调度司令部”** 职责�
 **LiteLLM** 是当前开源社区采用最广泛的大模型代理与统一网关核心。其核心调度逻辑集中在 `litellm/router.py`。它通过在内存中维护每个 `deployment` 的健康度状态机，实现了极富弹性的路由矩阵。
 
 ```mermaid
-flowchart TD
-    Req["客户端请求<br/>model: 'production-coding'"] --> Router["LiteLLM Router"]
+flowchart LR
+    Req["客户端请求<br/>model: 'coding'"] --> RouterCore
 
     subgraph RouterCore["Router 核心调度算法"]
-        PickModel["1. 解析逻辑模型映射 (Model Group)<br/>找到对应的物理部署列表 (Deployments)"]
-        FilterHealthy["2. 过滤处于 Cooldown 冷却状态的节点"]
-        Strategy["3. 执行路由策略:<br/>- latency-based-routing (基于 P95 延迟)<br/>- usage-based-routing (基于当前并发/TPM)<br/>- simple-shuffle / weighted"]
+        direction TB
+        PickModel["1. 解析模型组 (Model Group)"]
+        FilterHealthy["2. 过滤 Cooldown 冷却节点"]
+        Strategy["3. 延迟 / 负载自适应选路"]
+        PickModel --> FilterHealthy --> Strategy
     end
 
-    Router --> PickModel --> FilterHealthy --> Strategy
+    RouterCore --> Primary["主节点: Azure-OpenAI"]
+    Primary -->|"200 OK"| Done["记录指标返回客户端"]
+    Primary -->|"429/5xx"| FallbackEngine
 
-    Strategy --> Primary["发送给主部署节点: Azure-OpenAI-EastUS"]
-    
-    Primary -->|"成功 (HTTP 200)"| Done["记录延迟与成功计数<br/>返回客户端"]
-    Primary -->|"失败 (429 RateLimit / 5xx)"| ErrorHandler["Router 异常捕获状态机"]
-
-    subgraph FallbackEngine["容灾与降级级联状态机"]
-        ErrorHandler --> MarkCool["将该部署标记为 Cooldown<br/>启动退避计时器 (Base: 5s, Exp: 2x)"]
-        MarkCool --> CheckError{"检查异常类型"}
-        CheckError -->|"RateLimit / Down"| ModelFallback["Fallback 路由:<br/>同组备用节点 (AWS Bedrock Claude)"]
-        CheckError -->|"ContextWindowExceeded"| WindowFallback["Context 降级:<br/>升级至 128k 超大窗口模型 (DeepSeek-V3)"]
+    subgraph FallbackEngine["容灾与降级状态机"]
+        direction TB
+        MarkCool["标记 Cooldown (指数退避)"]
+        CheckError{"异常类型？"}
+        ModelFallback["备用节点: AWS Bedrock"]
+        WindowFallback["大窗口降级: DeepSeek-V3"]
+        MarkCool --> CheckError
+        CheckError -->|"429/Down"| ModelFallback
+        CheckError -->|"Context超限"| WindowFallback
     end
 
     ModelFallback --> Done

@@ -3,7 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { compileMarkdown } from "./markdown";
 import { postMetaSchema } from "./schema";
-import type { CompiledPost, PostSource } from "./types";
+import type { CompiledPost, PostSource, PostSummary } from "./types";
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
 
@@ -93,34 +93,70 @@ export function getPostSources(environment = process.env.NODE_ENV) {
   return readPostSources(postsDirectory, environment);
 }
 
+export function getPostSummaries(environment = process.env.NODE_ENV): PostSummary[] {
+  const sources = getPostSources(environment);
+  return sources.map((post) => ({
+    slug: post.slug,
+    meta: post.meta,
+    readingTimeMinutes: Math.max(1, Math.ceil(post.body.length / 500)),
+  }));
+}
+
+const singlePostCache = new Map<string, Promise<CompiledPost>>();
+let allPostsPromise: Promise<CompiledPost[]> | null = null;
+
+export async function getPostBySlug(
+  slug: string,
+  environment = process.env.NODE_ENV,
+): Promise<CompiledPost | undefined> {
+  const sources = getPostSources(environment);
+  const source = sources.find((post) => post.slug === slug);
+  if (!source) return undefined;
+
+  if (environment !== "development") {
+    const cached = singlePostCache.get(slug);
+    if (cached) return cached;
+  }
+
+  const promise = (async () => {
+    const compiled = await compileMarkdown(source.body);
+    return {
+      ...source,
+      ...compiled,
+    };
+  })();
+
+  if (environment !== "development") {
+    singlePostCache.set(slug, promise);
+  }
+  return promise;
+}
+
 export async function getAllPosts(
   environment = process.env.NODE_ENV,
 ): Promise<CompiledPost[]> {
-  if (environment === "production") {
-    const cached = compiledPostCache.get("production");
-    if (cached) return cached;
-
-    const compilation = Promise.all(
-      getPostSources(environment).map(async (post) => ({
-        ...post,
-        ...(await compileMarkdown(post.body)),
-      })),
-    );
-    compiledPostCache.set("production", compilation);
-    return compilation;
+  if (allPostsPromise && environment !== "test") {
+    return allPostsPromise;
   }
 
-  return Promise.all(
-    getPostSources(environment).map(async (post) => ({
-      ...post,
-      ...(await compileMarkdown(post.body)),
-    })),
+  const posts = getPostSources(environment);
+  const compilation = Promise.all(
+    posts.map(async (post) => {
+      const cached = singlePostCache.get(post.slug);
+      if (cached) return cached;
+
+      const compiled = await compileMarkdown(post.body);
+      const result = {
+        ...post,
+        ...compiled,
+      };
+      singlePostCache.set(post.slug, Promise.resolve(result));
+      return result;
+    }),
   );
-}
 
-export async function getPostBySlug(slug: string) {
-  const posts = await getAllPosts();
-  return posts.find((post) => post.slug === slug);
+  if (environment !== "test") {
+    allPostsPromise = compilation;
+  }
+  return compilation;
 }
-
-const compiledPostCache = new Map<string, Promise<CompiledPost[]>>();

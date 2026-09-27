@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 460" width="1020" height="460" role="img" aria-labelledby="vllm-abort-title vllm-abort-desc">
+  <title id="vllm-abort-title">vLLM 内部级联中止与 PagedAttention 显存物理块回收架构</title>
+  <desc id="vllm-abort-desc">展示从网关发出 abort(request_id) 到 AsyncLLMEngine 标记状态、Scheduler 剥离调度队列、BlockSpaceManager 递减引用计数并将 GPU 物理块归还 FreeList 顶部的完整架构闭环。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="460" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">vLLM 内部级联中止（Abort）与显存物理块自愈回收架构</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逐层剖析 AsyncLLMEngine 调度剥离与 PagedAttention 显存物理块 O(1) 释放流转机制</text>
+
+  <!-- Flow Steps: 3 Columns -->
+  <!-- Step 1: Engine Layer -->
+  <rect x="40" y="95" width="280" height="300" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="280" height="34" rx="8" fill="#eff6ff"/>
+  <text x="54" y="118" fill="#1e40af" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 1 层 · 异步引擎与追踪 (Async Engine)</text>
+
+  <!-- Ingress Trigger -->
+  <rect x="54" y="145" width="252" height="52" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="66" y="167" fill="#991b1b" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网关触发取消信号</text>
+  <text x="66" y="185" fill="#475569" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">HTTP/2 RST_STREAM / abort()</text>
+
+  <!-- Substep 1 -->
+  <rect x="54" y="210" width="252" height="80" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="66" y="232" fill="#0f172a" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">AsyncLLMEngine.abort()</text>
+  <text x="66" y="252" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 查找内存中的 RequestTracker 表</text>
+  <text x="66" y="270" fill="#dc2626" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 状态迁移: RUNNING ➔ ABORTED</text>
+
+  <rect x="54" y="302" width="252" height="78" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="66" y="324" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">事件循环驱动</text>
+  <text x="66" y="344" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">异步生成器结束，不再向下游发送</text>
+  <text x="66" y="362" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">向核心调度器派发中止事件</text>
+
+
+  <!-- Step 2: Scheduler Layer -->
+  <rect x="360" y="95" width="280" height="300" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="360" y="95" width="280" height="34" rx="8" fill="#fff7ed"/>
+  <text x="374" y="118" fill="#c2410c" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 2 层 · 连续批处理调度 (Scheduler)</text>
+
+  <rect x="374" y="145" width="252" height="85" rx="6" fill="#fffbeb" stroke="#eb6c36" stroke-width="1"/>
+  <text x="386" y="168" fill="#b45309" font-size="12" font-weight="700" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">abort_seq_group(req_id)</text>
+  <text x="386" y="189" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 检索 SequenceGroup 句柄</text>
+  <text x="386" y="207" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 从 running 调度队列中即刻物理剔除</text>
+  <text x="386" y="224" fill="#c2410c" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 阻断下一个 Token 的 Model Forward</text>
+
+  <rect x="374" y="245" width="252" height="135" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="386" y="268" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">连续批处理（Inflight Batching）重平衡</text>
+  <text x="386" y="290" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">该请求不再参与当前批次计算：</text>
+  <text x="386" y="310" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 腾出当前 Batch Slot 槽位</text>
+  <text x="386" y="328" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 通知内存管理器回收显存：</text>
+  <text x="386" y="348" fill="#0f766e" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">BlockSpaceManager.free(seq_group)</text>
+
+
+  <!-- Step 3: PagedAttention Memory Manager -->
+  <rect x="680" y="95" width="300" height="300" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="680" y="95" width="300" height="34" rx="8" fill="#f0fdf4"/>
+  <text x="694" y="118" fill="#115e59" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">第 3 层 · PagedAttention 显存回收</text>
+
+  <rect x="694" y="145" width="272" height="110" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="706" y="168" fill="#0f766e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">BlockSpaceManager 块释放</text>
+  <text x="706" y="189" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 遍历该请求 BlockTable 映射表:</text>
+  <text x="718" y="207" fill="#0f766e" font-size="11" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Blocks: [#402, #403, #891]</text>
+  <text x="706" y="226" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 物理块引用计数 ref_count 递减至 0</text>
+  <text x="706" y="244" fill="#115e59" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 归还至 gpu_allocator 的 free_list</text>
+
+  <rect x="694" y="268" width="272" height="112" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="706" y="291" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">下一 Iteration 即刻重新分配</text>
+  <text x="706" y="312" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 显存池空闲容量瞬间增加（数 GB）</text>
+  <text x="706" y="331" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">• 允许 waiting 队列中的新 Prompt 抢占</text>
+  <text x="706" y="351" fill="#2563eb" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">极速自愈：零显存碎片，O(1) 链表推送</text>
+
+
+  <!-- Connectors -->
+  <line x1="320" y1="245" x2="360" y2="245" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <line x1="640" y1="245" x2="680" y2="245" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+
+
+  <!-- Bottom Summary Callout -->
+  <rect x="40" y="410" width="940" height="36" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="510" y="433" fill="#c2410c" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">核心机制：vLLM 的 abort 属于纯内存操作（耗时微秒级），无需等待正在执行的 CUDA Kernel，下个步进周期直接自愈！</text>
+
+</svg>

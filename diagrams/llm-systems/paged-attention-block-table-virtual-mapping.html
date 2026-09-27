@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 530" width="1020" height="530" role="img" aria-labelledby="bt-title bt-desc">
+  <title id="bt-title">PagedAttention 核心机制：逻辑块到非连续物理块的页表映射</title>
+  <desc id="bt-desc">展示用户请求的连续逻辑 Token 序列如何通过 CPU 块表 (Block Table) 映射到 GPU 显存中离散、非连续的物理块，以及 PagedAttention 算子的访存闭环。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="530" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">PagedAttention 核心架构：逻辑块到非连续物理块的映射</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">从操作系统的 Page Table 获得灵感：让 GPU 注意力 Kernel 直接在散落物理显存上并行计算</text>
+
+  <!-- Layer 1: Logical Sequence (Top) -->
+  <rect x="40" y="95" width="940" height="90" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="940" height="28" rx="8" fill="#eff6ff"/>
+  <text x="56" y="114" fill="#2e5aa8" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 用户请求逻辑视角 (Logical Sequence · 逻辑上严格连续的 Token 序列)</text>
+
+  <!-- 4 Logical Blocks -->
+  <rect x="56" y="132" width="210" height="42" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="161" y="150" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逻辑块 0 (Logical Block 0)</text>
+  <text x="161" y="166" fill="#3b82f6" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Tokens [0, 1, 2, 3]</text>
+
+  <rect x="290" y="132" width="210" height="42" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="395" y="150" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逻辑块 1 (Logical Block 1)</text>
+  <text x="395" y="166" fill="#3b82f6" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Tokens [4, 5, 6, 7]</text>
+
+  <rect x="524" y="132" width="210" height="42" rx="4" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="629" y="150" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逻辑块 2 (Logical Block 2)</text>
+  <text x="629" y="166" fill="#3b82f6" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Tokens [8, 9, 10, 11]</text>
+
+  <rect x="758" y="132" width="206" height="42" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="861" y="150" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">逻辑块 3 (写入中)</text>
+  <text x="861" y="166" fill="#ea580c" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">Tokens [12, 13] (待满)</text>
+
+  <!-- Connectors to Block Table -->
+  <line x1="161" y1="174" x2="161" y2="210" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="395" y1="174" x2="395" y2="210" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="629" y1="174" x2="629" y2="210" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="861" y1="174" x2="861" y2="210" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Layer 2: Block Table (Middle) -->
+  <rect x="40" y="215" width="940" height="96" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="215" width="940" height="28" rx="8" fill="#f8fafc"/>
+  <text x="56" y="234" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 调度器块表映射 (Block Table · 在 CPU 宿主机常驻维护的轻量索引表)</text>
+
+  <rect x="56" y="252" width="210" height="46" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="161" y="271" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 0 ➔ 物理块 7</text>
+  <text x="161" y="288" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存基地址 0x1A00</text>
+
+  <rect x="290" y="252" width="210" height="46" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="395" y="271" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 1 ➔ 物理块 2</text>
+  <text x="395" y="288" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存基地址 0x8F00</text>
+
+  <rect x="524" y="252" width="210" height="46" rx="4" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="629" y="271" fill="#0f172a" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 2 ➔ 物理块 19</text>
+  <text x="629" y="288" fill="#475569" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存基地址 0x3C00</text>
+
+  <rect x="758" y="252" width="206" height="46" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="861" y="271" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">逻辑块 3 ➔ 物理块 11</text>
+  <text x="861" y="288" fill="#ea580c" font-size="11" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">显存基地址 0x6E00</text>
+
+  <!-- Connectors to Physical GPU HBM -->
+  <line x1="161" y1="298" x2="161" y2="335" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="395" y1="298" x2="395" y2="335" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="629" y1="298" x2="629" y2="335" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="861" y1="298" x2="861" y2="335" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Layer 3: GPU Physical HBM Blocks (Bottom) -->
+  <rect x="40" y="340" width="940" height="106" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="340" width="940" height="28" rx="8" fill="#f0fdf4"/>
+  <text x="56" y="359" fill="#115e59" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. GPU 物理显存离散分布 (Physical Blocks in HBM · 物理地址分散，绝不要求物理连续！)</text>
+
+  <rect x="56" y="378" width="210" height="54" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="161" y="398" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 物理块 7 (0x1A00)</text>
+  <text x="161" y="416" fill="#0d9488" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">KV Cache: Token 0~3 (已满)</text>
+
+  <rect x="290" y="378" width="210" height="54" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="395" y="398" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 物理块 2 (0x8F00)</text>
+  <text x="395" y="416" fill="#0d9488" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">KV Cache: Token 4~7 (已满)</text>
+
+  <rect x="524" y="378" width="210" height="54" rx="4" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="629" y="398" fill="#115e59" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 物理块 19 (0x3C00)</text>
+  <text x="629" y="416" fill="#0d9488" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">KV Cache: Token 8~11 (已满)</text>
+
+  <rect x="758" y="378" width="206" height="54" rx="4" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="861" y="398" fill="#c2410c" font-size="12" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">GPU 物理块 11 (0x6E00)</text>
+  <text x="861" y="416" fill="#ea580c" font-size="11" text-anchor="middle" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace">KV: Token 12~13 (仍余2空位)</text>
+
+  <!-- Bottom Explanatory Banner -->
+  <rect x="40" y="458" width="940" height="54" rx="8" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="56" y="480" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">PagedAttention 算子内幕：</text>
+  <text x="210" y="480" fill="#334155" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">每个 CUDA 线程块接收当前 Query 向量，按 Block Table 索引逐块加载分散在 HBM 中的物理页到片上共享内存 (SRAM)；</text>
+  <text x="56" y="498" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">完成 Dot-Product 与在线 Softmax 规约，兼顾 FlashAttention 极速计算与零碎片显存管理。</text>
+</svg>

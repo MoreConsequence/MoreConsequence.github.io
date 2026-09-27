@@ -62,7 +62,7 @@ sequenceDiagram
     participant Ingress as 上游网关 (Ingress / Nginx)
 
     Admin->>API: 1. 触发滚动更新，标记旧 Pod 为 Terminating
-    
+
     par 链路 A: 容器物理关闭链路 (速度极快: 10~50ms)
         API-->>Klet: Watch 收到 Pod 删除事件
         Klet->>App: 2. 立即向容器内发送 SIGTERM 信号!
@@ -91,16 +91,10 @@ sequenceDiagram
 要想彻底抹平这个时间差，必须通过强制介入 Pod 的生命周期，让**链路 A 故意停顿等待链路 B 彻底执行完毕**。
 
 ```mermaid
-flowchart TD
-    subgraph ZeroDowntime["零 502 黄金四步曲 (Pod Spec 配置)"]
-        direction TB
-        Step1["1. preStop Hook 睡眠 15 秒:<br/>exec: command: ['/bin/sh', '-c', 'sleep 15']<br/>硬性阻断 Kubelet 发送 SIGTERM，留出充裕时间让全集群摘除 IP"]
-        Step2["2. 上游网关与 kube-proxy 在 3 秒内完成路由切除，不再向该 Pod 发送任何新流量"]
-        Step3["3. 15 秒后，Kubelet 真正发送 SIGTERM<br/>应用执行内部优雅清退 (Drain 在飞未完成的 HTTP 请求与事务)"]
-        Step4["4. terminationGracePeriodSeconds 设置为 45~60 秒<br/>为业务保留充裕的收尾时间，防止被 SIGKILL 暴力强杀"]
-
-        Step1 --> Step2 --> Step3 --> Step4
-    end
+flowchart LR
+    Step1["1. preStop Hook 睡眠 15 秒<br/>阻断 SIGTERM，等待摘除 IP"] --> Step2["2. 上游网关完成路由切除<br/>不再向该 Pod 发送新流量"]
+    Step2 --> Step3["3. 15 秒后触发 SIGTERM<br/>应用优雅 Drain 在飞请求"]
+    Step3 --> Step4["4. GracePeriod 45~60 秒<br/>防止被 SIGKILL 暴力强杀"]
 ```
 
 #### 生产黄金配置模板：
@@ -134,15 +128,19 @@ spec:
 ```
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph WithoutPreStop["方案 A: 未配 preStop 陷阱 (高并发必现 502)"]
-        direction LR
-        T0A["T=0.0s: 收到通知<br/>直接发送 SIGTERM"] --> T01A["T=0.05s: 应用关闭端口<br/>停止 Accept 新连接"] --> T05A["T=0.5s: 上游网关仍发新请求<br/>内核返回 RST -> 502 报错!"] --> T20A["T=2.0s: 路由规则才姗姗来迟完成切除"]
+        direction TB
+        T0A["T=0.0s: 收到通知直接发 SIGTERM"] --> T01A["T=0.05s: 应用关闭端口停止 Accept"]
+        T01A --> T05A["T=0.5s: 网关仍发新请求 -> 内核返回 RST (502!)"]
+        T05A --> T20A["T=2.0s: 路由规则才姗姗来迟完成切除"]
     end
 
     subgraph WithPreStop["方案 B: 注入 preStop: sleep 15 (零 502 黄金链路)"]
-        direction LR
-        T0B["T=0.0s: 进入 preStop 强制睡眠 15s<br/>应用端口继续保持监听处理"] --> T20B["T=2.0s: 网关与 kube-proxy 完成路由切除<br/>彻底停止向该 Pod 转发新流量"] --> T15B["T=15.0s: 睡眠结束真正发送 SIGTERM<br/>应用此时 Drain 剩余在飞请求"] --> T18B["T=18.0s: 优雅正常关闭<br/>零连接重置! 零 502!"]
+        direction TB
+        T0B["T=0.0s: preStop 睡眠 15s 保持监听"] --> T20B["T=2.0s: 网关与 kube-proxy 完成切除"]
+        T20B --> T15B["T=15.0s: 睡眠结束发 SIGTERM Drain 请求"]
+        T15B --> T18B["T=18.0s: 优雅正常关闭 (零 502!)"]
     end
 ```
 
@@ -242,37 +240,29 @@ $ etcdctl defrag --endpoints=https://127.0.0.1:2379 \
 在面对线上突发告警时，优秀的云原生工程师能够根据 Pod 的状态码与底层物理成因，建立条件反射级的诊断链路。
 
 ```mermaid
-flowchart TD
-    subgraph DiagnosisTree["Kubernetes 生产故障物理排查决策树"]
-        direction TB
-        Issue["Pod 状态异常告警"]
-        
-        Q1{"当前处于什么状态？"}
-        Issue --> Q1
+flowchart LR
+    Issue["Pod 状态异常告警"] --> Q1{"当前处于什么状态？"}
 
-        Q1 -- "Pending" --> BranchPending["Pending 诊断分支"]
-        Q1 -- "CrashLoopBackOff" --> BranchCrash["CrashLoopBackOff 诊断分支"]
-        Q1 -- "Evicted" --> BranchEvicted["Evicted 诊断分支"]
-        Q1 -- "Terminating 假死" --> BranchTerm["Terminating 诊断分支"]
+    Q1 -- "Pending" --> BranchPending["Pending 诊断"]
+    Q1 -- "CrashLoop" --> BranchCrash["CrashLoopBackOff 诊断"]
+    Q1 -- "Evicted" --> BranchEvicted["Evicted 诊断"]
+    Q1 -- "Terminating" --> BranchTerm["Terminating 诊断"]
 
-        BranchPending --> PCheck{"检查 kubectl describe pod 最后的 Events"}
-        PCheck -- "0/50 nodes available" --> P1["调度资源不足: CPU/Memory/GPU 满载，需扩容 Node 或调整 Requests"]
-        PCheck -- "node(s) had untolerated taint" --> P2["节点存在污点 (NoSchedule)，Pod 缺少相应 Tolerations"]
-        PCheck -- "pod has unbound immediate PVC" --> P3["存储卷 PVC 未成功绑定 PV，检查 StorageClass 与云存储配额"]
+    BranchPending --> PCheck{"describe pod Events"}
+    PCheck --> P1["调度资源不足 / 污点未容忍 / PVC 未绑定"]
 
-        BranchCrash --> CCheck{"检查退出码 (Exit Code)"}
-        CCheck -- "Exit Code 137 (128 + 9)" --> C1["被 SIGKILL 强杀!<br/>若 LastState.Reason == OOMKilled，说明内存超配;<br/>若非 OOM，说明 LivenessProbe 探针超时被 Kubelet 强杀"]
-        CCheck -- "Exit Code 143 (128 + 15)" --> C2["收到 SIGTERM 优雅退出未在宽限期内完成，被硬杀"]
-        CCheck -- "Exit Code 139 (128 + 11)" --> C3["Segmentation Fault (C/C++ 或 Go cgo 底层指针越界内核崩溃)"]
-        CCheck -- "Exit Code 0" --> C4["应用主进程提前正常退出 (未配置前台阻塞进程，容器跑完即关)"]
-        CCheck -- "Exit Code 1 / 255" --> C5["应用代码抛出未捕获异常 / 配置读取失败 / 数据库连不上"]
+    BranchCrash --> CCheck{"检查退出码 (Exit Code)"}
+    CCheck --> C1["137: OOMKilled 或探针超时强杀"]
+    CCheck --> C2["143: 优雅退出超时强杀"]
+    CCheck --> C3["139: 段错误 Segmentation Fault"]
+    CCheck --> C4["0: 无前台常驻进程提前退出"]
+    CCheck --> C5["1/255: 抛出未捕获异常 / 配置失败"]
 
-        BranchEvicted --> ECheck["宿主机资源跌破阈值!<br/>查看磁盘 inode 耗尽、空间耗尽 (nodefs/imagefs) 或节点内存不足"]
-        
-        BranchTerm --> TCheck{"检查为何迟迟不退出？"}
-        TCheck -- "存在 Finalizer" --> T1["自定义资源或关联对象打有 Finalizer 未释放，卡死删除流程"]
-        TCheck -- "存储设备卸载超时" --> T2["节点与存储脱离 (D-State 软锁)，CSI 无法完成 Unmount/Detach"]
-    end
+    BranchEvicted --> ECheck["宿主机资源跌破阈值:<br/>磁盘 inode/空间耗尽 或内存不足"]
+
+    BranchTerm --> TCheck{"退出阻塞成因"}
+    TCheck --> T1["Finalizer 未解绑卡死删除"]
+    TCheck --> T2["存储脱离 (D-State 软锁) CSI 卸载超时"]
 ```
 
 ### 3.1 容器退出码（Exit Codes）的物理含义备查表
@@ -303,7 +293,7 @@ flowchart LR
     subgraph Solution["安全且彻底的解套流程"]
         direction TB
         Fix1["第一步: 优先排查并恢复挂载节点网络"]
-        Fix2["第二步: 若确定物理无害，Patch 强力清空 Finalizers:<br/>kubectl patch pod my-pod -p '{\"metadata\":{\"finalizers\":null}}'"]
+        Fix2["第二步: 若确定物理无害，Patch 强力清空 Finalizers:<br/>kubectl patch pod my-pod -p #39;{#quot;metadata#quot;:{#quot;finalizers#quot;:null}}#39;"]
         Fix3["第三步: 终极强制删除 (慎用，仅作为最后防线):<br/>kubectl delete pod my-pod --force --grace-period=0"]
     end
 
@@ -333,18 +323,14 @@ flowchart LR
 
 在将核心业务正式推向 Kubernetes 生产环境之前，请对照以下黄金核对清单（Production Readiness Checklist）逐一闭环：
 
-```mermaid
-flowchart TD
-    subgraph Checklist["Kubernetes 生产就绪核对清单"]
-        direction TB
-        C1["应用生命周期: 配置 preStop sleep 15 + 合理 GracePeriod，杜绝 502"]
-        C2["健康探针防线: 区分 Liveness (防死锁重启) 与 Readiness (防流量冲刷)，严禁探针打内部慢 SQL"]
-        C3["资源边界治理: 在线业务不配硬 CPU Limits 防 Throttling，配置合理 Requests 支撑调度"]
-        C4["高可用打散拓扑: 核心应用强制配置 PodTopologySpreadConstraints 与 PodDisruptionBudget (PDB)"]
-        C5["控制面加固: etcd 扩容 8GB + 独占 NVMe 固态盘 + 定期自动备份快照与 defrag 整理"]
-        C6["安全防御: 禁用特权容器 (privileged: false)，非 Root 用户运行，配置只读根文件系统"]
-    end
-```
+| 治理维度 | 核心生产基线规范 | 关键风险防线 |
+| --- | --- | --- |
+| **应用生命周期** | 配置 `preStop: sleep 15` 并预留 45~60s `terminationGracePeriodSeconds` | 抹平 Endpoint 切除与进程停机时间差，根绝 502/RST |
+| **健康探针防线** | 区分 Liveness（防死锁重启）与 Readiness（防流量冲刷） | 严禁探针打内部慢 SQL，超时必须大于单次调用延迟 |
+| **资源边界治理** | 在线业务不设硬 CPU Limits，按真实 P99 配置 Requests | 防 CFS 内核级 CPU Throttling，保障调度装箱精度 |
+| **高可用打散拓扑** | 强制配置 `topologySpreadConstraints` 与 `PodDisruptionBudget` | 杜绝单机硬件故障与节点维护导致业务全量中断 |
+| **控制面加固** | etcd 配额扩至 8GB，独占 NVMe 固态盘，定期快照与 defrag | 避免 MVCC 空间写满导致全局只读脑裂 |
+| **安全合规底线** | 禁用特权容器 (`privileged: false`)，非 Root 运行与只读根文件系统 | 限制容器逃逸攻击面与宿主机特权污染 |
 
 ---
 

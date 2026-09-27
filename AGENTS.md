@@ -43,7 +43,14 @@
 
 ## 五、图表底线
 
-- 唯一规范来源是当前 Agent 的 `~/.codex/skills/diagram-design/SKILL.md`；按图表类型按需读取对应 reference，不在本文件复制颜色表和完整反模式。
+- 唯一规范来源是当前 Agent 的 `~/.codex/skills/diagram-design/SKILL.md`；当前工程强制激活 `engineering-clean` Profile（见项目根目录 `.diagram-design`）。
+- **Mermaid 规范与图表选型铁律（用户硬性规格）**：
+  1. **尽量横向画（Horizontal-First）**：Mermaid 流程图必须尽量采用横向流动（`flowchart LR` / `graph LR`），严禁绘制超长单列纵向瀑布流（`flowchart TD` / `TB`），避免纵向跨屏拉伸导致字体变形或阅读困难。
+  2. **复杂/大拓扑图严禁使用 Mermaid，必须使用 Skill 独立绘制**：多层级架构、复杂集群拓扑、精细状态机或深层交互，凡在 Mermaid 中排版别扭、容易穿线或超长超宽的内容，**一律不得使用 Mermaid**；必须调用 `diagram-design` Skill 设计独立且符合规范的矢量 SVG/HTML 图表并输出至 `public/images/`，正文使用 Markdown 图片规范引入。
+- **工程图表高清晰度与 Windows 显示优化铁律（反过度现代主义/反视觉噪音）**：
+  1. **跨平台原生字体栈（零网络依赖，杜绝 Windows 乱码回退）**：SVG 内严禁引用外部 Google Fonts。统一使用原生高清字体栈：通用文本优先使用 `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif`；代码/协议/状态使用 `ui-monospace, "Cascadia Code", "Segoe UI Mono", Menlo, Consolas, monospace`。
+  2. **字号红线（根除 Windows 96DPI/1080p 下的毛刺微雕字）**：主标题 20~24px，节点名称/主干 14~16px 加粗，描述正文 12~13px，次级标注底线为 11px。严禁出现 7px~9px 的微雕文字。
+  3. **去噪与主体鲜明**：严禁点阵背景（dot pattern）、弱化细发丝（hairline）；主体节点边框必须达到 1.5px，主干流向箭头 1.5px~2px；严禁为了“装饰感”堆叠无意义的英文小 Tag（如 eyebrow 标签），用清晰的高对比度色块突出核心拓扑与数据流向。
 - 绘制前只需确定图表类型、尺寸和读者；复杂图记录合并、折叠或删除的内容。
 - HTML 是图表生成源，SVG 是导出物；修改 HTML 后再导出到 `public/images/`，不要只手工改最终 SVG。正文图片使用 `../../../public/images/<name>.svg`。
 - 图内每条路径、数字和安全/性能断言都必须可追溯；不要把图表本身当成证据。

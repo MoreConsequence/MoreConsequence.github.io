@@ -153,7 +153,7 @@ flowchart LR
 - 其余数千万普通用户，仅在偶尔打开个人中心时，关心一下自己的粗略名次（如“您排在第 152,340 名”）。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Tier1["Tier-1: 实时核心荣誉榜 (Redis ZSET)"]
         direction TB
         TopZset["固定容量 ZSET: 仅容纳 Top 10,000 名活跃尖子生<br/>内存占用仅 1.9MB (相比全量节约 99.9%!)<br/>跳表深度极浅，ZREVRANGE 纳秒级极速响应"]
@@ -165,8 +165,8 @@ flowchart TD
     end
 
     UserReq["用户请求查看排名"] --> Top100Check{"是否在前 10,000 名内？"}
-    Top100Check -->|是 (命中 Tier-1)| TopZset
-    Top100Check -->|否 (普通大众用户)| Buckets
+    Top100Check -->|"是 (命中 Tier-1)"| TopZset
+    Top100Check -->|"否 (普通大众用户)"| Buckets
     Buckets --> CalcRank["个人名次估算 = 前置所有满额桶总人数 + 当前桶内偏移"]
 ```
 

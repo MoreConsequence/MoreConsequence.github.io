@@ -98,7 +98,7 @@ flowchart LR
 Kubernetes 控制面（Control Plane）的设计遵循极度纯粹的**松耦合、无状态计算与持久状态解耦**原则。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Clients["客户端与扩展生态"]
         Kubectl["kubectl CLI"]
         CI["CI/CD 流水线"]
@@ -107,28 +107,28 @@ flowchart TB
 
     subgraph ControlPlane["Kubernetes 控制面 (Master Nodes)"]
         direction TB
-        APIServer["kube-apiserver (无状态 REST API 网关 / 唯一与 etcd 通信的组件)"]
+        APIServer["kube-apiserver<br/>(无状态 REST API 网关 / 唯一与 etcd 通信)"]
         
-        subgraph Controllers["自治控制器集群"]
-            Scheduler["kube-scheduler (调度器: 节点亲和 / 拓扑分布)"]
-            KCM["kube-controller-manager (内置 30+ 核心调和控制器)"]
+        subgraph Internal["核心持久化与调度调和"]
+            direction LR
+            ETCD[("etcd 集群<br/>(Raft 共识 / MVCC 强一致)")]
+            Scheduler["kube-scheduler<br/>(亲和性 / 拓扑分布)"]
+            KCM["kube-controller-manager<br/>(30+ 核心调和控制器)"]
         end
-
-        ETCD[("etcd 集群 (Raft 共识 / MVCC 强一致性 KV 存储)")]
+        APIServer <-->|gRPC| ETCD
+        Scheduler <-->|List-Watch| APIServer
+        KCM <-->|List-Watch| APIServer
     end
 
     subgraph WorkerNodes["工作节点 (Worker Nodes)"]
-        direction LR
+        direction TB
         Kubelet1["Node 1: Kubelet + CRI"]
         Kubelet2["Node 2: Kubelet + CRI"]
     end
 
     Clients -->|HTTPS REST| APIServer
-    APIServer <-->|gRPC| ETCD
-    Scheduler <-->|List-Watch| APIServer
-    KCM <-->|List-Watch| APIServer
-    Kubelet1 <-->|List-Watch| APIServer
-    Kubelet2 <-->|List-Watch| APIServer
+    APIServer <-->|List-Watch| Kubelet1
+    APIServer <-->|List-Watch| Kubelet2
 ```
 
 ### 2.1 kube-apiserver：无状态流量网关与唯一数据守门人
@@ -157,21 +157,21 @@ etcd 是 Kubernetes 的“单一事实源（Single Source of Truth）”。它�
 - **Watch 机制**：客户端可以监听指定 Key 或目录的前缀变更，etcd 基于 HTTP/2 gRPC 流长连接，毫秒级将数据推送到监听者。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph RAM["etcd 内存层 (RAM)"]
-        TreeIndex["treeIndex (内存 B-Tree 索引)<br/>用户 Key: '/registry/pods/default/nginx'<br/>映射到历代版本修订号列表: [rev{50,1}, rev{80,0}, rev{105,0}]"]
+        TreeIndex["treeIndex (内存 B-Tree 索引)<br/>用户 Key: '/registry/pods/default/nginx'<br/>映射到历代版本修订号列表:<br/>[rev{50,1}, rev{80,0}, rev{105,0}]"]
     end
 
     subgraph Disk["etcd 磁盘持久化层 (Disk - bbolt B+ Tree)"]
         direction TB
-        Bbolt["bbolt 单文件数据库 (snap/db)<br/>以 revision{main, sub} 为二进制键<br/>以完整的 protobuf 序列化数据为值"]
         WAL["WAL (预写式日志 Write-Ahead Log)<br/>写磁盘前先顺序追加 fsync 保证崩溃不丢数据"]
+        Bbolt["bbolt 单文件数据库 (snap/db)<br/>以 revision{main, sub} 为二进制键<br/>以完整的 protobuf 序列化数据为值"]
+        WAL --> Bbolt
     end
 
-    Query["只读请求: GET /registry/pods/default/nginx"] --> TreeIndex
+    Query["只读请求:<br/>GET /registry/pods/..."] --> TreeIndex
     TreeIndex -->|"定位最新 revision{105,0}"| Bbolt
-    Write["写请求: PUT /registry/pods/default/nginx"] --> WAL
-    WAL --> Bbolt
+    Write["写请求:<br/>PUT /registry/pods/..."] --> WAL
     Bbolt --> TreeIndex
 ```
 
@@ -193,23 +193,17 @@ flowchart TD
 在计算机通信和操作系统领域，事件驱动模型存在两大流派：**边缘触发（Edge-Triggered）** 与 **水平触发（Level-Triggered）**。深刻理解两者的区别，是吃透 Kubernetes 调和稳定性的关键。
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Edge["边缘触发模型 (Edge-Triggered)"]
         direction TB
-        E1["事件: Pod 副本从 2 变 3 (发送 +1 消息)"]
-        E2["网络丢包 / 控制器此时崩溃重启!"]
-        E3["丢失该单次跳变通知"]
-        E4["系统永远停留在 2 副本 (状态永久错乱)"]
-        E1 --> E2 --> E3 --> E4
+        E1["1. 事件跳变: 副本 2 变 3"] --> E2["2. 网络丢包 / 控制器崩溃"]
+        E2 --> E3["3. 丢失单次跳变通知"] --> E4["4. 永久停留在 2 副本 (状态偏差)"]
     end
 
     subgraph Level["水平触发模型 (Level-Triggered)"]
         direction TB
-        L1["状态: 目标状态=3, 当前存活=2"]
-        L2["网络恢复 / 控制器重启，重新拉取全量快照"]
-        L3["检测到实际仍为 2 != 3 (持续处于非平衡高电平状态)"]
-        L4["重新触发创建动作，直至状态平衡 (自愈收敛)"]
-        L1 --> L2 --> L3 --> L4
+        L1["1. 状态比对: 期望=3, 存活=2"] --> L2["2. 网络恢复 / 控制器重启拉取快照"]
+        L2 --> L3["3. 发现差分 Δ=1 (持续高电平)"] --> L4["4. 重新触发创建直至收敛自愈"]
     end
 ```
 

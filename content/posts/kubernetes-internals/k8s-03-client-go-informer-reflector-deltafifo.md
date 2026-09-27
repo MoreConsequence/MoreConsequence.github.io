@@ -46,7 +46,7 @@ series: "Kubernetes 架构内核与生产实战"
 在设计现代分布式控制系统时，一个最基础的架构考量是：**控制面如何向成千上万的客户端分发状态变更？**
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Bad["反模式: 传统轮询 (HTTP Polling)"]
         direction TB
         C1["Controller 1"] -->|每秒 GET /api/v1/pods| APISrv1["kube-apiserver"]
@@ -57,9 +57,9 @@ flowchart TB
 
     subgraph Good["优雅模式: client-go Informer 架构"]
         direction TB
-        C4["所有本地业务逻辑 / Reconcile()"] -->|读本地内存 (零网络 I/O / 纳秒级延迟)| LocalCache["本地 Indexer 缓存 (ThreadSafeStore)"]
-        LocalCache <== "异步批量填充" == InformerArch["Informer (Reflector + DeltaFIFO)"]
-        InformerArch <== "仅维持 1 条 HTTP/2 Watch 长连接<br/>增量事件流推送" ==> APISrv2["kube-apiserver"]
+        C4["所有本地业务逻辑 / Reconcile()"] -->|"读本地内存 (零网络 I/O / 纳秒级延迟)"| LocalCache["本地 Indexer 缓存 (ThreadSafeStore)"]
+        InformerArch == "异步批量填充" ==> LocalCache
+        InformerArch <==>|"仅维持 1 条 HTTP/2 Watch 长连接<br/>增量事件流推送"| APISrv2["kube-apiserver"]
     end
 ```
 
@@ -76,45 +76,7 @@ flowchart TB
 
 `client-go` 的内部设计极其精巧，是一个多级生产者-消费者流水线。
 
-```mermaid
-flowchart TD
-    subgraph APIServerPlane["控制面 (kube-apiserver)"]
-        APIServer["kube-apiserver REST / Watch Endpoint"]
-    end
-
-    subgraph ClientGoPipeline["client-go Informer 核心拓扑"]
-        direction TB
-        
-        Reflector["Reflector (反射器)<br/>负责 List-Watch 维持与断线重连"]
-        DeltaFIFO["DeltaFIFO (增量先进先出队列)<br/>类型: Added/Updated/Deleted/Sync/Replaced<br/>支持同 Key 增量折叠去重"]
-        Controller["Informer Controller 调度循环<br/>DeltaFIFO.Pop() 调度者"]
-
-        subgraph StorageLayer["本地存储与索引层"]
-            Indexer["Indexer (ThreadSafeStore)<br/>线程安全内存红黑树 / 哈希缓存<br/>支持 Namespace / NodeName 多维索引"]
-        end
-
-        subgraph EventDistribution["事件分发与缓冲"]
-            Processor["SharedProcessor (事件分发器)"]
-            Listener["ProcessorListener (带缓冲 channel)"]
-            ResourceEventHandler["ResourceEventHandler<br/>OnAdd / OnUpdate / OnDelete"]
-            WorkQueue["WorkQueue (限速退避工作队列)"]
-        end
-
-        Worker["用户业务 Worker 协程<br/>执行实际 Reconcile() 调和"]
-    end
-
-    APIServer <== "List-Watch (HTTP 流)" ==> Reflector
-    Reflector -->|"Push (Delta)"| DeltaFIFO
-    DeltaFIFO -->|"Pop (Deltas)"| Controller
-    
-    Controller -->|"1. 写入本地缓存 (Update Cache)"| Indexer
-    Controller -->|"2. 广播通知 (Distribute)"| Processor
-    
-    Processor --> Listener --> ResourceEventHandler
-    ResourceEventHandler -->|"Enqueue(objKey)"| WorkQueue
-    WorkQueue -->|"objKey = 'default/my-pod'"| Worker
-    Worker -.->|"零 I/O 读: indexer.GetByKey(objKey)"| Indexer
-```
+![client-go Informer 核心拓扑与事件流转机制](../../../public/images/k8s-client-go-informer-core-architecture.svg)
 
 整个架构包含六大物理环节：
 1. **Reflector**：负责与 `kube-apiserver` 建立通信，利用 List-Watch 协议获取数据，并将事件转换为 `Delta` 放入 `DeltaFIFO`；
@@ -268,18 +230,14 @@ flowchart LR
 经过 Controller 从 DeltaFIFO 取出增量后，数据被持久化推入客户端本地的终极堡垒——**Indexer**。
 
 ```mermaid
-flowchart TD
-    subgraph IndexerArch["Indexer (ThreadSafeStore) 内存多维索引拓扑"]
-        direction TB
-        Lock["sync.RWMutex (全局并发读写保护锁)"]
-        
-        subgraph Data["items (全量数据存储哈希表)"]
-            Obj1["'default/pod-1' -> PodStructA (Node: node-alpha)"]
-            Obj2["'default/pod-2' -> PodStructB (Node: node-beta)"]
-            Obj3["'kube-system/core-dns' -> PodStructC (Node: node-alpha)"]
-        end
+flowchart LR
+    Query1["调用: indexer.ByIndex('byNode', 'node-alpha')"] --> Lock
 
+    subgraph IndexerArch["Indexer (ThreadSafeStore) 内存多维索引拓扑"]
+        Lock["sync.RWMutex<br/>(全局读写保护锁)"]
+        
         subgraph Indices["indices (倒排索引映射表)"]
+            direction TB
             subgraph NodeIndex["IndexFunc: 'byNode'"]
                 NodeA["'node-alpha' -> Set{'default/pod-1', 'kube-system/core-dns'}"]
                 NodeB["'node-beta' -> Set{'default/pod-2'}"]
@@ -289,12 +247,18 @@ flowchart TD
                 NSKube["'kube-system' -> Set{'kube-system/core-dns'}"]
             end
         end
+
+        subgraph Data["items (全量数据存储哈希表)"]
+            direction TB
+            Obj1["'default/pod-1' -> PodStructA (Node: node-alpha)"]
+            Obj2["'default/pod-2' -> PodStructB (Node: node-beta)"]
+            Obj3["'kube-system/core-dns' -> PodStructC (Node: node-alpha)"]
+        end
     end
 
-    Query1["调用: indexer.ByIndex('byNode', 'node-alpha')"] --> Lock
     Lock --> NodeIndex
-    NodeIndex -->|"O(1) 检索 Set 集合"| Data
-    Data -->|"直接返回内存指针集合 (耗时 < 1 微秒)"| Result["PodStructA, PodStructC"]
+    NodeIndex -->|"O(1) 检索 Set"| Data
+    Data -->|"直接返回内存指针 (< 1 微秒)"| Result["PodStructA, PodStructC"]
 ```
 
 ### 5.1 索引器原理：IndexFunc 与 Indexers
@@ -331,24 +295,17 @@ pods, err := indexer.ByIndex("byNode", "node-alpha")
 答案是：**绝对不会！client-go 设计了基于 `processorListener` 的双重缓冲与动态环形切片隔离架构**：
 
 ```mermaid
-flowchart TD
+flowchart LR
     Distributor["sharedProcessor.distribute(notification)<br/>遍历所有已注册的监听器 (单线程快速派发)"]
     
     subgraph FastListener["Listener 1 (快速消费者: 审计日志)"]
-        direction TB
-        AddCh1["addCh (channel 缓冲: 1024)"]
-        NextCh1["nextCh (直接投递)"]
-        Handler1["ResourceEventHandler A<br/>纳秒级处理完毕"]
-        AddCh1 --> NextCh1 --> Handler1
+        direction LR
+        AddCh1["addCh (缓冲: 1024)"] --> NextCh1["nextCh (直接投递)"] --> Handler1["ResourceEventHandler A<br/>纳秒级处理完毕"]
     end
 
     subgraph SlowListener["Listener 2 (慢速消费者: 外部慢 RPC)"]
-        direction TB
-        AddCh2["addCh 瞬间打满 1024!"]
-        RingBuffer["pendingNotifications (内存环形切片动态膨胀)<br/>pop/push 动态滑动窗口，隔离背压"]
-        NextCh2["nextCh (等待唤醒)"]
-        Handler2["ResourceEventHandler B<br/>长时间阻塞消费"]
-        AddCh2 --> RingBuffer --> NextCh2 --> Handler2
+        direction LR
+        AddCh2["addCh 瞬间打满 1024!"] --> RingBuffer["pendingNotifications (环形切片)<br/>动态滑动窗口隔离背压"] --> NextCh2["nextCh (唤醒)"] --> Handler2["ResourceEventHandler B<br/>长时间阻塞消费"]
     end
 
     Distributor --> FastListener

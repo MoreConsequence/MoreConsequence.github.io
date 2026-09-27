@@ -39,19 +39,20 @@ series: "Kubernetes 架构内核与生产实战"
 资深边缘架构师必须能够画出云边网络断裂时的**时序冲突与四级防御模型**：
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph EdgeChallenge["边缘极端物理约束"]
-        C1["网络极不稳定：高延迟、频繁断网、4G流量极其昂贵"]
-        C2["资源极其受限：嵌入式硬件无力承受原生组件底噪"]
-        C3["物理不可靠：现场随时断电拔插，硬件反复冷重启"]
+        direction TB
+        C1["网络极不稳定：高延迟、频繁断网、4G 昂贵"]
+        C2["资源极其受限：嵌入式硬件无力承受底噪"]
+        C3["物理不可靠：现场随时断电，硬件冷重启"]
     end
 
     subgraph CoreMechanism["边缘自治四大核心支柱"]
         direction TB
-        M1["防驱逐声明：解除云端对离线节点的污名化驱逐"]
-        M2["本地元数据快照：本地轻量级数据库 (SQLite) 持久化全量 Spec"]
-        M3["离线冷启动：本地 Agent 逆向重构 Pod 运行时状态机"]
-        M4["网络复通双向合流：增量对账 (Delta Sync) 与冲突消解"]
+        M1["防驱逐声明：解除云端对离线节点污名化驱逐"]
+        M2["本地元数据快照：SQLite 持久化全量 Spec"]
+        M3["离线冷启动：本地 Agent 逆向重构运行时"]
+        M4["网络复通合流：增量对账与冲突消解"]
     end
 
     EdgeChallenge --> CoreMechanism
@@ -91,13 +92,13 @@ sequenceDiagram
 KubeEdge 作为 CNCF 孵化的首个专门针对边缘计算的顶级项目，其核心哲学是**“云边解耦、彻底裁剪、重构边缘控制面”**。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Cloud["云端控制面 (CloudCore)"]
         direction TB
         CloudAPIS["Kubernetes API Server"]
-        EdgeController["EdgeController (同步 K8s 原生资源)"]
-        DeviceController["DeviceController (物模型与设备管理)"]
-        CloudHub["CloudHub (WebSocket / QUIC 多路复用网关)"]
+        EdgeController["EdgeController (同步 K8s 资源)"]
+        DeviceController["DeviceController (物模型管理)"]
+        CloudHub["CloudHub (WebSocket/QUIC 网关)"]
         
         CloudAPIS <--> EdgeController
         CloudAPIS <--> DeviceController
@@ -107,17 +108,17 @@ flowchart TB
 
     subgraph Edge["边缘设备工控机 (EdgeCore)"]
         direction TB
-        EdgeHub["EdgeHub (长连接客户端，断网自动重试)"]
-        MetaManager["MetaManager (元数据中枢 + SQLite 本地存储)"]
-        Edged["Edged (深度裁剪重构版轻量 Kubelet)"]
-        EventBus["EventBus (MQTT Broker，连接 IoT 传感器)"]
+        EdgeHub["EdgeHub (长连接客户端，自动重试)"]
+        MetaManager["MetaManager (元数据中枢 + SQLite)"]
+        Edged["Edged (轻量裁剪版 Kubelet)"]
+        EventBus["EventBus (MQTT Broker)"]
         
         EdgeHub <--> MetaManager
         MetaManager <--> Edged
         MetaManager <--> EventBus
     end
 
-    CloudHub <=="双向多路复用长连接 (支持 QUIC 穿透弱网)"===> EdgeHub
+    CloudHub <=="双向多路复用长连接 (QUIC / WebSocket)"===> EdgeHub
 ```
 
 ### 3.1 核心组件的物理职能
@@ -156,29 +157,30 @@ stateDiagram-v2
 在 OpenYurt 体系下，边缘节点上的标准 Kubelet、kube-proxy 以及各类 CNI 插件，不再直接访问云端的 `https://<api-server>:6443`，而是将 Master 地址配置为本地环回地址：`http://127.0.0.1:10261`（即 YurtHub 监听的端口）。
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph EdgeNode["边缘节点 Worker"]
         direction TB
-        Kubelet["原生 Kubelet (未做任何代码修改)"]
+        Kubelet["原生 Kubelet (未改动)"]
         KubeProxy["原生 kube-proxy"]
         
-        subgraph YurtHub["YurtHub (节点本地反向代理守护进程)"]
+        subgraph YurtHub["YurtHub (节点本地代理)"]
+            direction TB
             ProxyRouter["反向代理路由引擎"]
-            CacheManager["Cache Manager (本地文件/BoltDB 存储)"]
-            FilterEngine["响应动态过滤器 (剔除无用字段节省带宽)"]
+            CacheManager["Cache Manager (BoltDB)"]
+            FilterEngine["动态过滤器 (裁剪无用字段)"]
+            ProxyRouter <--> CacheManager
+            ProxyRouter <--> FilterEngine
         end
         
-        Kubelet -->|"请求发送至 127.0.0.1:10261"| ProxyRouter
-        KubeProxy -->|"请求发送至 127.0.0.1:10261"| ProxyRouter
-        ProxyRouter <--> CacheManager
-        ProxyRouter <--> FilterEngine
+        Kubelet -->|"127.0.0.1:10261"| ProxyRouter
+        KubeProxy -->|"127.0.0.1:10261"| ProxyRouter
     end
 
-    subgraph CloudAPIServer["云端 Kubernetes API Server"]
+    subgraph CloudAPIServer["云端控制面"]
         RemoteAPIS["kube-apiserver (6443)"]
     end
 
-    ProxyRouter ==="正常模式：透明转发 + 异步落盘缓存Spec\n离线模式：阻断报错，直接从本地 Cache 构造响应"===> RemoteAPIS
+    ProxyRouter == "在线: 透明转发+异步缓存<br/>离线: 本地 Cache 构造响应" ==> RemoteAPIS
 ```
 
 ### 4.2 YurtHub 双工作模式逆向

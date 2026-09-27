@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 500" width="1020" height="500" role="img" aria-labelledby="backpressure-title backpressure-desc">
+  <title id="backpressure-title">AI 流式网关慢客户端反向背压与 TCP 滑动窗口协同机制</title>
+  <desc id="backpressure-desc">对比传统网关无背压时堆内存暴胀导致 OOM 的致命缺陷，与采用 TCP 接收窗口感知、HTTP/2 流控暂停与推理调度挂起构建的全链路响应式背压闭环。</desc>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1020" height="500" fill="#f8fafc" rx="10"/>
+
+  <!-- Title & Subtitle -->
+  <text x="40" y="44" fill="#0f172a" font-size="22" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">AI 流式网关慢客户端反向背压（Reactive Backpressure）架构</text>
+  <text x="40" y="70" fill="#475569" font-size="13" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">从 TCP 零窗口探活到 GPU 生成挂起：遏制内存雪崩与慢客户端（Slowloris）算力挟持</text>
+
+  <!-- Left Container: No Backpressure (Buffer Bloat & OOM) -->
+  <rect x="40" y="95" width="455" height="345" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="40" y="95" width="455" height="34" rx="8" fill="#fef2f2"/>
+  <text x="56" y="118" fill="#991b1b" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">反模式 · 缺乏背压控制 (Buffer Bloat &amp; OOM 崩溃)</text>
+
+  <!-- Left Step 1 -->
+  <rect x="56" y="145" width="423" height="46" rx="6" fill="#fff7ed" stroke="#eb6c36" stroke-width="1"/>
+  <text x="70" y="166" fill="#c2410c" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. GPU 高速生成 (120 Tokens/s)</text>
+  <text x="70" y="182" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">推理引擎源源不断向下游倾泻 Token 数据包</text>
+
+  <!-- Left Step 2 -->
+  <rect x="56" y="203" width="423" height="66" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="70" y="224" fill="#991b1b" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 网关堆内存队列无节制膨胀 (Buffer Bloat)</text>
+  <text x="70" y="242" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网关拼命读取上游，未发送 Token 积压至几千个，内存暴增数 GB</text>
+  <text x="70" y="258" fill="#dc2626" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">极度危险：并发积压瞬间触发系统 Linux OOM Killer 杀进程！</text>
+
+  <!-- Left Step 3 -->
+  <rect x="56" y="281" width="423" height="46" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="70" y="302" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. 网关内核 SO_SNDBUF 打满 (128KB 阻塞)</text>
+  <text x="70" y="318" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">内核写缓冲区饱和，继续写入直接丢弃或阻塞</text>
+
+  <!-- Left Step 4 -->
+  <rect x="56" y="339" width="423" height="46" rx="6" fill="#f1f5f9" stroke="#4f5d75" stroke-width="1"/>
+  <text x="70" y="360" fill="#475569" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">4. 弱网客户端 (TCP rcv_wnd = 0)</text>
+  <text x="70" y="376" fill="#64748b" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">网络严重拥塞或假死，完全停止消费数据</text>
+
+  <!-- Left Connecting Lines -->
+  <line x1="267" y1="191" x2="267" y2="203" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <line x1="267" y1="269" x2="267" y2="281" stroke="#dc2626" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="267" y1="327" x2="267" y2="339" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Left Consequence Tag -->
+  <rect x="56" y="397" width="423" height="30" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+  <text x="267" y="417" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">后果：慢客户端绑架集群内存，全站常规请求连带瘫痪</text>
+
+
+  <!-- Right Container: End-to-End Reactive Backpressure -->
+  <rect x="525" y="95" width="455" height="345" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <rect x="525" y="95" width="455" height="34" rx="8" fill="#f0fdf4"/>
+  <text x="541" y="118" fill="#115e59" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">现代生产级 · 端到端反向背压流控 (滑窗联动与挂起)</text>
+
+  <!-- Right Step 1 -->
+  <rect x="541" y="145" width="423" height="46" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="555" y="166" fill="#1e40af" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">1. 客户端 TCP 零窗口通告 (Zero Window Probe)</text>
+  <text x="555" y="182" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">移动弱网或界面阻塞，客户端通告 rcv_wnd = 0</text>
+
+  <!-- Right Step 2 -->
+  <rect x="541" y="203" width="423" height="52" rx="6" fill="#f8fafc" stroke="#4f5d75" stroke-width="1"/>
+  <text x="555" y="224" fill="#0f172a" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">2. 网关探测 Socket 阻塞 (EAGAIN / EWOULDBLOCK)</text>
+  <text x="555" y="242" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">立即停止对上游 gRPC / HTTP2 的 Read()，不消耗上游流</text>
+
+  <!-- Right Step 3 -->
+  <rect x="541" y="267" width="423" height="52" rx="6" fill="#fffbeb" stroke="#eb6c36" stroke-width="1"/>
+  <text x="555" y="288" fill="#b45309" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">3. HTTP/2 流控窗口耗尽 (STREAM_WINDOW = 0)</text>
+  <text x="555" y="306" fill="#475569" font-size="11" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">上游推理引擎发送通道被 TCP/H2 协议层原生阻塞挂起</text>
+
+  <!-- Right Step 4 -->
+  <rect x="541" y="331" width="423" height="54" rx="6" fill="#f0fdf4" stroke="#0d9488" stroke-width="1"/>
+  <text x="555" y="352" fill="#0f766e" font-size="12" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">4. 推理引擎暂停调度，算力让渡就绪请求</text>
+  <text x="555" y="372" fill="#115e59" font-size="11" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">vLLM 挂起慢 sequence，GPU 优先服务排队请求，零显存泄漏！</text>
+
+  <!-- Right Connecting Lines (Upward Backpressure Flow) -->
+  <line x1="752" y1="203" x2="752" y2="191" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arrow-link)"/>
+  <line x1="752" y1="267" x2="752" y2="255" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+  <line x1="752" y1="331" x2="752" y2="319" stroke="#0d9488" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Right Consequence Tag -->
+  <rect x="541" y="397" width="423" height="30" rx="4" fill="#ccfbf1" stroke="#0d9488" stroke-width="1"/>
+  <text x="752" y="417" fill="#0f766e" font-size="11" font-weight="700" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">收益：内存水位维持平稳，GPU 吞吐率提升 35%</text>
+
+
+  <!-- Bottom Summary Callout -->
+  <rect x="40" y="452" width="940" height="36" rx="6" fill="#eff6ff" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="510" y="475" fill="#1e40af" font-size="12" font-weight="600" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">背压本质：网关不做无界蓄水池；下游不读、上游不发；将压力自然传递至最上游暂停 GPU 算力消耗。</text>
+
+</svg>

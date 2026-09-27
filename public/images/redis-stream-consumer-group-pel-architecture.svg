@@ -9,36 +9,36 @@
 
   <g transform="translate(30, 20)">
     <rect x="0" y="0" width="14" height="24" rx="3" fill="#2563eb" />
-    <text x="24" y="18" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="18" font-weight="700" fill="#2d3142">Redis Stream 消费组与 PEL (Pending Entries List) 可靠确认架构</text>
-    <text x="24" y="36" font-family="'Geist', 'Noto Sans SC', sans-serif" font-size="12" fill="#4f5d75">XADD 生产 ──► XREADGROUP 分发 ──► 消息进入消费者私有 PEL ──► XACK 确认移除 ｜ 节点崩溃则通过 XCLAIM / XAUTOCLAIM 转移抢救</text>
+    <text x="24" y="18" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="700" fill="#2d3142">Redis Stream 消费组与 PEL (Pending Entries List) 可靠确认架构</text>
+    <text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12" fill="#4f5d75">XADD 生产 ──► XREADGROUP 分发 ──► 消息进入消费者私有 PEL ──► XACK 确认移除 ｜ 节点崩溃则通过 XCLAIM / XAUTOCLAIM 转移抢救</text>
   </g>
 
   <g transform="translate(30, 70)">
     
-    <g transform="translate(20, 15)" font-family="'Geist', 'Noto Sans SC', sans-serif">
+    <g transform="translate(20, 15)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif">
       <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
       <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">1. 消息入队与持久化日志 (XADD stream * sensor 100)</text>
-      <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">生成毫秒级单调递增 ID (如 1718900000000-0) ──► 采用紧凑 Rax (Radix Tree) 树结构持久化存储在内存与 AOF 中</text>
+      <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">生成毫秒级单调递增 ID (如 1718900000000-0) ──► 采用紧凑 Rax (Radix Tree) 树结构持久化存储在内存与 AOF 中</text>
       <text x="15" y="62" font-size="8" fill="#4f5d75">打破传统 Pub/Sub 无法持久化与丢历史消息的缺陷！</text>
 
       <g transform="translate(0, 83)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="rgba(235,108,54,0.30)" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">2. 消费组并发竞争拉取 (XREADGROUP GROUP mygroup c1 COUNT 1 STREAMS stream &gt;)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">消费组内多个 Consumer 竞争分发消息 ──► 每条消息仅分配给组内某一个消费者 ──► 自动推进 Group Last Delivered ID</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">消费组内多个 Consumer 竞争分发消息 ──► 每条消息仅分配给组内某一个消费者 ──► 自动推进 Group Last Delivered ID</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">实现天然的水平负载均衡与并发消费！</text>
       </g>
 
       <g transform="translate(0, 166)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#7a8399" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#2d3142">3. PEL 待确认列表与可靠保底 (In-Flight Tracking in PEL)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#4f5d75">读取后消息立即挂载到当前 Consumer 的 PEL 中 ──► 记录投递时间与投递次数 ──► 必须显式收到 XACK 才从 PEL 抹除！</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#4f5d75">读取后消息立即挂载到当前 Consumer 的 PEL 中 ──► 记录投递时间与投递次数 ──► 必须显式收到 XACK 才从 PEL 抹除！</text>
         <text x="15" y="62" font-size="8" fill="#4f5d75">100% 杜绝消费端处理中途断电导致消息静默丢失！</text>
       </g>
 
       <g transform="translate(0, 249)">
         <rect width="860" height="75" rx="4" fill="#ffffff" stroke="#d8b4fe" stroke-width="1" />
         <text x="15" y="24" font-size="10" font-weight="700" fill="#4f5d75">4. 崩溃孤儿消息抢救接管 (XAUTOCLAIM stream mygroup c2 60000 0-0)</text>
-        <text x="15" y="44" font-family="'Geist Mono', monospace" font-size="8" fill="#2d3142">Consumer 1 宕机超过 60s ──► Consumer 2 扫描发现滞留 PEL ──► 强行变更所有权至自己名下重新执行！</text>
+        <text x="15" y="44" font-family="ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace" font-size="8" fill="#2d3142">Consumer 1 宕机超过 60s ──► Consumer 2 扫描发现滞留 PEL ──► 强行变更所有权至自己名下重新执行！</text>
         <text x="15" y="62" font-size="8" fill="#2d3142">兼具轻量极速与企业级可靠性的自愈消息流中枢！</text>
       </g>
     </g>

@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "Prompt Caching", "vLLM", "SGLang", "KV Cache", "RadixAttention", "前缀路由", "系统性能"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -102,7 +102,7 @@ SGLang 将这一思想推向了极致：它在推理引擎内存中维护了一�
 网关如何在既不全量运行重型 Tokenizer，又不在关键路径引入高延迟的前提下，实现精准的前缀亲和？
 
 ```mermaid
-flowchart TD
+flowchart LR
     Client["Client / Agent Request"] --> GW["AI Gateway Prefix Router"]
 
     subgraph FastFeature["1. 超轻量前缀特征提取 (< 0.5ms)"]

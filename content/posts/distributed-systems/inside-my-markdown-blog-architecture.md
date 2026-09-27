@@ -97,17 +97,15 @@ export const postMetaSchema = z.object({
 这是整个系统最核心的部分。位于 `lib/content/markdown.ts`，使用 unified 的 remark → rehype 管线：
 
 ```mermaid
-flowchart TB
-    MD["Raw Markdown<br/>字符串输入"] --> R1["remarkParse<br/>mdast 解析器"]
-    R1 --> R2["remarkGfm<br/>表格 / 任务列表 / 删除线"]
+flowchart LR
+    MD["Raw Markdown<br/>字符串输入"] --> R1["remarkParse<br/>mdast 解析"]
+    R1 --> R2["remarkGfm<br/>GFM 扩展"]
     R2 --> R3["remarkRehype<br/>mdast → hast"]
-    R3 --> R4["rehypeMermaid<br/>mermaid 代码块 → 带 data-src 的 div"]
-    R4 --> R5["rehypeSlug<br/>为 h2/h3 注入 id"]
-    R5 --> R6["collectHtmlHeadings<br/>提取目录项"]
-    R6 --> R7["rehypeAutolinkHeadings<br/>追加 # 锚点"]
-    R7 --> R8["rehypeShikiFromHighlighter<br/>代码高亮"]
-    R8 --> R9["rehypeStringify<br/>hast → HTML 字符串"]
-    R9 --> OUT["输出：{ html, toc, readingTimeMinutes, plainText }"]
+    R3 --> R4["rehypeMermaid<br/>mermaid 预处理"]
+    R4 --> R5["rehypeSlug & Toc<br/>id 与目录提取"]
+    R5 --> R7["rehypeShiki<br/>代码语法高亮"]
+    R7 --> R9["rehypeStringify<br/>hast → HTML"]
+    R9 --> OUT["输出结构体<br/>{html, toc, time, text}"]
 ```
 
 ### 3.1 代码高亮：Shiki 双主题方案
@@ -253,17 +251,19 @@ export async function generateStaticParams() {
 页面渲染时，`ArticleBody` 接收预编译的 HTML，通过 `dangerouslySetInnerHTML` 注入。客户端组件 `CodeCopy` 和 `MermaidRenderer` 作为 side-effect 组件，增强已渲染的静态 HTML。
 
 ```mermaid
-graph TD
+flowchart LR
     subgraph Compile["构建时编译"]
-        A["content/posts/*.md"] --> B["lib/content/posts.ts<br/>读取 + 解析 frontmatter"]
+        direction TB
+        A["content/posts/*.md"] --> B["lib/content/posts.ts<br/>读取 + frontmatter"]
         B --> C["lib/content/markdown.ts<br/>unified 管线编译"]
-        C --> D["编译产物：<br/>{ html, toc, readingTimeMinutes }"]
+        C --> D["编译产物：<br/>{html, toc, readingTime}"]
     end
 
     subgraph SSG["静态页面生成"]
+        direction TB
         D --> E["generateStaticParams<br/>→ /writing/{slug}"]
-        D --> F["generateMetadata<br/>→ OG / Twitter / canonical"]
-        E --> G["ArticlePage 组件渲染"]
+        D --> F["generateMetadata<br/>→ OG / SEO 元数据"]
+        E --> G["ArticlePage 页面组件"]
         F --> G
         G --> H["静态 HTML/CSS/JS<br/>写入 ./out"]
     end
@@ -387,20 +387,19 @@ const nextConfig: NextConfig = {
 `.github/workflows/deploy-pages.yml` 定义了两阶段任务：
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Job1["Job: build (Ubuntu)"]
-        C1["Checkout repo"] --> C2["Setup Node 24"]
-        C2 --> C3["npm ci （精确安装）"]
-        C3 --> C4["npm test （Vitest）"]
-        C4 --> C5["npm run lint （ESLint）"]
-        C5 --> C6["npm run build （next build）"]
-        C6 --> C7["configure-pages<br/>仅 push/dispatch"]
-        C7 --> C8["upload-pages-artifact<br/>把 ./out 上传为 CI artifact"]
+        direction TB
+        C1["Checkout & Setup Node 24"] --> C3["npm ci 精确依赖安装"]
+        C3 --> C4["npm test (Vitest) & lint"]
+        C4 --> C6["npm run build (next build)"]
+        C6 --> C8["upload-pages-artifact<br/>上传 ./out 产物"]
     end
 
     subgraph Job2["Job: deploy"]
+        direction TB
         C8 --> D1["deploy-pages<br/>发布到 GitHub Pages"]
-        D1 --> D2["https://moreconsequence.github.io<br/>CDN 全球生效"]
+        D1 --> D2["moreconsequence.github.io<br/>CDN 全球生效"]
     end
 ```
 
@@ -430,36 +429,41 @@ git add -A && git commit -m "新文章" && git push
 ## 七、 架构全景图
 
 ```mermaid
-graph TB
+flowchart LR
     subgraph Source["源码层"]
-        A["content/posts/*.md"] --- A2["public/images/*"]
-        A --- A3["components/*"]
+        direction TB
+        A["content/posts/*.md"]
+        A2["public/images/*"]
+        A3["components/* & app/*"]
     end
 
     subgraph Build["构建时 (Next.js / CI)"]
-        B["lib/content/posts.ts<br/>readdirSync + readFileSync"] --> B2["lib/content/schema.ts<br/>Zod 校验"]
-        B2 --> B3["lib/content/markdown.ts<br/>unified 编译管线"]
-        B3 --> B4["产出：<br/>html / toc / readingTime / plainText"]
+        direction TB
+        subgraph Pipeline["数据与编译流水线"]
+            direction LR
+            B["posts.ts<br/>文件扫描"] --> B2["schema.ts<br/>Zod 强校验"]
+            B2 --> B3["markdown.ts<br/>unified 编译"]
+            B3 --> B4["结构化数据缓存"]
+        end
 
-        B4 --> R1["app/writing/[slug]/page.tsx<br/>文章页 SSG"]
-        B4 --> R2["app/writing/page.tsx<br/>归档页"]
-        B4 --> R3["app/page.tsx<br/>首页"]
-        B4 --> R4["app/tags/**<br/>标签页"]
-
-        B4 --> D1["app/rss.xml/route.ts"]
-        B4 --> D2["app/sitemap.xml/route.ts"]
-        B4 --> D3["app/search-index.json/route.ts"]
-
-        R1 & R2 & R3 & R4 --> NEXT["next build<br/>output: export"]
-        D1 & D2 & D3 --> NEXT
+        subgraph Outputs["页面与路由生成"]
+            direction LR
+            B4 --> P1["SSG 页面<br/>(文章/归档/首页/标签)"]
+            B4 --> P2["Route Handlers<br/>(RSS / Sitemap / 搜索索引)"]
+            P1 --> NEXT["next build<br/>(output: export)"]
+            P2 --> NEXT
+        end
         NEXT --> OUT["./out 目录<br/>纯静态 HTML/CSS/JS"]
     end
 
-    subgraph Deploy["部署时"]
+    subgraph Deploy["部署与边缘分发"]
+        direction TB
         OUT --> GH["GitHub Actions<br/>upload-pages-artifact"]
         GH --> GP["GitHub Pages CDN"]
         GP --> USER["用户浏览器"]
     end
+
+    Source --> Build
 ```
 
 ## 八、 关键设计决策

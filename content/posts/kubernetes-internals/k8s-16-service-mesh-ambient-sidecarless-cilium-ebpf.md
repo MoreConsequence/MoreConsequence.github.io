@@ -78,12 +78,12 @@ sequenceDiagram
 ### 2.1 传统 Sidecar 模式的三大不可承受之重
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph PainPoints["传统 Envoy Sidecar 的三大原罪"]
-        direction TB
-        P1["1. 延迟激增 (Latency Tax)<br/>每个报文经历 4 次 TCP 栈遍历与 iptables 线性扫描<br/>原本 0.5ms 的内部调用被硬生生拖慢至 3~5ms"]
-        P2["2. 内存黑洞 (Memory Footprint)<br/>每个 Envoy 维护全集群所有 Service 的端点与路由缓存<br/>10,000 个 Pod 造成 800GB~1.5TB 内存被代理吞噬"]
-        P3["3. 强耦合升级地狱 (Coupled Lifecycle)<br/>Envoy 与业务容器同生共死<br/>修复 Envoy CVE 漏洞必须滚动重启全部上万个业务 Pod!"]
+        direction LR
+        P1["1. 延迟激增 (Latency Tax)<br/>4 次 TCP 栈遍历 + iptables<br/>0.5ms 拖慢至 3~5ms"]
+        P2["2. 内存黑洞 (Memory Footprint)<br/>全集群 Service 端点缓存<br/>万 Pod 吞噬 800GB+ 内存"]
+        P3["3. 强耦合生命周期<br/>Envoy 与业务同生共死<br/>升级 CVE 须重启万级业务 Pod"]
     end
 ```
 
@@ -96,32 +96,28 @@ flowchart TD
 Google 与 Isovalent、Solo.io 在 2022 年底联合推出了 **Ambient Mesh**。它的核心设计哲学是：**“四层传输层与七层业务层彻底分家”**！
 
 ```mermaid
-flowchart TB
-    subgraph AmbientArch["Istio Ambient Mesh 分层解耦全景拓扑"]
+flowchart LR
+    subgraph WorkerNode1["工作节点 Node 1 (源端)"]
         direction TB
-
-        subgraph WorkerNode1["工作节点 Node 1"]
-            PodA1["业务 Pod A1 (纯裸容器, 无任何 Sidecar!)"]
-            PodA2["业务 Pod A2 (纯裸容器, 无任何 Sidecar!)"]
-            Ztunnel1["ztunnel (Zero-Trust Tunnel)<br/>每节点单例 DaemonSet / 采用极速 Rust 编写<br/>仅处理 L4 mTLS 握手、HBONE 隧道与身份识别<br/>单节点内存消耗仅 ~15MB!"]
-            PodA1 -. 自动透明重定向 .-> Ztunnel1
-            PodA2 -. 自动透明重定向 .-> Ztunnel1
-        end
-
-        subgraph WorkerNode2["工作节点 Node 2"]
-            PodB1["业务 Pod B1 (纯裸容器, 无任何 Sidecar!)"]
-            Ztunnel2["ztunnel (Node 2 单例 DaemonSet)"]
-            PodB1 -.-> Ztunnel2
-        end
-
-        subgraph Layer7Plane["按需独立的七层治理层 (L7 Processing Plane)"]
-            Waypoint["waypoint proxy (标准的 Envoy 实例)<br/>按 Namespace 或 Service 独立按需拉起<br/>仅在需要高级路由/灰度/WAF 时才介入<br/>完全脱离业务 Pod 独立演进与无损升级!"]
-        end
-
-        Ztunnel1 ==="HBONE 协议 (基于 HTTP/2 承载的双向 mTLS 隧道 / 端口 15008)"===> Ztunnel2
-        Ztunnel1 -. "若目标服务声明了 L7 策略" .-> Waypoint
-        Waypoint -.-> Ztunnel2
+        PodA["业务 Pod (无 Sidecar)"]
+        Ztunnel1["ztunnel (Rust DaemonSet)<br/>L4 mTLS + HBONE 隧道 (~15MB)"]
+        PodA -. "透明重定向" .-> Ztunnel1
     end
+
+    subgraph Layer7Plane["按需独立 L7 治理层"]
+        Waypoint["waypoint proxy (独立 Envoy)<br/>按 Namespace 按需拉起 / 独立无损升级"]
+    end
+
+    subgraph WorkerNode2["工作节点 Node 2 (宿端)"]
+        direction TB
+        Ztunnel2["ztunnel (Node 2 单例)"]
+        PodB["业务 Pod (无 Sidecar)"]
+        Ztunnel2 -.-> PodB
+    end
+
+    Ztunnel1 == "L4 HBONE (HTTP/2 mTLS :15008)" ==> Ztunnel2
+    Ztunnel1 -. "若声明 L7 策略" .-> Waypoint
+    Waypoint -.-> Ztunnel2
 ```
 
 ### 3.1 核心组件分工：ztunnel vs waypoint

@@ -5,7 +5,7 @@ publishedAt: "2026-09-23"
 tags: ["AI网关", "LLM", "Agent", "Envoy", "系统架构", "高并发", "Prompt Caching", "MCP协议"]
 category: "大模型与智能体系统"
 series: "面向大模型与 Agent 的 AI 网关实战"
-draft: true
+draft: false
 featured: true
 ---
 
@@ -31,20 +31,14 @@ AI 网关（AI Gateway）绝不是在传统网关上加一个 `OpenAI API Key` �
 
 为了看清 AI 网关的必要性，我们必须首先把传统网关建立在经典微服务之上的底层假设，与大模型 / Agent 工作负载做一个彻底的对比剖析：
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        传统 API 网关 vs AI 网关                        │
-├──────────────────┬──────────────────────┬──────────────────────────────┤
-│ 维度             │ 传统微服务网关 (Kong/Nginx) │ AI / Agent 网关             │
-├──────────────────┼──────────────────────┼──────────────────────────────┤
-│ 1. 连接与传输    │ 毫秒级 (5~50ms), 短连接│ 数十秒至数分钟, SSE 长连接流式 │
-│ 2. 内存与背压    │ 固定 Content-Length 缓冲 │ Chunked 无穷尽流，需零拷贝背压 │
-│ 3. 资源计量标尺  │ 请求数 (QPS / RPS)     │ Token (Prompt + Completion)  │
-│ 4. 负载均衡拓扑  │ 无状态轮询 / 最小连接数 │ 前缀亲和 (Prefix-Aware / KV) │
-│ 5. 失败与异常    │ HTTP 状态码明确 (4xx/5xx)│ 200 OK 内部截断/幻觉/死循环   │
-│ 6. 治理对象      │ REST / gRPC API 接口 │ 模型 + Prompt + MCP 工具代理 │
-└──────────────────┴──────────────────────┴──────────────────────────────┘
-```
+| 维度 | 传统微服务网关 (Kong/Nginx) | AI / Agent 网关 |
+| :--- | :--- | :--- |
+| **1. 连接与传输** | 毫秒级 (5~50ms), 短连接 | 数十秒至数分钟, SSE 长连接流式 |
+| **2. 内存与背压** | 固定 Content-Length 缓冲 | Chunked 无穷尽流，需零拷贝背压 |
+| **3. 资源计量标尺** | 请求数 (QPS / RPS) | Token (Prompt + Completion) |
+| **4. 负载均衡拓扑** | 无状态轮询 / 最小连接数 | 前缀亲和 (Prefix-Aware / KV) |
+| **5. 失败与异常** | HTTP 状态码明确 (4xx/5xx) | 200 OK 内部截断/幻觉/死循环 |
+| **6. 治理对象** | REST / gRPC API 接口 | 模型 + Prompt + MCP 工具代理 |
 
 ```mermaid
 flowchart LR
@@ -183,39 +177,36 @@ Round 3: [System Prompt (4k)] + [User Input (1k)] + [Tool Call 1 (2k)] + [Tool C
 Agent Router 的设计哲学非常纯粹：**将高并发、高吞吐的流量搬运交给 Envoy Proxy，将所有大模型专属的复杂业务逻辑卸载到专门的控制器与外置处理器。**
 
 ```mermaid
-flowchart TD
-    subgraph ControlPlane["Control Plane (Kubernetes Operator)"]
-        CRD["AI Gateway CRDs<br/>(AIGatewayRoute, AIServiceBackend, BackendSecurityPolicy)"]
-        ARC["Agent Router Controller"]
-        EGC["Envoy Gateway Controller"]
-        ExtServer["Envoy Gateway Extension Server<br/>(Injects Dynamic xDS Filter Chains)"]
-
-        CRD --> ARC
-        ARC --> EGC
-        EGC --> ExtServer
-    end
+flowchart LR
+    Client["Agent Client"] -->|"HTTPS / SSE"| Listener
 
     subgraph DataPlanePod["Data Plane (Per-Pod High Performance Ingress)"]
         direction LR
         subgraph EnvoyCore["Envoy Proxy (C++)"]
+            direction TB
             Listener["TLS / HTTP2 / HTTP3 Listener"]
+            ExtProcFilter["External Processor (ExtProc)"]
             RouterFilter["Envoy Router & Rate Limit"]
-            ExtProcFilter["External Processor Filter (ExtProc)"]
             
             Listener --> ExtProcFilter --> RouterFilter
         end
 
         subgraph ExtProcSidecar["ExtProc Engine (Go / Rust Sidecar)"]
+            direction TB
             TokenCounter["BPE Token Calculator & Quota"]
-            Transform["OpenAI <-> Bedrock/Claude Protocol Transform"]
-            Guardrails["Regex & Embeddings Content Inspection"]
+            Transform["Protocol Transform (OpenAI <-> Bedrock)"]
+            Guardrails["Regex & Embeddings Guardrails"]
         end
 
-        ExtProcFilter <===>|"Unix Domain Socket (UDS)<br/>Zero Network Hop"| ExtProcSidecar
+        ExtProcFilter <===>|"UDS (Zero Hop)"| ExtProcSidecar
+    end
+
+    subgraph ControlPlane["Control Plane (Kubernetes Operator)"]
+        direction TB
+        CRD["AI Gateway CRDs"] --> ARC["Agent Router Controller"] --> EGC["Envoy Gateway Controller"] --> ExtServer["Extension Server"]
     end
 
     ExtServer -.->|"Dynamic xDS Stream"| EnvoyCore
-    Client["Agent Client"] -->|"HTTPS Request / SSE Stream"| Listener
     RouterFilter -->|"Upstream HTTP Stream"| Backends["Upstream LLM Serving (vLLM / SaaS)"]
 ```
 
@@ -243,58 +234,14 @@ flowchart TD
 
 为了彻底搞懂 AI 网关如何处理一个 Agent 请求，我们沿着一条请求的完整生命周期，放大网关内部的状态流动：
 
-```text
-[Agent 发起流式推理请求]
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 1: 客户端连接握手与协议归一化                      │
-│ - 建立 HTTP/2 或 HTTP/3 双向流                         │
-│ - 鉴权校验 API Key，提取 Tenant ID 与 Model 请求参数    │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 2: Token 预估与两阶段记账 (Token Pre-accounting)    │
-│ - 网关内置轻量 BPE 快速分词 (tiktoken 缓存)            │
-│ - 预估 Prompt Tokens = 1,250                           │
-│ - Redis 原子扣减 TPM 令牌桶: 预扣 (1250 + max_tokens/4) │
-│ - 若超卖: 直接返回 429 与 Retry-After                  │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 3: 语义前缀分析与亲和调度 (Prefix-Aware Routing)  │
-│ - 提取 System Prompt + 历史对话哈希前缀               │
-│ - 查询一致性哈希环 / Radix 缓存状态表                  │
-│ - 选取具有热 KV Cache 的最佳推理实例 (如 GPU-Worker-03) │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 4: 建立上游长连接与流式背压转发                    │
-│ - 向 GPU-Worker-03 建立 HTTP/2 Stream                  │
-│ - 开启零拷贝分块通道 (Zero-Copy Chunk Pipeline)        │
-│ - 监听下游 Socket 可写事件 (Epoll OUT) 动态驱动流控    │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 5: 流式帧实时过滤与工具调用劫持 (Streaming Tap)    │
-│ - 逐帧捕获 data: {"choices":[{"delta":...}]}           │
-│ - 实时正则流式窗口扫描 (防注入与敏感词审查)             │
-│ - 检测 tool_calls 声明: 提取目标工具名称与 JSON 片段    │
-│ - 若触发 MCP 工具: 网关旁路发起鉴权与参数校验          │
-└────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│ 步骤 6: 终结统计与配额结算 (Reconciliation)            │
-│ - 接收 [DONE] 帧，解析 usage 元数据                    │
-│   (Prompt: 1,250, Completion: 380)                     │
-│ - Redis 异步补齐对账: 释放先前过度预扣的配额 (多退少补) │
-│ - 记录会话拓扑，排查是否出现 A->B->A 循环调用特征      │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    S1["1. 连接握手与协议归一化<br/>• HTTP/2 / HTTP/3 双向流<br/>• API Key 鉴权与租户提取"] -->
+    S2["2. Token 预估与两阶段记账<br/>• 轻量 BPE 快速分词<br/>• Redis 令牌桶预扣"] -->
+    S3["3. 前缀分析与亲和调度<br/>• Radix 树前缀哈希<br/>• 路由至热 KV Cache GPU"] -->
+    S4["4. 上游连接与背压转发<br/>• 零拷贝管道<br/>• Epoll OUT 动态背压"] -->
+    S5["5. 流式过滤与 MCP 劫持<br/>• 正则流式窗口扫描<br/>• 实时 tool_calls 拦截"] -->
+    S6["6. 终结统计与配额结算<br/>• 解析 [DONE] 帧 usage<br/>• Redis 多退少补对账"]
 ```
 
 ---
@@ -304,43 +251,46 @@ flowchart TD
 在实际的企业级生产落地中，单个网关往往无法同时兼顾“全局安全管控”与“精细化推理加速”。业内成熟方案普遍采用 **两层网关拓扑（Two-Tier Gateway Pattern）**：
 
 ```mermaid
-flowchart TD
-    Client["Client / Agent Apps"] --> GlobalLB["Global Load Balancer"]
+flowchart LR
+    Client["Client / Agent Apps"] --> GlobalLB["Global Load Balancer"] --> T1_GW
 
-    subgraph TierOne["Tier 1: 全局入口网关 (Global Ingress Gateway)"]
+    subgraph TierOne["Tier 1: 全局入口网关 (Global Ingress)"]
         direction TB
-        T1_GW["Envoy Agent Router (Cluster Ingress)"]
-        Auth["企业 SSO / 租户 API Key 统一认证"]
-        FinOps["全局预算配额 (TPM/RPM) & 跨云计费对账"]
-        Router["云厂商抽象与灾备路由 (OpenAI / Claude / 私有云)"]
+        T1_GW["Envoy Agent Router<br/>(Cluster Ingress)"]
+        Auth["SSO / API Key 认证"]
+        FinOps["全局预算配额 (TPM/RPM)"]
+        Router["跨云多模型灾备路由"]
         
         T1_GW --- Auth
         T1_GW --- FinOps
         T1_GW --- Router
     end
 
-    GlobalLB --> T1_GW
+    T1_GW -->|"SaaS 公有模型"| SaaS["公有云模型<br/>(OpenAI / Anthropic API)"]
+    T1_GW -->|"私有化模型请求"| T2_GW
 
-    subgraph TierTwo["Tier 2: 模型推理协同网关 (Serving Ingress Gateway)"]
+    subgraph TierTwo["Tier 2: 推理协同网关 (Serving Ingress)"]
         direction TB
-        T2_GW["SGLang / vLLM 专属前缀网关 (Model Ingress)"]
-        PrefixCache["Prefix Hash Ring (Radix Tree 状态感知)"]
-        ChunkedPrefill["Chunked Prefill & PD 分离流量协调"]
-        GPUHealth["GPU 显存水位与队列排队感知负载均衡"]
+        T2_GW["SGLang / vLLM 网关<br/>(Model Ingress)"]
+        PrefixCache["Prefix Hash Ring (Radix 树)"]
+        ChunkedPrefill["Chunked Prefill & PD 分离"]
+        GPUHealth["GPU 显存水位排队负载均衡"]
 
         T2_GW --- PrefixCache
         T2_GW --- ChunkedPrefill
         T2_GW --- GPUHealth
     end
 
-    T1_GW -->|"私有化模型请求"| T2_GW
-    T1_GW -->|"SaaS 公共模型"| SaaS["公有云模型 (OpenAI / Anthropic API)"]
-
     subgraph GPUCluster["私有化 GPU 推理集群 (Infra Mesh)"]
-        T2_GW --> Node1["GPU Worker 01 (vLLM / Cache Hit)"]
-        T2_GW --> Node2["GPU Worker 02 (vLLM / Cold)"]
-        T2_GW --> Node3["GPU Worker 03 (SGLang)"]
+        direction TB
+        Node1["GPU Worker 01 (vLLM / Hit)"]
+        Node2["GPU Worker 02 (vLLM / Cold)"]
+        Node3["GPU Worker 03 (SGLang)"]
     end
+
+    T2_GW --> Node1
+    T2_GW --> Node2
+    T2_GW --> Node3
 ```
 
 ### 1. 第一层（Tier 1）：全局企业级控制层（Global Ingress）
@@ -395,14 +345,18 @@ flowchart TD
 本篇作为全系列的开篇总纲，从第一性原理确立了核心架构范式。接下来，我们将按逻辑主线深入开源核心，逐篇彻底拆解关键机制的源码与工程实现：
 
 ```mermaid
-flowchart TD
-    P1["01 概念与架构总纲 (本篇已完成)"] --> P2["02 SSE 流式传输与长连接背压<br/>(Higress Wasm 数据面解密)"]
-    P2 --> P3["03 智能模型路由与降级级联<br/>(LiteLLM Router & RouteLLM 源码剖析)"]
-    P3 --> P4["04 前缀感知路由 (Prefix-Aware Routing)<br/>(协同 vLLM / SGLang KV Cache)"]
-    P4 --> P5["05 Token 双轨自适应限流与 FinOps<br/>(Kong AI 源码与 Redis Lua 原子精算)"]
-    P5 --> P6["06 语义缓存 (Semantic Cache) 工程实现<br/>(GPTCache 架构与假阳性陷阱)"]
-    P6 --> P7["07 Agent 工具代理与 MCP 协议网关<br/>(安全沙箱、动态发现与死循环熔断)"]
-    P7 --> P8["08 流式实时安全护栏 (Guardrails)<br/>(NeMo / Portkey 双层防御与防越狱)"]
+flowchart LR
+    subgraph Track1["阶段一：基础架构与路由加速"]
+        direction LR
+        P1["01 架构总纲<br/>(已完成)"] --> P2["02 SSE 流式传输<br/>(Higress Wasm)"] --> P3["03 智能模型路由<br/>(LiteLLM Router)"] --> P4["04 前缀感知路由<br/>(KV Cache 协同)"]
+    end
+
+    subgraph Track2["阶段二：计量治理与安全护栏"]
+        direction LR
+        P5["05 Token 自适应限流<br/>(Kong AI / Redis Lua)"] --> P6["06 语义缓存实现<br/>(GPTCache 避坑)"] --> P7["07 MCP 协议网关<br/>(工具沙箱治理)"] --> P8["08 实时安全护栏<br/>(NeMo 双层防御)"]
+    end
+
+    Track1 --> Track2
 ```
 
 在下一篇中，我们将聚焦 **网络传输与高并发背压**：深入解密当数十秒的 SSE Chunked Transfer 席卷网关时，Alibaba Higress 如何在 Envoy Wasm 沙箱中实现零拷贝解析、动态 Token 注入与连接耗尽防御。

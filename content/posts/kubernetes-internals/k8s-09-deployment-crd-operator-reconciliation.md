@@ -46,23 +46,23 @@ series: "Kubernetes 架构内核与生产实战"
 但面对以下分布式有状态拓扑，原生工作负载瞬间跌入能力断崖：
 
 ```mermaid
-flowchart TD
-    subgraph NativeLimit["原生 Deployment / StatefulSet 的盲区"]
+flowchart LR
+    subgraph NativeLimit["原生 Workload 盲区"]
         direction TB
-        F1["无法理解分布式共识协议 (Raft / Paxos)"]
-        F2["无法执行主从平滑切主 (Failover)"]
-        F3["无法执行分片槽位重平衡 (Rebalance)"]
-        F4["无法协调复杂的在线数据备份与冷热恢复"]
+        F1["不理解共识协议 (Raft/Paxos)"]
+        F2["无法主从平滑切主 (Failover)"]
+        F3["无法分片槽位重平衡 (Rebalance)"]
+        F4["无法协调复杂数据备份恢复"]
     end
 
-    subgraph OperatorPower["Operator 模式: 运维专家代码化"]
+    subgraph OperatorPower["Operator: 领域专家代码化"]
         direction TB
-        Op["自定义控制器 (Operator Controller)"]
-        DomainKnowledge["内置 SRE 领域专业知识:<br/>- 检查从节点复制积压 (Replication Lag)<br/>- 发起哨兵共识投票或 Patroni 切主<br/>- 优雅注销分片并重定向流量<br/>- 原子更新集群拓扑元数据"]
+        Op["自定义控制器 (Operator)"]
+        DomainKnowledge["内置 SRE 领域专业知识:<br/>• 监控复制积压 (Replication Lag)<br/>• 自动发起共识选主与切主<br/>• 优雅槽位迁移与流量调度"]
         Op --> DomainKnowledge
     end
 
-    NativeLimit -. "无法支撑复杂系统" .-> OperatorPower
+    NativeLimit -. "业务复杂化演进" .-> OperatorPower
 ```
 
 - **Redis 集群扩容**：StatefulSet 可以把副本从 3 变成 6，但新加进来的 3 个 Pod 只是孤立运行的空实例，**StatefulSet 根本不知道如何执行 `CLUSTER MEET` 与哈希槽（Hash Slots）的均匀迁移**；
@@ -180,29 +180,23 @@ flowchart LR
 在现代云原生开发中，**Kubebuilder** 与其底层依赖的 **Controller-Runtime** 是工业级 Operator 的事实标准基座。
 
 ```mermaid
-flowchart TD
-    subgraph ControllerRuntime["Controller-Runtime 内部执行拓扑"]
+flowchart LR
+    subgraph Pipeline["Controller-Runtime 调和管道"]
         direction TB
-        Manager["Manager 统一生命周期管理 (持有一组 Controller、Cache、Client)"]
-        InformerCache["Informer Cache (本地无锁内存只读索引库)"]
-        WorkQueue["RateLimitingQueue (限速退避工作队列)"]
-        WorkerPool["Worker Goroutine 并发池 (并发调和处理)"]
-        ReconcileFunc["Reconcile(ctx, req) 业务逻辑函数"]
-
-        Manager --> InformerCache
-        InformerCache -->|"Watch 事件入队"| WorkQueue
-        WorkQueue -->|"Pop 出队"| WorkerPool
-        WorkerPool -->|"执行"| ReconcileFunc
+        InformerCache["Informer Cache (内存索引)"] -->|"Watch 入队"| WorkQueue["RateLimitingQueue (限速队列)"]
+        WorkQueue -->|"Pop 出队"| WorkerPool["Worker Goroutine 池"]
+        WorkerPool -->|"调用"| ReconcileFunc["Reconcile(ctx, req)"]
     end
 
-    subgraph ExtSystem["集群实际状态与外部服务"]
+    subgraph External["集群与外部资源"]
+        direction TB
         API["kube-apiserver"]
-        DB["真实的分布式数据库 / 云厂商资源"]
+        DB["数据库 / 云资源"]
     end
 
-    ReconcileFunc -.->|"1. 读本地缓存 (零 I/O)"| InformerCache
-    ReconcileFunc -.->|"2. 幂等创建/修改 Pod"| API
-    ReconcileFunc -.->|"3. 执行业务探测与槽位迁移"| DB
+    ReconcileFunc -.->|"1. 零 I/O 读缓存"| InformerCache
+    ReconcileFunc -.->|"2. 幂等更新"| API
+    ReconcileFunc -.->|"3. 业务探测"| DB
 ```
 
 ### 3.1 核心调和入口 `Reconcile` 签名之谜
