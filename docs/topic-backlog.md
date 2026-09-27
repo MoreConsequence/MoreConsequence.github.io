@@ -28,6 +28,7 @@
 | Google AX 架构解密与云原生 Agent 编排 | 10 | ✅ 全 10 篇圆满交付（范式转移、Substrate多路复用、亚秒快照、四大原语、gVisor沙箱、MCP治理、零信任网关、终局选型） |
 | 大模型安全防御与对抗攻防实战 | 5 | ✅ 全 5 篇圆满交付（双模型隔离、MCP工具投毒、RAG间接注入、多轮会话语义漂移、流式实时安全护栏） |
 | 多智能体协同协议与 A2A 分布式编排 | 6 | ✅ 全 6 篇圆满交付（多智能体拓扑学、A2A能力卡协议、有向等待图死锁熔断、孔多塞辩论共识、MVCC共享记忆、Durable工作流状态机） |
+| 生产级 Coding Agent 架构与自主执行引擎 | 6 | ✅ 全 6 篇圆满交付（增量AST/RepoMap、精准Diff/模糊匹配、PTY交互终端、LSP类型穿透、TDD自愈闭环、Git Alternates/OverlayFS虚拟工作区） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -357,12 +358,12 @@
 
 | 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
 | :--- | :--- | :--- |
-| 01. 语法树增量解析与 Repo Map 压缩（`coding-agent-01-ast-tree-sitter-repo-map.md`） | 超长代码库如何在几千 Token 内完成符号图谱索引？Tree-sitter 增量 AST 解析、PageRank 依赖图权重与启发式上下文压缩 | Tree-sitter C/Wasm 绑定、PageRank 节点权重算法、Repo Map 紧凑拓扑与文件依赖图修剪 |
-| 02. 代码精准差异编辑（Diff & Patch）（`coding-agent-02-exact-diff-patch-fuzzy-match.md`） | 为什么让大模型输出完整文件必然崩塌？Search/Replace 块匹配算法、Levenshtein 模糊编辑距离容错与 AST 节点保护 | GNU Patch / Myers Diff 算法、统一差分格式、模糊匹配滑动窗口与未修改代码零膨胀 |
-| 03. Linux 伪终端（PTY）多路复用（`coding-agent-03-pty-multiplexing-interactive-cli.md`） | 如何像人类工程师一样与 Bash 终端交互？Linux PTY 伪终端主从架构、ANSI 逃逸码清洗与交互式输入捕获 | Linux `posix_openpt(3)`、xterm.js 协议、终端无锁环形缓冲区与超时死循环熔断 |
-| 04. Language Server Protocol 深度穿透（`coding-agent-04-lsp-protocol-type-diagnostics.md`） | 终结纯文本盲猜！通过 JSON-RPC 桥接真实语言服务器（gopls / tsserver / pyright），实现编译期红线诊断与跨文件跳转 | LSP 3.17 规范、`textDocument/diagnostic` 增量同步、声明跳转与类型定义 AST 穿透 |
-| 05. 测试驱动自愈与上下文精简（`coding-agent-05-test-driven-self-healing-loop.md`） | 捕获单测崩溃堆栈、过滤海量日志噪音并将有效错误喂回大模型的确定性闭环 | JUnit / Vitest 结构化结果抽取、错误堆栈清洗压缩、失败用例定向重放与回滚策略 |
-| 06. 虚拟工作区与亚秒级快照回滚（`coding-agent-06-virtual-workspace-git-alternates.md`） | 智能体写错代码如何一键原子还原？Git Alternates 对象借用、OverlayFS 写时复制（CoW）与沙箱分支隔离 | Git Alternates 零开销仓库克隆、Linux OverlayFS 联合挂载与失败试验一键瞬时回滚 |
+| ✅ 01. 语法树增量解析与 Repo Map 压缩（2026-10-06 `coding-agent-01-ast-tree-sitter-repo-map.md`） | 超长代码库如何在几千 Token 内完成符号图谱索引？Tree-sitter 增量 AST 解析、PageRank 依赖图权重与启发式上下文压缩 | Tree-sitter C/Wasm 绑定、PageRank 节点权重算法、Repo Map 紧凑拓扑与文件依赖图修剪 |
+| ✅ 02. 代码精准差异编辑（Diff & Patch）（2026-10-07 `coding-agent-02-exact-diff-patch-fuzzy-match.md`） | 为什么让大模型输出完整文件必然崩塌？Search/Replace 块匹配算法、Levenshtein 模糊编辑距离容错与 AST 节点保护 | GNU Patch / Myers Diff 算法、统一差分格式、模糊匹配滑动窗口与未修改代码零膨胀 |
+| ✅ 03. Linux 伪终端（PTY）多路复用（2026-10-08 `coding-agent-03-pty-multiplexing-interactive-cli.md`） | 如何像人类工程师一样与 Bash 终端交互？Linux PTY 伪终端主从架构、ANSI 逃逸码清洗与交互式输入捕获 | Linux `posix_openpt(3)`、xterm.js 协议、终端无锁环形缓冲区与超时死循环熔断 |
+| ✅ 04. Language Server Protocol 深度穿透（2026-10-09 `coding-agent-04-lsp-protocol-type-diagnostics.md`） | 终结纯文本盲猜！通过 JSON-RPC 桥接真实语言服务器（gopls / tsserver / pyright），实现编译期红线诊断与跨文件跳转 | LSP 3.17 规范、`textDocument/diagnostic` 增量同步、声明跳转与类型定义 AST 穿透 |
+| ✅ 05. 测试驱动自愈与上下文精简（2026-10-10 `coding-agent-05-test-driven-self-healing-loop.md`） | 捕获单测崩溃堆栈、过滤海量日志噪音并将有效错误喂回大模型的确定性闭环 | JUnit / Vitest 结构化结果抽取、错误堆栈清洗压缩、失败用例定向重放与回滚策略 |
+| ✅ 06. 虚拟工作区与亚秒级快照回滚（2026-10-11 `coding-agent-06-virtual-workspace-git-alternates.md`） | 智能体写错代码如何一键原子还原？Git Alternates 对象借用、OverlayFS 写时复制（CoW）与沙箱分支隔离 | Git Alternates 零开销仓库克隆、Linux OverlayFS 联合挂载与失败试验一键瞬时回滚 |
 
 ### S18. 多智能体协同协议与 A2A 分布式编排【全 6 篇圆满交付】
 

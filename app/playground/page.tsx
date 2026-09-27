@@ -4,6 +4,7 @@ import { LLMCalculator } from "@/components/sandboxes/llm-calculator";
 import { RaftSimulator } from "@/components/sandboxes/raft-simulator";
 import { VectorClockSimulator } from "@/components/sandboxes/vector-clock-simulator";
 import { TCPacingSimulator } from "@/components/sandboxes/tc-pacing-simulator";
+import { PagedAttentionSimulator } from "@/components/sandboxes/paged-attention-simulator";
 
 export const metadata: Metadata = {
   title: "交互式系统设计实验室",
@@ -46,6 +47,15 @@ const SANDBOX_LIST = [
     href: "/playground/tc-pacing",
     relatedArticle: "/writing/kernel-05-tc-bbr-qdisc-traffic-shaping",
     relatedTitle: "Linux 流量控制（TC）与拥塞调度：qdisc 排队规则、HTB 分层令牌桶与 BBR 联动",
+  },
+  {
+    id: "paged-attention",
+    icon: "🧩",
+    title: "PagedAttention 显存虚拟分页与 CoW 交互沙盘",
+    desc: "交互式体验大模型虚拟内存分页架构：探索物理块池、逻辑页表、前缀零拷贝共享、写时复制（Copy-on-Write）分支与显存换出/换入机制。",
+    href: "/playground/paged-attention",
+    relatedArticle: "/writing/ai-backend-16-paged-attention-kv-cache-virtual-memory",
+    relatedTitle: "PagedAttention 与显存虚拟化：操作系统的虚拟内存分页哲学如何终结大模型显存碎片",
   },
 ];
 
@@ -176,6 +186,25 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <TCPacingSimulator />
+      </section>
+
+      {/* Sandbox 5: PagedAttention Simulator */}
+      <section id="paged-attention" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🧩</span>
+            <h2 className="playground-section-title">
+              5. PagedAttention 显存虚拟分页与 CoW 交互沙盘
+            </h2>
+          </div>
+          <Link
+            href="/writing/ai-backend-16-paged-attention-kv-cache-virtual-memory"
+            className="playground-section-sublink"
+          >
+            查看原理解析 ──►
+          </Link>
+        </div>
+        <PagedAttentionSimulator />
       </section>
     </div>
   );

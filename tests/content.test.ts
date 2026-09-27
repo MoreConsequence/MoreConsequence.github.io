@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "coding-agent-06-virtual-workspace-git-alternates",
+      "coding-agent-05-test-driven-self-healing-loop",
+      "coding-agent-04-lsp-protocol-type-diagnostics",
+      "coding-agent-03-pty-multiplexing-interactive-cli",
+      "coding-agent-02-exact-diff-patch-fuzzy-match",
+      "coding-agent-01-ast-tree-sitter-repo-map",
       "ax-10-model-governance-token-finops-production-tradeoffs",
       "ax-09-gateway-primitive-zero-trust-egress-secret-redaction",
       "ax-08-security-gvisor-syscall-interception-sandbox-isolation",
