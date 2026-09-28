@@ -33,6 +33,7 @@
 | 企业级分布式存储内核与 NVMe 硬件调优 | 6 | ✅ 全 6 篇圆满交付（RUM猜想、ZNS物理闪存、SPDK用户态驱动、NVMe-oF RDMA、Reed-Solomon纠删码与Ceph CRUSH几何算法） |
 | 高性能计算与 GPU 算子工程：从 CUDA 核心到 Triton 极速编译 | 6 | ✅ 全 6 篇圆满交付（SIMT与合并访存、Bank Conflict破局、Tensor Core MMA指令、FlashAttention访存平铺、OpenAI Triton编译优化与FP8量化算子） |
 | Linux 内核级可观测性与 eBPF 系统工程 | 6 | ✅ 全 6 篇圆满交付（验证器DAG剪枝证明、BPF Maps无锁并发、kprobe到fentry蹦床、XDP极速数据面、Sockops套接字重定向与持续性能剖析混合调用栈） |
+| 大规模分布式服务韧性与混沌工程内核 | 6 | ✅ 全 6 篇圆满交付（BBR自适应过载保护、分布式令牌桶与配额租赁、断路器三态机与信号量隔离、负载脱落与Deadline级联透传、Linux TC/Netem/eBPF故障注入、The Tail at Scale与对冲请求） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -433,6 +434,19 @@
 | ✅ 04. XDP 极速数据面与硬件卸载（2026-11-02 `ebpf-04-xdp-packet-filter-hardware-offload.md`） | 在进入 Linux 网络协议栈之前就地拦截！XDP 驱动模式、单机千万级 PPS 丢包抗 DDoS 与极速路由直通 | 物理网卡驱动层挂载、XDP Action（DROP/TX/REDIRECT）、硬件智能网卡卸载与 AF_XDP 零拷贝 Socket |
 | ✅ 05. Sockops 套接字重定向加速（2026-11-03 `ebpf-05-sockops-socket-redirection-mesh.md`） | 终结 Service Mesh 边车（Sidecar）延迟！利用 `sk_msg` 与 `sock_hash` 绕过四层握手与整个 TCP/IP 协议栈 | TCP 连接建立挂钩（Hook）、套接字直接内存重定向（Socket Redirection）、Sidecar 延迟直接砍半 |
 | ✅ 06. 持续性能剖析与混合调用栈（2026-11-04 `ebpf-06-continuous-profiling-stack-unwinding.md`） | 无侵入全栈火焰图如何绘制？Frame Pointer、DWARF 调试信息与 eBPF 用户态/内核态混合调用栈解析 | 栈回溯物理原理、编译器优化 `-fomit-frame-pointer` 的破解之道、无符号表剥离二进制文件的高效回溯 |
+
+### S23. 大规模分布式服务韧性与混沌工程内核【全 6 篇圆满交付】
+
+**为什么**：微服务高可用的终极防线。传统系统在突发流量、网络抖动与慢调用时极易发生级联雪崩。从 BBR 自适应过载保护、分布式精准令牌桶，到断路器三态机隔离、负载脱落、内核级混沌工程与 The Tail at Scale 对冲请求，打通从算法数学到 Linux 网络数据面的高可用全链路。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. BBR 自适应系统过载保护（2026-11-05 `resilience-01-bbr-adaptive-overload-protection.md`） | 为什么静态 QPS 面对异构请求开销必将崩溃？利特尔法则（L = λW）与借鉴 TCP BBR 探测物理并发窗口 | 追踪 MinRTT 与 MaxPass，动态计算 MaxInflight = MaxPass * MinRTT + α，联动 CPU 动态水位 |
+| ✅ 02. 分布式精准限流内核（2026-11-06 `resilience-02-distributed-rate-limiting-token-bucket.md`） | Redis 同步限流 RTT 损耗与时钟漂移难题；惰性补算模型与本地配额租约微批处理（Quota Lease） | Redis Lua 原子脚本、时钟回退截断保护与削减 90% 集中式网络访问开销 |
+| ✅ 03. 断路器三态机与隔离哲学（2026-11-07 `resilience-03-circuit-breaker-hystrix-vs-sentinel.md`） | 慢调用引发线程耗尽雪崩；CLOSED/OPEN/HALF-OPEN 状态机与 Hystrix 线程池 vs Sentinel 信号量深度对比 | 抢占式中断 vs 零上下文切换开销，Sentinel LeapArray 无锁环形滑动窗口设计 |
+| ✅ 04. 负载脱落与级联超时传递（2026-11-08 `resilience-04-load-shedding-priority-shed-cascading.md`） | 客户端断连与超时引发的深层“僵尸请求”死工浪费；W3C Baggage、gRPC grpc-timeout 与优先级脱落 | 相对时间预算递减传递、HTTP/2 RST_STREAM 级联取消与 CoDel 队列驻留延迟多级剪枝 |
+| ✅ 05. 混沌工程内核与故障注入（2026-11-09 `resilience-05-chaos-engineering-ebpf-fault-injection.md`） | 为什么应用层 Mock 测不出物理真实灾难？Linux TC/Netem 排队规则与 eBPF bpf_override_return 系统调用覆写 | Gilbert-Elliott 突发丢包马尔可夫模型、非对称断网、VFS 磁盘只读模拟与死人开关自毁保护 |
+| ✅ 06. 极端尾部延迟消减（2026-11-10 `resilience-06-hedged-requests-tail-at-scale.md`） | 扇出并发长尾放大陷阱（1 - (1-p)^N 概率暴增）；Google The Tail at Scale 经典论文与对冲请求（Hedged Requests） | 仅在 P95 延迟未返回时对冲次生请求，以不足 5% 流量代价换取 P99.9 尾部延迟暴降 80% |
 
 
 

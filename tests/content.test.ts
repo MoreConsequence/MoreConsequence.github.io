@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "resilience-06-hedged-requests-tail-at-scale",
+      "resilience-05-chaos-engineering-ebpf-fault-injection",
+      "resilience-04-load-shedding-priority-shed-cascading",
+      "resilience-03-circuit-breaker-hystrix-vs-sentinel",
+      "resilience-02-distributed-rate-limiting-token-bucket",
+      "resilience-01-bbr-adaptive-overload-protection",
       "ebpf-06-continuous-profiling-stack-unwinding",
       "ebpf-05-sockops-socket-redirection-mesh",
       "ebpf-04-xdp-packet-filter-hardware-offload",
