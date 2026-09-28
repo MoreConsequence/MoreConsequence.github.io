@@ -392,18 +392,18 @@
 | ✅ 05. 状态机复制与确定性容灾（2026-10-16 `hft-05-smr-wal-deterministic-replay.md`） | 基于状态机复制（SMR）、WAL 环形日志与 DFA 自动机 100% 确定性回放容灾 | 非易失性内存 (NVDIMM/CXL)、异步双写复制、微秒级主备热切与状态机同态校验 |
 | ✅ 06. 资金复式记账与风控流控（2026-10-17 `hft-06-double-entry-bookkeeping-risk-control.md`） | Pat Helland 最终一致性对账、热点账户分段锁与单微秒级动态穿透风控规则引擎 | 1494 年 Pacioli 复式记账公理、内存位图动态穿透风控、热点分段账户与无死锁记账 |
 
-### S20. 企业级分布式存储内核与 NVMe 硬件调优【前沿新系列】
+### S20. 企业级分布式存储内核与 NVMe 硬件调优【全 6 篇圆满交付】
 
 **为什么**：存储系统是分布式系统的根基。深入 LSM-Tree、B+Tree、Ceph、SPDK 与 NVMe-oF，打通从用户态到固态硬盘物理闪存通道的全链路。
 
 | 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
 | :--- | :--- | :--- |
-| 01. RUM 猜想与现代存储权衡（`storage-01-rum-conjecture-rocksdb-pebble.md`） | 读放大、写放大、空间放大三难困境在 RocksDB / Pebble / WiredTiger 中的工程平衡 | 溯源 Athanassoulis 2016 RUM 猜想、Leveled vs Tiered 压实拓扑与布隆过滤器假阳性位级推导 |
-| 02. SSD 物理闪存与 ZNS 存储（`storage-02-nvme-ssd-zns-zoned-storage.md`） | FTL 闪存转换层、GC 写入放大（WA）、TRIM 指令与 ZNS 绕过内部 GC 消除 P99 抖动 | NAND Flash 擦写物理特性、Zoned Namespaces 规范、内核驱动协同与 P99 延迟暴降 80% 实测 |
-| 03. SPDK 用户态无锁存储引擎（`storage-03-spdk-nvme-user-space-driver.md`） | 轮询模式驱动（UIO/VFIO）、异步轮询彻底终结传统同步 I/O 系统调用与上下文切换 | Intel SPDK 架构、NVMe 命令队列 (SQ/CQ) 用户态直投、无锁线程模型与百万 IOPS 压榨 |
-| 04. NVMe-oF 极速远程块存储（`storage-04-nvme-over-fabrics-rdma-roce.md`） | RDMA RoCEv2 穿透网络，万兆网络下实现本地 SSD 级的超低延迟访问 | NVMe-oF 协议规范、RDMA 零拷贝读写 (READ/WRITE)、无损队列流控与跨机架共享块存储 |
-| 05. 纠删码（EC）与网络修复（`storage-05-erasure-coding-reed-solomon-lrc.md`） | Reed-Solomon 编码数学矩阵推导、LRC 局部重构码与节点宕机修复带宽优化 | 伽罗华域 (Galois Field GF(2^8)) 矩阵乘法、SIMD 硬件加速指令与网络修复流重构 |
-| 06. Ceph CRUSH 算法几何原理（`storage-06-ceph-crush-algorithm-mathematics.md`） | 通过纯数学哈希计算消除中心元数据寻址表，权重加权、故障域拓扑与数据重平衡震荡规避 | Sage Weil 2006 OSDI 论文推导、Straw2 算法数学证明、机架/机房多级故障域隔离 |
+| ✅ 01. RUM 猜想与现代存储权衡（2026-10-18 `storage-01-rum-conjecture-rocksdb-pebble.md`） | 读放大、写放大、空间放大三难困境在 RocksDB / Pebble / WiredTiger 中的工程平衡 | 溯源 Athanassoulis 2016 RUM 猜想、Leveled vs Tiered 压实拓扑与布隆过滤器假阳性位级推导 |
+| ✅ 02. SSD 物理闪存与 ZNS 存储（2026-10-19 `storage-02-nvme-ssd-zns-zoned-storage.md`） | FTL 闪存转换层、GC 写入放大（WA）、TRIM 指令与 ZNS 绕过内部 GC 消除 P99 抖动 | NAND Flash 擦写物理特性、Zoned Namespaces 规范、内核驱动协同与 P99 延迟暴降 80% 实测 |
+| ✅ 03. SPDK 用户态无锁存储引擎（2026-10-20 `storage-03-spdk-nvme-user-space-driver.md`） | 轮询模式驱动（UIO/VFIO）、异步轮询彻底终结传统同步 I/O 系统调用与上下文切换 | Intel SPDK 架构、NVMe 命令队列 (SQ/CQ) 用户态直投、无锁线程模型与百万 IOPS 压榨 |
+| ✅ 04. NVMe-oF 极速远程块存储（2026-10-21 `storage-04-nvme-over-fabrics-rdma-roce.md`） | RDMA RoCEv2 穿透网络，万兆网络下实现本地 SSD 级的超低延迟访问 | NVMe-oF 协议规范、RDMA 零拷贝读写 (READ/WRITE)、无损队列流控与跨机架共享块存储 |
+| ✅ 05. 纠删码（EC）与网络修复（2026-10-22 `storage-05-erasure-coding-reed-solomon-lrc.md`） | Reed-Solomon 编码数学矩阵推导、LRC 局部重构码与节点宕机修复带宽优化 | 伽罗华域 (Galois Field GF(2^8)) 矩阵乘法、SIMD 硬件加速指令与网络修复流重构 |
+| ✅ 06. Ceph CRUSH 算法几何原理（2026-10-23 `storage-06-ceph-crush-algorithm-mathematics.md`） | 通过纯数学哈希计算消除中心元数据寻址表，权重加权、故障域拓扑与数据重平衡震荡规避 | Sage Weil 2006 OSDI 论文推导、Straw2 算法数学证明、机架/机房多级故障域隔离 |
 
 ---
 

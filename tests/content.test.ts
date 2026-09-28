@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "storage-06-ceph-crush-algorithm-mathematics",
+      "storage-05-erasure-coding-reed-solomon-lrc",
+      "storage-04-nvme-over-fabrics-rdma-roce",
+      "storage-03-spdk-nvme-user-space-driver",
+      "storage-02-nvme-ssd-zns-zoned-storage",
+      "storage-01-rum-conjecture-rocksdb-pebble",
       "hft-06-double-entry-bookkeeping-risk-control",
       "hft-05-smr-wal-deterministic-replay",
       "hft-04-zero-gc-off-heap-memory-engineering",
