@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "ebpf-06-continuous-profiling-stack-unwinding",
+      "ebpf-05-sockops-socket-redirection-mesh",
+      "ebpf-04-xdp-packet-filter-hardware-offload",
+      "ebpf-03-kprobe-uprobe-fentry-trampoline",
+      "ebpf-02-bpf-maps-lru-percpu-lockless",
+      "ebpf-01-verifier-register-liveness-pruning",
       "gpu-06-fp8-mixed-precision-quantization-gemm",
       "gpu-05-triton-compiler-polyhedral-autotuning",
       "gpu-04-flash-attention-tiling-online-softmax",

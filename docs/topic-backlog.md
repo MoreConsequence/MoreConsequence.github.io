@@ -29,7 +29,10 @@
 | 大模型安全防御与对抗攻防实战 | 5 | ✅ 全 5 篇圆满交付（双模型隔离、MCP工具投毒、RAG间接注入、多轮会话语义漂移、流式实时安全护栏） |
 | 多智能体协同协议与 A2A 分布式编排 | 6 | ✅ 全 6 篇圆满交付（多智能体拓扑学、A2A能力卡协议、有向等待图死锁熔断、孔多塞辩论共识、MVCC共享记忆、Durable工作流状态机） |
 | 生产级 Coding Agent 架构与自主执行引擎 | 6 | ✅ 全 6 篇圆满交付（增量AST/RepoMap、精准Diff/模糊匹配、PTY交互终端、LSP类型穿透、TDD自愈闭环、Git Alternates/OverlayFS虚拟工作区） |
-| 超低延迟与金融级高性能交易系统架构 | 6 | 🚀 研发中（前 3 篇单核撮合定序、Disruptor 环形缓冲区与内核旁路网络完成） |
+| 超低延迟与金融级高性能交易系统架构 | 6 | ✅ 全 6 篇圆满交付（单核内存撮合定序、Disruptor无锁环形队列、Solarflare/DPDK网络旁路、零GC堆外内存、SMR确定性回放容灾、复式记账穿透风控） |
+| 企业级分布式存储内核与 NVMe 硬件调优 | 6 | ✅ 全 6 篇圆满交付（RUM猜想、ZNS物理闪存、SPDK用户态驱动、NVMe-oF RDMA、Reed-Solomon纠删码与Ceph CRUSH几何算法） |
+| 高性能计算与 GPU 算子工程：从 CUDA 核心到 Triton 极速编译 | 6 | ✅ 全 6 篇圆满交付（SIMT与合并访存、Bank Conflict破局、Tensor Core MMA指令、FlashAttention访存平铺、OpenAI Triton编译优化与FP8量化算子） |
+| Linux 内核级可观测性与 eBPF 系统工程 | 6 | ✅ 全 6 篇圆满交付（验证器DAG剪枝证明、BPF Maps无锁并发、kprobe到fentry蹦床、XDP极速数据面、Sockops套接字重定向与持续性能剖析混合调用栈） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -417,6 +420,20 @@
 | ✅ 04. FlashAttention 核心机理深度拆解（2026-10-27 `gpu-04-flash-attention-tiling-online-softmax.md`） | 突破 $O(N^2)$ 内存墙！如何不将完整的 Attention 矩阵写回 HBM，在高速片上 SRAM 完成自注意力计算？ | Tri Dao 2022 论文推导、分块计算（Tiling）、Online Softmax 统计增量重标度与反向重计算（Recomputation） |
 | ✅ 05. OpenAI Triton 编译优化与多面体调度（2026-10-28 `gpu-05-triton-compiler-polyhedral-autotuning.md`） | 为什么 Pythonic 的 Triton 能够击败手工编写的纯 CUDA 代码？Block 级自动内存分配、LLVM IR 管道化与自动调优 | Block 级编程范式、自动内存聚合（Memory Coalescing）、共享内存分配优化与超参数自动寻优搜索 |
 | ✅ 06. FP8 混合精度与低比特量化算子（2026-10-29 `gpu-06-fp8-mixed-precision-quantization-gemm.md`） | Hopper 架构下 2 倍吞吐压榨：E4M3 与 E5M2 浮点表示、动态与延迟缩放（Delayed Scaling）与量化 GEMM | IEEE 浮点动态范围对比、FP8 异常溢出防护、通道级（Per-Channel）量化与 CUTLASS 3.x 硬件级管线流水 |
+
+### S22. Linux 内核级可观测性与 eBPF 系统工程【全 6 篇圆满交付】
+
+**为什么**：云原生监控与网络安全的新基建。现代微服务与分布式集群排障，传统日志、APM 插桩存在严重的性能损耗与侵入性。从 eBPF 验证器有向无环图剪枝、无锁 BPF Maps，到 XDP 千万级 PPS 数据面与连续性能剖析（Continuous Profiling），打通内核态无损观测全链路。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. eBPF 验证器数学证明（2026-10-30 `ebpf-01-verifier-register-liveness-pruning.md`） | 为什么任意 eBPF 程序都绝不可能搞崩 Linux 内核？验证器有向无环图（DAG）遍历、寄存器存活性分析与状态剪枝（State Pruning） | 溯源 BPF 验证器第一性原理、停机问题（Halting Problem）有限规避、指针越界检查与指令复杂度预算 |
+| ✅ 02. BPF Maps 内存与无锁并发（2026-10-31 `ebpf-02-bpf-maps-lru-percpu-lockless.md`） | 内核态与用户态如何以微秒级吞吐共享状态？Hash / Array / LRU / Per-CPU 与 RingBuffer 无锁并发模型 | BPF Maps 底层内存布局、Per-CPU 消除跨核缓存一致性风暴、BPF 环形缓冲区内存屏障与溢出处理 |
+| ✅ 03. 内核探针与 BPF Trampoline（2026-11-01 `ebpf-03-kprobe-uprobe-fentry-trampoline.md`） | 从 kprobe 软中断断点（`int3`）到 fentry/fexit 蹦床（Trampoline）零开销桩函数的架构演进 | Linux 异常表处理、断点指令引发的数千周期流水线清空、fentry 动态修补指令与亚微秒插桩 |
+| ✅ 04. XDP 极速数据面与硬件卸载（2026-11-02 `ebpf-04-xdp-packet-filter-hardware-offload.md`） | 在进入 Linux 网络协议栈之前就地拦截！XDP 驱动模式、单机千万级 PPS 丢包抗 DDoS 与极速路由直通 | 物理网卡驱动层挂载、XDP Action（DROP/TX/REDIRECT）、硬件智能网卡卸载与 AF_XDP 零拷贝 Socket |
+| ✅ 05. Sockops 套接字重定向加速（2026-11-03 `ebpf-05-sockops-socket-redirection-mesh.md`） | 终结 Service Mesh 边车（Sidecar）延迟！利用 `sk_msg` 与 `sock_hash` 绕过四层握手与整个 TCP/IP 协议栈 | TCP 连接建立挂钩（Hook）、套接字直接内存重定向（Socket Redirection）、Sidecar 延迟直接砍半 |
+| ✅ 06. 持续性能剖析与混合调用栈（2026-11-04 `ebpf-06-continuous-profiling-stack-unwinding.md`） | 无侵入全栈火焰图如何绘制？Frame Pointer、DWARF 调试信息与 eBPF 用户态/内核态混合调用栈解析 | 栈回溯物理原理、编译器优化 `-fomit-frame-pointer` 的破解之道、无符号表剥离二进制文件的高效回溯 |
+
 
 
 ---
