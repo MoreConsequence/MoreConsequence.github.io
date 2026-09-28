@@ -4,6 +4,7 @@ import type { CompiledPost } from "./content/types";
 export type SearchDocument = {
   slug: string;
   title: string;
+  series?: string;
   description: string;
   tags: string[];
   publishedAt: string;
@@ -13,14 +14,24 @@ export type SearchDocument = {
 export function buildSearchIndex(posts: CompiledPost[]): SearchDocument[] {
   return posts
     .filter((post) => !post.meta.draft)
-    .map((post) => ({
-      slug: post.slug,
-      title: post.meta.title,
-      description: post.meta.description,
-      tags: post.meta.tags,
-      publishedAt: post.meta.publishedAt,
-      text: post.plainText,
-    }));
+    .map((post) => {
+      const headings = (post.toc || []).map((item) => item.title).join(" ");
+      const snippet = (post.plainText || "")
+        .slice(0, 1000)
+        .replace(/\s+/g, " ")
+        .trim();
+      const text = headings ? `${headings} ${snippet}` : snippet;
+
+      return {
+        slug: post.slug,
+        title: post.meta.title,
+        series: post.meta.series ?? "",
+        description: post.meta.description,
+        tags: post.meta.tags,
+        publishedAt: post.meta.publishedAt,
+        text,
+      };
+    });
 }
 
 export function searchPosts(documents: SearchDocument[], query: string) {
@@ -31,10 +42,11 @@ export function searchPosts(documents: SearchDocument[], query: string) {
     threshold: 0.36,
     ignoreLocation: true,
     keys: [
-      { name: "title", weight: 0.42 },
-      { name: "tags", weight: 0.25 },
-      { name: "description", weight: 0.2 },
-      { name: "text", weight: 0.13 },
+      { name: "title", weight: 0.38 },
+      { name: "series", weight: 0.22 },
+      { name: "tags", weight: 0.2 },
+      { name: "description", weight: 0.12 },
+      { name: "text", weight: 0.08 },
     ],
   })
     .search(normalized, { limit: 8 })

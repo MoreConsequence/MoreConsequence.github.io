@@ -29,6 +29,7 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "穿透大模型炒作迷雾，直击显存虚拟化（PagedAttention）、推测解码、高并发流式网关、RAG 混合检索、自动化评估门禁、代码执行沙箱与自主智能体状态机。",
     keyTopics: ["LLM", "Agent", "AI网关", "vLLM", "RAG", "推测解码", "评估门禁", "MCP协议", "Prompt Caching"],
     seriesList: [
+      "生产级 Coding Agent 架构与自主执行引擎",
       "多智能体协同协议与 A2A 分布式编排",
       "Google AX 架构解密与云原生 Agent 编排",
       "前沿大模型训练与全栈 Infra 解密",
@@ -54,6 +55,9 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "攻克分布式状态与系统韧性难题：共识算法（Paxos/Raft）、事务故障模型（2PC/SAGA）、数据复制、LSM-Tree 与 B-Tree 存储引擎、Postgres HOT 元组与 Redis 深度解密。",
     keyTopics: ["分布式系统", "Raft", "高并发", "存储引擎", "PostgreSQL", "Redis", "MySQL", "ClickHouse"],
     seriesList: [
+      "企业级分布式存储内核与 NVMe 硬件调优",
+      "现代高并发消息引擎内核：从磁盘顺序写到分布式事务消息",
+      "大规模分布式服务韧性与混沌工程内核",
       "分布式共识与高可用容错",
       "分布式系统的故障模型",
       "数据库原理手记",
@@ -70,6 +74,9 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "打破操作系统黑盒，直击单机千万级吞吐背后的内核原语：eBPF/XDP 驱动层包处理、内存分页与脏页回写停顿、EEVDF 调度器、无锁环形队列与万兆网络极限测速。",
     keyTopics: ["Linux内核", "eBPF", "性能优化", "内存分页", "无锁队列", "调度器", "测速工程"],
     seriesList: [
+      "超低延迟与金融级高性能交易系统架构",
+      "高性能计算与 GPU 算子工程：从 CUDA 核心到 Triton 极速编译",
+      "Linux 内核级可观测性与 eBPF 系统工程",
       "Linux 内核网络与 eBPF 性能工程",
       "硬核底层原理",
       "网络测速与极限吞吐工程",
@@ -136,18 +143,18 @@ export function getPostPillarId(
 
   // 2. 根据 slug 规则匹配
   if (/^iot-netdev-/.test(slug)) return "network-iot";
-  if (/^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^multi-agent-|^ax-|^google-ax-/.test(slug)) return "ai-systems";
+  if (/^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^multi-agent-|^ax-|^google-ax-|^coding-agent-/.test(slug)) return "ai-systems";
   if (/^interview-/.test(slug)) return "architecture-practice";
   if (/^k8s-|^kubernetes-/.test(slug)) return "architecture-practice";
-  if (/^kernel-|^bpf-|^linux-|^speedtest-/.test(slug)) return "kernel-performance";
-  if (/^consensus-|^raft-|^postgres-|^redis-|^db-|^sqlite-/.test(slug)) return "distributed-systems";
+  if (/^kernel-|^bpf-|^ebpf-|^linux-|^speedtest-|^hft-|^gpu-/.test(slug)) return "kernel-performance";
+  if (/^consensus-|^raft-|^postgres-|^redis-|^db-|^sqlite-|^storage-|^mq-|^resilience-/.test(slug)) return "distributed-systems";
   if (/^go-|^node-|^typescript-|^service-/.test(slug)) return "architecture-practice";
 
   // 3. 根据标签包含内容降级匹配
   const tagStr = tags.join(" ").toLowerCase();
-  if (/llm|agent|rag|大模型|ai/.test(tagStr)) return "ai-systems";
-  if (/分布式|共识|raft|数据库|postgres|redis|mysql|存储/.test(tagStr)) return "distributed-systems";
-  if (/内核|ebpf|linux|性能|调度|内存/.test(tagStr)) return "kernel-performance";
+  if (/llm|agent|rag|大模型|ai|coding agent/.test(tagStr)) return "ai-systems";
+  if (/分布式|共识|raft|数据库|postgres|redis|mysql|存储|消息引擎|kafka|rocketmq|韧性|混沌工程/.test(tagStr)) return "distributed-systems";
+  if (/内核|ebpf|linux|性能|调度|内存|cuda|gpu|triton|hft|低延迟|dpdk/.test(tagStr)) return "kernel-performance";
   if (/网络|协议|iot|ztp|yang|tcp|http|cdn/.test(tagStr)) return "network-iot";
   if (/面试|系统设计|架构|go|typescript|node/.test(tagStr)) return "architecture-practice";
 

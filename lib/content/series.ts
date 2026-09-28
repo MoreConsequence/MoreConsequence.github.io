@@ -98,6 +98,10 @@ export function getSeriesIcon(seriesName: string): string {
   if (/TypeScript|从 Go 到/i.test(seriesName)) return "🔄";
   if (/底层原理|造轮子/i.test(seriesName)) return "⚙️";
   if (/协议|浏览器/i.test(seriesName)) return "📡";
+  if (/交易|高频|超低延迟|HFT/i.test(seriesName)) return "⚡";
+  if (/GPU|CUDA|Triton|算子/i.test(seriesName)) return "🔥";
+  if (/消息引擎|Kafka|RocketMQ/i.test(seriesName)) return "📨";
+  if (/韧性|混沌工程/i.test(seriesName)) return "🛡️";
   if (/网关/i.test(seriesName)) return "🛡️";
   if (/安全|防御|护栏|越狱/i.test(seriesName)) return "🔒";
   if (/AX|Agent Executor/i.test(seriesName)) return "⚡";

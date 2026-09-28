@@ -143,7 +143,11 @@ export function SearchDialog() {
                 <div>
                   <strong>{result.title}</strong>
                   <p>{result.description}</p>
-                  <small>{result.tags.join(" · ")}</small>
+                  <small>
+                    {result.series
+                      ? `《${result.series}》 · ${result.tags.join(" · ")}`
+                      : result.tags.join(" · ")}
+                  </small>
                 </div>
                 <time>{result.publishedAt.replaceAll("-", ".")}</time>
               </Link>

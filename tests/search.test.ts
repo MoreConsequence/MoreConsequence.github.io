@@ -8,6 +8,7 @@ const post = (
   tags: string[],
   plainText: string,
   draft = false,
+  series?: string,
 ): CompiledPost => ({
   slug,
   body: plainText,
@@ -17,6 +18,7 @@ const post = (
   plainText,
   meta: {
     title,
+    series,
     description: `${title} 的摘要`,
     publishedAt: "2026-07-26",
     tags,
@@ -30,12 +32,20 @@ describe("static search", () => {
     post("go-context", "理解 Go Context", ["Go", "并发"], "取消信号向下传播"),
     post("event-loop", "事件循环不是一个循环", ["JavaScript"], "任务与微任务"),
     post("draft", "未发布手稿", ["内部"], "不能被检索", true),
+    post(
+      "hft-01",
+      "极速交易网卡",
+      ["低延迟", "C++"],
+      "网卡旁路技术",
+      false,
+      "超低延迟与金融级高性能交易系统架构",
+    ),
   ];
 
   it("keeps published searchable fields and excludes drafts", () => {
     const index = buildSearchIndex(posts);
 
-    expect(index).toHaveLength(2);
+    expect(index).toHaveLength(3);
     expect(index[0]).toMatchObject({
       slug: "go-context",
       tags: ["Go", "并发"],
@@ -48,5 +58,11 @@ describe("static search", () => {
     expect(searchPosts(index, "事件循环")[0]?.slug).toBe("event-loop");
     expect(searchPosts(index, "取消信号")[0]?.slug).toBe("go-context");
     expect(searchPosts(index, "并发")[0]?.slug).toBe("go-context");
+  });
+
+  it("matches series name directly", () => {
+    const index = buildSearchIndex(posts);
+
+    expect(searchPosts(index, "金融级高性能")[0]?.slug).toBe("hft-01");
   });
 });
