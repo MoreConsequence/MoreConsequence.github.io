@@ -34,6 +34,7 @@
 | 高性能计算与 GPU 算子工程：从 CUDA 核心到 Triton 极速编译 | 6 | ✅ 全 6 篇圆满交付（SIMT与合并访存、Bank Conflict破局、Tensor Core MMA指令、FlashAttention访存平铺、OpenAI Triton编译优化与FP8量化算子） |
 | Linux 内核级可观测性与 eBPF 系统工程 | 6 | ✅ 全 6 篇圆满交付（验证器DAG剪枝证明、BPF Maps无锁并发、kprobe到fentry蹦床、XDP极速数据面、Sockops套接字重定向与持续性能剖析混合调用栈） |
 | 大规模分布式服务韧性与混沌工程内核 | 6 | ✅ 全 6 篇圆满交付（BBR自适应过载保护、分布式令牌桶与配额租赁、断路器三态机与信号量隔离、负载脱落与Deadline级联透传、Linux TC/Netem/eBPF故障注入、The Tail at Scale与对冲请求） |
+| 现代高并发消息引擎内核：从磁盘顺序写到分布式事务消息 | 6 | ✅ 全 6 篇圆满交付（PageCache预读与sendfile零拷贝、分层时间轮O(1)延迟调度、Pulsar存算分离终结重平衡、RocketMQ半消息与反向回查、Kafka EOS端到端幂等去重、Tiered Storage冷热分层与S3卸载） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -447,6 +448,19 @@
 | ✅ 04. 负载脱落与级联超时传递（2026-11-08 `resilience-04-load-shedding-priority-shed-cascading.md`） | 客户端断连与超时引发的深层“僵尸请求”死工浪费；W3C Baggage、gRPC grpc-timeout 与优先级脱落 | 相对时间预算递减传递、HTTP/2 RST_STREAM 级联取消与 CoDel 队列驻留延迟多级剪枝 |
 | ✅ 05. 混沌工程内核与故障注入（2026-11-09 `resilience-05-chaos-engineering-ebpf-fault-injection.md`） | 为什么应用层 Mock 测不出物理真实灾难？Linux TC/Netem 排队规则与 eBPF bpf_override_return 系统调用覆写 | Gilbert-Elliott 突发丢包马尔可夫模型、非对称断网、VFS 磁盘只读模拟与死人开关自毁保护 |
 | ✅ 06. 极端尾部延迟消减（2026-11-10 `resilience-06-hedged-requests-tail-at-scale.md`） | 扇出并发长尾放大陷阱（1 - (1-p)^N 概率暴增）；Google The Tail at Scale 经典论文与对冲请求（Hedged Requests） | 仅在 P95 延迟未返回时对冲次生请求，以不足 5% 流量代价换取 P99.9 尾部延迟暴降 80% |
+
+### S24. 现代高并发消息引擎内核：从磁盘顺序写到分布式事务消息【全 6 篇圆满交付】
+
+**为什么**：现代分布式系统的核心大动脉。深入剖析磁盘物理几何结构、Linux PageCache 与零拷贝底层网络通道，到千万级分层时间轮、Pulsar 存算分离、分布式事务消息与 S3 分层存储，打通从底层操作系统到分布式流平台的全景内核。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. 顺序写与零拷贝第一性原理（2026-11-11 `mq-01-pagecache-zero-copy-sendfile.md`） | 为什么顺序写能匹敌内存？Linux PageCache 预读机制与 sendfile + DMA 散布收集（Scatter-Gather） | 4 次上下文切换与 4 次拷贝压缩至 2 次切换与 0 次 CPU 拷贝，避免 JVM GC 停顿与内存放大 |
+| ✅ 02. 分层时间轮与延迟消息架构（2026-11-12 `mq-02-time-wheel-delayed-message-engine.md`） | 小顶堆 O(log N) 面对千万级延迟任务的 CPU 崩溃；时分秒齿轮级联与 O(1) 调度 | 溯源 Varghese 1987 经典论文，Kafka Purgatory 结合 Java DelayQueue 稀疏推进时间格 |
+| ✅ 03. 存算分离架构演进（2026-11-13 `mq-03-pulsar-storage-compute-disaggregation.md`） | Kafka 存算一体物理分区绑定在扩容时引发的数据迁移与重平衡雪崩；Pulsar 两层解耦与分段 Ledger | 无状态 Broker 计算层 + BookKeeper 存储层，扩容 0 字节数据迁移，Journal 与 EntryLog 读写物理隔离 |
+| ✅ 04. 分布式事务消息与半消息机制（2026-11-14 `mq-04-distributed-transaction-message-half-topic.md`） | 本地数据库事务与远程消息发送的双写不一致困境；RocketMQ 两阶段半消息与反向事务状态回查 | 内部 Topic 偷换、Broker 主动补偿回查与最终一致性死信队列（DLQ）兜底防线 |
+| ✅ 05. 端到端 Exactly-Once 语义（2026-11-15 `mq-05-exactly-once-semantics-eos-idempotency.md`） | 分布式网络两将军问题下的“恰好一次”破局；生产者 PID + Sequence 幂等去重与事务协调器 | 内存 5 槽位无锁滑动去重、__transaction_state 内部主题与 Read-Committed LSO 隔离防线 |
+| ✅ 06. 现代分层存储架构（2026-11-16 `mq-06-tiered-storage-s3-offloading.md`） | 本地企业级 NVMe 磁盘昂贵迫使 3 天强制删除的容量墙；热数据本地缓冲与封口段（Segment）异步卸载至 S3 | KIP-405 架构、RemoteLogManager 双层元数据索引与客户端零侵入透明流式 Range 读取 |
 
 
 

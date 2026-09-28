@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "mq-06-tiered-storage-s3-offloading",
+      "mq-05-exactly-once-semantics-eos-idempotency",
+      "mq-04-distributed-transaction-message-half-topic",
+      "mq-03-pulsar-storage-compute-disaggregation",
+      "mq-02-time-wheel-delayed-message-engine",
+      "mq-01-pagecache-zero-copy-sendfile",
       "resilience-06-hedged-requests-tail-at-scale",
       "resilience-05-chaos-engineering-ebpf-fault-injection",
       "resilience-04-load-shedding-priority-shed-cascading",
