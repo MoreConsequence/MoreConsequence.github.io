@@ -29,6 +29,7 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "穿透大模型炒作迷雾，直击显存虚拟化（PagedAttention）、推测解码、高并发流式网关、RAG 混合检索、自动化评估门禁、代码执行沙箱与自主智能体状态机。",
     keyTopics: ["LLM", "Agent", "AI网关", "vLLM", "RAG", "推测解码", "评估门禁", "MCP协议", "Prompt Caching"],
     seriesList: [
+      "云原生 AI 与 K8s 大模型调度内核",
       "生产级 Coding Agent 架构与自主执行引擎",
       "多智能体协同协议与 A2A 分布式编排",
       "Google AX 架构解密与云原生 Agent 编排",
@@ -143,7 +144,7 @@ export function getPostPillarId(
 
   // 2. 根据 slug 规则匹配
   if (/^iot-netdev-/.test(slug)) return "network-iot";
-  if (/^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^multi-agent-|^ax-|^google-ax-|^coding-agent-/.test(slug)) return "ai-systems";
+  if (/^k8s-ai-|^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^multi-agent-|^ax-|^google-ax-|^coding-agent-/.test(slug)) return "ai-systems";
   if (/^interview-/.test(slug)) return "architecture-practice";
   if (/^k8s-|^kubernetes-/.test(slug)) return "architecture-practice";
   if (/^kernel-|^bpf-|^ebpf-|^linux-|^speedtest-|^hft-|^gpu-/.test(slug)) return "kernel-performance";

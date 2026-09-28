@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "k8s-ai-06-topology-aware-scheduling-dra-numa",
+      "k8s-ai-05-llm-inference-autoscaling-keda-vllm",
+      "k8s-ai-04-image-acceleration-nydus-dragonfly",
+      "k8s-ai-03-distributed-training-kubeflow-pytorchjob",
+      "k8s-ai-02-gang-scheduling-volcano-kueue",
+      "k8s-ai-01-gpu-virtualization-cdi-mig-mps",
       "mq-06-tiered-storage-s3-offloading",
       "mq-05-exactly-once-semantics-eos-idempotency",
       "mq-04-distributed-transaction-message-half-topic",
