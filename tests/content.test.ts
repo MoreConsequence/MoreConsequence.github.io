@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "gpu-06-fp8-mixed-precision-quantization-gemm",
+      "gpu-05-triton-compiler-polyhedral-autotuning",
+      "gpu-04-flash-attention-tiling-online-softmax",
+      "gpu-03-tensor-core-mma-wmma-ptx",
+      "gpu-02-shared-memory-bank-conflict-padding",
+      "gpu-01-cuda-warp-divergence-memory-coalescing",
       "storage-06-ceph-crush-algorithm-mathematics",
       "storage-05-erasure-coding-reed-solomon-lrc",
       "storage-04-nvme-over-fabrics-rdma-roce",

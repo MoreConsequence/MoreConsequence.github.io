@@ -405,6 +405,20 @@
 | ✅ 05. 纠删码（EC）与网络修复（2026-10-22 `storage-05-erasure-coding-reed-solomon-lrc.md`） | Reed-Solomon 编码数学矩阵推导、LRC 局部重构码与节点宕机修复带宽优化 | 伽罗华域 (Galois Field GF(2^8)) 矩阵乘法、SIMD 硬件加速指令与网络修复流重构 |
 | ✅ 06. Ceph CRUSH 算法几何原理（2026-10-23 `storage-06-ceph-crush-algorithm-mathematics.md`） | 通过纯数学哈希计算消除中心元数据寻址表，权重加权、故障域拓扑与数据重平衡震荡规避 | Sage Weil 2006 OSDI 论文推导、Straw2 算法数学证明、机架/机房多级故障域隔离 |
 
+### S21. 高性能计算与 GPU 算子工程：从 CUDA 核心到 Triton 极速编译【全 6 篇圆满交付】
+
+**为什么**：AI 基础设施与算力集群的绝对核心。大模型推理与训练性能的胜负手不仅在集群拓扑，更在单卡 GPU 硬件算子的极致压榨。从硬件微架构（SIMT/Warp/Tensor Core）到 FlashAttention 与 OpenAI Triton 编译期多面体优化，打通现代大模型高性能计算算子全链路。
+
+| 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
+| :--- | :--- | :--- |
+| ✅ 01. SIMT 微架构与合并访存（2026-10-24 `gpu-01-cuda-warp-divergence-memory-coalescing.md`） | 为什么 Warp Divergence 会让 GPU 算力暴跌 32 倍？全局内存合并访问（Memory Coalescing）物理总线事务与 128B 缓存行对齐 | 溯源 SIMT 执行模型、32 线程单指令分发、非合并跨步访存总线交易膨胀与 Branchless 分支消除 |
+| ✅ 02. 共享内存与 Bank Conflict 破局（2026-10-25 `gpu-02-shared-memory-bank-conflict-padding.md`） | 共享内存（SRAM）19TB/s 超高带宽背后的 32 Banks 交叉寻址与多线程广播/冲突机理 | 32 个 4 字节 Bank 寻址冲突、Stride 访存避免、2D 数组 Padding 错位填充与 Warp Shuffle 寄存器级洗牌 |
+| ✅ 03. Tensor Core 硬件微架构与 MMA 指令（2026-10-26 `gpu-03-tensor-core-mma-wmma-ptx.md`） | 从通用 CUDA Core 到专门的混合精度矩阵乘加（MMA）微架构，算力飙升 16 倍的物理本质 | Volta/Ampere/Hopper Tensor Core 架构、WMMA C++ API、PTX 内联汇编 `mma.sync` 与异步数据搬运 `cp.async` |
+| ✅ 04. FlashAttention 核心机理深度拆解（2026-10-27 `gpu-04-flash-attention-tiling-online-softmax.md`） | 突破 $O(N^2)$ 内存墙！如何不将完整的 Attention 矩阵写回 HBM，在高速片上 SRAM 完成自注意力计算？ | Tri Dao 2022 论文推导、分块计算（Tiling）、Online Softmax 统计增量重标度与反向重计算（Recomputation） |
+| ✅ 05. OpenAI Triton 编译优化与多面体调度（2026-10-28 `gpu-05-triton-compiler-polyhedral-autotuning.md`） | 为什么 Pythonic 的 Triton 能够击败手工编写的纯 CUDA 代码？Block 级自动内存分配、LLVM IR 管道化与自动调优 | Block 级编程范式、自动内存聚合（Memory Coalescing）、共享内存分配优化与超参数自动寻优搜索 |
+| ✅ 06. FP8 混合精度与低比特量化算子（2026-10-29 `gpu-06-fp8-mixed-precision-quantization-gemm.md`） | Hopper 架构下 2 倍吞吐压榨：E4M3 与 E5M2 浮点表示、动态与延迟缩放（Delayed Scaling）与量化 GEMM | IEEE 浮点动态范围对比、FP8 异常溢出防护、通道级（Per-Channel）量化与 CUTLASS 3.x 硬件级管线流水 |
+
+
 ---
 
 ## 开发顺序建议
