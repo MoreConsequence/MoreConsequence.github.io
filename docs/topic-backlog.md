@@ -29,6 +29,7 @@
 | 大模型安全防御与对抗攻防实战 | 5 | ✅ 全 5 篇圆满交付（双模型隔离、MCP工具投毒、RAG间接注入、多轮会话语义漂移、流式实时安全护栏） |
 | 多智能体协同协议与 A2A 分布式编排 | 6 | ✅ 全 6 篇圆满交付（多智能体拓扑学、A2A能力卡协议、有向等待图死锁熔断、孔多塞辩论共识、MVCC共享记忆、Durable工作流状态机） |
 | 生产级 Coding Agent 架构与自主执行引擎 | 6 | ✅ 全 6 篇圆满交付（增量AST/RepoMap、精准Diff/模糊匹配、PTY交互终端、LSP类型穿透、TDD自愈闭环、Git Alternates/OverlayFS虚拟工作区） |
+| 超低延迟与金融级高性能交易系统架构 | 6 | 🚀 研发中（前 3 篇单核撮合定序、Disruptor 环形缓冲区与内核旁路网络完成） |
 | 无系列（ai-backend-no-magic、building-a-markdown-blog） | 2 | ✅ 已发布 |
 
 
@@ -378,18 +379,18 @@
 | ✅ 05. 分层共享记忆与并发隔离（2026-09-28 `multi-agent-05-shared-memory-concurrency-isolation.md`） | 传统互斥锁导致推理卡死；三层记忆金字塔（L1工作记忆/L2协作流/L3事实库）、MVCC 快照隔离、CAS 乐观锁与跨 Agent 污点数据扩散拦截（Taint Tracking） | 溯源 Kung-Robinson 1981 OCC 规范、不可变历史版本链、三路归并与写安全 Sink 门禁 |
 | ✅ 06. 确定性工作流图执行引擎（2026-09-29 `multi-agent-06-durable-execution-dag-state-machine.md`） | 进程崩溃导致状态全失；事件溯源（Event Sourcing）重放、StateGraph 检查点（Checkpoints）、时间旅行调试与人机审批（HITL）零消耗挂起唤醒 | 溯源 Temporal / LangGraph 持久化执行哲学、状态快照原子提交与无阻塞挂起恢复 |
 
-### S19. 超低延迟与金融级高性能交易系统架构【前沿新系列】
+### S19. 超低延迟与金融级高性能交易系统架构【全 6 篇圆满交付】
 
 **为什么**：后端的“性能天花板”——将系统响应时间从 100ms 压缩到 100ns（纳秒级）。大厂资深架构师面试中最具技术辨识度的领域，深入 CPU 缓存、内存屏障、网络旁路与并发无锁编程。
 
 | 序号与规划文件名 | 核心主题与切入问题 | 核心剖析机理与技术规范 |
 | :--- | :--- | :--- |
-| 01. 纯内存撮合引擎哲学（`hft-01-memory-matching-engine-sequencer.md`） | 为什么加锁和多线程反而在交易系统中成为毒瘤？确定性定序器（Sequencer）与价格时间优先撮合 | 单核绑定、流水线指令级并行 (ILP)、FIFO 确定性状态机与零锁内存模型 |
-| 02. LMAX Disruptor 深度剖析（`hft-02-disruptor-ringbuffer-false-sharing.md`） | 环形缓冲区（RingBuffer）、CPU 伪共享（False Sharing）、缓存行填充（Padding）与内存屏障 | MESI 缓存一致性协议、CPU 乱序执行、`@Contended` 内存布局与 CAS 无锁无阻塞队列 |
-| 03. 内核旁路与极速网络（`hft-03-kernel-bypass-dpdk-solarflare-onload.md`） | Solarflare Onload、DPDK 与物理网卡硬件时间戳（Hardware Timestamping）打破网络协议栈税 | 用户态网络栈直通网卡、大页内存分配、无拷贝包处理与零中断轮询驱动 (PMD) |
-| 04. 零 GC 内存工程（`hft-04-zero-gc-off-heap-memory-engineering.md`） | 内存预分配、对象池（Object Pool）、堆外直接内存（Off-Heap）与免逃逸分析代码设计 | JVM 停顿消除、直接内存指针操作、结构体内存紧凑对齐与环形复用池 |
-| 05. 状态机复制与确定性容灾（`hft-05-smr-wal-deterministic-replay.md`） | 基于状态机复制（SMR）、WAL 环形日志与 DFA 自动机 100% 确定性回放容灾 | 非易失性内存 (NVDIMM/CXL)、异步双写复制、微秒级主备热切与状态机同态校验 |
-| 06. 资金复式记账与风控流控（`hft-06-double-entry-bookkeeping-risk-control.md`） | Pat Helland 最终一致性对账、热点账户分段锁与单微秒级动态穿透风控规则引擎 | 1494 年 Pacioli 复式记账公理、内存位图动态穿透风控、热点分段账户与无死锁记账 |
+| ✅ 01. 纯内存撮合引擎哲学（2026-10-12 `hft-01-memory-matching-engine-sequencer.md`） | 为什么加锁和多线程反而在交易系统中成为毒瘤？确定性定序器（Sequencer）与价格时间优先撮合 | 单核绑定、流水线指令级并行 (ILP)、FIFO 确定性状态机与零锁内存模型 |
+| ✅ 02. LMAX Disruptor 深度剖析（2026-10-13 `hft-02-disruptor-ringbuffer-false-sharing.md`） | 环形缓冲区（RingBuffer）、CPU 伪共享（False Sharing）、缓存行填充（Padding）与内存屏障 | MESI 缓存一致性协议、CPU 乱序执行、`@Contended` 内存布局与 CAS 无锁无阻塞队列 |
+| ✅ 03. 内核旁路与极速网络（2026-10-14 `hft-03-kernel-bypass-dpdk-solarflare-onload.md`） | Solarflare Onload、DPDK 与物理网卡硬件时间戳（Hardware Timestamping）打破网络协议栈税 | 用户态网络栈直通网卡、大页内存分配、无拷贝包处理与零中断轮询驱动 (PMD) |
+| ✅ 04. 零 GC 内存工程（2026-10-15 `hft-04-zero-gc-off-heap-memory-engineering.md`） | 内存预分配、对象池（Object Pool）、堆外直接内存（Off-Heap）与免逃逸分析代码设计 | JVM 停顿消除、直接内存指针操作、结构体内存紧凑对齐与环形复用池 |
+| ✅ 05. 状态机复制与确定性容灾（2026-10-16 `hft-05-smr-wal-deterministic-replay.md`） | 基于状态机复制（SMR）、WAL 环形日志与 DFA 自动机 100% 确定性回放容灾 | 非易失性内存 (NVDIMM/CXL)、异步双写复制、微秒级主备热切与状态机同态校验 |
+| ✅ 06. 资金复式记账与风控流控（2026-10-17 `hft-06-double-entry-bookkeeping-risk-control.md`） | Pat Helland 最终一致性对账、热点账户分段锁与单微秒级动态穿透风控规则引擎 | 1494 年 Pacioli 复式记账公理、内存位图动态穿透风控、热点分段账户与无死锁记账 |
 
 ### S20. 企业级分布式存储内核与 NVMe 硬件调优【前沿新系列】
 

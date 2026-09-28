@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "hft-06-double-entry-bookkeeping-risk-control",
+      "hft-05-smr-wal-deterministic-replay",
+      "hft-04-zero-gc-off-heap-memory-engineering",
+      "hft-03-kernel-bypass-dpdk-solarflare-onload",
+      "hft-02-disruptor-ringbuffer-false-sharing",
+      "hft-01-memory-matching-engine-sequencer",
       "coding-agent-06-virtual-workspace-git-alternates",
       "coding-agent-05-test-driven-self-healing-loop",
       "coding-agent-04-lsp-protocol-type-diagnostics",
