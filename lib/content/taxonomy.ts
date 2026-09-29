@@ -56,6 +56,7 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "攻克分布式状态与系统韧性难题：共识算法（Paxos/Raft）、事务故障模型（2PC/SAGA）、数据复制、LSM-Tree 与 B-Tree 存储引擎、Postgres HOT 元组与 Redis 深度解密。",
     keyTopics: ["分布式系统", "Raft", "高并发", "存储引擎", "PostgreSQL", "Redis", "MySQL", "ClickHouse"],
     seriesList: [
+      "云原生存储与 K8s 有状态集群实战",
       "企业级分布式存储内核与 NVMe 硬件调优",
       "现代高并发消息引擎内核：从磁盘顺序写到分布式事务消息",
       "大规模分布式服务韧性与混沌工程内核",
@@ -149,7 +150,7 @@ export function getPostPillarId(
   if (/^interview-/.test(slug)) return "architecture-practice";
   if (/^k8s-|^kubernetes-|^operator-/.test(slug)) return "architecture-practice";
   if (/^kernel-|^bpf-|^ebpf-|^linux-|^speedtest-|^hft-|^gpu-/.test(slug)) return "kernel-performance";
-  if (/^consensus-|^raft-|^postgres-|^redis-|^db-|^sqlite-|^storage-|^mq-|^resilience-/.test(slug)) return "distributed-systems";
+  if (/^consensus-|^raft-|^postgres-|^redis-|^db-|^sqlite-|^storage-|^mq-|^resilience-|^k8s-storage-/.test(slug)) return "distributed-systems";
   if (/^go-|^node-|^typescript-|^service-/.test(slug)) return "architecture-practice";
 
   // 3. 根据标签包含内容降级匹配

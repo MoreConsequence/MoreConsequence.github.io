@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "k8s-storage-06-database-on-k8s-cloudnative-pg-operator",
+      "k8s-storage-05-volume-snapshots-velero-disaster-recovery",
+      "k8s-storage-04-storage-modes-rwo-rwx-performance-tradeoffs",
+      "k8s-storage-03-rook-ceph-operator-internals",
+      "k8s-storage-02-topology-aware-volume-scheduling",
+      "k8s-storage-01-csi-architecture-volume-lifecycle",
       "operator-06-high-throughput-tuning-and-testing",
       "operator-05-leader-election-idempotency-finalizers",
       "operator-04-crd-schema-evolution-conversion-webhooks",
