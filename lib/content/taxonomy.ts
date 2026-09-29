@@ -111,6 +111,7 @@ export const PILLARS: Record<PillarId, PillarInfo> = {
       "资深与架构师职级分水岭：Go/TypeScript 语言边界与并发模型、一线大厂千万级高频系统设计真题深度拆解、不可变 API 演进、代码重构艺术与生产排障方法论。",
     keyTopics: ["系统设计", "面试题", "Go", "TypeScript", "Node.js", "架构演进", "并发模型"],
     seriesList: [
+      "Kubernetes Operator 与 Controller-Runtime 内核",
       "Kubernetes 架构内核与生产实战",
       "资深工程师面试深度拆解",
       "系统设计手记",
@@ -146,7 +147,7 @@ export function getPostPillarId(
   if (/^iot-netdev-/.test(slug)) return "network-iot";
   if (/^k8s-ai-|^ai-gateway-|^ai-agent-gateway-|^ai-backend-|^llm-|^mcp-|^agent-|^pi-agent|^a2a-|^multi-agent-|^ax-|^google-ax-|^coding-agent-/.test(slug)) return "ai-systems";
   if (/^interview-/.test(slug)) return "architecture-practice";
-  if (/^k8s-|^kubernetes-/.test(slug)) return "architecture-practice";
+  if (/^k8s-|^kubernetes-|^operator-/.test(slug)) return "architecture-practice";
   if (/^kernel-|^bpf-|^ebpf-|^linux-|^speedtest-|^hft-|^gpu-/.test(slug)) return "kernel-performance";
   if (/^consensus-|^raft-|^postgres-|^redis-|^db-|^sqlite-|^storage-|^mq-|^resilience-/.test(slug)) return "distributed-systems";
   if (/^go-|^node-|^typescript-|^service-/.test(slug)) return "architecture-practice";

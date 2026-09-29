@@ -46,6 +46,12 @@ describe("Markdown content pipeline", () => {
     );
 
     expect(posts.map((post) => post.slug)).toEqual([
+      "operator-06-high-throughput-tuning-and-testing",
+      "operator-05-leader-election-idempotency-finalizers",
+      "operator-04-crd-schema-evolution-conversion-webhooks",
+      "operator-03-admission-webhooks-mutating-validating",
+      "operator-02-workqueue-rate-limiting-algorithms",
+      "operator-01-controller-runtime-architecture-lifecycle",
       "k8s-ai-06-topology-aware-scheduling-dra-numa",
       "k8s-ai-05-llm-inference-autoscaling-keda-vllm",
       "k8s-ai-04-image-acceleration-nydus-dragonfly",
