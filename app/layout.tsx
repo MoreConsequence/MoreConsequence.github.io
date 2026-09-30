@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { SearchDialog } from "@/components/search/search-dialog";
+import { TerminalDrawer } from "@/components/sandboxes/terminal-drawer";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { siteConfig } from "@/lib/site";
@@ -71,6 +72,7 @@ export default function RootLayout({
           </a>
           <SiteHeader />
           <SearchDialog />
+          <TerminalDrawer />
           <main id="content">{children}</main>
           <SiteFooter />
         </ThemeProvider>

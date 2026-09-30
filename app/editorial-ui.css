@@ -5681,3 +5681,306 @@ body::before {
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
+
+/* ==========================================================================
+   Code Actions: Smart Copy & Web Terminal Run
+   ========================================================================== */
+.article-prose pre {
+  position: relative;
+}
+
+.code-actions {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 10;
+}
+
+.code-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--line, var(--border));
+  border-radius: 4px;
+  background: var(--paper-elevated, var(--surface));
+  color: var(--ink-secondary, var(--muted));
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.code-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--paper);
+}
+
+.code-action-btn.run {
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.code-action-btn.run:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+}
+
+/* ==========================================================================
+   Terminal Float Pill & Drawer Container
+   ========================================================================== */
+.terminal-float-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line, var(--border));
+  border-radius: 9999px;
+  background: var(--paper-elevated, var(--surface));
+  color: var(--ink, var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.terminal-float-pill:hover {
+  transform: translateY(-2px);
+  border-color: #10b981;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
+}
+
+.terminal-float-kbd {
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-secondary);
+}
+
+.terminal-drawer-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: min(680px, calc(100vw - 2rem));
+  height: 480px;
+  max-height: calc(100vh - 4rem);
+  background: #0f141c;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 50;
+  animation: terminalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.terminal-drawer-container.minimized {
+  height: 42px;
+}
+
+.terminal-drawer-header {
+  height: 42px;
+  background: #151c28;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.85rem;
+  user-select: none;
+}
+
+.terminal-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.terminal-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.terminal-drawer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.terminal-drawer-btn:hover {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+.terminal-drawer-btn.close:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.terminal-drawer-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.terminal-drawer-body .web-terminal-container {
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@keyframes terminalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Edward Tufte Sidenotes (Floating Marginalia)
+   ========================================================================== */
+.sidenote {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink-secondary, #64748b);
+  border-left: 2px solid var(--accent, #2563eb);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  padding: 0.6rem 0.85rem;
+  margin: 1.25rem 0;
+  border-radius: 0 6px 6px 0;
+  font-style: normal;
+}
+
+.sidenote strong {
+  color: var(--ink, #0f172a);
+}
+
+.sidenote-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  margin-right: 0.4rem;
+}
+
+@media (min-width: 1280px) {
+  /* On large screens, float into the right margin smoothly */
+  .sidenote.margin-float {
+    float: right;
+    clear: right;
+    width: 240px;
+    margin-right: -280px;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    background: var(--paper-elevated, var(--surface));
+    border: 1px solid var(--line, var(--border));
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* ==========================================================================
+   Micro-Glossary Tooltips (Backend Term Cards)
+   ========================================================================== */
+.term-hint {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  border-bottom: 1px dashed var(--accent, #2563eb);
+  color: var(--ink);
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.term-hint:hover {
+  color: var(--accent);
+}
+
+.term-card {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: 280px;
+  padding: 0.65rem 0.85rem;
+  background: var(--paper-elevated, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 40;
+}
+
+.term-card::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--line) transparent transparent transparent;
+}
+
+.term-hint:hover .term-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.term-card-title {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+}
+
+.term-card-rfc {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--accent);
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+}

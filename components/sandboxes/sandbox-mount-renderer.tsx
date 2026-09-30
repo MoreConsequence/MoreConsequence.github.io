@@ -6,12 +6,16 @@ import { LLMCalculator } from "./llm-calculator";
 import { RaftSimulator } from "./raft-simulator";
 import { VectorClockSimulator } from "./vector-clock-simulator";
 import { TCPacingSimulator } from "./tc-pacing-simulator";
+import { PagedAttentionSimulator } from "./paged-attention-simulator";
+import { WebTerminal } from "./web-terminal";
 
 const SANDBOX_FACTORIES: Record<string, () => React.ReactElement> = {
   "llm-calculator": () => <LLMCalculator />,
   "raft-simulator": () => <RaftSimulator />,
   "vector-clock": () => <VectorClockSimulator />,
   "tc-pacing": () => <TCPacingSimulator />,
+  "paged-attention": () => <PagedAttentionSimulator />,
+  "terminal": () => <WebTerminal />,
 };
 
 export function SandboxMountRenderer() {

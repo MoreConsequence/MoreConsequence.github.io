@@ -231,6 +231,85 @@ const HELP_OUTPUT = (
   </div>
 );
 
+export function getCommandOutput(cmd: string): React.ReactNode {
+  const trimmed = cmd.trim();
+  if (trimmed === "help") {
+    return HELP_OUTPUT;
+  }
+  if (trimmed === "kubectl get nodes" || trimmed.startsWith("kubectl get node")) {
+    return K8S_NODES_OUTPUT;
+  }
+  if (trimmed === "kubectl get pods -A" || trimmed === "kubectl get pods" || trimmed.startsWith("kubectl get pod")) {
+    return K8S_PODS_OUTPUT;
+  }
+  if (trimmed.startsWith("kubectl describe pod")) {
+    return K8S_DESCRIBE_OUTPUT;
+  }
+  if (trimmed === "bpftool prog list" || trimmed === "bpftool prog") {
+    return BPFTOOL_OUTPUT;
+  }
+  if (trimmed === "crictl pods" || trimmed.startsWith("crictl")) {
+    return CRICTL_OUTPUT;
+  }
+  if (trimmed === "uname -a" || trimmed === "uname") {
+    return (
+      <div className="term-output">
+        Linux k8s-control-plane-01 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+      </div>
+    );
+  }
+  if (trimmed === "free -h" || trimmed === "free") {
+    return (
+      <div className="term-output term-pre-block">
+        {'               '}total        used        free      shared  buff/cache   available{'\n'}
+        Mem:           125Gi        32Gi        78Gi       1.2Gi        15Gi        91Gi{'\n'}
+        Swap:            0B          0B          0B
+      </div>
+    );
+  }
+  if (trimmed.startsWith("curl ")) {
+    return (
+      <div className="term-output term-pre-block">
+        <span className="term-green">HTTP/2 200 OK</span>{'\n'}
+        <span className="term-cyan">date:</span> {new Date().toUTCString()}{'\n'}
+        <span className="term-cyan">content-type:</span> application/json; charset=utf-8{'\n'}
+        <span className="term-cyan">x-envoy-upstream-service-time:</span> 1.82ms{'\n'}
+        <span className="term-cyan">server:</span> envoy-ai-gateway/v1.31{'\n\n'}
+        {JSON.stringify({ status: "healthy", cluster: "production-k8s", paged_kv_cache: "enabled" }, null, 2)}
+      </div>
+    );
+  }
+  if (trimmed.startsWith("cat ")) {
+    const target = trimmed.slice(4).trim();
+    return (
+      <div className="term-output term-pre-block">
+        <span className="term-yellow"># Content of {target}</span>{'\n'}
+        vm.max_map_count = 262144{'\n'}
+        net.core.somaxconn = 65535{'\n'}
+        net.ipv4.tcp_max_syn_backlog = 16384{'\n'}
+        fs.file-max = 2097152
+      </div>
+    );
+  }
+  if (trimmed === "docker ps" || trimmed.startsWith("docker ps")) {
+    return (
+      <div className="term-output term-pre-block">
+        CONTAINER ID   IMAGE                         COMMAND                  CREATED         STATUS         PORTS     NAMES{'\n'}
+        a1b2c3d4e5f6   vllm/vllm-openai:latest       &quot;python3 -m vllm.en…&quot;   2 hours ago     Up 2 hours               vllm-inference{'\n'}
+        f7e8d9c0b1a2   envoyproxy/envoy:v1.31-latest &quot;/docker-entrypoint…&quot;   5 days ago      Up 5 days                ai-gateway
+      </div>
+    );
+  }
+  if (trimmed.startsWith("echo ")) {
+    return <div className="term-output">{trimmed.slice(5)}</div>;
+  }
+  return (
+    <div className="term-output term-error">
+      bash: {trimmed.split(" ")[0]}: command simulated. Type &apos;help&apos; for cluster commands.
+    </div>
+  );
+}
+
 export function WebTerminal({
   initialCommand = "kubectl get nodes",
   title = "dev@k8s-node-01: ~",
@@ -241,22 +320,27 @@ export function WebTerminal({
   className?: string;
 }) {
   const [input, setInput] = useState("");
-  const [history, setHistory] = useState<TerminalHistoryItem[]>(() => [
-    {
-      command: "uname -a",
-      output: (
-        <div className="term-output">
-          Linux k8s-control-plane-01 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
-        </div>
-      ),
-      time: "08:00:01",
-    },
-    {
-      command: initialCommand,
-      output: K8S_NODES_OUTPUT,
-      time: "08:00:02",
-    },
-  ]);
+  const [history, setHistory] = useState<TerminalHistoryItem[]>(() => {
+    const items: TerminalHistoryItem[] = [
+      {
+        command: "uname -a",
+        output: (
+          <div className="term-output">
+            Linux k8s-control-plane-01 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+          </div>
+        ),
+        time: "08:00:01",
+      },
+    ];
+    if (initialCommand && initialCommand !== "uname -a") {
+      items.push({
+        command: initialCommand,
+        output: getCommandOutput(initialCommand),
+        time: "08:00:02",
+      });
+    }
+    return items;
+  });
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [copied, setCopied] = useState(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -274,35 +358,7 @@ export function WebTerminal({
       return;
     }
 
-    let output: React.ReactNode;
-
-    if (trimmed === "help") {
-      output = HELP_OUTPUT;
-    } else if (trimmed === "kubectl get nodes" || trimmed.startsWith("kubectl get node")) {
-      output = K8S_NODES_OUTPUT;
-    } else if (trimmed === "kubectl get pods -A" || trimmed === "kubectl get pods" || trimmed.startsWith("kubectl get pod")) {
-      output = K8S_PODS_OUTPUT;
-    } else if (trimmed.startsWith("kubectl describe pod")) {
-      output = K8S_DESCRIBE_OUTPUT;
-    } else if (trimmed === "bpftool prog list" || trimmed === "bpftool prog") {
-      output = BPFTOOL_OUTPUT;
-    } else if (trimmed === "crictl pods" || trimmed.startsWith("crictl")) {
-      output = CRICTL_OUTPUT;
-    } else if (trimmed === "uname -a" || trimmed === "uname") {
-      output = (
-        <div className="term-output">
-          Linux k8s-control-plane-01 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
-        </div>
-      );
-    } else if (trimmed.startsWith("echo ")) {
-      output = <div className="term-output">{trimmed.slice(5)}</div>;
-    } else {
-      output = (
-        <div className="term-output term-error">
-          bash: {trimmed.split(" ")[0]}: command not found. Type &apos;help&apos; for available commands.
-        </div>
-      );
-    }
+    const output = getCommandOutput(trimmed);
 
     setHistory((prev) => [...prev, { command: trimmed, output, time }]);
     setInput("");

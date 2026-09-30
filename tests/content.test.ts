@@ -113,6 +113,7 @@ describe("Markdown content pipeline", () => {
       "ax-06-workspace-primitive-git-prewarm-cache-trees",
       "ax-05-task-primitive-lifecycle-cgroups-reconcile-loop",
       "jamstack-ui-refactoring-and-component-system",
+      "virtual-memory-to-paged-attention-for-backend-engineers",
       "ax-04-sub-second-suspend-resume-state-checkpointing",
       "multi-agent-06-durable-execution-dag-state-machine",
       "ax-03-agent-substrate-actor-multiplexing-resource-pooling",
