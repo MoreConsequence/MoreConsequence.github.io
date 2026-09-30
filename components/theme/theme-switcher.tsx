@@ -92,7 +92,13 @@ export function ThemeSwitcher() {
   };
 
   const pick = (next: ThemePreference) => {
-    setPreference(next);
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      document.startViewTransition(() => {
+        setPreference(next);
+      });
+    } else {
+      setPreference(next);
+    }
     closeMenu();
   };
 

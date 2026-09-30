@@ -1,18 +1,34 @@
 import React from "react";
+import Link from "next/link";
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
+  href?: string;
 }
 
 export function Card({
   className = "",
   hoverable = false,
+  href,
   children,
   ...props
 }: CardProps) {
-  const classes = ["ui-card", hoverable ? "ui-card-hoverable" : "", className]
+  const classes = [
+    "ui-card",
+    hoverable ? "ui-card-hoverable" : "",
+    href ? "ui-card-link" : "",
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
+
+  if (href) {
+    return (
+      <Link href={href} className={classes}>
+        {children}
+      </Link>
+    );
+  }
 
   return (
     <div className={classes} {...props}>
@@ -64,6 +80,18 @@ export function CardContent({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={`ui-card-content ${className}`} {...props}>
+      {children}
+    </div>
+  );
+}
+
+export function CardFooter({
+  className = "",
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={`ui-card-footer ${className}`} {...props}>
       {children}
     </div>
   );

@@ -9,6 +9,7 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { createBlogHighlighter } from "./highlighter";
+import { createCodeNotationTransformer } from "./transformers";
 import type { TocItem } from "./types";
 
 type MarkdownNode = {
@@ -216,6 +217,7 @@ export async function compileMarkdown(markdown: string) {
       },
       defaultColor: false,
       fallbackLanguage: "text",
+      transformers: [createCodeNotationTransformer()],
     })
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);

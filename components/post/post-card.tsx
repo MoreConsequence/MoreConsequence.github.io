@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { PostMeta } from "./post-meta";
+import { Badge } from "@/components/ui/badge";
 import type { CompiledPost, PostSource, PostSummary } from "@/lib/content/types";
 import { tagHref } from "@/lib/site-links";
 
@@ -42,12 +43,20 @@ export function PostCard({
         <ul className="tag-list" aria-label="文章标签">
           {post.meta.tags.slice(0, 4).map((tag) => (
             <li key={tag}>
-              <Link href={tagHref(tag)}>{tag}</Link>
+              <Badge href={tagHref(tag)} variant="outline" size="sm">
+                {tag}
+              </Badge>
             </li>
           ))}
           {post.meta.tags.length > 4 && (
-            <li className="tag-more" title={`还有 ${post.meta.tags.slice(4).join("、")}`}>
-              <span>+{post.meta.tags.length - 4}</span>
+            <li className="tag-more">
+              <Badge
+                variant="pill"
+                size="sm"
+                title={`还有 ${post.meta.tags.slice(4).join("、")}`}
+              >
+                +{post.meta.tags.length - 4}
+              </Badge>
             </li>
           )}
         </ul>

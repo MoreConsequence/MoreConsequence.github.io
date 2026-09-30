@@ -61,4 +61,31 @@ describe("Worker-compatible syntax highlighting", () => {
       expect(html, `language ${lang}`).toContain("shiki");
     }
   });
+
+  it("transforms diff and line highlight notation", async () => {
+    const { createCodeNotationTransformer } = await import("@/lib/content/transformers");
+    const highlighter = await createBlogHighlighter();
+    const code = [
+      'const a = 1; // [!code --]',
+      'const a = 2; // [!code ++]',
+      'console.log(a); // [!code highlight]',
+    ].join('\n');
+
+    const html = highlighter.codeToHtml(code, {
+      lang: "javascript",
+      themes: {
+        light: "github-light",
+        dark: "github-dark",
+      },
+      defaultColor: false,
+      transformers: [createCodeNotationTransformer()],
+    });
+
+    expect(html).toContain('class="line diff remove"');
+    expect(html).toContain('class="line diff add"');
+    expect(html).toContain('class="line highlighted"');
+    expect(html).not.toContain('[!code ++]');
+    expect(html).not.toContain('[!code --]');
+    expect(html).not.toContain('[!code highlight]');
+  });
 });

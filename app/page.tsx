@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PostCard } from "@/components/post/post-card";
+import { Button, Badge, Card, SectionHeading } from "@/components/ui";
 import { getPostSources } from "@/lib/content/posts";
 import { getAllPillars, getPostPillarId } from "@/lib/content/taxonomy";
 import { tagHref } from "@/lib/site-links";
@@ -66,12 +67,12 @@ export default async function Home() {
               这里记录软件工程、分布式系统、大模型基础设施与系统底层的长期工程判断。拒绝浮躁追新，专注经得住时间考验的架构规律。
             </p>
             <div className="hero-actions">
-              <Link className="button-primary" href="/writing">
+              <Button href="/writing" variant="primary" size="lg">
                 开始阅读 <span aria-hidden="true">↗</span>
-              </Link>
-              <Link className="text-link" href="/series">
+              </Button>
+              <Button href="/series" variant="ghost" size="lg">
                 浏览系列专题
-              </Link>
+              </Button>
             </div>
           </div>
           <dl className="hero-stats" aria-label="站点统计">
@@ -87,25 +88,21 @@ export default async function Home() {
 
       {/* 核心重构亮点：五大技术知识支柱全景板块 */}
       <section className="home-section pillars-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">
-              <span className="section-index">01</span> Engineering Pillars
-            </p>
-            <h2>核心技术版图</h2>
-          </div>
-          <p>
-            全站 {posts.length} 篇深度长文收敛于五大核心支柱。从应用层智能体到网卡驱动内核，层层递进。
-          </p>
-        </div>
+        <SectionHeading
+          index="01"
+          eyebrow="Engineering Pillars"
+          title="核心技术版图"
+          description={`全站 ${posts.length} 篇深度长文收敛于五大核心支柱。从应用层智能体到网卡驱动内核，层层递进。`}
+        />
 
         <div className="pillars-grid">
           {pillars.map((pillar) => {
             const count = pillarCounts[pillar.id] ?? 0;
             return (
-              <Link
+              <Card
                 key={pillar.id}
-                href={`/writing`}
+                href="/writing"
+                hoverable
                 className="pillar-card"
                 data-pillar={pillar.id}
               >
@@ -113,7 +110,9 @@ export default async function Home() {
                   <span className="pillar-icon" aria-hidden="true">
                     {pillar.icon}
                   </span>
-                  <span className="pillar-count-badge">{count} 篇长文</span>
+                  <Badge variant="series" size="sm">
+                    {count} 篇长文
+                  </Badge>
                 </div>
                 <div className="pillar-card-body">
                   <h3>{pillar.name}</h3>
@@ -123,16 +122,16 @@ export default async function Home() {
                 <div className="pillar-card-footer">
                   <div className="pillar-topics">
                     {pillar.keyTopics.slice(0, 4).map((topic) => (
-                      <span key={topic} className="pillar-topic-pill">
+                      <Badge key={topic} variant="topic" size="sm">
                         {topic}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                   <span className="pillar-arrow" aria-hidden="true">
                     进入板块 →
                   </span>
                 </div>
-              </Link>
+              </Card>
             );
           })}
         </div>
@@ -140,15 +139,12 @@ export default async function Home() {
 
       {/* 本期精选 */}
       <section className="home-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">
-              <span className="section-index">02</span> Editor&apos;s selection
-            </p>
-            <h2>本期精选</h2>
-          </div>
-          <p>从最近的文章中，选出更值得反复细读的深度长文。</p>
-        </div>
+        <SectionHeading
+          index="02"
+          eyebrow="Editor's selection"
+          title="本期精选"
+          description="从最近的文章中，选出更值得反复细读的深度长文。"
+        />
         <div className="featured-grid">
           {featured.map((post, index) => (
             <PostCard
@@ -163,17 +159,16 @@ export default async function Home() {
 
       {/* 最近发布 */}
       <section className="home-section latest-section">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">
-              <span className="section-index">03</span> Recently published
-            </p>
-            <h2>最新发布</h2>
-          </div>
-          <Link className="text-link" href="/writing">
-            全部文章归档 →
-          </Link>
-        </div>
+        <SectionHeading
+          index="03"
+          eyebrow="Recently published"
+          title="最新发布"
+          action={
+            <Button href="/writing" variant="link" size="sm">
+              全部文章归档 →
+            </Button>
+          }
+        />
         <div className="latest-list">
           {latest.map((post, index) => (
             <PostCard key={post.slug} post={post} index={index + 1} />
@@ -184,12 +179,12 @@ export default async function Home() {
       {/* 核心主题入口 */}
       <section className="topic-band" aria-labelledby="topic-title">
         <div className="topic-band-inner">
-          <div>
-            <p className="eyebrow">
-              <span className="section-index">04</span> Core Topics
-            </p>
-            <h2 id="topic-title">核心技术主题</h2>
-          </div>
+          <SectionHeading
+            index="04"
+            eyebrow="Core Topics"
+            title="核心技术主题"
+            id="topic-title"
+          />
           <div className="topic-links">
             {featuredTags.map((tag, index) => (
               <Link key={tag} href={tagHref(tag)}>

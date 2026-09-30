@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Search, X } from "lucide-react";
 import type { TagSummary } from "@/lib/content/tags";
 import { tagHref } from "@/lib/site-links";
+import { Input, Badge, Button } from "@/components/ui";
 
 export function TagsExplorer({ allTags }: { allTags: TagSummary[] }) {
   const [query, setQuery] = useState("");
@@ -27,30 +29,31 @@ export function TagsExplorer({ allTags }: { allTags: TagSummary[] }) {
   return (
     <div className="tags-explorer-container">
       <div className="tags-search-bar">
-        <div className="search-input-wrapper">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="输入技术关键词搜索标签（如 eBPF, Raft, K8s, Redis...）"
-            className="tags-search-input"
-            aria-label="搜索标签"
-          />
-          {query && (
-            <button
-              type="button"
-              className="clear-search-btn"
-              onClick={() => setQuery("")}
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="输入技术关键词搜索标签（如 eBPF, Raft, K8s, Redis...）"
+          aria-label="搜索标签"
+          leftIcon={<Search size={16} />}
+          rightSlot={
+            query ? (
+              <Button
+                variant="icon"
+                size="sm"
+                onClick={() => setQuery("")}
+                aria-label="清除搜索"
+              >
+                <X size={14} />
+              </Button>
+            ) : null
+          }
+        />
 
         <div className="tags-filter-radios">
           <span className="filter-label">文章数筛选：</span>
           {[
-            { label: "全部 (772)", val: 0 },
+            { label: `全部 (${allTags.length})`, val: 0 },
             { label: "≥ 3 篇", val: 3 },
             { label: "≥ 5 篇", val: 5 },
             { label: "≥ 10 篇", val: 10 },
@@ -86,7 +89,9 @@ export function TagsExplorer({ allTags }: { allTags: TagSummary[] }) {
                 {String(index + 1).padStart(2, "0")}
               </span>
               <strong className="tag-name">{tag.name}</strong>
-              <span className="tag-badge">{tag.count} 篇</span>
+              <Badge variant="default" size="sm">
+                {tag.count} 篇
+              </Badge>
             </Link>
           ))}
         </div>

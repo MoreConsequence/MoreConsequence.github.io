@@ -5,6 +5,7 @@ import { RaftSimulator } from "@/components/sandboxes/raft-simulator";
 import { VectorClockSimulator } from "@/components/sandboxes/vector-clock-simulator";
 import { TCPacingSimulator } from "@/components/sandboxes/tc-pacing-simulator";
 import { PagedAttentionSimulator } from "@/components/sandboxes/paged-attention-simulator";
+import { WebTerminal } from "@/components/sandboxes/web-terminal";
 
 export const metadata: Metadata = {
   title: "交互式系统设计实验室",
@@ -56,6 +57,15 @@ const SANDBOX_LIST = [
     href: "/playground/paged-attention",
     relatedArticle: "/writing/ai-backend-16-paged-attention-kv-cache-virtual-memory",
     relatedTitle: "PagedAttention 与显存虚拟化：操作系统的虚拟内存分页哲学如何终结大模型显存碎片",
+  },
+  {
+    id: "web-terminal",
+    icon: "💻",
+    title: "云原生与内核交互式 Web 终端 (K8s & Linux Shell)",
+    desc: "免后端、纯客户端运行的仿 Linux 命令行沙盒：实操演练 kubectl 集群拓扑、crictl 容器运行时排查、eBPF 内核探测与 Linux 系统调度命令。",
+    href: "/playground/terminal",
+    relatedArticle: "/writing/cloud-native-ai-01-vllm-deepseek-k8s-scheduling-topology",
+    relatedTitle: "Kubernetes 与大模型系统：vLLM/DeepSeek 拓扑感知调度",
   },
 ];
 
@@ -205,6 +215,25 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <PagedAttentionSimulator />
+      </section>
+
+      {/* Sandbox 6: Web Terminal */}
+      <section id="web-terminal" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>💻</span>
+            <h2 className="playground-section-title">
+              6. 云原生与内核交互式 Web 终端 (K8s & Linux Shell)
+            </h2>
+          </div>
+          <Link
+            href="/writing/cloud-native-ai-01-vllm-deepseek-k8s-scheduling-topology"
+            className="playground-section-sublink"
+          >
+            查看原理解析 ──►
+          </Link>
+        </div>
+        <WebTerminal />
       </section>
     </div>
   );
