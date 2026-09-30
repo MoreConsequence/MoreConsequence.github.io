@@ -29,5 +29,5 @@ export function useSearch(isOpen: boolean) {
 
   const loading = isOpen && documents.length === 0 && !error;
 
-  return { query, setQuery, results, loading, error };
+  return { query, setQuery, results, loading, error, documents };
 }

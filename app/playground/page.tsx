@@ -6,6 +6,7 @@ import { VectorClockSimulator } from "@/components/sandboxes/vector-clock-simula
 import { TCPacingSimulator } from "@/components/sandboxes/tc-pacing-simulator";
 import { PagedAttentionSimulator } from "@/components/sandboxes/paged-attention-simulator";
 import { WebTerminal } from "@/components/sandboxes/web-terminal";
+import { SSEBackpressureSimulator } from "@/components/sandboxes/sse-backpressure-simulator";
 
 export const metadata: Metadata = {
   title: "交互式系统设计实验室",
@@ -66,6 +67,15 @@ const SANDBOX_LIST = [
     href: "/playground/terminal",
     relatedArticle: "/writing/cloud-native-ai-01-vllm-deepseek-k8s-scheduling-topology",
     relatedTitle: "Kubernetes 与大模型系统：vLLM/DeepSeek 拓扑感知调度",
+  },
+  {
+    id: "sse-backpressure",
+    icon: "🌊",
+    title: "高并发 SSE 流式长连接反压（Backpressure）机制模拟器",
+    desc: "对比传统无界缓冲区在慢速消费者下的 OOM 崩溃，与 TCP Zero Window / 高低水位线流控的有界内存防护。",
+    href: "/playground/sse-backpressure",
+    relatedArticle: "/writing/sse-streaming-gateway-and-backpressure-engineering",
+    relatedTitle: "百万级流式长连接与反压实战：为什么普通网关在 SSE 下会被撑爆？",
   },
 ];
 
@@ -234,6 +244,25 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <WebTerminal />
+      </section>
+
+      {/* Sandbox 7: SSE Backpressure Simulator */}
+      <section id="sse-backpressure" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>🌊</span>
+            <h2 className="playground-section-title">
+              7. 高并发 SSE 流式长连接反压（Backpressure）机制模拟器
+            </h2>
+          </div>
+          <Link
+            href="/writing/sse-streaming-gateway-and-backpressure-engineering"
+            className="playground-section-sublink"
+          >
+            查看原理解析 ──►
+          </Link>
+        </div>
+        <SSEBackpressureSimulator />
       </section>
     </div>
   );
