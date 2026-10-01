@@ -7,6 +7,7 @@ import { TCPacingSimulator } from "@/components/sandboxes/tc-pacing-simulator";
 import { PagedAttentionSimulator } from "@/components/sandboxes/paged-attention-simulator";
 import { WebTerminal } from "@/components/sandboxes/web-terminal";
 import { SSEBackpressureSimulator } from "@/components/sandboxes/sse-backpressure-simulator";
+import { CacheConsistencySimulator } from "@/components/sandboxes/cache-consistency-simulator";
 
 export const metadata: Metadata = {
   title: "交互式系统设计实验室",
@@ -76,6 +77,15 @@ const SANDBOX_LIST = [
     href: "/playground/sse-backpressure",
     relatedArticle: "/writing/sse-streaming-gateway-and-backpressure-engineering",
     relatedTitle: "百万级流式长连接与反压实战：为什么普通网关在 SSE 下会被撑爆？",
+  },
+  {
+    id: "cache-consistency",
+    icon: "⚡",
+    title: "缓存与数据库并发一致性时序模拟器",
+    desc: "推演先删后写、经典 Cache-Aside、延迟双删的时序空洞，与版本号栅栏（Version Fencing）的确定性防旧值复活。",
+    href: "/playground/cache-consistency",
+    relatedArticle: "/writing/cache-consistency-concurrency-version-fencing",
+    relatedTitle: "高并发缓存一致性的确定性裁决：从并发时序陷阱到版本号栅栏",
   },
 ];
 
@@ -263,6 +273,25 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <SSEBackpressureSimulator />
+      </section>
+
+      {/* Sandbox 8: Cache Consistency Simulator */}
+      <section id="cache-consistency" className="playground-section">
+        <div className="playground-section-header">
+          <div className="playground-section-title-wrap">
+            <span>⚡</span>
+            <h2 className="playground-section-title">
+              8. 缓存与数据库并发一致性时序模拟器
+            </h2>
+          </div>
+          <Link
+            href="/writing/cache-consistency-concurrency-version-fencing"
+            className="playground-section-sublink"
+          >
+            查看原理解析 ──►
+          </Link>
+        </div>
+        <CacheConsistencySimulator />
       </section>
     </div>
   );

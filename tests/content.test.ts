@@ -111,6 +111,7 @@ describe("Markdown content pipeline", () => {
       "ax-08-security-gvisor-syscall-interception-sandbox-isolation",
       "ax-07-mcp-integration-long-lived-connections-tool-governance",
       "ax-06-workspace-primitive-git-prewarm-cache-trees",
+      "cache-consistency-concurrency-version-fencing",
       "ax-05-task-primitive-lifecycle-cgroups-reconcile-loop",
       "jamstack-ui-refactoring-and-component-system",
       "sse-streaming-gateway-and-backpressure-engineering",

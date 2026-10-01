@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/post/article-body";
 import { PostMeta } from "@/components/post/post-meta";
 import { ReadingProgress } from "@/components/post/reading-progress";
+import { KeyboardNavigation } from "@/components/post/keyboard-navigation";
 import { ArticleSidebar } from "@/components/post/article-sidebar";
 import { getSeriesIcon } from "@/lib/content/series";
 import { getPostBySlug, getPostSources } from "@/lib/content/posts";
@@ -75,6 +76,7 @@ export default async function ArticlePage({ params }: PageProps) {
   return (
     <>
       <ReadingProgress />
+      <KeyboardNavigation />
       <article className="article-page">
         <header className="article-header">
           <div className="article-kicker">

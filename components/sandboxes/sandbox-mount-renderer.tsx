@@ -9,6 +9,7 @@ import { TCPacingSimulator } from "./tc-pacing-simulator";
 import { PagedAttentionSimulator } from "./paged-attention-simulator";
 import { WebTerminal } from "./web-terminal";
 import { SSEBackpressureSimulator } from "./sse-backpressure-simulator";
+import { CacheConsistencySimulator } from "./cache-consistency-simulator";
 
 const SANDBOX_FACTORIES: Record<string, () => React.ReactElement> = {
   "llm-calculator": () => <LLMCalculator />,
@@ -18,6 +19,7 @@ const SANDBOX_FACTORIES: Record<string, () => React.ReactElement> = {
   "paged-attention": () => <PagedAttentionSimulator />,
   "terminal": () => <WebTerminal />,
   "sse-backpressure": () => <SSEBackpressureSimulator />,
+  "cache-consistency": () => <CacheConsistencySimulator />,
 };
 
 export function SandboxMountRenderer() {
