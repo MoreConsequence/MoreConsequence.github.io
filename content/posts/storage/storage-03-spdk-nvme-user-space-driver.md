@@ -370,3 +370,10 @@ SPDK 代表了高性能存储驱动的技术巅峰：
 然而，单机本地存储的性能再强，容量与容灾依然受到单台物理服务器物理边界的约束。当业务跨越到数百台节点、需要将成百上千块高性能 NVMe 盘池化并跨网络共享时，**如何避免 TCP/IP 协议栈再次成为新的网络税？**
 
 下一篇，我们将迈向极速分布式网络存储，深度拆解 **《NVMe-oF 极速远程块存储：RDMA RoCEv2 穿透网络，万兆网络下实现本地 SSD 级的超低延迟访问》**。
+
+## 参考资料
+
+- Storage Performance Development Kit (SPDK) Architecture & Documentation: <https://spdk.io/doc/>
+- Yang, Z., et al. (2017). SPDK: A High Performance Storage Software Stack. Intel Technology Journal.
+- Linux Kernel VFIO (Virtual Function I/O) Architecture: <https://www.kernel.org/doc/html/latest/driver-api/vfio.html>
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

@@ -343,8 +343,10 @@ export function WebTerminal({
   });
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [copied, setCopied] = useState(false);
+  const terminalBodyRef = useRef<HTMLDivElement>(null);
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isFirstMountRef = useRef(true);
 
   const executeCommand = (cmd: string) => {
     const trimmed = cmd.trim();
@@ -409,7 +411,13 @@ export function WebTerminal({
   };
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+    }
   }, [history]);
 
   const copyTranscript = () => {
@@ -489,6 +497,7 @@ export function WebTerminal({
 
       {/* 终端主体输出区 */}
       <div
+        ref={terminalBodyRef}
         className="terminal-body"
         onClick={() => inputRef.current?.focus()}
       >

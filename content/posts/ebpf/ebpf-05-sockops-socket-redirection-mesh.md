@@ -358,3 +358,10 @@ flowchart TD
 从上世纪 80 年代 BSD Socket 诞生至今，TCP/IP 协议栈被设计为假设“通信双方连接在不可靠的物理电缆上”，因此每一层都充满校验、重传、分段与路由逻辑。然而在云原生时代，微服务的大规模拆分使得 **80% 以上的网络调用发生在同一台多核物理机内**。
 
 eBPF 的 Sockops 与 `sk_msg` 重构了这一底层认知：**在宿主机内部，软件不应模拟笨拙的网络线缆，而应成为内存总线的极速开关。** 它在保留标准 POSIX Socket 接口兼容性的前提下，彻底剔除了冗余的协议税，成为了现代 Service Mesh 和高性能分布式系统无法绕开的核心基石。
+
+## 参考资料
+
+- Linux Kernel Documentation: BPF Socket Operations (`sock_ops`) & `sk_msg`: <https://www.kernel.org/doc/html/latest/bpf/bpf_prog_run.html>
+- Cilium Architecture Guide: BPF Host-Routing & Service Mesh Acceleration: <https://docs.cilium.io/>
+- Linux Kernel Source: `net/core/sock_map.c`.
+- 站内关联：[HTTP 四则：复用、流、续传、跨域](/writing/http-four-mechanisms)

@@ -2,8 +2,8 @@ export const themes = [
   {
     id: "boundary",
     label: "边界 · 雾蓝",
-    description: "雾白 × 深海蓝 × 信号橙 × 冷杉绿",
-    colors: ["#f3f5f7", "#17324d", "#e85d3f", "#2f7d75", "#7b8794"],
+    description: "冷白 × 钴蓝 × 墨蓝",
+    colors: ["#f7f9fc", "#285ccc", "#173e85", "#182c46", "#53657a"],
   },
   {
     id: "paper",

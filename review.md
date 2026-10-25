@@ -2215,3 +2215,39 @@ transform 感知的"同绝对坐标不同文字"复扫：**588 张全部清零**
 | `llm-16-model-silent-reroute` | deepseek api-docs 260910 公告 | 真实质量差、账单 |
 
 验证：audit `{}`、12/45 tests、lint 0 errors、build 4 新页齐全、verify:experiments 全过后发布。
+
+## 2026-10-05：博客视觉与响应式迭代
+
+- 默认视觉改为冷白、墨蓝与钴蓝；首页精选前置，技术版图入口支持对应领域筛选。
+- 外层容器最大 1200px，正文最大 760px，1040px 以下单栏且目录可展开，修复重复阅读进度条。
+- 字体遵守用户追加约束：Mac 优先保留 Apple 系统字体与 PingFang SC，Windows 使用本站提供的 Noto Sans SC 后备字体。实际首页标题确认是 PingFangSC-Semibold 原生字体；Windows 实机显示尚未验收。
+- 47 项测试通过；更新默认主题色板后相关 8 项复测通过。Lint 0 errors，保留既有 Mermaid 图片 warning。完整静态构建 1754/1754 成功；部分路由首次生成超时，自动重试后完成。
+- 首页、文章以及共享页面完成目标断点与交互检查。设计合同见 [DESIGN.md](DESIGN.md)，具体结果与截图见 [dated evidence](evidence/2026-10-05-ui/README.md)。只完成本地源代码与预览，没有提交或部署。
+
+### 2026-10-05：工程手记视觉体系的后续迭代
+
+根据用户反馈重做左上角文字标识与首屏构图。用户认可工程手记生成图后，补齐纸页背景、五册手记横幅和页尾翻页背景，共四张本地 WebP，约 314 KiB。文章正文保持干净，Mac 标题确认使用原生 PingFangSC-Medium。
+
+完整页面复核时修复了主题入口继承白色文字的对比问题。首页相关 3 项测试、修改文件 ESLint、设计检测与 diff 检查通过；最终完整静态构建成功。素材说明见 [视觉素材](docs/blog-visual-assets.md)，当前截图与验证记录见 [dated evidence](evidence/2026-10-05-ui/README.md)。仅本地预览，未提交或部署。
+## 2026-10-05：系统工程视觉深化
+
+- 根据用户认可后的追加要求，保留透明工程手记封面与 Mac 原生字体优先策略，新增芯片分层、存储模块、光纤走线三张原创专题图。
+- 技术版图改为有主次的专题排版，保留真实文章数量与领域筛选入口；手机单列。配图与文字分区，图片属于艺术表达，不作为真实技术拓扑。
+- 移除最新文章区继承旧卡片样式造成的空白行，改为紧凑分隔列表；精选仍采用卡片。
+- 本轮验证与当前截图见 evidence/2026-10-05-ui/README.md；素材与完整生成 prompt 见 docs/blog-visual-assets.md。
+
+## 2026-10-05：全站前端 UI 顶刊级全面重构与微交互升维
+
+- **顶栏导航系统**：注入滚动感知状态（`is-scrolled`），实现磨砂毛玻璃悬浮效果；主导航升级为胶囊式 Pill Nav，当前激活路由配备呼吸微指示点（`nav-link-dot`）；左侧微标集成精密几何边界图标（`site-symbol`）。
+- **全局 Command Palette (SearchDialog)**：全面升维为 Raycast / Linear 级别桌面指令台。采用居中毛玻璃（`backdrop-filter: blur(28px)`）、实体物理键帽（`<kbd>`）、分组微标高光与平滑入场动效；搜索结果条目采用等宽编号徽标与蓝紫微胶囊专栏标签。
+- **主题切换面板 (ThemeSwitcher)**：20+ 款主题双列规整排版；调色板色卡赋予实体微圆角与内阴影；激活主题配备平滑 View Transitions 切换与高光光环；极细高雅定制滚动条。
+- **交互式实验室 (/playground)**：定位并修复了终端模拟器首次 mount 时抢夺全页面滚动视口的隐蔽 Bug；为 8 大沙盒入口卡片注入流光彩条与微悬浮质感；修复移动端（390px）下 `.sandbox-panel` 3px 溢出，达成所有核心页面严格 `overflow: none`。
+- **验证与契约**：全站 12 个测试文件、47 项单元与集成测试 100% 通过（Vitest）；`git diff --check` 无格式告警；核心页面全断点截图已持久化至 `evidence/2026-10-05-ui/`。仅本地源码重构与预览，严格遵守未经授权不提交、不推送代码规则。
+
+## 2026-10-05：taste-skill 全局集成与前端 UI 深度美学升级
+
+- **Taste Skill 全套体系安装**：成功安装开源 anti-slop 前端技能套件 `taste-skill`（包含 `design-taste-frontend`、`redesign-existing-projects`、`minimalist-ui`、`industrial-brutalist-ui`、`high-end-visual-design` 等 13 项细分 skill），并无缝打通本地 Antigravity / Gemini / Agents 技能中枢。
+- **排版与流式文本反孤字优化**：引入 `text-wrap: balance`（全站标题及徽标）与 `text-wrap: pretty`（摘要正文、导语及说明），从排版引擎根源消灭行末单字孤独折行；对所有数字、统计计数、发布日期与阅读耗时激活 `font-variant-numeric: tabular-nums`，消除数字对齐抖动。
+- **设计去 Slop 化与质感调校**：剔除泛滥的 Web3/AI 青蓝高饱和渐变（#06b6d4），替换为深邃沉稳的皇家钴蓝至墨蓝渐变；首屏大标题收紧至黄金排版行高（1.20）与微负字距（-0.035em）。
+- **实体杂志封面展示台（Hero Stage）与全站状态微舱（Hero Stats Pill）样式补齐**：为首屏补齐高阶毛玻璃质感、微光晕底色、精密状态灯与触感悬浮动效；全站按钮、卡片、胶囊及导航项统一注入实体物理按压反馈（`:active { transform: scale(0.985) translateY(0.5px); }`）。
+- **验证与契约**：47 项单元/集成测试全部通过，ESLint 0 errors，`git diff --check` 格式审查无告警。严格遵守未经授权不提交、不推送规则。

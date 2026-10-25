@@ -219,3 +219,10 @@ int main() {
 - 如今，云原生数据中心已普及 25GbE / 100GbE RDMA 高速网络，**“网络传输的开销已经远小于本地机械寻道的开销”**。
 
 存算分离通过将状态与计算拆解，赋予了现代分布式系统近乎无限的弹性生命力，也成为了现代湖仓一体（Lakehouse）、云原生数据库（Aurora / TiDB）与顶级分布式中间件不可逆转的技术必然。
+
+## 参考资料
+
+- Apache Pulsar Architecture: Storage and Compute Separation: <https://pulsar.apache.org/docs/>
+- Junqueira, F. P., et al. (2013). Apache BookKeeper: High-Performance Distributed Write-Ahead Log. USENIX ATC 2013.
+- Apache BookKeeper Ledger Storage & Journal Consistency: <https://bookkeeper.apache.org/>
+- 站内关联：[Kafka 4.1 Queues：不数分区也能点对点](/writing/kafka-queues-share-groups)

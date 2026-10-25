@@ -385,3 +385,10 @@ flowchart LR
 ```
 
 分布式存储从来不是空中楼阁的代码拼凑，而是**在有限域抽象代数、概率统计学、极速网络与硅晶体半导体物理极限之间构建的宏伟力学平衡**。掌握了这套从物理页到跨机房的完整知识体系，你便拥有了驾驭当代任意超大规模存储基石的核心硬实力！
+
+## 参考资料
+
+- Weil, S. A., et al. (2006). CRUSH: Controlled, Scalable, Decentralized Placement of Replicated Data. ACM SC 2006.
+- Ceph Documentation: Architecture & CRUSH Map Reference: <https://docs.ceph.com/en/latest/rados/operations/crush-map/>
+- Karger, D., et al. (1997). Consistent Hashing and Random Trees. ACM STOC 1997.
+- 站内关联：[Gossip 传播轮数与感染动力学：从经典 Demers 1987 到 SWIM 故障检测](/writing/gossip-rounds-infection)

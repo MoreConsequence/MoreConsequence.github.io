@@ -7,10 +7,12 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
+import "./fonts.css";
 import "./design-tokens.css";
 import "./kami-global-layer.css";
 import "./editorial-ui.css";
 import "./sandboxes.css";
+import "./reading-system.css";
 import "katex/dist/katex.min.css";
 
 export function generateMetadata(): Metadata {
@@ -61,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning id="top">
+    <html lang="zh-CN" suppressHydrationWarning id="top" data-scroll-behavior="smooth">
       <head>
         <ThemeScript />
       </head>

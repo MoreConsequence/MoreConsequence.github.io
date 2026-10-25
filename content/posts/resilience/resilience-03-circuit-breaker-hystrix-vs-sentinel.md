@@ -311,3 +311,10 @@ int main() {
    - 读请求：返回本地过期缓存数据（Stale Cache）或静态默认数据；
    - 写请求：写入可靠的消息队列（Dead Letter Queue）或提示用户排队稍后重试；
 3. **指标协同**：断路器必须通过 Prometheus / OpenTelemetry 实时暴露当前状态值（0=Closed, 1=Half-Open, 2=Open）与拒绝计数器，联动报警系统在触发熔断的第 1 秒通报值班工程师。
+
+## 参考资料
+
+- Nygard, M. T. (2018). Release It! Design and Deploy Production-Ready Software (Circuit Breaker Pattern).
+- Netflix Hystrix Wiki: How it Works & Circuit Breaker Logic: <https://github.com/Netflix/Hystrix/wiki/How-it-Works>
+- Alibaba Sentinel: Flow Control and Circuit Breaking for Microservices: <https://sentinelguard.io/en-us/docs/circuit-breaking.html>
+- 站内关联：[分布式限流窗口重试法则：固定 vs 滑动窗口崩溃反转](/writing/resilience-window-retry)

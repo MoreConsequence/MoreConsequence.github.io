@@ -222,3 +222,10 @@ cat /etc/sysctl.d/99-k8s.conf
 计算机科学中的核心难题从未改变：**空间与时间的权衡、局部性原理、碎片化的消解与并发隔离。** 
 
 作为后端开发工程师，不需要畏惧看似日新月异的技术浪潮。只要把操作系统的内存模型、网络协议栈与高并发调优的核心功底打得足够扎实，无论未来技术范式如何更迭，你都能在第一时间内看穿它的底层本质，并在工程世界里游刃有余。
+
+## 参考资料
+
+- Kwon, W., et al. (2023). Efficient Memory Management for Large Language Model Serving with PagedAttention. SOSP 2023.
+- Denning, P. J. (1968). The Working Set Model for Program Behavior. Communications of the ACM.
+- vLLM Architecture & KV Cache Paging Mechanism: <https://docs.vllm.ai/>
+- 站内关联：[大模型长会话淘汰策略：从全局 LRU 到 Head-Tail 注意力沉降](/writing/llm-15-context-eviction)

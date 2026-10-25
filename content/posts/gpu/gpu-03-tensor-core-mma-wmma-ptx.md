@@ -302,3 +302,10 @@ Tensor Core 是现代 AI 大模型基础设施的算力支柱：
 然而，在面对现代大模型超长上下文（Long-Context）场景时，经典的自注意力机制（Self-Attention: $QK^T$）面临着一个更加恐怖的物理魔咒——**序列长度 $N$ 的二次方内存爆炸（$O(N^2)$ Memory Wall）**！如果每次计算都要把巨大的 $N \times N$ 注意力矩阵完整写入 HBM，显存将在几千个 Token 时彻底爆仓。
 
 下一篇，我们将进入现代大模型计算的封神之作，深度解构 **《FlashAttention 核心机理深度拆解：SRAM 分块 Tiling、Online Softmax 统计重标度与反向重计算》**！
+
+## 参考资料
+
+- NVIDIA Corporation: Tensor Cores Architecture & Programming (Volta, Ampere, Hopper): <https://www.nvidia.com/en-us/data-center/tensor-cores/>
+- NVIDIA PTX ISA: Matrix Multiply and Accumulate (MMA) Instructions (`mma.sync`).
+- CUTLASS: Fast Linear Algebra Operations in CUDA C++: <https://github.com/NVIDIA/cutlass>
+- 站内关联：[LLM Token 经济学：长上下文、KV Cache 命中与真实账单分析](/writing/llm-token-economics)

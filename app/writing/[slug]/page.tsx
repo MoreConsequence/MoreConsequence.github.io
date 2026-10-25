@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleBody } from "@/components/post/article-body";
-import { PostMeta } from "@/components/post/post-meta";
 import { ReadingProgress } from "@/components/post/reading-progress";
 import { KeyboardNavigation } from "@/components/post/keyboard-navigation";
 import { ArticleSidebar } from "@/components/post/article-sidebar";
@@ -77,42 +76,56 @@ export default async function ArticlePage({ params }: PageProps) {
     <>
       <ReadingProgress />
       <KeyboardNavigation />
-      <article className="article-page">
-        <header className="article-header">
-          <div className="article-kicker">
-            <Link href="/writing">文章</Link>
-            <span>/</span>
-            {post.meta.series ? (
-              <>
-                <Link href={seriesHref(post.meta.series)} className="kicker-series">
-                  {getSeriesIcon(post.meta.series)} {post.meta.series}
-                  {isSeries ? (
-                    <span className="kicker-chapter">
-                      （{String(currentSeriesIndex + 1).padStart(2, "0")}/{seriesPosts.length}）
-                    </span>
-                  ) : null}
-                </Link>
-                <span>/</span>
-              </>
-            ) : null}
-            <span>{post.meta.tags[0]}</span>
+      <article className="article-page claude-dev-layout">
+        <header className="article-hero article-hero-centered">
+          <div className="hero-nav-bar">
+            <Link href="/writing" className="hero-back-link">
+              ← 文章列表
+            </Link>
           </div>
-          <h1>{post.meta.title}</h1>
-          <p className="article-deck">{post.meta.description}</p>
-          <div className="article-header-meta">
-            <PostMeta
-              meta={post.meta}
-              readingTimeMinutes={post.readingTimeMinutes}
-            />
-            {post.meta.updatedAt ? (
-              <span>更新于 {post.meta.updatedAt.replaceAll("-", ".")}</span>
-            ) : null}
+          <div className="hero-center-box">
+            <div className="article-kicker">
+              {post.meta.series ? (
+                <>
+                  <Link href={seriesHref(post.meta.series)} className="kicker-series">
+                    {getSeriesIcon(post.meta.series)} {post.meta.series}
+                    {isSeries ? (
+                      <span className="kicker-chapter">
+                        （{String(currentSeriesIndex + 1).padStart(2, "0")}/{seriesPosts.length}）
+                      </span>
+                    ) : null}
+                  </Link>
+                  <span className="kicker-sep">/</span>
+                </>
+              ) : null}
+              <span className="kicker-tag">{post.meta.tags[0]}</span>
+            </div>
+            <h1 className="hero-title">{post.meta.title}</h1>
+            <p className="hero-standfirst">{post.meta.description}</p>
+            <div className="hero-meta">
+              <div className="meta-col">
+                <span className="meta-lb">AUTHOR</span>
+                <span className="meta-vv">└ 边界笔记</span>
+              </div>
+              <div className="meta-col">
+                <span className="meta-lb">PUBLISHED</span>
+                <span className="meta-vv">└ {post.meta.publishedAt.replaceAll("-", ".")}</span>
+              </div>
+              <div className="meta-col">
+                <span className="meta-lb">READING TIME</span>
+                <span className="meta-vv">└ {post.readingTimeMinutes} 分钟精读</span>
+              </div>
+              {post.meta.updatedAt ? (
+                <div className="meta-col">
+                  <span className="meta-lb">UPDATED</span>
+                  <span className="meta-vv">└ {post.meta.updatedAt.replaceAll("-", ".")}</span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </header>
 
-        <ReadingProgress />
-
-        <div className="article-layout">
+        <div className="article-layout body-grid">
           <ArticleSidebar
             items={post.toc}
             series={post.meta.series}
@@ -121,8 +134,12 @@ export default async function ArticlePage({ params }: PageProps) {
             currentSeriesIndex={currentSeriesIndex}
             seriesIcon={post.meta.series ? getSeriesIcon(post.meta.series) : "📚"}
             seriesHrefUrl={post.meta.series ? seriesHref(post.meta.series) : ""}
+            articleTitle={post.meta.title}
+            markdownBody={post.body}
           />
-          <ArticleBody html={post.html} />
+          <div className="prose-column">
+            <ArticleBody html={post.html} />
+          </div>
         </div>
 
         <nav className="article-neighbors" aria-label="相邻文章">

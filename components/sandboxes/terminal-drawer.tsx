@@ -39,21 +39,7 @@ export function TerminalDrawer() {
   }, []);
 
   if (!isOpen) {
-    return (
-      <aside aria-label="快捷终端工具" className="fixed bottom-5 right-5 z-40">
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="terminal-float-pill"
-          title="打开虚拟 Web 终端 (快捷键: Ctrl + `)"
-          aria-label="打开虚拟终端"
-        >
-          <TerminalIcon className="w-4 h-4 text-emerald-500" />
-          <span>终端</span>
-          <kbd className="terminal-float-kbd">Ctrl+`</kbd>
-        </button>
-      </aside>
-    );
+    return null;
   }
 
   return (

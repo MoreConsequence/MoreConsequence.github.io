@@ -411,3 +411,10 @@ int main() {
 然而，在成千上万个节点、上百万块磁盘构成的超大规模存储集群（如 Ceph）中，数据分片被编码计算完成后，**应该放置到哪台机器、哪个机架、哪个机房？** 如果依赖中心元数据寻址表，数十亿个分片的寻址表将彻底撑爆内存；而哈希一旦变动，全集群搬迁将直接引发服务瘫痪。
 
 下一篇，我们将作为本系列的收官终局篇，深度解构分布式存储的几何空间定位奇迹—— **《Ceph CRUSH 算法几何原理：纯数学哈希消除中心元数据表，故障域拓扑与数据重平衡震荡规避》**。
+
+## 参考资料
+
+- Reed, I. S., & Solomon, G. (1960). Polynomial Codes Over Certain Finite Fields. SIAM Journal on Applied Mathematics.
+- Huang, C., et al. (2012). Erasure Coding in Windows Azure Storage (Local Reconstruction Codes). USENIX ATC 2012.
+- Plank, J. S. (2007). A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems. Software: Practice and Experience.
+- 站内关联：[无共享 CRDT 状态合并：G-Counter 到 LWW-Register 的代数收敛](/writing/crdt-gcounter-merge)

@@ -275,3 +275,10 @@ int main() {
 1. **精度与槽位大小的平衡**：时间轮的单格时间（`tick_ms`）并非越小越好。对于电商关单等粗粒度业务，1 秒甚至 5 秒的 tick 足够满足需求，过小的 tick（如 1ms）会导致不必要的空转轮巡；
 2. **持久化与高可用灾备（TimerLog）**：纯内存时间轮在节点崩溃重启时会导致未到期任务丢失。在生产级分布式消息引擎中，必须配备磁盘追加写入的 **TimerLog**，重启时只需重新回放未到期的时间槽位即可瞬间自愈；
 3. **任务回调严禁执行同步耗时阻塞**：时间轮的工作线程只负责“捞出到期任务并快速分发”，所有耗时业务逻辑必须异步投递给独立的线程池或消息队列消费，坚决保证时钟指针推进的确定性时延。
+
+## 参考资料
+
+- Varghese, G., & Lauck, A. (1987). Hashed and Hierarchical Timing Wheels: Data Structures for the Efficient Implementation of a Timer Facility. ACM SOSP 1987.
+- Netty `HashedWheelTimer` Source Code & Architecture: <https://netty.io/>
+- Apache RocketMQ Timer Wheel: High Performance Delay Message Scheduling: <https://rocketmq.apache.org/docs/>
+- 站内关联：[Go 运行时三连：cap=0 定时器、pprof 标签与 slog 动态日志](/writing/go-runtime-trio-127)

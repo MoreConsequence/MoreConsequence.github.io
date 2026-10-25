@@ -311,3 +311,10 @@ NVMe-oF 代表了现代分布式基础设施架构的演化方向：
 然而，在成百上千台节点组成的大规模存储集群中，硬件故障是不可避免的常态。如果仅靠多副本（3-Replication）来容灾，存储成本将暴增 200%！现代分布式存储系统如何在保证 9 个 9 极端可用性的同时，将存储冗余开销大幅压缩至 20%~30%？
 
 下一篇，我们将进入存储系统的容错数学核心，深度解构 **《纠删码（EC）与网络修复：Reed-Solomon 编码数学矩阵推导、LRC 局部重构码与节点宕机修复带宽优化》**。
+
+## 参考资料
+
+- NVM Express: NVMe over Fabrics (NVMe-oF) Specification (v1.1): <https://nvmexpress.org/>
+- InfiniBand Trade Association (IBTA): RoCE (RDMA over Converged Ethernet) Specification.
+- Linux Kernel Documentation: NVMe over Fabrics Host and Target Drivers: <https://www.kernel.org/doc/html/latest/networking/device_drivers/ethernet/mellanox/mlx5/index.html>
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

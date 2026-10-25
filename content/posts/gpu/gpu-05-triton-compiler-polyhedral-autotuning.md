@@ -277,3 +277,10 @@ OpenAI Triton 是近年来 AI 基础设施领域最具统治力的软件创新�
 然而，在解决了算法与编译层面的调度之后，大模型工程面临的终极算力瓶颈是——**数据位宽（Bitwidth）**。即便是 FP16 精度，单次参数传输依然消耗 2 个完整字节；最新的 NVIDIA Hopper 架构推出了革命性的 **FP8 低比特计算**。**E4M3 与 E5M2 两种截然不同的格式如何抉择？如何在极其狭窄的 8 位动态范围内防止梯度下溢或激活值爆仓？**
 
 下一篇，我们将作为本系列的压轴终局篇，深度解构 **《FP8 混合精度与低比特量化算子：E4M3/E5M2 动态缩放、延迟缩放与量化 GEMM 吞吐压榨》**！
+
+## 参考资料
+
+- Tillet, P., et al. (2019). Triton: An Intermediate Language and Compiler for Tiled Neural Network Computations. MAPL 2019.
+- OpenAI Triton Architecture & Documentation: <https://triton-lang.org/>
+- Bondhugula, U., et al. (2008). A Practical Automatic Polyhedral Parallelizer and Locality Optimizer. PLDI 2008.
+- 站内关联：[benchmark 只改一个变量：min 统计会把第二个变量藏起来](/writing/benchmark-one-variable)

@@ -194,3 +194,10 @@ func (r *RedisClusterReconciler) cleanExternalResources(ctx context.Context, c *
 然而，当我们的集群从管理 10 个实例扩展到管理 **10 万个复杂自定义资源（CR）**时，底层的物理瓶颈将再次席卷而来：**默认 Client-Go 的内存占用会瞬间突破数十 GB，默认的 QPS 限制会导致 API 响应被严重限流，而未经调优的 Worker 协程池将成为系统吞吐的阿喀琉斯之踵**。
 
 在下一篇（完结篇）中，我们将全力攻坚大规模性能优化，深度拆解 **高吞吐 Operator 性能调优与测试工程——Client-Go 限流规避、Filtered Cache 与 Fake Client 单元测试**。
+
+## 参考资料
+
+- Kubernetes Documentation: Coordinated Leader Election (`coordination.k8s.io/v1` Lease): <https://kubernetes.io/docs/concepts/architecture/leases/>
+- Kubernetes Finalizers Specification: Handling Asynchronous Deletion Gracefully: <https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/>
+- Kleppmann, M. (2016). How to do distributed locking. Martin Kleppmann blog.
+- 站内关联：[etcd 3.7 升级核对清单：RangeStream 分块、仅键索引与降级红线](/writing/etcd-37-upgrade-checklist)

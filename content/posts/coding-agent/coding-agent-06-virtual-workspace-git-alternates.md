@@ -363,3 +363,10 @@ flowchart LR
 6. **第 6 篇：构筑底线** —— 凭借 **Git Alternates 对象池借用与 OverlayFS 写时复制**，为智能体赋予亚秒级试错回滚与人类审批合并的坚固护盾。
 
 这六大基石环环相扣，共同构成了现代自主编程智能体的坚固骨架。当这些第一性原理机制在代码库中被严谨落地时，AI 编程助手便不再是一个只会聊天代码片段的“玩具补全插件”，而是一台真正能够独立承担架构重构、自主探寻解决方案并交付工业级可靠代码的**超级工程引擎**。
+
+## 参考资料
+
+- Git Documentation: git-worktree & alternates mechanism: <https://git-scm.com/docs/git-worktree>
+- Linux Kernel Overlay Filesystem: <https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html>
+- Git Internals: Object Database and Storage Architecture: <https://git-scm.com/book/en/v2/Git-Internals-Git-Objects>
+- 站内关联：[结构化克隆语义实测：深度克隆 5 大陷阱与 ArrayBuffer 转移](/writing/node-structured-clone-semantics)

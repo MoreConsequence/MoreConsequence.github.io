@@ -314,3 +314,10 @@ int main() {
 然而，即便我们将内存访存压榨到了极致，传统的通用 FP32/FP16 CUDA Core 在面对万亿参数大模型密集矩阵乘法时，算力依然捉襟见肘。为此，NVIDIA 在硬件层面构建了终极算力怪兽——**Tensor Core（张量核心）**。
 
 下一篇，我们将直接穿透到底层硬件微架构，深入解构 **《Tensor Core 硬件微架构与 MMA 指令：从 WMMA API 到 PTX 内联汇编矩阵乘极致优化》**！
+
+## 参考资料
+
+- NVIDIA Corporation: Parallel Thread Execution (PTX) ISA Reference: <https://docs.nvidia.com/cuda/parallel-thread-execution/>
+- Harris, M. (2007). Optimizing Parallel Reduction in CUDA. NVIDIA Developer Technology.
+- NVIDIA Developer Blog: Using Shared Memory in CUDA C/C++: <https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/>
+- 站内关联：[从虚拟内存到 PagedAttention：后端工程师的注意力显存漫谈](/writing/virtual-memory-to-paged-attention-for-backend-engineers)

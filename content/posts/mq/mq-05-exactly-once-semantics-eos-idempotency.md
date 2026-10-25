@@ -268,3 +268,10 @@ int main() {
 3. **架构选型原则**：
    - 纯日志、遥测监控流：采用默认的 At-Least-Once，换取单机极致的数百万 QPS 吞吐；
    - 金融记账、电商订单流：毫不犹豫地全面开启 EOS，用极小的延迟开销换取绝对的数据纯洁性。
+
+## 参考资料
+
+- Apache Kafka KIP-98: Exactly Once Delivery and Transactional Messaging: <https://cwiki.apache.org/confluence/display/KAFKA/KIP-98+-+Exactly+Once+Delivery+and+Transactional+Messaging>
+- Wang, G., et al. (2017). Exactly-once Processing in Apache Kafka. ACM SIGMOD 2017.
+- Apache Kafka Idempotent Producer & Transaction Coordinator: <https://kafka.apache.org/documentation/>
+- 站内关联：[从游标到 Keysheet：千万级分页不走 OFFSET 的唯一姿势](/writing/service-pagination-cursor)

@@ -430,3 +430,10 @@ flowchart LR
 3. **跨文件跳转赋予了模型探查真理的放大镜**：在修改任何第三方或底层调用前，通过 `goToDefinition` 先行探明底层真实契约。
 
 正是在 LSP 深度赋能之下，现代 Coding Agent 才能真正告别盲人摸象的窘境，化身为兼具广阔视野与严苛编译纪律的顶级代码工匠。
+
+## 参考资料
+
+- Microsoft: Language Server Protocol Specification (v3.17): <https://microsoft.github.io/language-server-protocol/>
+- JSON-RPC 2.0 Specification: <https://www.jsonrpc.org/specification>
+- TypeScript Compiler API & Language Service: <https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API>
+- 站内关联：[TS 7.1 nightly 自举实测：本仓 typecheck 快 5 倍，报错逐字一致](/writing/typescript-71-beta-native-check)

@@ -270,3 +270,10 @@ flowchart LR
 构建 Kubernetes Operator 是每一位资深云原生与系统架构工程师的必修内功。它不仅是一种代码编写技术，更是**将人类架构师复杂的运维经验、故障自愈逻辑与业务不变量，凝结为永不疲倦、秒级响应的软件控制论实体**。
 
 唯有彻底洞悉 `controller-runtime` 的底层设计精髓，敬畏高并发下的每一把锁与每一个时间窗口，我们才能在万级节点、海量有状态服务的云原生星辰大海中，驾驭起稳定、高效、自愈的企业级云原生控制中枢。
+
+## 参考资料
+
+- Kubernetes SIGs: Kubebuilder envtest documentation: <https://book.kubebuilder.io/reference/envtest.html>
+- client-go Performance Tuning: QPS, Burst, and Connection Pooling in HTTP transport.
+- Kubernetes API Server Flow Control & Priority and Fairness (APF): <https://kubernetes.io/docs/concepts/cluster-administration/flow-control/>
+- 站内关联：[Go net/http 连接复用账本](/writing/go-nethttp-connection-reuse)

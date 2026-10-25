@@ -371,3 +371,10 @@ FlashAttention 的伟大之处，在于它打破了算法工程师“只看数�
 然而，手动用 CUDA C++ 和裸 PTX 汇编编写这样一套高度复杂的 Tiling 算子，开发周期往往以月计算，且在不同 GPU 架构（A100 vs H100）之间极难移植。**我们能不能既拥有 Python 的高生产力，又能自动生成击败手工编写的高性能 GPU 算子？**
 
 下一篇，我们将进入现代深度学习编译器的代表作，深度拆解 **《OpenAI Triton 极速编译：Pythonic Block 级编程模型、LLVM IR 与多面体优化自动调优》**！
+
+## 参考资料
+
+- Dao, T., et al. (2022). FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. NeurIPS 2022.
+- Dao, T. (2023). FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning. ICLR 2024.
+- Milakov, M., & Gimelshein, N. (2018). Online normalizer calculation for softmax. arXiv:1805.02867.
+- 站内关联：[大模型长会话淘汰策略：从全局 LRU 到 Head-Tail 注意力沉降](/writing/llm-15-context-eviction)

@@ -45,6 +45,15 @@ export function WritingArchive({ posts }: { posts: ListPost[] }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
+  // Topic links from the home page survive the static-export navigation.
+  useEffect(() => {
+    const pillar = new URLSearchParams(window.location.search).get("pillar");
+    if (pillar && Object.hasOwn(PILLARS, pillar)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActivePillar(pillar as PillarId);
+    }
+  }, []);
+
   // 从 localStorage 恢复用户偏好的视图模式
   useEffect(() => {
     try {

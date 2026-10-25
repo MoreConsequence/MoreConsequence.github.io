@@ -271,3 +271,10 @@ flowchart TD
    严格限制每次实验的节点范围在总体容量的 5% 以内，且绝对避开单机单实例的关键基础设施；
 4. **回放与版本审计**：
    每一次注入的指令、时间戳与影响范围，必须写入不可篡改的审计日志，支持事后进行一比一全景根因复盘。
+
+## 参考资料
+
+- Basiri, A., et al. (2016). Chaos Engineering. IEEE Software.
+- CNCF Chaos Mesh Architecture & Fault Injection Primitives: <https://chaos-mesh.org/>
+- Linux Kernel Error Injection & `bpf_override_return`: <https://www.kernel.org/doc/html/latest/fault-injection/fault-injection.html>
+- 站内关联：[Go 1.25.1 testing/synctest 虚拟时间与并发状态机测试](/writing/go-test-synctest-fuzz)

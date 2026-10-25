@@ -203,3 +203,9 @@ uname -a
 | **复杂多表聚合缓存** | 异步解耦（写操作吞吐优先） | **Binlog CDC (Canal / Debezium) + 版本栅栏** | 依赖外部 CDC 中间件，需处理消息堆积 |
 
 架构设计的最高境界，不是追求虚无缥缈的“绝对一致”，而是**明确你的故障边界在哪、并用最精简克制的机制将非确定性牢牢锁死在安全水线之内**。
+
+## 参考资料
+
+- Kleppmann, M. (2016). Designing Data-Intensive Applications (Fencing Tokens in Chapter 8). O'Reilly.
+- Redis Documentation: Distributed Locks with Redlock & Fencing: <https://redis.io/docs/latest/develop/use/patterns/distributed-locks/>
+- 站内关联：[会话级写后读一致性：粘性路由 vs 版本栅栏的工程权衡](/writing/read-your-write-session)

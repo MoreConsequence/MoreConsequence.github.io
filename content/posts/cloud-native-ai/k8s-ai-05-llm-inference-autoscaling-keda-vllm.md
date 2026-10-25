@@ -187,3 +187,10 @@ spec:
 然而，在解决了单卡虚拟化、分布式训练、镜像加速与在线服务弹性之后，还有一个更底层的物理瓶颈隐藏在多卡服务器之中：**在拥有 8 张 GPU 的单台物理机内部，跨 NUMA 节点与跨 PCIe Switch 的数据传输时延相差数倍；一旦 Pod 被随意调度到不相匹配的 CPU Socket 与网卡上，大模型通信吞吐将暴跌 40%**。
 
 在下一篇（完结篇）中，我们将彻底深入硬件拓扑的微观底层，解密 **Kubernetes 拓扑感知调度（Topology-Aware Scheduling）与全新的 DRA（Dynamic Resource Allocation）规范**。
+
+## 参考资料
+
+- vLLM: High-throughput and memory-efficient LLM serving engine: <https://docs.vllm.ai/>
+- KEDA: Kubernetes Event-driven Autoscaling Specification: <https://keda.sh/>
+- Kubernetes Horizontal Pod Autoscaler (HPA) Metrics API: <https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/>
+- 站内关联：[从虚拟内存到 PagedAttention：后端工程师的注意力显存漫谈](/writing/virtual-memory-to-paged-attention-for-backend-engineers)

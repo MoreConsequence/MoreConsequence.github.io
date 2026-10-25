@@ -292,3 +292,10 @@ int main() {
 然而，全局显存（HBM）的物理延迟终究在数百个周期。当需要跨线程复用数据、打碎频繁的显存回写时，我们必须依靠位于 SM 片上的真正极速内存——**共享内存（Shared Memory, 19TB/s 超大带宽）**。
 
 下一篇，我们将深入解构 **《共享内存与 Bank Conflict 破局：32 Banks 交叉寻址、Padding 填充技巧与跨线程数据洗牌 Shuffle》**，揭秘如何规避硬件冲突、榨干片上 SRAM 的每一滴吞吐！
+
+## 参考资料
+
+- NVIDIA Corporation: CUDA C++ Programming Guide: <https://docs.nvidia.com/cuda/cuda-c-programming-guide/>
+- Kirk, D. B., & Hwu, W. M. (2016). Programming Massively Parallel Processors: A Hands-on Approach. Morgan Kaufmann.
+- NVIDIA Corporation: CUDA Best Practices Guide: Memory Coalescing & SIMT Execution.
+- 站内关联：[共享内存与 Atomics：Node.js 多线程无锁编程真相](/writing/node-shared-memory-atomics)

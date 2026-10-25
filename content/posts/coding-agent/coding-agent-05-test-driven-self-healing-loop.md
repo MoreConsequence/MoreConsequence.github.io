@@ -422,3 +422,10 @@ flowchart LR
 3. **全局门禁与震荡熔断是品质的最后守门人**：防止按下葫芦浮起瓢，坚决斩断逻辑死循环，确保交付物绝对健壮。
 
 掌握了测试驱动自愈闭环的 Coding Agent，才真正具备了自主对抗不确定性、在复杂的软件迷宫中自我纠错直至抵达彼岸的工程师灵魂。
+
+## 参考资料
+
+- Beck, K. (2002). Test-Driven Development: By Example. Addison-Wesley.
+- Language Models for Code Repair and Synthesis: Zhang et al. (2023).
+- Go Testing & Subprocess Isolation: <https://pkg.go.dev/testing>
+- 站内关联：[把错误形状喂给模型：5/5 全过的大模型自愈契约设计](/writing/llm-error-shape-feeds-model)

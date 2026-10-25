@@ -174,3 +174,10 @@ flowchart LR
 从无状态微服务走向以数据库为代表的核心有状态系统，是企业云原生基础设施演进的最艰难一步，也是最具商业价值的一步。
 
 **存储不是孤立的磁盘，而是数据流动、计算拓扑、故障域与状态收敛算法的宏观交响**。唯有建立起从底层物理接口、网络协议到上层一致性状态机的立体化认知，我们才能在风云变幻的云原生时代，真正筑造起坚如磐石、永不宕机的数据底座。
+
+## 参考资料
+
+- CloudNativePG Documentation: PostgreSQL Operator for Kubernetes: <https://cloudnative-pg.io/documentation/>
+- PostgreSQL Global Development Group: Continuous Archiving and Point-in-Time Recovery (PITR): <https://www.postgresql.org/docs/current/continuous-archiving.html>
+- Barman: Backup and Recovery Manager for PostgreSQL: <https://pgbarman.org/>
+- 站内关联：[PostgreSQL 19 延后发布随笔：被撤回的三个特性与底层争议](/writing/pg19-delayed-note)

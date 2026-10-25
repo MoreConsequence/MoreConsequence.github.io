@@ -403,3 +403,10 @@ flowchart LR
 然而，仅仅让内存做到零 GC 还不够——当单节点撮合引擎全速运转在纯内存中时，**如果服务器突然断电，内存数据瞬间蒸发怎么办？** 传统的数据库刷盘和分布式 Raft 每次提交耗时数十微秒，根本无法匹配纳秒级内存撮合。
 
 下一篇，我们将深入解构 **《状态机复制与确定性容灾：基于 SMR、WAL 环形日志与 DFA 自动机 100% 确定性回放》**，揭秘高频交易系统如何在不损失微秒延迟的前提下，实现零数据丢失（RPO=0）与毫秒级确定性灾备恢复。
+
+## 参考资料
+
+- Shipilëv, A. (2014). The JVM Anatomy Park: Memory Barriers and Safe Publication.
+- Chronicle Software: Low Latency Java Architecture & Chronicle Queue: <https://chronicle.software/>
+- Real Logic Agrona: High performance data structures and utility methods for Java: <https://github.com/real-logic/agrona>
+- 站内关联：[Redis 集合三种编码：从 intset 到 hashtable 的内存跳跃实测](/writing/redis-intset-encoding-memory)

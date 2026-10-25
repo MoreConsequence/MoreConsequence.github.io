@@ -220,3 +220,10 @@ spec:
 然而，在公有云上依赖单一厂商的闭源云盘（如 EBS/云硬盘），企业不仅要面临昂贵的跨区流量账单，还会受限于单盘挂载数量上限。在自建机房或混合多云环境中，**如何用纯开源的软件定义存储在裸金属服务器上构建高性能分布式存储池？**
 
 在下一篇文章中，我们将视角转向目前云原生生态最主流的分布式软件定义存储体系，深度拆解 **Rook-Ceph 云原生分布式存储内核——CRUSH 算法、BlueStore 引擎与 CRD 控制循环实战**。
+
+## 参考资料
+
+- Kubernetes Documentation: Volume Binding Mode `WaitForFirstConsumer`: <https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode>
+- Kubernetes KEP-565: Topology-Aware Volume Provisioning.
+- CSI Topology Keys & Storage Topology Spread: <https://kubernetes-csi.github.io/docs/topology.html>
+- 站内关联：[K8s 1.37：DRA 转正与 gang 调度的 Beta 入场券](/writing/k8s-137-dra-gang-scheduling)

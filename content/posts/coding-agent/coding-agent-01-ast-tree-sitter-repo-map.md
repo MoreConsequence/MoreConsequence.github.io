@@ -521,3 +521,10 @@ flowchart LR
 4. **交付物是缩进保留的伪代码骨架**：在严格的 Token 物理红线内，让大模型在最少的认知负荷下，获得对整个软件工程全貌的透视。
 
 这正是所有顶尖 Coding Agent 能够精准穿透未知大型代码库、瞬间定位 Bug 源头的首要秘密武器。
+
+## 参考资料
+
+- Tree-sitter: An incremental parsing system for programming tools: <https://tree-sitter.github.io/tree-sitter/>
+- PageRank Algorithm & Graph Centrality in Code Navigation: Brin, S. & Page, L. (1998).
+- Universal Ctags & Symbol Definition Extraction: <https://ctags.io/>
+- 站内关联：[架构师能力图谱与高阶面试拆解](/writing/capability-map-interview)

@@ -261,3 +261,10 @@ flowchart TD
 6. **现代分层存储**：融合本地 NVMe 与云端 S3 对象存储，打破了物理磁盘容量与存储成本的天然天花板。
 
 消息引擎是现代分布式系统的心脏与大动脉。穿透这些表层 API，洞悉操作系统、内存总线、磁盘几何与网络协议在极限高并发下的物理共振，你便掌握了架构演进中最坚实、最不随框架更迭而过时的核心力量！
+
+## 参考资料
+
+- Apache Kafka KIP-405: Add Tiered Storage Support to Kafka: <https://cwiki.apache.org/confluence/display/KAFKA/KIP-405%3A+Add+Tiered+Storage+Support+to+Kafka>
+- Uber Engineering: Building Real-time Data Infrastructure with Kafka Tiered Storage.
+- Amazon S3 REST API Specification: <https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html>
+- 站内关联：[Kafka 4.1 Queues：不数分区也能点对点](/writing/kafka-queues-share-groups)

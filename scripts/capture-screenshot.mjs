@@ -1,18 +1,24 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 
-const [,, url, outputPath, selectorOrY] = process.argv;
+const [,, url, outputPath, selectorOrY, themeName] = process.argv;
 
 if (!url || !outputPath) {
-  console.log("Usage: node scripts/capture-screenshot.mjs <url> <outputPath> [selectorOrY]");
+  console.log("Usage: node scripts/capture-screenshot.mjs <url> <outputPath> [selectorOrY] [themeName]");
   process.exit(1);
 }
 
+const viewportWidth = parseInt(process.env.VIEWPORT_WIDTH || "1920", 10);
+const viewportHeight = parseInt(process.env.VIEWPORT_HEIGHT || "1080", 10);
+
+const port = process.env.CDP_PORT || "9488";
+
 const chrome = spawn("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", [
-  "--headless",
-  "--remote-debugging-port=9222",
+  "--headless=new",
+  `--remote-debugging-port=${port}`,
   "--disable-gpu",
-  "--window-size=1280,1000",
+  "--no-sandbox",
+  `--window-size=${viewportWidth},${viewportHeight}`,
   `--user-data-dir=/tmp/chrome-screenshot-${Date.now()}`,
   "about:blank"
 ]);
@@ -20,7 +26,7 @@ const chrome = spawn("/Applications/Google Chrome.app/Contents/MacOS/Google Chro
 let tabs;
 for (let i = 0; i < 20; i++) {
   try {
-    const res = await fetch("http://127.0.0.1:9222/json");
+    const res = await fetch(`http://127.0.0.1:${port}/json`);
     if (res.ok) {
       tabs = await res.json();
       if (tabs && tabs.length > 0) break;
@@ -63,8 +69,21 @@ function send(method, params = {}) {
 
 await send("Page.enable");
 await send("DOM.enable");
+await send("Emulation.setDeviceMetricsOverride", {
+  width: viewportWidth,
+  height: viewportHeight,
+  deviceScaleFactor: 1,
+  mobile: false
+});
 await send("Page.navigate", { url });
 await new Promise(r => setTimeout(r, 2000));
+
+if (themeName) {
+  await send("Runtime.evaluate", {
+    expression: `document.documentElement.setAttribute('data-theme', '${themeName}')`
+  });
+  await new Promise(r => setTimeout(r, 400));
+}
 
 if (selectorOrY) {
   const isNumber = !isNaN(Number(selectorOrY));
@@ -81,6 +100,17 @@ if (selectorOrY) {
     });
   }
   await new Promise(r => setTimeout(r, 500));
+}
+
+if (process.env.EVAL_CODE) {
+  const evalRes = await send("Runtime.evaluate", {
+    expression: process.env.EVAL_CODE,
+    returnByValue: true
+  });
+  if (evalRes?.result?.value !== undefined) {
+    console.log("EVAL_RESULT:", evalRes.result.value);
+  }
+  await new Promise(r => setTimeout(r, 400));
 }
 
 const shot = await send("Page.captureScreenshot", { format: "png" });

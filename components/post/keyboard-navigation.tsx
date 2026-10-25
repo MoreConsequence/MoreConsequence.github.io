@@ -104,20 +104,7 @@ export function KeyboardNavigation() {
 
   return (
     <>
-      {/* Floating Keyboard Pill */}
-      <aside aria-label="快捷键提示" className="keyboard-nav-pill-wrap">
-        <button
-          type="button"
-          onClick={() => setShowHelp(true)}
-          className="keyboard-nav-pill"
-          title="查看极客键盘快捷键 (?)"
-          aria-label="查看快捷键"
-        >
-          <Keyboard className="w-3.5 h-3.5 text-blue-500" />
-          <span>快捷键</span>
-          <kbd className="keyboard-nav-kbd">?</kbd>
-        </button>
-      </aside>
+      {/* Help Modal (Triggered via '?' key, no floating widget on screen) */}
 
       {/* Help Modal */}
       {showHelp && (

@@ -316,3 +316,10 @@ RUM 猜想向我们揭示了存储内核演进的终极本质：**没有任何�
 然而，软件层面的努力终究有其天花板。不论我们如何优化压实算法，现代 NAND 闪存物理结构中的“擦除块（Block）”与“写入页（Page）”不对称特性，依然在底层驱动着二次写入放大与严重的 P99 尾延迟抖动。
 
 下一篇，我们将直接穿透到物理芯片级，深入解构 **《SSD 物理闪存与 ZNS 存储：FTL 闪存转换层、GC 写入放大与 ZNS 绕过内部 GC 消除 P99 抖动》**，探索存储从“软件迁就硬件”走向“软硬协同设计（Hardware-Software Co-Design）”的前沿革命。
+
+## 参考资料
+
+- Athanassoulis, M., et al. (2016). Designing Access Methods: The RUM Conjecture. EDBT 2016.
+- O'Neil, P., et al. (1996). The Log-Structured Merge-Tree (LSM-Tree). Acta Informatica.
+- CockroachDB Pebble Key-Value Store Architecture: <https://github.com/cockroachdb/pebble>
+- 站内关联：[SQLite WAL 检查点机制与读写并发实战](/writing/sqlite-wal-checkpoint)

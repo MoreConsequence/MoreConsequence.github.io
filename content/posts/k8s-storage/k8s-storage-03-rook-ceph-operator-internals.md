@@ -208,3 +208,10 @@ Rook 与 Ceph 的结合是云原生存储的巅峰工程之作：
 然而，在面对多样化的业务应用时，存储架构师必须做出艰难的技术选型：**是选择高性能的块存储（RWO），还是选择支持多 Pod 并发写入的分布式文件系统（RWX）？本地 NVMe 盘（Local PV）在极致性能与高可用之间又是如何取舍的？**
 
 在下一篇文章中，我们将直击云原生存储的选型腹地，深度拆解 **块存储（RWO）、共享文件系统（RWX）与本地存储（Local PV）的性能与锁竞争瓶颈**。
+
+## 参考资料
+
+- Rook Architecture and Documentation: Cloud-Native Storage Orchestrator for Kubernetes: <https://rook.io/docs/rook/latest/>
+- Weil, S. A., et al. (2006). Ceph: A Scalable, High-Performance Distributed File System. OSDI 2006.
+- Ceph OSD & BlueStore Internal Storage Engine: <https://docs.ceph.com/en/latest/rados/configuration/bluestore-config-ref/>
+- 站内关联：[RocksDB 与 Pebble 存储选型：RUM 猜想下的 LSM-Tree 演进](/writing/storage-01-rum-conjecture-rocksdb-pebble)

@@ -234,3 +234,10 @@ BPF Trampoline 是 Linux 动态可观测性领域的一座丰碑：
 然而，内核追踪再快，依然运行在主机协议栈的后方。在遭遇大规模分布式拒绝服务攻击（DDoS）或超高吞吐网络转发时，报文在进入操作系统内核协议栈之前就已经把 CPU 硬中断打满了。**我们能不能在网卡刚刚完成物理 DMA、操作系统还没来得及分配 `sk_buff` 的第一纳秒，就地完成报文过滤与路由？**
 
 下一篇，我们将进入 Linux 网络性能的最前线，深度解构 **《XDP 极速数据面与硬件卸载：单机千万级 PPS 丢包抗 DDoS 与 AF_XDP 零拷贝 Socket》**！
+
+## 参考资料
+
+- Linux Kernel Documentation: Kprobes and Uprobes: <https://www.kernel.org/doc/html/latest/trace/kprobes.html>
+- Alexei Starovoitov: BPF Trampolines Architecture & Implementation (Linux Plumbers Conference).
+- Linux Kernel Source: `arch/x86/net/bpf_jit_comp.c` - JIT & Trampoline generation.
+- 站内关联：[Go 运行时三连：cap=0 定时器、pprof 标签与 slog 动态日志](/writing/go-runtime-trio-127)

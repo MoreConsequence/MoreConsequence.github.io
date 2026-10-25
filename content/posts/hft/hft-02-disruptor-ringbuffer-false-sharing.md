@@ -370,3 +370,10 @@ flowchart LR
 3. **消除竞争胜过优化竞争**：不要试图去写更精巧的锁，最好的无锁设计是让核心数据在物理上只属于某一个核心，或者只通过单调递增的单向游标进行确定性交接。
 
 正是这套极致贯穿硬件底层的设计哲学，奠定了现代高频金融交易基础设施牢不可破的技术底盘。
+
+## 参考资料
+
+- Thompson, M., et al. (2011). Disruptor: High performance alternative to bounded queues for sharing data between threads. LMAX Whitepaper.
+- Java JEP 142: Reduce Cache Contention on Specified Fields (`@Contended`).
+- Drepper, U. (2007). What Every Programmer Should Know About Memory. Red Hat.
+- 站内关联：[共享内存与 Atomics：Node.js 多线程无锁编程真相](/writing/node-shared-memory-atomics)

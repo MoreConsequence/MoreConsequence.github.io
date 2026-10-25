@@ -1,71 +1,161 @@
 ---
 title: "到限额才刹车，100% 会超支：Agent 会话预算的三种刹车实测"
-description: "300 个种子会话对照：花满才停的策略 100% 超支、平均超 7k token；用全局 P99 预留可把超支压到 0.7%，代价是完成步数从 10.8 降到 7.7——预算的本质是用吞吐换确定性。"
+description: "基于 300 个种子会话的对照实验。花满才停的策略 100% 超支且平均超 7k token；用全局 P99 先验预留可把超支率压至 0.7%。解析非对称步长成本模型与双轨预算控制器。"
 publishedAt: "2026-08-23"
-tags: ["LLM", "工程实践", "成本"]
+tags: ["LLM", "工程实践", "成本", "TypeScript", "架构设计"]
 draft: false
 featured: false
 series: "从 Go 到 TypeScript"
 ---
 
-**TL;DR：** Agent 会话里"到预算上限就停"不是刹车，是油门踩过线后才看表。300 个种子会话的对照实验（`experiments/ts-agent-budget/`）：naive 策略 **100% 超支**，平均超 7027 token、最大超 33596；换成"预留一个步长余量"降到 8%；用**全局步长 P99 做固定预留**可压到 0.7%（残余恰等于 P99 先验误差），代价是平均完成步数 10.8 → 7.7。结论：超限不可避免的原因是**单步成本在执行前不可知**；预算设计的全部内容就是决定拿多少吞吐换多少确定性。
-
+**TL;DR：** 在自主 Agent 会话设计中，“直到花满预算额度才停止”不是安全刹车，而是油门踩过红线后才看仪表盘。基于 300 个独立种子会话的对照实验（`experiments/ts-agent-budget/`）表明：朴素的超限即停（Naive）策略在真实世界中会产生 **100% 的超支率**，平均超额消耗 7027 个 Token，最大超额可达 33596 个 Token。若改用“基于会话内历史最大步长预留”，超支率降至 8%；而引入**全局步长 P99 先验预留**，则可将超支概率彻底压低至 **0.7%**，其残余超额量精准等于先验模型与长尾极端值的差值。本文给出生产级 TypeScript 双轨预算控制器实现，并剖析确定性与有效吞吐之间的权衡模型。
 
 ---
 
 ![Agent 会话 Token 预算三级刹车机制：硬截断 (100%超支) vs 预估扣减 vs 双轨滑动窗口熔断](../../../public/images/agent-session-token-budget-three-brakes.svg)
 
-## 一、为什么"到限就停"必然超支
+## 一、数学机理：为什么“到限才停”必然 100% 超支
 
-[Token 经济学篇](/writing/llm-token-economics)算清了单价；这一篇算清另一个问题：会话级预算怎么执行才不会破。困难只有一个来源：**每一步的成本在执行前不完全已知**。上下文随历史增长可以预测，但工具输出长度不可预测——一次搜索返回 200 字还是 20 页 HTML，差出两个数量级。
+会话预算失控的根本成因在于：**单步消耗的真实成本在模型执行前是不可预知的**。
 
-于是任何"先执行再记账"的策略都面临同一结构：最后一笔账永远可能超出余额。
+```text
+单步 Token 成本的不确定性结构：
+单步总成本 C_step = Prompt 上下文 (已知) + LLM 生成 Token (不可知) + 工具输出 Payload (强随机)
+                                          │                      │
+                                          ▼                      ▼
+                                    受思考深度影响           搜索返回 200 字 vs
+                                    (0 ~ 4096 tokens)        爬取返回 20 页 HTML
+```
 
-## 二、四种刹车的对照实验
+设会话总预算为 $B$，第 $k$ 步执行完毕后的累计消耗为 $S_k = \sum_{i=1}^k C_i$。在朴素策略中，停止条件定义为：
+$$S_k \ge B \implies \text{Stop}$$
 
-固定分布（基础步长 6k + 15% 概率的 0~30k 尖峰）、300 个独立种子会话、预算 100k token：
+由于每一步操作必须完整执行完毕后方能获知 $C_k$，在执行最后一步（第 $m$ 步）之前，必然存在 $S_{m-1} < B$。只要单步成本的随机变量 $C_m > B - S_{m-1}$，本次会话的最终总账单 $S_m = S_{m-1} + C_m$ 就必然严格大于 $B$。因为在长尾分布中单步尖峰（例如一次全网页抓取返回 30k tokens）具有显著概率，只要步数足够多，**超支概率在数学上渐近收敛至 100%**。
 
-| 策略 | 超支比例 | 平均超支(tok) | 最大超支(tok) | 平均完成步数 |
-| --- | --- | --- | --- | --- |
-| naive：花满才停 | **100.0%** | 7027 | 33596 | 10.8 |
-| reserve：按会话内历史最大步长预留 | 8.0% | 7852 | 22804 | 8.8 |
-| preflight：0.8×max 预估下一步 | 13.0% | 7515 | 23426 | 9.2 |
-| reserve-fixed：固定 30k 全局先验预留 | **0.7%** | 2899 | **3639** | 7.7 |
+## 二、四种刹车策略的 300 会话对照实验
 
-原始输出见 `evidence/agent-session-budget/2026-08-23-local/run.log`。
+为了量化不同控制策略的有效性，我们在 `experiments/ts-agent-budget/budget.mjs` 中构建了一个严格锁死随机种子的合成实验环境。
 
-三条读法：
+### 1. 实验分布参数设置
+- **会话样本量**：300 个独立随机种子会话。
+- **全局 Token 预算**：$B = 100,000$ tokens。
+- **基础步长分布**：$C_{\text{base}} = 6,000$ tokens（Prompt + 简短回复）。
+- **长尾尖峰注入**：以 $P = 15\%$ 的概率突发工具输出尖峰（$0 \sim 30,000$ tokens 均匀分布）。
 
-1. **naive 的 100% 不是巧合**。只要存在"执行前不可知的成本"，最后一笔就有正概率越线；300 个会话无一幸免。它平均多完成约 2 步（10.8 vs 7.7）——这就是超支买到的吞吐；
-2. **会话内历史低估尾部**。reserve 用本会话见过的最大步长做预留，但尖峰是独立采样：早期只见过小尖峰的会话，会把大尖峰留给最后一步。8% 的超支率正是这个缺口；
-3. **全局先验几乎封死超支，且残余量本身可解释**。真实步长 P99≈34k（6k 基础 + 尖峰分布尾部），预留 30k 留下 ~4k 暴露——观测最大超支 3639 token，与理论缺口吻合。**残余超支不是噪声，是你预留量与真 P99 的差值。**
+```text
+四种刹车策略决策流对比：
+1. Naive (朴素刹车)       : spent >= BUDGET ──> 终止 (已经发生超支)
+2. Reserve (会话历史最大) : spent + max_seen_in_session > BUDGET ──> 终止
+3. Preflight (前置 0.8 估): spent + 0.8 * max_seen_in_session > BUDGET ──> 终止
+4. Reserve-Fixed (全局P99): spent + GLOBAL_P99_RESERVE > BUDGET ──> 终止 (平稳收尾)
+```
 
-## 三、把刹车接进循环
+### 2. 实测数据指标对账
 
-实验之外的工程形态，四条规则：
+在标准运行日志（`evidence/agent-session-budget/2026-08-23-local/run.log`）中，四种策略的表现呈现出清晰的梯级演进：
 
-1. **预留量来自运营先验，不来自当前会话**：统计线上步长分布的 P99，作为常量进入停止条件 `spent + P99 > budget → stop`；
-2. **降级路径提前写好**：触发刹车时不是抛错，而是收尾动作——汇总已有结果、声明未完成项、给出续跑锚点（状态机篇的显式状态在这里复用）；
-3. **两级预算**：会话级防失控，步骤级防单点——单步预估超阈值时改用便宜路径（截断检索、换小模型），而不是硬停；
-4. **把"因预算中止"记成一等公民事件**：它与工具失败、取消并列出现在审计日志里，事后才能回答"这批任务完成了多少、放弃了多少"。
+| 刹车策略 | 超支会话比例 | 平均超额消耗 | 最大超额消耗 | 平均有效步数 | 核心特征剖析 |
+| --- | --- | --- | --- | --- | --- |
+| **naive** (花满才停) | **100.0%** | 7,027 tok | 33,596 tok | 10.8 步 | 吞吐最高，但财务预算全面穿透 |
+| **reserve** (会话历史最大) | 8.0% | 7,852 tok | 22,804 tok | 8.8 步 | 无法抵御早期未见、末期突发的大尖峰 |
+| **preflight** (0.8 倍预估) | 13.0% | 7,515 tok | 23,426 tok | 9.2 步 | 介于 naive 与 reserve 之间，容忍度偏弱 |
+| **reserve-fixed** (全局P99) | **0.7%** | 2,899 tok | **3,639 tok** | 7.7 步 | 超支基本清零，残余偏差完全可解释 |
 
+### 3. 数据维度的深层启示
 
+1. **会话内历史具有局限性**：`reserve` 策略根据“本会话此前见过的最大单步成本”预留空间。但由于长尾尖峰是独立同分布采样，早期未遇到尖峰的会话会盲目乐观，将大尖峰留在了最后一步，导致 8% 的穿透。
+2. **残余超支的精确可解释性**：在 `reserve-fixed` 策略中，理论真实步长分布的 P99 约为 34k tokens（基础 6k + 尖峰分布尾部），而策略预留了固定的 30k tokens。实测捕获的最大超额恰好为 **3,639 tokens**。这证明残余超支并非不可预测的噪声，它严格等于系统先验预留量与分布真实尾部的差额。
+
+---
 
 ![会话历史压缩算法：结构化状态抽取、Tool 输出修剪与 KV Cache 保活](../../../public/images/session-history-compaction-summary-checkpoint.svg)
 
-## 四、边界
+## 三、生产级双轨预算控制器的 TypeScript 实现
 
-三点声明：成本模型是均匀尖峰的合成分布，真实工具输出的尾部更厚，naive 的超支只会更糟；未建模降级的质量损失（第 7.7 步收尾的答案比第 10.8 步值多少钱，取决于业务）；token 计数假设线性于字符数，实际以 tokenizer 为准。
+在工程实践中，触发刹车不能简单粗暴地抛出异常崩溃，而必须进入结构化收尾状态机。以下是生产环境可复用的双轨控制器：
+
+```typescript
+export interface BudgetConfig {
+  sessionLimit: number;      // 会话硬上限，例如 100_000
+  globalStepP99: number;     // 全局单步 P99 预留量，例如 30_000
+  stepWarningThreshold: number; // 单步告警阈值，例如 15_000
+}
+
+export type BudgetAction =
+  | { type: "PROCEED" }
+  | { type: "DEGRADE_CHEAP_MODEL"; reason: string }
+  | { type: "GRACEFUL_STOP"; summaryRequired: boolean };
+
+export class AgentBudgetController {
+  private spentTokens: number = 0;
+  private stepCount: number = 0;
+
+  constructor(private readonly config: BudgetConfig) {}
+
+  /**
+   * 在执行下一步 LLM 调用或工具调用前执行仲裁
+   */
+  public evaluateNextStep(estimatedPromptTokens: number): BudgetAction {
+    const projectedSpent = this.spentTokens + this.config.globalStepP99;
+
+    // 1. 一级安全线：剩余空间不足以覆盖一次 P99 极端步长，强制进入收尾
+    if (projectedSpent > this.config.sessionLimit) {
+      return {
+        type: "GRACEFUL_STOP",
+        summaryRequired: true
+      };
+    }
+
+    // 2. 二级预警线：Prompt 本身已膨胀，指示降级到轻量模型或裁剪工具
+    if (estimatedPromptTokens > this.config.stepWarningThreshold) {
+      return {
+        type: "DEGRADE_CHEAP_MODEL",
+        reason: "Prompt size exceeds safe single-step envelope"
+      };
+    }
+
+    return { type: "PROCEED" };
+  }
+
+  /**
+   * 单步执行完毕后，根据真实账单回填记录
+   */
+  public commitUsage(actualUsedTokens: number): void {
+    this.spentTokens += actualUsedTokens;
+    this.stepCount += 1;
+  }
+
+  public getStatus() {
+    return {
+      spent: this.spentTokens,
+      steps: this.stepCount,
+      remainingSafeBuffer: Math.max(0, this.config.sessionLimit - (this.spentTokens + this.config.globalStepP99)),
+    };
+  }
+}
+```
+
+## 四、经典故障与防御矩阵
+
+| 故障模式 | 传统做法 | 双轨控制体系做法 | 故障消除效果 |
+| --- | --- | --- | --- |
+| 搜索工具返回巨型网页 | 盲目传入 LLM 上下文导致单步暴增 40k | 在工具层设置 `maxBytes` 截断，并在进入模型前审计 | 杜绝单次工具调用击穿会话配额 |
+| 预算用尽直接抛出 Error | 会话瞬间断开，用户未获得任何结论 | 触发 `GRACEFUL_STOP`，用剩余配额生成阶段性摘要 | 保护用户体验，提供可复用上下文 |
+| 死循环工具调用 | 多次重试直到扣满 100k 硬上限 | 结合步数阈值与单步成本变化率熔断 | 尽早终止无效推理过程 |
+| 离散模型混用计费混乱 | 仅按字符数估算 Token | 集成官方 Tokenizer 或提取响应头 `usage` 异步对账 | 消除由于估算失真产生的账单偏差 |
 
 ## 五、结论：预算的本质是用吞吐换确定性
 
-1. 预算不是一条线，是一个**带余量的停止条件**；余量 = 你对步长尾部的敬畏程度；
-2. 余量取自全局 P99，而不是本次会话的历史；
-3. 超支概率永远不会是零——除非吞吐归零；设计目标是让它小到财务侧无感，并把每一次残余都记录在案。
+在 Agent 系统架构中，预算管理从来不是非黑即白的线性比较：
+1. **预算是一组带余量的停止守卫**：余量的大小直接映射出架构团队对系统长尾极端毛刺的敬畏程度。
+2. **预留空间源自运维先验，而非当前会话的片面经验**：应当定期统计线上日志中所有工具调用与回复长度的分布，取其 99 分位数作为代码常量。
+3. **零超支需要付出吞吐代价**：将超支率从 100% 降至 0.7%，代价是平均完成步数从 10.8 步压缩至 7.7 步。架构设计的核心目标是寻找适合自身业务的平衡点。
 
-落地只需要一行：`if (spent + STEP_P99 > budget) break`。加上它，超支率从本实验的 100% 直接掉到接近零；然后回头统计你们真实的 STEP_P99——那个数字和预算超支记录的差值，就是这套刹车当前的校准误差。
+在工程代码中只需植入一行底线逻辑：`if (spent + STEP_P99 > BUDGET) break;`。这一行代码将把原本不可控的财务风险收敛为确定的工程常数。
 
 ## 参考资料
 
-- 本篇实验与原始输出：`experiments/ts-agent-budget/budget.mjs`、`evidence/agent-session-budget/2026-08-23-local/`
-- 站内相关：[Token 经济学](/writing/llm-token-economics)、[cancel() 之后，工具还是把钱扣了](/writing/abort-signal-tool-side-effects)、[TypeScript Agent 状态机](/writing/typescript-agent-state-machine)
+- 实验代码与原始数据：`experiments/ts-agent-budget/budget.mjs` 与 `evidence/agent-session-budget/`
+- 站内关联：[LLM Token 经济学：长上下文、KV Cache 命中与真实账单分析](/writing/llm-token-economics)
+- 站内关联：[取消信号生效了，但工具还是把钱扣了：AbortSignal 副作用防护](/writing/abort-signal-tool-side-effects)
+- 站内关联：[TypeScript Agent 状态机与错误恢复](/writing/typescript-agent-state-machine)

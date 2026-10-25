@@ -268,3 +268,10 @@ flowchart LR
 1. **绝对禁止在深层微服务硬编码超时值**：所有内部 RPC 超时必须是上游传入的剩余预算的子集；
 2. **设置单跳最小保底预算（Minimum Hop Budget）**：如果计算出的剩余预算低于网络单程 RTT（如小于 15ms），直接拒绝发起 RPC，坚决不向网络线缆发射注定失败的垃圾数据包；
 3. **将死工削减指标常态化监控**：在监控仪表盘中记录 `Cancelled Before Execution` 与 `Deadline Dropped Rate`，量化系统在流量洪峰中挽救了多少个核心 CPU 的无用功。
+
+## 参考资料
+
+- Nichols, K., & Jacobson, V. (2012). Controlling Queue Delay (CoDel). Communications of the ACM.
+- Google SRE Book: Handling Overload & Criticality Levels: <https://sre.google/sre-book/handling-overload/>
+- Netflix TechBlog: Prioritized Load Shedding with Adaptive Concurrency Limits.
+- 站内关联：[SLO 多窗口燃尽率告警：把假报警压到零的工程公式](/writing/slo-burn-rate-alert)

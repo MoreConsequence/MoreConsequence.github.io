@@ -143,3 +143,10 @@ flowchart TD
 在明确了存储模式之后，我们必须面对生产运维的终极命题——**数据资产的容灾与备份**：**当勒索软件入侵、机房遭遇不可抗力物理火灾、或者人为失误执行了 `DROP DATABASE` 时，如何基于 Kubernetes 原生机制秒级恢复海量 PB 级数据？**
 
 在下一篇文章中，我们将全面攻坚云原生容灾体系，深度拆解 **生产级卷快照（VolumeSnapshot）与 Velero 崩溃一致性备份恢复实战**。
+
+## 参考资料
+
+- Kubernetes Storage Access Modes Specification: `ReadWriteOnce`, `ReadOnlyMany`, `ReadWriteMany`, `ReadWriteOncePod`.
+- RFC 7530: Network File System (NFS) Version 4 Protocol Specification.
+- CephFS vs Ceph RBD: POSIX File System vs Block Device Performance Benchmarks.
+- 站内关联：[HTTP 四则：复用、流、续传、跨域](/writing/http-four-mechanisms)

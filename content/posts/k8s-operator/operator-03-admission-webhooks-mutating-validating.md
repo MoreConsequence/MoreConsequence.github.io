@@ -224,3 +224,10 @@ flowchart TD
 但在企业软件的真实生命周期中，业务需求永远在变化：**今天设计的 `v1alpha1`，半年后必定演进出 `v1beta1` 甚至 `v1`。如何在不停止在线业务的前提下，平滑升级数以万计的 CRD 对象结构，并保证新旧版本客户端双向兼容？**
 
 在下一篇文章中，我们将直面这个资深架构师必考难题，深度剖析 **CRD 多版本无损演进与 Conversion Webhook——Hub-and-Spoke 拓扑模型与 etcd 存储迁移实战**。
+
+## 参考资料
+
+- Kubernetes Documentation: Dynamic Admission Control: <https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/>
+- Kubernetes API Reference: `AdmissionReview` and `AdmissionRequest` specifications.
+- cert-manager Documentation: Automated TLS Certificate Management: <https://cert-manager.io/docs/>
+- 站内关联：[Webhook 签名设计与验签实践：Raw Body HMAC-SHA256 避坑指南](/writing/service-webhook-hmac)

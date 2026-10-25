@@ -196,3 +196,10 @@ spec:
 然而，在面对现代复杂的生产级关系型数据库（如 PostgreSQL、MySQL）时，仅仅做每日快照依然是不够的：**快照只能防灾，无法解决日常的主备同步复制、读写分离、连接池优化以及最关键的——在主节点突发硬件宕机时，如何实现秒级自动无脑裂故障转移（Failover）？**
 
 在下一篇（完结篇）中，我们将彻底攻坚云原生存储的最顶峰，深度拆解 **数据库容器化终局：CloudNative-PG 架构内核、WAL 物理隔离与无脑裂自动容灾实战**。
+
+## 参考资料
+
+- Kubernetes CSI Snapshotter Documentation: <https://kubernetes-csi.github.io/docs/external-snapshotter.html>
+- Velero: Backup and migrate Kubernetes applications and their persistent volumes: <https://velero.io/docs/>
+- Kubernetes Enhancement Proposal (KEP-177): Volume Snapshot Support in Kubernetes.
+- 站内关联：[SQLite WAL 检查点机制与读写并发实战](/writing/sqlite-wal-checkpoint)

@@ -251,3 +251,10 @@ flowchart LR
 将 Kubernetes 打造为现代 AI 算力的底座，绝非简单地在节点上安装一个 GPU 驱动插件。从单机总线延迟的微秒级优化，到跨集群千卡训练的宏观编排，**云原生工程师必须同时具备对硬件物理体系（SM、Crossbar、NVLink、RDMA）的深刻敬畏，以及对 Kubernetes 控制器模式、声明式 API 规范的纯熟运用**。
 
 唯有穿透虚妄的封装，将调度逻辑真正扎根于硬件的物理规律之中，我们才能在大模型浪潮的算力军备竞赛中，构筑起坚不可摧、极致高效的云原生算力中枢。
+
+## 参考资料
+
+- Kubernetes Topology Manager Guide: <https://kubernetes.io/docs/tasks/administer-cluster/topology-manager/>
+- Dynamic Resource Allocation (DRA) upstream KEP-3063: <https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/3063-dynamic-resource-allocation>
+- Linux Kernel NUMA Memory Policy: <https://www.kernel.org/doc/html/latest/admin-guide/mm/numa_memory_policy.html>
+- 站内关联：[K8s 1.37：DRA 转正与 gang 调度的 Beta 入场券](/writing/k8s-137-dra-gang-scheduling)

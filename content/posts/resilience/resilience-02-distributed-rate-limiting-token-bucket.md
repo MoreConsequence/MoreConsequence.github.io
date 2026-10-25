@@ -301,3 +301,10 @@ int main() {
 1. **动静分级限流**：将限流维度拆分为 `租户 ID + API 路由 + 客户端 IP`。基础防刷使用本地内存布隆过滤器或单机滑窗，租户级配额控制才走 Redis 分布式限流，避免无关流量浪费中央配额；
 2. **预热机制（Warm Up）**：对于新启动的服务或长时间无流量的冷接口，令牌桶应支持从较小的容量平滑爬坡（如 Guava `SmoothWarmingUp` 思想），防止冷系统遭遇突发流量时瞬间被打死；
 3. **监控与告警契约**：分布式限流器不仅要监控丢弃率（Drop Rate），更要对 Redis 的响应耗时（P99 延迟）和连接池健康度设防，确保限流组件绝不反向成为系统稳定性的最大单点弱点。
+
+## 参考资料
+
+- Turner, J. S. (1986). New directions in communications (or which way to the information age?). IEEE Communications Magazine (Token Bucket).
+- Redis Documentation: Eval Lua scripts & Redis Strings Memory Packing: <https://redis.io/docs/interact/programmability/eval-intro/>
+- IETF RFC 6598: Carrier-Grade NAT and Rate Limiting.
+- 站内关联：[分布式限流窗口重试法则：固定 vs 滑动窗口崩溃反转](/writing/resilience-window-retry)

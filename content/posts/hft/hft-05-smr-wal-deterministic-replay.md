@@ -369,3 +369,10 @@ int main() {
 在掌握了极速撮合、内存无 GC 与确定性容灾之后，交易系统面临的最后一个高危地带是——**钱（Money）**。一笔买单进入系统，如何保证资金不会超卖穿仓？当每秒涌入百万笔交易、数千个并发交易员争抢同一热点做市商资金池时，**如何既防止死锁与并发扣错账，又能把事前风控校验压缩在 1 微秒之内？**
 
 下一篇，我们将作为本系列的压轴终局篇，深度解构 **《资金复式记账与风控流控：Pat Helland 最终一致性对账、热点账户分段锁与单微秒级动态穿透风控规则引擎》**。
+
+## 参考资料
+
+- Schneider, F. B. (1990). Implementing Fault-Tolerant Services Using the State Machine Approach: A Tutorial. ACM Computing Surveys.
+- Gray, J., & Reuter, A. (1992). Transaction Processing: Concepts and Techniques. Morgan Kaufmann.
+- Ongaro, D., & Ousterhout, J. (2014). In Search of an Understandable Consensus Algorithm (Raft). USENIX ATC 2014.
+- 站内关联：[SQLite WAL 检查点机制与读写并发实战](/writing/sqlite-wal-checkpoint)

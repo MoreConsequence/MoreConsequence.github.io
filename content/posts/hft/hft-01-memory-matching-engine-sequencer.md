@@ -412,3 +412,10 @@ flowchart LR
 1. **并行不等于高性能**：当工作负载处于微秒与纳秒尺度且存在强状态共享时，任何跨核心的数据同步都会演变为性能灾难；
 2. **定序先于执行**：通过在网关入口处以极低开销完成全局定序，执行阶段的全部并发冲突被就地消解；
 3. **拥抱硬件物理现实**：对齐缓存行、消除分支预测失败、平铺内存数组——只有与现代处理器的微体系结构共舞，才能真正突破通用软件工程的性能天花板。
+
+## 参考资料
+
+- Harris, L. (2003). Trading and Exchanges: Market Microstructure for Practitioners. Oxford University Press.
+- LMAX Architecture: How to build high throughput and low latency systems: Martin Fowler (2011).
+- Hennessy, J. L., & Patterson, D. A. (2017). Computer Architecture: A Quantitative Approach (Memory Hierarchy).
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

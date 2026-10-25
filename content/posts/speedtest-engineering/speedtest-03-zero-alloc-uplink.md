@@ -20,18 +20,21 @@ series: "网络测速与极限吞吐工程"
 在 1000Mbps 上行测速中，客户端每秒需产生约 125MB 二进制数据并推入套接字。在持续 10 秒的测试期间，累计需要处理超过 1.25GB 的数据流。
 
 ```mermaid
-flowchart TD
-    subgraph Bad["❌ 错误写法: 循环体内频繁动态分配 byte[]"]
-        B1["循环 new byte[64KB]"] --> B2["产生数万个短期堆对象"]
-        B2 --> B3["Android ART 触发 Stop-the-World GC -> UI 卡死掉帧"]
-        B2 --> B4["iOS Autoreleasepool 延迟释放 -> 内存暴涨 500MB+ 被系统 Jetsam 强杀"]
+flowchart LR
+    subgraph Bad["❌ 错误反模式: 循环内动态分配 byte[]"]
+        direction TB
+        B1["推流循环 new byte[64KB]"] --> B2["每秒产生数万短期堆对象"]
+        B2 --> B3["Android ART 频繁 GC<br/>CPU 被抢占，UI 卡死掉帧"]
+        B2 --> B4["iOS Autoreleasepool 延迟释放<br/>内存飙至 600MB+ 触发 Jetsam 强杀"]
     end
 
-    subgraph Good["✅ 工业级写法: 全生命周期零堆分配 (Zero Heap Allocation)"]
-        G1["初始化预分配 1 块 2MB 静态只读 Buffer (Native 内存驻留)"]
-        G1 --> G2["多线程只读共享切片 (Slice Pointer)"]
-        G2 --> G3["直接循环推入系统 Socket -> 全过程 0 次 GC, 0 次堆分配"]
+    subgraph Good["✅ 工业级标准: 全生命周期零堆分配 (Zero Alloc)"]
+        direction TB
+        G1["预分配 2MB 静态常驻 Buffer<br/>(Native 内存驻留，填充高熵数据)"] --> G2["多线程只读共享切片<br/>(Slice Pointer 指针视图)"]
+        G2 --> G3["循环推入系统套接字<br/>全链路 0 次 GC / 0 次堆分配"]
     end
+
+    Bad ~~~ Good
 ```
 
 ### 1. Android ART 分代垃圾回收陷阱

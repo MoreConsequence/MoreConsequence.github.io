@@ -286,3 +286,10 @@ XDP 彻底重塑了 Linux 在网络数据面处理上的技术地位：
 然而，网络报文进入主机后，在云原生微服务架构中面临着另一个极度内耗的场景——**Service Mesh 边车代理（Sidecar，如 Envoy / Istio）**。业务容器与 Sidecar 之间通过 Localhost/TCP 互相转发，明明都在同一台物理机的内存里，却不得不反复经历两次完整的 TCP 三次握手与四层协议栈封包解包。**如何利用 eBPF 将两个套接字的收发队列在内存中物理短路，让 Service Mesh 延迟直接砍半？**
 
 下一篇，我们将进入套接字优化核心，深度解构 **《Sockops 套接字重定向加速：终结 Service Mesh 边车延迟，利用 sk_msg 与 sock_hash 绕过 TCP/IP 协议栈》**！
+
+## 参考资料
+
+- Høiland-Jørgensen, T., et al. (2018). The eXpress Data Path: Fast Programmable Packet Processing in the Linux Kernel. ACM CoNEXT.
+- Linux Kernel XDP Documentation: <https://www.kernel.org/doc/html/latest/networking/af_xdp.html>
+- IO Visor Project: XDP Reference Specifications & Tutorials: <https://github.com/xdp-project/xdp-tutorial>
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

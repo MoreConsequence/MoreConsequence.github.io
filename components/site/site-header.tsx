@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
@@ -16,25 +17,34 @@ const navigation = [
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isActive = (href: string) =>
     pathname === href || (pathname ?? "").startsWith(href + "/");
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
       <div className="site-header-inner">
         <SiteLogo />
         <nav className="primary-nav" aria-label="主导航">
-          {navigation.map((item, index) => (
+          {navigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              className={`nav-link ${isActive(item.href) ? "active" : ""}`}
               aria-current={isActive(item.href) ? "page" : undefined}
             >
-              <span className="nav-num" aria-hidden="true">
-                {"0" + (index + 1)}
-              </span>
-              {item.label}
+              <span className="nav-link-text">{item.label}</span>
+              {isActive(item.href) && <span className="nav-link-dot" aria-hidden="true" />}
             </Link>
           ))}
         </nav>

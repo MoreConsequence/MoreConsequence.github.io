@@ -291,3 +291,10 @@ int main() {
 - 第 6 篇：**对冲请求与长尾消减**，破解了海量分布式扇出下的《The Tail at Scale》数学魔咒。
 
 分布式系统的终极优雅，绝不在于假设物理世界永远健康，而在于：**敢于直面硬件不可靠、网络必抖动、时钟会漂移的物理残酷现实，并用确定性的数学与内核架构，构建出在风暴中依然傲然挺立的自愈系统。**
+
+## 参考资料
+
+- Dean, J., & Barroso, L. A. (2013). The Tail at Scale. Communications of the ACM.
+- Vulimiri, A., et al. (2013). More is Less: Reducing Latency via Redundancy. ACM SIGCOMM 2013.
+- Google SRE Book: Service Level Objectives & Tail Latency Mitigation: <https://sre.google/sre-book/>
+- 站内关联：[p99 的一次测量不可信：样本量决定分位数能告诉你多少](/writing/p99-sample-size-confidence)

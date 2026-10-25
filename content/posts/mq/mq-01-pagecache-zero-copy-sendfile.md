@@ -270,3 +270,10 @@ vm.swappiness = 1
 3. **`sendfile` 零拷贝与 DMA 散布收集** 斩断了用户态/内核态的数据拷贝锁链。
 
 理解了这些物理规律，我们便能看透各类高并发中间件的底层共性，在架构设计与性能调优中做出最符合物理本质的工程决策。
+
+## 参考资料
+
+- Linux man-pages: sendfile(2) - transfer data between file descriptors.
+- Corbet, J. (2005). Kernel Korner: Splice and Tee (Zero-Copy I/O in Linux). Linux Journal.
+- Apache Kafka Design: Zero-Copy and OS PageCache Utilization: <https://kafka.apache.org/documentation/#design_zerocopy>
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

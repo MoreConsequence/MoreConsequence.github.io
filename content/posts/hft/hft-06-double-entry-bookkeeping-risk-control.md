@@ -449,3 +449,10 @@ flowchart LR
 ```
 
 在系统设计的宏大叙事中，低延迟与高性能从不是空中楼阁的技巧堆砌，而是**对计算机体系结构、CPU 缓存一致性、物理网络传输与数学确定性第一性原理的深刻理解与敬畏**。愿这一系列能够成为你突破高阶后端性能天花板的坚实底座！
+
+## 参考资料
+
+- SEC Rule 15c3-5: Risk Management Controls for Brokers or Dealers with Market Access.
+- Luca Pacioli (1494). Summa de arithmetica, geometria, proportioni et proportionalita (Double-Entry Bookkeeping).
+- Financial Information eXchange (FIX) Protocol Specification: <https://www.fixtrading.org/>
+- 站内关联：[第三方支付回调的确定性设计：从签名验签到幂等状态机](/writing/service-payment-callback-design)

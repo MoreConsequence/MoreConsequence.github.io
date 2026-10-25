@@ -271,3 +271,10 @@ spec:
 - **核心多租户生产集群与高可靠 LLM 推理**：坚决采用 **MIG** 模式并拥抱 **CDI 规范**，用硬件级隔离兜底集群稳定性，彻底消灭噪音邻居（Noisy Neighbor）与故障跨租户穿透。
 
 在下一篇文章中，我们将视角从单机 GPU 虚拟化上升到**集群级作业调度**，深度拆解在分布式深度学习场景下，默认 `kube-scheduler` 为何屡屡引发死锁，以及 **Volcano 与 Kueue 的 Gang 调度与 PodGroup 状态机**是如何彻底解决 All-or-Nothing 资源死锁问题的。
+
+## 参考资料
+
+- NVIDIA Multi-Instance GPU (MIG) User Guide: <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/>
+- Container Device Interface (CDI) Specification: <https://tags.cncf.io/container-device-interface>
+- NVIDIA Multi-Process Service (MPS) Overview: <https://docs.nvidia.com/deploy/mps/index.html>
+- 站内关联：[Kubernetes 调度器资源账本](/writing/k8s-scheduler-resource-ledger)

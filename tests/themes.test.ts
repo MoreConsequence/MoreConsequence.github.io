@@ -38,7 +38,7 @@ describe("theme registry", () => {
       {
         id: "boundary",
         label: "边界 · 雾蓝",
-        colors: ["#f3f5f7", "#17324d", "#e85d3f", "#2f7d75", "#7b8794"],
+        colors: ["#f7f9fc", "#285ccc", "#173e85", "#182c46", "#53657a"],
       },
       {
         id: "paper",

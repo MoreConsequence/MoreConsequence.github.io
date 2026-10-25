@@ -161,3 +161,10 @@ CSI 规范是云原生架构最具代表性的成功解耦案例之一：
 然而，在公有云与多可用区（Multi-AZ）生产环境中，这套机制立刻遭遇了一个致命的经典冲突：**如果 PVC 在创建时就立即申请了可用区 A 的存储卷，而调度器随后却把 Pod 调度到了可用区 B（因为可用区 A 的 GPU 或 CPU 算力已耗尽），这个 Pod 将陷入永久的 `VolumeNodeAffinityConflict` 死锁**。
 
 在下一篇文章中，我们将直面这个跨可用区多地容灾的核心痛点，深度拆解 **拓扑感知卷调度（Topology-Aware Volume Scheduling）——延迟绑定 `WaitForFirstConsumer` 与跨 AZ 故障域决策**。
+
+## 参考资料
+
+- Container Storage Interface (CSI) Specification (v1.9.0): <https://github.com/container-storage-interface/spec>
+- Kubernetes CSI Developer Documentation: <https://kubernetes-csi.github.io/docs/>
+- Kubernetes Storage Classes and Volume Life Cycle: <https://kubernetes.io/docs/concepts/storage/storage-classes/>
+- 站内关联：[内嵌 SQLite 生产实践与 WAL 机制剖析](/writing/sqlite-wal-checkpoint)

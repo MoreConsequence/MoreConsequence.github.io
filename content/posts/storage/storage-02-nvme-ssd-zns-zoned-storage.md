@@ -385,3 +385,10 @@ ZNS 存储是一场颠覆传统块存储抽象的硬件革命：
 然而，即便底层的 NVMe/ZNS 硬件延迟已经降低到数十微秒，如果操作系统仍然依赖传统的系统调用（`read`/`write`）、VFS 虚拟文件系统锁与硬中断，主机 CPU 将再次沦为瓶颈。
 
 下一篇，我们将跨越内核与硬件驱动的鸿沟，深度解构 **《SPDK 用户态无锁存储引擎：UIO/VFIO 轮询驱动彻底终结同步 I/O 系统调用与上下文切换》**，揭秘如何单核轰出数百万 IOPS 的极限存储吞吐。
+
+## 参考资料
+
+- NVM Express: Zoned Namespaces (ZNS) Command Set Specification: <https://nvmexpress.org/developers/nvme-zns-specification/>
+- Bjørling, M., et al. (2021). ZNS: Zoned Namespaces for Flash Storage. USENIX ATC 2021.
+- Linux Kernel Zoned Block Device Support: <https://www.kernel.org/doc/html/latest/block/zbd.html>
+- 站内关联：[RocksDB 与 Pebble 存储选型：RUM 猜想下的 LSM-Tree 演进](/writing/storage-01-rum-conjecture-rocksdb-pebble)

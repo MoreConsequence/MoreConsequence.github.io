@@ -193,3 +193,10 @@ version = 2
 至此，我们的 AI 计算环境已经完成了从 GPU 硬件物理切分、无死锁作业调度、弹性容错分布式训练，到大模型镜像秒级分发的完整基建拼图。
 
 然而在在线大模型推理（LLM Serving）场景中，另一个巨大的挑战出现了：**大模型推理的资源瓶颈绝非传统的 CPU 使用率或 HTTP QPS，而是与输入输出序列长度高度相关的显存与 KV Cache 饱和度**。在下一篇文章中，我们将深度解析如何基于 **vLLM / Triton、Prometheus 与 KEDA** 构建现代 AI 原生推理服务的智能弹性伸缩引擎。
+
+## 参考资料
+
+- CNCF Dragonfly: P2P Based Intelligent Image Distribution System: <https://d7y.io/>
+- Dragonfly Nydus: Container Image Acceleration Service: <https://nydus.dev/>
+- OCI Artifacts & Image Specification: <https://github.com/opencontainers/image-spec>
+- 站内关联：[内嵌 SQLite 生产实践与 WAL 机制剖析](/writing/sqlite-wal-checkpoint)

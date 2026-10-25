@@ -258,3 +258,10 @@ int main() {
 - 消费者在成功处理完业务逻辑后，向 Broker 发送消费确认 ACK 时，同样可能发生网络丢包；
 - Broker 在超时未收到 ACK 时，必然会再次将消息推给另一个消费者实例（**至少一次投递语义，At-Least-Once**）；
 - **生产铁律**：消费者在消费事务消息时，**必须在业务代码中基于唯一业务主键（如 `order_id`）做幂等去重表（Idempotency Table）或 Redis 唯一防重检查**，才能真正铸造端到端绝对一致性的钢铁闭环。
+
+## 参考资料
+
+- Apache RocketMQ Transactional Message Design: <https://rocketmq.apache.org/docs/featureBehavior/04transactionmessage/>
+- Bernstein, P. A., et al. (1987). Concurrency Control and Recovery in Database Systems (Two-Phase Commit).
+- Outbox Pattern and Transactional Messaging: Martin Fowler (2020).
+- 站内关联：[第三方支付回调的确定性设计：从签名验签到幂等状态机](/writing/service-payment-callback-design)

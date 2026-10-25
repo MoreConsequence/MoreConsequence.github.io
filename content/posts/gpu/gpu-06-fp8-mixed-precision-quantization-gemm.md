@@ -332,3 +332,10 @@ flowchart LR
 ```
 
 大模型的高性能计算工程，从来不是简单的调用现成库函数，而是**对半导体物理硅片布局、片上缓存微架构、编译期代数变换与信息论量化压缩的全面深度掌控**。愿这一系列能够成为你探索现代人工智能算力基石的终极指南！
+
+## 参考资料
+
+- Micikevicius, P., et al. (2022). FP8 Formats for Deep Learning. arXiv:2209.05433.
+- OCP (Open Compute Project) Microscaling Formats (MX) Specification: <https://www.opencompute.org/>
+- NVIDIA Hopper Architecture In-Depth: FP8 Precision and Transformer Engine.
+- 站内关联：[Pass@k 与评估无偏估计：CI/CD 中的大模型发布硬门禁](/writing/llm-12-eval-estimation-gates)

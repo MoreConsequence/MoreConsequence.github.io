@@ -263,3 +263,10 @@ Controller-Runtime 的核心美感在于**严格的职责解耦与单向事件�
 然而，在事件进入工作队列之后，一个新的核心挑战摆在眼前：**如果底层环境瞬时发生严重抖动（如 API Server 响应超时、云盘挂载失败），成千上万个请求如果在队列中盲目高频重试，将直接导致控制面发生雪崩**。
 
 在下一篇文章中，我们将直面工作队列的底层物理实现，深度剖析 **Client-Go WorkQueue 的去重机制与三重速率限制算法（令牌桶、指数退避与交织限流）**。
+
+## 参考资料
+
+- Kubernetes SIGs: controller-runtime architecture & designs: <https://github.com/kubernetes-sigs/controller-runtime>
+- Kubernetes Documentation: Custom Resources & Operators: <https://kubernetes.io/docs/concepts/extend-kubernetes/operator/>
+- client-go Architecture: Tools and cache primitives (`Reflector`, `DeltaFIFO`, `Informer`): <https://github.com/kubernetes/client-go>
+- 站内关联：[Kubernetes 调度器资源账本](/writing/k8s-scheduler-resource-ledger)

@@ -282,3 +282,10 @@ flowchart LR
 - **构建期 AST 预计算**优于沉重的客户端运行时库。
 
 系统已经就绪，排版已然舒展——把空间留给文字，把速度留给读者。
+
+## 参考资料
+
+- Next.js Documentation: Static Exports & App Router Architecture: <https://nextjs.org/docs/app/building-your-application/deploying/static-exports>
+- Shiki Syntax Highlighter: Unified Syntax Highlighting Engine: <https://shiki.style/>
+- W3C Web Content Accessibility Guidelines (WCAG) 2.2: <https://www.w3.org/TR/WCAG22/>
+- 站内关联：[TS 7.1 nightly 自举实测：本仓 typecheck 快 5 倍，报错逐字一致](/writing/typescript-71-beta-native-check)

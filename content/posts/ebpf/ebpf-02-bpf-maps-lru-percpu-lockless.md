@@ -306,3 +306,10 @@ BPF Maps 是整个 Linux 动态观测体系的基石：
 然而，仅仅拥有高效的存储结构还不够——如果我们要监听内核中的关键系统调用（如 `sys_enter_openat`）或网络协议栈内部函数，**传统的 `kprobe` 探针依赖 CPU 软中断与断点指令，单次挂钩开销高达数微秒；而现代 Linux 推出了零开销的 BPF Trampoline（蹦床技术）！**
 
 下一篇，我们将进入内核探针执行引擎的内部，深度解构 **《内核探针与 BPF Trampoline：从 kprobe 软中断断点（int3`）到 fentry/fexit 零开销桩函数的架构演进》**！
+
+## 参考资料
+
+- Linux Kernel Source: `kernel/bpf/hashtab.c` & `kernel/bpf/bpf_lru_list.c`.
+- McKenney, P. E. (2019). Is Parallel Programming Hard, And, If So, What Can You Do About It? (RCU Chapter).
+- Linux man-pages: bpf(2) system call and map operations.
+- 站内关联：[Redis 集合三种编码：从 intset 到 hashtable 的内存跳跃实测](/writing/redis-intset-encoding-memory)

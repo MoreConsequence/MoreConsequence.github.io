@@ -467,3 +467,10 @@ flowchart LR
 4. **进程组是避免环境污染的终极底线**：通过负数 PID 广播信号，确保每一次命令取消与超时熔断都能做到斩草除根、滴水不漏。
 
 正是这套工业级 PTY 执行内核，赋予了 Coding Agent 真正掌控开发机、自主编译、自动运行测试与排障自愈的强大双手。
+
+## 参考资料
+
+- Stevens, W. R., & Rago, S. A. Advanced Programming in the UNIX Environment (APUE) - Chapter 19: Pseudo Terminals.
+- Linux man-pages: pty(7) - pseudoterminal interfaces & termios(3).
+- ANSI/VT100 Escape Codes Specification: <https://vt100.net/docs/>
+- 站内关联：[Node.js 多进程 IPC 与 Socket 句柄传递](/writing/node-cluster-ipc)

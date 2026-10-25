@@ -232,3 +232,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 然而，在真实生产场景中，很多错误实际上可以在**资源尚未写入 etcd 之前**就被彻底阻断；或者需要给资源**动态注入默认配置与安全上下文**。
 
 在下一篇文章中，我们将视角延伸到 API 接入的最前线，深度拆解 **生产级准入控制（Admission Webhooks）——变异与校验拦截器、cert-manager 证书闭环与极端宕机场景下的安全降级策略**。
+
+## 参考资料
+
+- client-go workqueue implementation: `k8s.io/client-go/util/workqueue`.
+- Leiserson, C. E., et al. (2009). Introduction to Algorithms (Token Bucket & Leaky Bucket).
+- Kubernetes Rate Limiting Design Pattern in Reconcile Loops: <https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/>
+- 站内关联：[分布式限流窗口重试法则：固定 vs 滑动窗口崩溃反转](/writing/resilience-window-retry)

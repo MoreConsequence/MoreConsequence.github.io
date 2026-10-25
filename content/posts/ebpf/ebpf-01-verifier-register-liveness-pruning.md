@@ -298,3 +298,10 @@ eBPF 验证器是 Linux 内核有史以来最精密的工程奇迹：
 然而，仅仅让程序在内核中安全运转还不够——内核态与用户态之间如何实现高频、无锁、低延迟的数据交互？如果每秒产生上百万个监控事件，传统的系统调用和用户态拷贝如何被彻底终结？
 
 下一篇，我们将深入内核内部的通信数据结构，深度解构 **《BPF Maps 内存与无锁并发：Hash、Array、Per-CPU 与 RingBuffer 极速状态共享》**！
+
+## 参考资料
+
+- Linux Kernel Documentation: BPF Verifier Architecture: <https://www.kernel.org/doc/html/latest/bpf/verifier.html>
+- Linux Kernel Source: `kernel/bpf/verifier.c` - Register liveness & state pruning.
+- BPF and XDP Reference Guide (Cilium Project): <https://docs.cilium.io/en/stable/bpf/>
+- 站内关联：[Go 1.27 双特性实测：json/v2 的 strict 与 goroutineleak 画像的真相](/writing/go-encoding-json-v2-goroutineleak)

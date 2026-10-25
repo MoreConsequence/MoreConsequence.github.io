@@ -195,3 +195,10 @@ uname -a
 | **反压信号在中间件中断** | 网关暂停读上游，但上游框架继续猛推数据 | 全链路支持 HTTP/2 `WINDOW_UPDATE`，将反压传导至源头 |
 
 高并发系统的尊严，不仅体现在每秒能处理多少吞吐，更体现在**当上下游发生速率坍塌时，系统依然能够优雅有界地呼吸与自我保护**。
+
+## 参考资料
+
+- W3C Recommendation: Server-Sent Events (EventSource Interface): <https://html.spec.whatwg.org/multipage/server-sent-events.html>
+- RFC 9113: HTTP/2 (Flow Control & Stream Concurrency).
+- Node.js Stream Documentation: Backpressure in Streams: <https://nodejs.org/api/stream.html#backpressure-in-streams>
+- 站内关联：[异步迭代器的优雅退出：for-await 的 break 终结保证与连接泄露实测](/writing/node-async-iterators-cleanup)

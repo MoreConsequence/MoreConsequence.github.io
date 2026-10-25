@@ -227,3 +227,10 @@ Kueue 在准入该 `PyTorchJob` 时，会将其整体作为一个 Workload 校�
 - 对于**现代云原生平台与多团队协作环境**，Kueue 凭借其非侵入式、云厂商友好与灵活的 Cohort 配额借用机制，正迅速成为事实上的行业通用标准。
 
 在下一篇文章中，我们将继续深入分布式深度学习的核心腹地，拆解在数千张 GPU 组成的计算集群中，**Kubeflow Training Operator 与 PyTorchJob 弹性容错、动态通信拓扑（Rendezvous）以及 GPUDirect RDMA 网络编排**的内核实现。
+
+## 参考资料
+
+- Cloud Native Computing Foundation: Volcano Architecture & Gang Scheduling: <https://volcano.sh/en/docs/>
+- Kubernetes SIGs: Kueue Job Queueing Controller Specification: <https://kueue.sigs.k8s.io/>
+- Kubernetes Coscheduling Plugins: <https://github.com/kubernetes-sigs/scheduler-plugins>
+- 站内关联：[K8s 1.37：DRA 转正与 gang 调度的 Beta 入场券](/writing/k8s-137-dra-gang-scheduling)

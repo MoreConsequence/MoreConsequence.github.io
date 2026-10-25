@@ -301,3 +301,10 @@ int main() {
 1. **绝对不要对所有流量一视同仁**：在触发自适应丢弃时，配合优先级调度（Priority Shedding），优先保住登录、交易等核心流量，丢弃日志上报、后台异步刷新等边缘流量；
 2. **结合 CoDel 算法监控排队时间**：在应用层工作队列中记录每个任务入队时的时间戳，出队时若发现 `排队耗时 > 目标耗时（如 10ms）`，说明队列正在发生 Bufferbloat，应立即触发丢弃；
 3. **向客户端返回合理的 Retry-After**：不要静默吞掉请求，通过 HTTP 429 携带动态计算的退避时间，指引客户端错峰发起重试。
+
+## 参考资料
+
+- Cardwell, N., et al. (2016). BBR: Congestion-Based Congestion Control. ACM Queue.
+- Google SRE Book: Addressing Cascading Failures & Load Shedding: <https://sre.google/sre-book/addressing-cascading-failures/>
+- go-kratos / Alibaba Sentinel Adaptive System Protection algorithms: <https://sentinelguard.io/>
+- 站内关联：[SLO 多窗口燃尽率告警：把假报警压到零的工程公式](/writing/slo-burn-rate-alert)

@@ -369,3 +369,10 @@ flowchart TD
 从本系列第 1 篇深入 eBPF 验证器的 DAG 状态剪枝证明，到第 2 篇拆解 Per-CPU 与 RingBuffer 的无锁并发内存模型；从第 3 篇剖析 fentry/fexit 蹦床零开销修补，到第 4 篇 XDP 极速数据面的千万级 PPS 丢包；再到第 5 篇与第 6 篇的 Sockops 协议栈穿透与全栈火焰图回溯——
 
 我们走过了一条**从软件表象穿透至 Linux 内核物理机理的完整硬核演进之路**。eBPF 的本质，是将原本固化不可变的操作系统内核，转变为一个支持安全动态可编程的分布式算力底盘。掌握了这一武器，无论是千亿级高并发网络优化、云原生安全防御、抑或是微秒级极端性能压榨，你都将拥有穿透一切技术黑盒的终极掌控力。
+
+## 参考资料
+
+- Gregg, B. (2016). Flame Graphs: Visualizing Performance. Communications of the ACM.
+- Linux Kernel ORC (Oops Rewind Capability) Unwinder Architecture: <https://www.kernel.org/doc/html/latest/x86/orc-unwinder.html>
+- DWARF Debugging Information Format (Version 5 Specification): <https://dwarfstd.org/>
+- 站内关联：[p99 的一次测量不可信：样本量决定分位数能告诉你多少](/writing/p99-sample-size-confidence)

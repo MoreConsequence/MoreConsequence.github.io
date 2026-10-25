@@ -206,3 +206,10 @@ CRD 的多版本演进是衡量一个平台型 Operator 是否具备企业级工
 然而，在回到 Controller 的核心运行时后，我们必须面对分布式系统的终极挑战：**高可用主备容灾与数据清理安全**。如果有两台 Operator Pod 同时启动，如何确保只有一个在真正工作？当用户敲下 `kubectl delete` 时，如何确保云端挂载的负载均衡器与云盘被彻底回收，而不是直接把底层资源泄漏在机房？
 
 在下一篇文章中，我们将深度剖析 **高可用选主（Leader Election）、协调循环幂等性与 Finalizer 级联安全清理**。
+
+## 参考资料
+
+- Kubernetes Documentation: Custom Resource Definition Versioning: <https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/>
+- OpenAPI Specification (v3.0.0): Structural Schemas in Kubernetes.
+- Kubernetes Enhancement Proposal (KEP-598): CRD Conversion Webhooks.
+- 站内关联：[架构契约破损探测器：Protobuf/JSON Schema 兼容性红线](/writing/schema-breaking-detector)

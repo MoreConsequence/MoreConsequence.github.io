@@ -275,3 +275,10 @@ flowchart LR
 3. **真实世界以物理时间定序**：依靠 PHY 芯片级打标，让每一笔交易拥有不可篡改的纳秒物理因果基准。
 
 在内核旁路构建的超高速物理轨道上，现代高频交易系统真正突破了软件的束缚，以近乎光速的节奏奔涌向前。
+
+## 参考资料
+
+- DPDK Project: Data Plane Development Kit Programmer's Guide: <https://doc.dpdk.org/guides/>
+- Solarflare Communications: OpenOnload User Guide and Low Latency Architecture: <https://www.openonload.org/>
+- Corbet, J., et al. (2005). Linux Device Drivers (Memory Mapping and DMA). O'Reilly.
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

@@ -516,3 +516,10 @@ flowchart LR
 4. **Tree-sitter 担当最后一道语法闸门**：确保每一次落盘的代码，在语法树层面绝对合法。
 
 当代码编辑的确定性被牢牢锚定在 98.5% 以上的高位时，Coding Agent 才能真正放开手脚，在更高维度的系统设计与跨文件重构中展现其惊人的自主推理价值。
+
+## 参考资料
+
+- Hunt, J. W., & McIlroy, M. D. (1976). An Algorithm for Differential File Comparison. Computing Science Technical Report.
+- Myers, E. W. (1986). An O(ND) Difference Algorithm and Its Variations. Algorithmica.
+- GNU Diffutils Patch Specification: <https://www.gnu.org/software/diffutils/>
+- 站内关联：[架构契约破损探测器：Protobuf/JSON Schema 兼容性红线](/writing/schema-breaking-detector)

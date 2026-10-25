@@ -188,3 +188,10 @@ spec:
 - **云原生弹性架构时代**：单卡故障 $\rightarrow$ Kubernetes 自动标记并驱逐故障节点 $\rightarrow$ 剩余存活节点通过 Elastic Agent 在 30 秒内完成 Re-Rendezvous $\rightarrow$ 动态重平衡微批次并无缝继续训练。
 
 在大规模训练集群成功启动并跑通后，另一个致命的生产瓶颈随之浮现：**每个节点的容器镜像和基础运行环境高达 30GB 至 50GB，节点扩容时数百台机器同时向镜像仓库发起拉取，引发严重的网络拥塞与挂起**。在下一篇文章中，我们将深度拆解 **Nydus 块级按需加载与 Dragonfly P2P 集群分发**，看现代云原生平台如何将大模型节点启动耗时从 20 分钟压缩至 2 秒之内。
+
+## 参考资料
+
+- Kubeflow Training Operator Documentation: <https://www.kubeflow.org/docs/components/training/>
+- PyTorch Distributed Elastic (TorchElastic) Architecture: <https://pytorch.org/docs/stable/elastic/quickstart.html>
+- NVIDIA GPUDirect RDMA Architecture & Tuning: <https://docs.nvidia.com/cuda/gpudirect-rdma/>
+- 站内关联：[Zero-Alloc Uplink：吞吐压测零分配网络栈设计](/writing/speedtest-03-zero-alloc-uplink)

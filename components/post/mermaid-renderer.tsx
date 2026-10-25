@@ -9,58 +9,58 @@ const themeVars = (dark: boolean) =>
   dark
     ? {
         darkMode: true,
-        background: "#11172b",
-        primaryColor: "#1e3a5f",
-        primaryTextColor: "#e2e8f0",
-        primaryBorderColor: "#60a5fa",
-        lineColor: "#60a5fa",
-        secondaryColor: "#1e293b",
-        tertiaryColor: "#0f172a",
-        clusterBkg: "#0f172a",
-        clusterBorder: "#334155",
-        edgeLabelBackground: "#1e293b",
-        nodeBorder: "#60a5fa",
-        mainBkg: "#1e3a5f",
-        nodeTextColor: "#e2e8f0",
-        titleColor: "#f1f5f9",
-        actorBorder: "#60a5fa",
-        actorBkg: "#1e3a5f",
-        actorTextColor: "#e2e8f0",
-        signalColor: "#60a5fa",
-        signalTextColor: "#e2e8f0",
-        labelBoxBkgColor: "#1e293b",
-        labelBoxBorderColor: "#60a5fa",
-        labelTextColor: "#94a3b8",
-        loopTextColor: "#94a3b8",
-        noteBkgColor: "#1e293b",
-        noteBorderColor: "#475569",
-        sequenceNumberColor: "#94a3b8",
+        background: "transparent",
+        primaryColor: "#161b22",
+        primaryTextColor: "#f0f6fc",
+        primaryBorderColor: "#388bfd",
+        lineColor: "#58a6ff",
+        secondaryColor: "#21262d",
+        tertiaryColor: "#0d1117",
+        clusterBkg: "#0d1117",
+        clusterBorder: "#30363d",
+        edgeLabelBackground: "#161b22",
+        nodeBorder: "#388bfd",
+        mainBkg: "#161b22",
+        nodeTextColor: "#f0f6fc",
+        titleColor: "#f0f6fc",
+        actorBorder: "#388bfd",
+        actorBkg: "#161b22",
+        actorTextColor: "#f0f6fc",
+        signalColor: "#58a6ff",
+        signalTextColor: "#f0f6fc",
+        labelBoxBkgColor: "#161b22",
+        labelBoxBorderColor: "#388bfd",
+        labelTextColor: "#8b949e",
+        loopTextColor: "#8b949e",
+        noteBkgColor: "#21262d",
+        noteBorderColor: "#d29922",
+        sequenceNumberColor: "#8b949e",
       }
     : {
         darkMode: false,
-        background: "#ffffff",
-        primaryColor: "#eef2ff",
-        primaryTextColor: "#1e293b",
-        primaryBorderColor: "#6366f1",
-        lineColor: "#6366f1",
-        secondaryColor: "#f8faff",
-        tertiaryColor: "#f1f5f9",
-        clusterBkg: "#fafbff",
-        clusterBorder: "#d7def0",
+        background: "transparent",
+        primaryColor: "#f0f4f9",
+        primaryTextColor: "#0f172a",
+        primaryBorderColor: "#2563eb",
+        lineColor: "#2563eb",
+        secondaryColor: "#e2e8f0",
+        tertiaryColor: "#ffffff",
+        clusterBkg: "#f8fafc",
+        clusterBorder: "#cbd5e1",
         edgeLabelBackground: "#ffffff",
-        nodeBorder: "#6366f1",
-        mainBkg: "#eef2ff",
-        nodeTextColor: "#1e293b",
+        nodeBorder: "#2563eb",
+        mainBkg: "#f0f4f9",
+        nodeTextColor: "#0f172a",
         titleColor: "#0f172a",
-        actorBorder: "#6366f1",
-        actorBkg: "#eef2ff",
-        actorTextColor: "#1e293b",
-        signalColor: "#6366f1",
-        signalTextColor: "#1e293b",
-        labelBoxBkgColor: "#f8faff",
-        labelBoxBorderColor: "#6366f1",
-        labelTextColor: "#475569",
-        loopTextColor: "#475569",
+        actorBorder: "#2563eb",
+        actorBkg: "#f0f4f9",
+        actorTextColor: "#0f172a",
+        signalColor: "#2563eb",
+        signalTextColor: "#0f172a",
+        labelBoxBkgColor: "#f8fafc",
+        labelBoxBorderColor: "#2563eb",
+        labelTextColor: "#334155",
+        loopTextColor: "#334155",
         noteBkgColor: "#fef9e7",
         noteBorderColor: "#eab308",
         sequenceNumberColor: "#64748b",
@@ -192,85 +192,135 @@ export function MermaidRenderer() {
         const isKami = ["kami", "kamisha", "kamiao", "kamisumi"].includes(
           theme,
         );
-        const dark = theme === "kamisumi";
+        // midnight is light cream (#f8f2e7). Only yoruichi, kenpachi, and kamisumi are dark.
+        const dark = ["kamisumi", "yoruichi", "kenpachi"].includes(theme);
         mermaid.initialize({
           startOnLoad: false,
           theme: "base",
           securityLevel: "loose",
           suppressErrorRendering: true,
           fontFamily: isKami ? kamiFontStack : defaultFontStack,
+          fontSize: 14,
           themeVariables: isKami ? kamiThemeVars(dark) : themeVars(dark),
+          flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true,
+            curve: "basis",
+          },
+          sequence: {
+            useMaxWidth: false,
+            showSequenceNumbers: true,
+          },
         });
 
         const elements = Array.from(
           document.querySelectorAll<HTMLElement>(".mermaid:not([data-processed])"),
         );
-        for (const el of elements) {
+        for (let i = 0; i < elements.length; i++) {
+          const el = elements[i];
+          const src = el.getAttribute("data-src") || el.textContent || "";
+          if (!src.trim()) continue;
+
+          el.dataset.processed = "true";
+          el.dataset.tog = "1";
+
+          // 提取图表描述标题
+          const titleMatch = src.match(/title\s+([^\n\r]+)/i);
+          const subgraphMatch = src.match(/subgraph\s+[A-Za-z0-9_-]+\["([^"]+)"\]/);
+          const diagramTitle =
+            titleMatch?.[1]?.trim() ||
+            (subgraphMatch?.[1] ? subgraphMatch[1].replace(/^[❌✅⚠️\s]+/, "").trim() : "逻辑流程与系统架构");
+
           try {
-            await mermaid.run({ nodes: [el] });
+            const renderId = `mermaid-render-${Date.now()}-${i}`;
+            const { svg } = await mermaid.render(renderId, src);
+
+            el.innerHTML = [
+              `<div class="tech-diagram-header mermaid-header" role="toolbar" aria-label="Mermaid 架构图示">`,
+              `<div class="tech-diagram-meta">`,
+              `<span class="diagram-fig-badge">DIAGRAM</span>`,
+              `<span class="diagram-spec-sep">//</span>`,
+              `<span class="diagram-title-text">${escHtml(diagramTitle)}</span>`,
+              `</div>`,
+              `<div class="tech-diagram-actions">`,
+              `<button type="button" class="tech-diagram-btn mt-tab active" data-v="p" title="查看渲染图示">[preview]</button>`,
+              `<button type="button" class="tech-diagram-btn mt-tab" data-v="c" title="查看 Mermaid 源码">[source]</button>`,
+              `<button type="button" class="tech-diagram-btn mt-png" title="导出 2x 高清 PNG 图">[png]</button>`,
+              `<button type="button" class="tech-diagram-btn mt-open" title="全屏放大查看">[zoom]</button>`,
+              `</div>`,
+              `</div>`,
+              `<div class="mt-view mt-pv">${svg}</div>`,
+              `<div class="mt-view mt-cd" style="display:none"><pre>${escHtml(src)}</pre></div>`,
+            ].join("");
+
+            // 视图切换
+            el.querySelector(".mermaid-header")?.addEventListener("click", (e) => {
+              const btn = (e.target as HTMLElement).closest(".mt-tab") as HTMLElement;
+              if (!btn) return;
+              const v = btn.dataset.v;
+              el.querySelectorAll(".mt-tab").forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+              el.querySelectorAll(".mt-view").forEach((view) => {
+                (view as HTMLElement).style.display =
+                  view.classList.contains(v === "p" ? "mt-pv" : "mt-cd") ? "" : "none";
+              });
+            });
+
+            // 点击图表与放大按钮打开全屏 Portal
+            el.querySelector(".mt-pv")?.addEventListener("click", () =>
+              openModal({ type: "svg", content: svg }),
+            );
+
+            el.querySelector(".mt-open")?.addEventListener("click", (event) => {
+              event.stopPropagation();
+              openModal({ type: "svg", content: svg });
+            });
+
+            // 导出 2x 高清 PNG
+            el.querySelector(".mt-png")?.addEventListener("click", (event) => {
+              event.stopPropagation();
+              const svgEl = el.querySelector<SVGElement>(".mt-pv svg");
+              if (!svgEl) return;
+              const svgString = new XMLSerializer().serializeToString(svgEl);
+              const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              const img = new Image();
+              img.onload = () => {
+                const scale = 2;
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(svgEl.clientWidth || 800, 600) * scale;
+                canvas.height = Math.max(svgEl.clientHeight || 400, 300) * scale;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                  ctx.fillStyle = dark ? "#0d1117" : "#ffffff";
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                  URL.revokeObjectURL(url);
+                  const a = document.createElement("a");
+                  a.download = `diagram-${diagramTitle.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")}.png`;
+                  a.href = canvas.toDataURL("image/png");
+                  a.click();
+                }
+              };
+              img.src = url;
+            });
           } catch (err) {
             console.warn("Mermaid diagram render error:", err);
-            el.dataset.processed = "error";
-            const src = el.getAttribute("data-src") || el.textContent || "";
             el.innerHTML = [
-              `<div class="mt-bar" role="toolbar" aria-label="Mermaid 图示工具">`,
-              `<div class="mt-tabs">`,
-              `<button type="button" class="mt-tab active" data-v="c">Source (渲染异常)</button>`,
+              `<div class="tech-diagram-header mermaid-header" role="toolbar" aria-label="Mermaid 图示工具">`,
+              `<div class="tech-diagram-meta">`,
+              `<span class="diagram-fig-badge">DIAGRAM</span>`,
+              `<span class="diagram-spec-sep">//</span>`,
+              `<span class="diagram-title-text">${escHtml(diagramTitle)}</span>`,
+              `</div>`,
+              `<div class="tech-diagram-actions">`,
+              `<button type="button" class="tech-diagram-btn mt-tab active" data-v="c">[source]</button>`,
               `</div>`,
               `</div>`,
               `<div class="mt-view mt-cd"><pre>${escHtml(src)}</pre></div>`,
             ].join("");
           }
         }
-
-        document
-          .querySelectorAll<HTMLElement>(
-            ".mermaid[data-processed]:not([data-tog])",
-          )
-          .forEach((el) => {
-            el.dataset.tog = "1";
-            const src = el.getAttribute("data-src") || "";
-            const svg = el.innerHTML;
-
-            el.innerHTML = [
-              `<div class="mt-bar" role="toolbar" aria-label="Mermaid 图示工具">`,
-              `<div class="mt-tabs">`,
-              `<button type="button" class="mt-tab active" data-v="p">Diagram</button>`,
-              `<button type="button" class="mt-tab" data-v="c">Source</button>`,
-              `</div>`,
-              `<button type="button" class="mt-open" aria-label="放大查看 Mermaid 图">放大查看</button>`,
-              `</div>`,
-              `<div class="mt-view mt-pv">${svg}</div>`,
-              `<div class="mt-view mt-cd" style="display:none"><pre>${escHtml(src)}</pre></div>`,
-            ].join("");
-
-            el.querySelector(".mt-pv")!.addEventListener("click", () =>
-              openModal({ type: "svg", content: svg }),
-            );
-
-            el.querySelector(".mt-open")!.addEventListener("click", (event) => {
-              event.stopPropagation();
-              openModal({ type: "svg", content: svg });
-            });
-
-            el.querySelector(".mt-bar")!.addEventListener("click", (e) => {
-              const btn = (e.target as HTMLElement).closest(
-                ".mt-tab",
-              ) as HTMLElement;
-              if (!btn) return;
-              const v = btn.dataset.v;
-              el.querySelectorAll(".mt-tab").forEach((b) =>
-                b.classList.remove("active"),
-              );
-              btn.classList.add("active");
-              el.querySelectorAll(".mt-view").forEach((view) => {
-                (view as HTMLElement).style.display =
-                  view.classList.contains(v === "p" ? "mt-pv" : "mt-cd")
-                    ? ""
-                    : "none";
-              });
-            });
-          });
       } finally {
         busy.current = false;
         if (pending.current) {
@@ -298,8 +348,6 @@ export function MermaidRenderer() {
         .forEach((el) => {
           el.removeAttribute("data-processed");
           el.removeAttribute("data-tog");
-          const src = el.getAttribute("data-src");
-          if (src) el.textContent = src;
         });
       render();
     });
@@ -409,6 +457,7 @@ export function MermaidRenderer() {
             className="mt-zoom-canvas mt-image-canvas"
             style={{ transform: `scale(${zoom})` }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={modal.content} alt="放大查看的图示" className="mt-img" />
           </div>
         )}
