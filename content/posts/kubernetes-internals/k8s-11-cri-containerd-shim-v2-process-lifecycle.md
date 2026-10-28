@@ -1,7 +1,8 @@
 ---
-title: "面试官：从 Docker 废弃到 containerd 时代，Pod 启动时 containerd-shim-v2 究竟在干什么？（从 CRI gRPC 接口、OCI runc 到 live-restore 无损热升级）"
+title: "containerd-shim-v2 进程生命周期：CRI gRPC 接口、OCI runc 与 live-restore 无损热升级"
 description: "为什么 Kubernetes 执意废弃使用多年的 Dockershim？在现代云原生架构中，Pod 启动时底层经历了怎样的 CRI gRPC 调用链路？深度拆解 containerd-shim-v2 进程的物理职责：为什么它必须作为容器主进程的直接父进程存在？剖析标准输入输出 FIFO 管道与退出码收集机制；终极揭秘生产环境中 containerd 守护进程升级或异常崩溃时，业务容器如何凭借 live-restore 机制实现真正的不死身与零停机热升级。"
 publishedAt: "2026-06-22"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "CRI", "containerd", "shim-v2", "runc", "OCI", "容器运行时", "面试题", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“Dockershim 彻底移除”到“shim 进程树存亡”的连环追问
+## 一、 核心痛点与演进背景：从“Dockershim 彻底移除”到“shim 进程树存亡”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "Kubernetes 在 1.24 彻底移除了 Dockershim，现在主流生产集群都使用 containerd。
    请问当 Kubelet 启动一个 Pod 时，从 CRI 调用到业务进程跑起来，底层到底经历了哪几层调用？
    为什么每个 Pod 或容器都要单独拉起一个 containerd-shim-v2 进程？runc 执行完去哪了？
@@ -222,7 +223,7 @@ sequenceDiagram
     Note over Shim,App: 正常运行态: containerd 与 shim 通过 Unix Socket 通信
     Op->>Ctrd: 执行 systemctl restart containerd (或 kill -9 异常杀死)
     Ctrd->>Ctrd: containerd 进程终止退出!
-    
+
     Note over Shim,App: 关键物理隔离: shim 并不挂在 containerd 进程树下!<br/>shim 由操作系统 systemd 托管，继续正常运行!<br/>业务容器毫无感知，TCP 连接与数据处理完全正常!
 
     Op->>Ctrd: 新版本 containerd 进程启动 (PID 2899)
@@ -252,7 +253,7 @@ containerd 在重启后，之所以能精准找回宿主机上的所有存活容
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ```mermaid
 mindmap
@@ -278,7 +279,7 @@ mindmap
 
 ### 6.1 现场 2 分钟极速电梯演讲（高分答题模板）
 
-> **面试官问：**“从 Docker 废弃到 containerd 时代，Pod 启动时 containerd-shim-v2 究竟在干什么？containerd 重启容器会挂吗？”
+> **核心架构问题：**“从 Docker 废弃到 containerd 时代，Pod 启动时 containerd-shim-v2 究竟在干什么？containerd 重启容器会挂吗？”
 
 **高分应答结构（递进式穿透）：**
 
@@ -295,7 +296,7 @@ mindmap
 > **第三层（高可用解耦与 live-restore 生产热升级）：**
 > shim 进程在 Linux 进程树上脱钩独立运行，不受 containerd 守护进程的生命周期制约。在配置了 `live-restore` 的生产集群中，即使 containerd 被 `kill -9` 强杀或执行二进制在线热升级，**宿主机上的业务容器绝对不会死亡**。新启动的 containerd 会通过扫描 `/run/containerd/...` 下保留的套接字地址文件，在毫秒级重新连回存活的 shim 进程恢复纳管，实现真正的零停机稳定性保障。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对不要混淆 containerd 与 runc 的职责**：containerd 是遵循 CRI 的高级运行时，不直接接触底层系统调用；runc 是遵循 OCI 的低级运行时，建完容器即刻退出；
 2. **切记 shim-v2 是以 Pod 为单位复用的**：很多老工程师还停留在 Docker/shim-v1 时代，误以为一个容器配一个 shim。在现代 K8s 中，同一个 Pod 内的 Pause、主业务容器和 Sidecar 共享同一个 `containerd-shim-v2`；

@@ -1,5 +1,5 @@
 ---
-title: 面试官：如何设计高可用分布式键值（KV）存储系统？（从 Amazon Dynamo 论文、LSM-Tree 物理读写放大到 Quorum NWR 与 Merkle 树反熵修复）
+title: "高可用分布式键值（KV）存储系统设计：Dynamo 模型、LSM-Tree 读写放大、Quorum NWR 与 Merkle 树反熵"
 description: 深度拆解支撑海量高并发读写的分布式键值（Key-Value）存储系统架构（参考 Alex Xu 系统设计精要第 6 章及 Amazon Dynamo、Apache Cassandra、RocksDB 真实工业演进）：剖析从 B+ 树向 LSM-Tree 跨越的存储引擎物理本质；推导 MemTable 内存跳表、SSTable 分层压缩（Compaction）与布隆过滤器（Bloom Filter）消除读放大的第一性原理；深入探讨 Quorum 模型（W+R>N）在并发重叠写下的边界弱点；推导向量时钟（Vector Clock）因果冲突检测，并系统性构建读修复（Read Repair）、提示移交（Hinted Handoff）与 Merkle 树反熵同步的自愈闭环。
 publishedAt: 2026-05-05
 series: "资深工程师面试深度拆解"
@@ -17,11 +17,11 @@ featured: false
 
 在顶尖大厂的分布式存储与基础设施面试中，面试官往往会从单机底层逐步上升到分布式全景：
 
-> **面试官提问：**  
-> “设计一个支撑 1,000 万写入 QPS、单表存储 PB 级数据的去中心化高可用分布式键值存储系统（类似 Amazon Dynamo / Cassandra）。  
-> 1. **存储引擎物理抉择**：单机存储为什么不能用 MySQL 默认的 B+ 树，而必须选用 LSM-Tree？请画出 LSM-Tree 写入（WAL、MemTable、SSTable）与读取的全过程。在读取冷数据时，LSM-Tree 面临严重的‘读放大’，系统是如何利用布隆过滤器将磁盘寻道开销降低 99% 的？  
-> 2. **SSTable 压缩风暴**：SSTable 在磁盘上是不可变的，随着更新和删除积累，后台必须执行 Compaction。Size-Tiered 与 Leveled Compaction 各自的物理权衡是什么？写放大系数（WAF）对 NVMe SSD 寿命和系统带宽会带来什么冲击？  
-> 3. **Quorum 机制的假象**：我们配置副本数 $N=3$，写入副本数 $W=2$，读取副本数 $R=2$。数学上 $W + R = 4 > 3$。既然读写的副本集必有交集，这是否意味着系统满足严格线性一致性（Linearizability）？在什么极端场景下依然会读到旧值？  
+> **核心架构挑战：**
+> “设计一个支撑 1,000 万写入 QPS、单表存储 PB 级数据的去中心化高可用分布式键值存储系统（类似 Amazon Dynamo / Cassandra）。
+> 1. **存储引擎物理抉择**：单机存储为什么不能用 MySQL 默认的 B+ 树，而必须选用 LSM-Tree？请画出 LSM-Tree 写入（WAL、MemTable、SSTable）与读取的全过程。在读取冷数据时，LSM-Tree 面临严重的‘读放大’，系统是如何利用布隆过滤器将磁盘寻道开销降低 99% 的？
+> 2. **SSTable 压缩风暴**：SSTable 在磁盘上是不可变的，随着更新和删除积累，后台必须执行 Compaction。Size-Tiered 与 Leveled Compaction 各自的物理权衡是什么？写放大系数（WAF）对 NVMe SSD 寿命和系统带宽会带来什么冲击？
+> 3. **Quorum 机制的假象**：我们配置副本数 $N=3$，写入副本数 $W=2$，读取副本数 $R=2$。数学上 $W + R = 4 > 3$。既然读写的副本集必有交集，这是否意味着系统满足严格线性一致性（Linearizability）？在什么极端场景下依然会读到旧值？
 > 4. **冲突解决与数据自愈**：当节点网络分区恢复后，我们发现不同副本上针对同一个 Key 存在不同版本。如何避免物理时钟回拨导致的数据被错误覆盖？集群如何在日常运行中利用**读修复（Read Repair）、提示移交（Hinted Handoff）与 Merkle 树反熵对齐（Anti-Entropy）**构建三层自愈防线？”
 
 ---

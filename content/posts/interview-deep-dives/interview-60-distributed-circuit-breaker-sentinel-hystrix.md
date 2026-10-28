@@ -1,7 +1,8 @@
 ---
-title: "面试官：如何设计低延迟高吞吐分布式网关全链路熔断限流降级系统？（从 Netflix Hystrix 线程池隔离到 Sentinel 滑动窗口与自适应系统过载保护）"
+title: "分布式熔断限流与自适应过载保护系统：Sentinel 滑动窗口与 Hystrix 线程池隔离对比"
 description: "微服务级联雪崩（Cascading Failure）的终结者。深入剖析 Netflix Hystrix 与 Alibaba Sentinel 在容错治理上的本质物理分水岭：为什么 Hystrix 的线程池隔离（Thread Pool Isolation）在大流量下会带来昂贵的 CPU 线程上下文切换开销与内存浪费？Sentinel 如何通过无锁环形数组（LeapArray）滑动时间窗口实现纳秒级 QPS/异常比率统计；断路器标准三态机（Closed / Open / Half-Open）的平滑半开试探；以及基于系统 Load1、CPU 使用率与 RTT 梯度的 BBR 式自适应系统自愈保护。"
 publishedAt: "2026-06-15"
+updatedAt: "2026-10-29"
 tags: ["系统设计", "面试题", "熔断降级", "Sentinel", "Hystrix", "限流", "自适应保护", "高可用"]
 category: 面试深度拆解
 draft: false
@@ -13,10 +14,10 @@ series: "资深工程师面试深度拆解"
 
 ---
 
-## 一、 面试现场：从一个微服务超时拖垮整个数据中心谈起
+## 一、 核心痛点与演进背景：从一个微服务超时拖垮整个数据中心谈起
 
 ```text
-面试官提问：
+核心架构挑战：
   "我们拥有由 200 个微服务组成的深度调用拓扑，入口网关日均处理 5 亿次 API 请求。
    某天下午，一个最边缘的‘优惠券推荐服务’因为下游三方网络抖动，响应时间从 10ms 骤增至 3000ms。
    结果 20 秒内，商品详情、下单、支付、用户中心所有核心服务全部报错 504 Gateway Timeout，全网瘫痪。
@@ -37,10 +38,10 @@ sequenceDiagram
 
     Note over Coupon,DB: 故障起点：DB 慢查询，响应从 10ms 暴增至 3000ms
     Coupon->>DB: 慢 SQL 查询
-    
+
     Gateway->>Order: 用户请求下单
     Order->>Coupon: 查询优惠券 (挂起阻塞 3 秒)
-    
+
     Note over Order: 订单服务工作线程被阻塞！<br/>吞吐能力 = 200 线程 / 3 秒 = 仅 66 QPS！<br/>后续并发请求迅速排满等待队列！
 
     Note over Gateway: 网关转发给订单服务的请求全部超时！<br/>网关自身 200 个 Worker 线程在 5 秒内全被吃光！
@@ -138,7 +139,7 @@ stateDiagram-v2
     [*] --> Closed: 系统启动初始化 (健康状态)
 
     Closed --> Open: 达到熔断阈值!\n1. 慢调用比例超过 50%\n2. 异常比例超过 30%\n(最小请求数 >= 20)
-    
+
     state Open {
         [*] --> Sleeping
         Sleeping --> Timeout: 冷静期结束 (如 5 秒后)

@@ -1,7 +1,8 @@
 ---
-title: "面试官：面对 5000 台异构节点与海量 Pod，kube-scheduler 如何毫秒级选出最优节点？（从 Predicates/Priorities 到 Scheduling Framework 与抢占算法）"
+title: "kube-scheduler 调度框架与插件机制：Predicates/Priorities、Scheduling Framework 与抢占算法"
 description: "面对上万个 Pod 与数千台异构节点，kube-scheduler 如何在数毫秒内做出最优物理决策？深度拆解调度器架构演进史：从早期的 Predicates/Priorities 硬编码流水线，到现代基于编译期解耦的 Scheduling Framework 插件架构；逐层剖析调度周期（Scheduling Cycle）与绑定周期（Binding Cycle）的九大扩展点；揭秘两阶段状态机（Reserve 乐观预留 + 异步并发 Bind）如何让吞吐提升数十倍；实战解析高优先级 Pod 抢占（Preemption）与 PDB 预算保护算法。"
 publishedAt: "2026-06-16"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "kube-scheduler", "Scheduling Framework", "调度器", "抢占调度", "亲和性", "架构设计", "面试题", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“万级 Pod 毫秒级决策”到“并发抢占截胡”的连环追问
+## 一、 核心痛点与演进背景：从“万级 Pod 毫秒级决策”到“并发抢占截胡”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "在 5000 个节点的大规模异构集群中，kube-scheduler 是如何在几毫秒内为 Pod 选出最优节点的？
    为什么早期调度器每秒只能调度几十个 Pod，而现代 Scheduling Framework 吞吐提升了数十倍？
    如果在高负载下资源耗尽，高优先级的 Pod 是如何实施抢占的？如何防止释放出来的资源被其他 Pod‘半路截胡’？"
@@ -81,7 +82,7 @@ flowchart LR
         PreScore["PreScore 扩展点:<br/>为打分插件构建共享预聚合数据"]
         Score["Score / NormalizeScore:<br/>逐插件打分 (0~100) 并归一化"]
         Reserve["Reserve 扩展点:<br/>乐观锁预留! 内存扣减防超卖"]
-        
+
         PreFilter --> Filter
         Filter -- "无可用节点" --> PostFilter
         Filter -- "存在候选" --> PreScore
@@ -95,7 +96,7 @@ flowchart LR
         PreBind["PreBind 扩展点:<br/>绑定前准备 (挂卷 / 预置网络)"]
         Bind["Bind 扩展点:<br/>向 API Server 提交 Binding 对象"]
         PostBind["PostBind 扩展点:<br/>清理与指标上报"]
-        
+
         Permit --> PreBind
         PreBind --> Bind
         Bind --> PostBind
@@ -141,16 +142,16 @@ sequenceDiagram
 
     Queue->>Core: 1. Pop 取出 Pod-A (声明需要 4 CPU)
     Core->>Cache: 2. Filter & Score 计算，决定调度到 Node-1 (剩余 8 CPU)
-    
+
     Note over Core,Cache: 关键步骤: 触发 Reserve 乐观本地锁扣减
     Core->>Cache: 3. Reserve: 内存原子更新 Node-1 剩余 CPU = 8 - 4 = 4
-    
+
     Core->>AsyncWorker: 4. go run 启动异步协程执行 BindingCycle(Pod-A, Node-1)
-    
+
     Note over Core,Queue: 5. 主线程无需等待网络! 立即回头处理 Pod-B!
     Queue->>Core: 6. Pop 取出 Pod-B (同样需要 4 CPU)
     Core->>Cache: 7. 读取最新 NodeCache: 发现 Node-1 只剩 4 CPU，刚好分配给 Node-1!
-    
+
     Note over AsyncWorker,API: 此时 Pod-A 的异步网络调用才刚刚抵达 API Server
     AsyncWorker->>API: 8. POST /binding (Pod-A 绑定至 Node-1)
     API-->>AsyncWorker: 200 OK
@@ -169,15 +170,15 @@ kube-scheduler 内部维护了一个极为精密的优先级队列管理器（`P
 stateDiagram-v2
     [*] --> activeQ: 1. 新待调度 Pod / 集群事件唤醒
     activeQ --> SchedulingCycle: 2. Scheduler 每次从 activeQ 堆顶 Pop 优先级最高的 Pod
-    
+
     SchedulingCycle --> ReserveSuccess: Filter & Score 成功
     ReserveSuccess --> bindingCycle: 派发异步 Goroutine
     bindingCycle --> [*]: 3. 成功绑定至 Node (写入 spec.nodeName)
-    
+
     SchedulingCycle --> unschedulablePods: 4. Filter 失败 (无任何 Node 满足条件)
     unschedulablePods --> backoffQ: 5. 监听到集群事件 (如某 Pod 销毁释放资源 / 新加 Node)
     backoffQ --> activeQ: 6. 指数退避时间到期 (backoffDuration: 1s, 2s... 最大 10s)
-    
+
     bindingCycle --> UnreserveRollback: 绑定失败 (网络 409 / 异常)
     UnreserveRollback --> backoffQ: 归还预留资源，入队重试
 ```
@@ -311,13 +312,13 @@ sequenceDiagram
     Note over PostFilter: 遍历所有可能通过驱逐来满足条件的节点
     Note over PostFilter: 评估 Node-Beta: 仅需驱逐 Pod A 即可腾出 4 核 CPU!
     Note over PostFilter: 检查 PDB (PodDisruptionBudget): 驱逐 Pod A 符合预算!
-    
+
     PostFilter->>API: 2. 向选定牺牲者 Pod A 发送 Evict (驱逐指令)
     Note over VictimA: Pod A 收到 SIGTERM，开始执行优雅停机
-    
+
     PostFilter->>HighPod: 3. 更新高优先级 Pod: spec.nominatedNodeName = "Node-Beta"
     Note over HighPod: 设置提名节点，防止其他后到的低优先级 Pod 抢占该位置!
-    
+
     VictimA-->>API: 4. Pod A 优雅退出完毕，资源彻底释放
     Note over PostFilter: 下一轮调度循环触发，HighPod 立即成功调度至 Node-Beta!
 ```
@@ -332,7 +333,7 @@ sequenceDiagram
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ```mermaid
 mindmap
@@ -358,7 +359,7 @@ mindmap
 
 ### 6.1 现场 2 分钟极速电梯演讲（高分答题模板）
 
-> **面试官问：**“面对 5000 台异构节点与海量 Pod，kube-scheduler 如何毫秒级选出最优节点？抢占机制如何防截胡？”
+> **核心架构问题：**“面对 5000 台异构节点与海量 Pod，kube-scheduler 如何毫秒级选出最优节点？抢占机制如何防截胡？”
 
 **高分应答结构（递进式穿透）：**
 
@@ -376,7 +377,7 @@ mindmap
 > 2. 选定牺牲者节点后，调度器向 API Server 发送删除牺牲者 Pod 的请求，同时将该节点写入当前高优先级 Pod 的 `status.nominatedNodeName` 字段；
 > 3. **核心防截胡（Anti-Theft）机制**：在牺牲者优雅退出的 30 秒窗口期内，后续到来的其他低优先级 Pod 进行 Filter 计算时，调度器会**假定被提名的 Pod 已经占用了该节点的资源**，从而坚决防止新来的 Pod‘半路截胡’偷跑算力，保障了抢占动作的最终确定性。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对不要说“调度器全流程都是多线程并发”**：调度周期（Filter/Score/Reserve）必须严格单线程串行，否则内存记账会发生严重的资源超卖；只有绑定周期（Bind）才是多 Goroutine 并发；
 2. **点明 Reserve 与 Unreserve 的两阶段事务思想**：类似于分布式事务中的 Try-Confirm/Cancel 逻辑，内存先预扣，失败再回滚；

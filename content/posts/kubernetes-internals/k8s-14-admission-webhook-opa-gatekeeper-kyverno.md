@@ -1,7 +1,8 @@
 ---
-title: "面试官：如何从根源杜绝研发提交特权容器与危险配置？如果准入 Webhook 挂了会不会导致全集群瘫痪？（从 Mutating/Validating Webhook、failurePolicy 容灾到 OPA/Kyverno）"
+title: "Kubernetes 准入控制与安全基线：Mutating/Validating Webhook、failurePolicy 容灾与 OPA/Kyverno 策略"
 description: "为什么配置了严密的 RBAC 权限依然无法阻止研发不慎运行 root 特权容器或漏配资源 Requests？深度拆解 kube-apiserver 准入控制链条（Admission Controller）的底层物理架构：从 Mutating 变形注入到 Validating 终审拦截的两阶段严格时序；剖析生产中因准入 Webhook 自身崩溃或超时导致全集群陷入'无法创建任何 Pod'的系统级死锁成因；详解 failurePolicy 容灾机制、namespaceSelector 豁免策略与 cert-manager 证书热轮换；横向对比 OPA Gatekeeper（Rego 引擎）与 Kyverno（原生 YAML 策略）的落地选型决策。"
 publishedAt: "2026-06-25"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "Admission Webhook", "准入控制", "OPA Gatekeeper", "Kyverno", "云原生安全", "安全合规", "面试题", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“生产被偷渡特权容器”到“Webhook 宕机引发瘫痪”的连环追问
+## 一、 核心痛点与演进背景：从“生产被偷渡特权容器”到“Webhook 宕机引发瘫痪”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "我们在生产集群配置了严格的 RBAC，只给研发开放了特定命名空间的 Pod 创建权限。
    为什么依然无法阻止有人在 YAML 里写 privileged: true 逃逸提权？
    kube-apiserver 的 Mutating 与 Validating Webhook 是怎么协作拦截的？为什么两者的执行顺序绝对不能颠倒？
@@ -235,7 +236,7 @@ flowchart LR
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ```mermaid
 mindmap
@@ -259,7 +260,7 @@ mindmap
 
 ### 6.1 现场 2 分钟极速电梯演讲（高分答题模板）
 
-> **面试官问：**“如何从根源杜绝研发提交特权容器与危险配置？如果准入 Webhook 挂了会不会导致全集群瘫痪？”
+> **核心架构问题：**“如何从根源杜绝研发提交特权容器与危险配置？如果准入 Webhook 挂了会不会导致全集群瘫痪？”
 
 **高分应答结构（递进式穿透）：**
 
@@ -281,7 +282,7 @@ mindmap
 > **第三层（策略引擎选型与现代落地）：**
 > 生产环境坚决不推荐自研 Webhook 业务代码。针对团队协作推荐采用 **Kyverno**（纯 Kubernetes 原生 YAML 声明式语法，零学习成本，一键支持特权拦截与存量审计）；而在需要跨外部数据源多维关联的超大型复杂金融场景下，可选用 **OPA Gatekeeper** 结合 Rego 语言构建企业级策略中台。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对不要直接对全部 Namespace 盲目配置 `failurePolicy: Fail`**：这是引发集群全局死锁的第一诱因，必须强调 `namespaceSelector` 的排除隔离机制；
 2. **切记说明 Webhook 必须使用 HTTPS**：API Server 拒绝任何普通 HTTP 明文通信，且通信必须保证双向信任证书（`caBundle` 对齐）；

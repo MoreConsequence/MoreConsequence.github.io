@@ -1,7 +1,8 @@
 ---
-title: "面试官：如何设计跨国跨地域千亿级分布式日志检索系统？（从 Elasticsearch 倒排索引爆炸到 ClickHouse / VictoriaLogs 列存重构）"
+title: "跨国跨地域千亿级分布式日志检索系统：倒排索引爆炸治理与 ClickHouse / VictoriaLogs 列存重构"
 description: "深度拆解高频核心系统设计题：海量分布式日志收集与检索平台。面对日增 100TB 原始日志与千亿级日志行，为什么传统 ELK（Elasticsearch）的倒排索引（Inverted Index）会导致 300% 磁盘膨胀与 JVM Full GC 锁死雪崩？深入推导新一代日志检索架构的物理分水岭：稀疏主键索引 + 分块压缩（Chunked ZSTD）、时间分段与结构化标签过滤、结合 SIMD（AVX-512）就地暴力流式扫描，以 1/5 的硬件成本实现毫秒级交互式检索。"
 publishedAt: "2026-06-12"
+updatedAt: "2026-10-29"
 tags: ["系统设计", "面试题", "日志检索", "Elasticsearch", "ClickHouse", "VictoriaLogs", "列式存储", "高并发"]
 category: 面试深度拆解
 draft: false
@@ -13,10 +14,10 @@ series: "资深工程师面试深度拆解"
 
 ---
 
-## 一、 面试现场：从标准“搭建 ELK”到 PB 级成本灾难追问
+## 一、 核心痛点与演进背景：从标准“搭建 ELK”到 PB 级成本灾难追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "我们公司在全球拥有上万台微服务 Pod 与物理节点，每天产生 100TB 原始日志（约 1000 亿条日志记录）。
    研发人员需要支持在 3 秒内按时间区间、服务名、TraceID 或关键字检索任意历史日志，并支持保存 30 天。
    请设计这个海量日志收集、传输、索引与交互式检索系统。"

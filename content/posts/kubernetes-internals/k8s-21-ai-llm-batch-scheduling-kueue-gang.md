@@ -1,7 +1,8 @@
 ---
-title: "面试官：千卡集群训练大模型时，如何防止资源死锁？（从 Kubernetes Kueue、Gang Scheduling 到多队列公平借还拓扑）"
+title: "千卡集群大模型训练批量调度：Kubernetes Kueue、Gang Scheduling 与多队列公平借还拓扑"
 description: "深度拆解 2025/2026 云原生 AI 与大模型训练集群最核心的批调度架构。传统 Kubernetes 默认调度器是‘单 Pod 独立逐个决策’的，在大规模分布式训练（PyTorch DDP/FSDP、Megatron-LM、Ray）场景下，极易引发致命的‘哲学家就餐式’抢卡死锁（Deadlock）。深度剖析 CNCF 顶级项目 Kueue：作业级配额管理（Job-level Quotas）、全有或全无调度（Gang Scheduling / All-or-Nothing）、层级队列（LocalQueue 与 ClusterQueue）与队列群组（Cohort）动态借用归还机制；逆向分析抢占优先级与容灾撤销状态机，彻底释放万卡算力吞吐。"
 publishedAt: "2026-07-02"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "面试题", "Kueue", "AI训练", "GangScheduling", "批调度", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“万卡集群空转死锁”到“Kueue 算力中枢”的连环追问
+## 一、 核心痛点与演进背景：从“万卡集群空转死锁”到“Kueue 算力中枢”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "我们在千卡 H100 集群上同时运行算法团队的多个分布式大模型预训练作业（如 PyTorchJob 和 Ray 集群）。
    上周五晚上两个团队同时提交了 512 卡训练作业，结果到了周六早晨一看：
    两个作业一个都没跑起来，各自卡死在 init_process_group 握手阶段，1000 多张卡空转烧了整整一晚上！
@@ -141,13 +142,13 @@ Kueue 引入了 **Cohort（队列群组）** 模型，定义了严密的**算力
 stateDiagram-v2
     [*] --> Idle: 部门 A (自动驾驶) 暂无作业，400卡空闲
     Idle --> Borrowed: 部门 B (LLM) 提交 800卡超额作业，借用部门 A 闲置算力
-    
+
     state Borrowed {
         [*] --> RunningShared: 部门 B 跨配额全速训练中 (借用 200卡)
     }
 
     Borrowed --> Reclaiming: 周一早晨，部门 A 提交 400卡任务！
-    
+
     state Reclaiming {
         DetectDeficit: Kueue 探测到部门 A 处于配额亏损 (Deficit) 状态
         SelectVictim: 在部门 B 中挑选超额借用的低优先级 Workload 作为受害者
@@ -194,18 +195,18 @@ spec:
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ### 6.1 现场 2 分钟极速电梯演讲
 
 > “面试官，大模型分布式训练场景下发生‘哲学家就餐式死锁’，本质是因为**Kubernetes 原生调度器基于单 Pod 独立贪心决策，无法满足分布式训练对资源‘全有或全无（All-or-Nothing）’的硬性离散要求**。
-> 
+>
 > 在千卡集群的生产治理中，我们坚决反对推倒原生调度器的重型方案，而是采用 CNCF 官方推崇的新一代批调度中枢 **Kueue** 构建两层解耦架构：
 > 1. **在调度准入层引入 Gang Scheduling**：利用原生 `SchedulingGates` 将所有 Pod 挂起，由 Kueue 在上层统一管理作业级生命周期。只有当全量 512 张 GPU 物理配额全部满足时，才原子化解开门控放行给 `kube-scheduler`，从数学上 100% 根除局部死锁；
 > 2. **在团队资源层构建 Cohort 弹性借还体系**：通过将多部门的 `ClusterQueue` 编入同一个 Cohort，在业务低谷期自动允许兄弟团队借用闲置算力，将集群整体 GPU 利用率拉升至 85% 以上；
 > 3. **在抢占收回层配套无损降级**：当原属部门提交任务时，触发确定性抢占状态机，精准剔除借用配额的低优先级任务，并预留 3 分钟优雅停机窗口让训练框架完成 Checkpoint 刷盘，实现企业级算力利用率与研发体验的完美共赢。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对禁止作业中不同 Pod 填错数量申明**：Gang 调度依赖 Workload 准确声明预期 Pod 数量。如果在 PyTorchJob 中期望 64 个节点，但配置失误写成了 65，Kueue 会永远等待第 65 个节点而导致整个作业无限期挂起（Hang）；
 2. **严防抢占抖动（Preemption Churn）**：配置借用策略时，必须配置 `reclaimWithinCohort` 的冷却防抖窗口（Cooldown），避免两个作业在临界点反复互相杀死对方的 Pod，造成网络流量暴增与算力归零；

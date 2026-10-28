@@ -1,5 +1,5 @@
 ---
-title: 面试官：如何设计分布式全局唯一 ID 生成器？（从 Twitter Snowflake 到 2024 RFC 9562 UUIDv7、时钟回拨容死与 B+ 树页分裂物理本质）
+title: "分布式全局唯一 ID 生成器架构演进：Twitter Snowflake、2024 RFC 9562 UUIDv7 与 B+ 树页分裂本质"
 description: 深度拆解分布式全局唯一 ID（Distributed Unique ID）的技术演进与底层物理考量（参考 Alex Xu 系统设计精要第 7 章及 Twitter Snowflake、百度 UidGenerator、美团 Leaf 与 2024 年正式发布的 IETF RFC 9562）：剖析为何单库自增与 UUIDv4 在大规模分布式下必然撞墙？从 InnoDB 聚簇索引底层推导 UUIDv4 随机插入引发的“B+ 树页分裂与缓存穿透”物理惨剧；推导 Snowflake 64 位空间分配与单机 409 万 QPS 极限；并对 NTP 时钟回拨（Clock Drift）提出毫秒追平与未来借时的容死设计，最终演进至免协调中心、原生趋势递增的现代化 UUIDv7 标准。
 publishedAt: 2026-05-03
 series: "资深工程师面试深度拆解"
@@ -17,11 +17,11 @@ featured: false
 
 在各大头部互联网大厂的资深架构师面试中，面试官常常通过以下连环追问层层剥离候选人的工程功底：
 
-> **面试官提问：**  
-> “我们现在要为日均新增 10 亿笔订单的交易核心设计分布式唯一 ID 生成器。  
-> 1. **主键危机**：很多初级开发者直接用 Java 的 `UUID.randomUUID()`（UUIDv4）作为主键存入 MySQL。当单表数据量达到 1,000 万行以后，为什么写入 TPS 会从最初的 8,000 骤降到几百？请画出 InnoDB B+ 树底层的物理变化。  
-> 2. **Snowflake 极限精算**：画出 Twitter Snowflake 算法的 64 位结构。41 位时间戳能用多少年？12 位序列号能支撑多高的单机发号 QPS？如果某一毫秒内发号请求超过了 4096 次，算法应该如何处理？  
-> 3. **时钟回拨灾难**：分布式服务器运行久了物理时钟都会偏斜，NTP 守护进程会自动调整时间。如果时钟突然被往回调了 100 毫秒（Clock Rollback），Snowflake 会发生什么？如果你只会在代码里抛出 `Clock moved backwards! Refusing to generate id` 异常，在线交易将在 100ms 内全部中断报错，你如何从工程上消除这一脆弱性？  
+> **核心架构挑战：**
+> “我们现在要为日均新增 10 亿笔订单的交易核心设计分布式唯一 ID 生成器。
+> 1. **主键危机**：很多初级开发者直接用 Java 的 `UUID.randomUUID()`（UUIDv4）作为主键存入 MySQL。当单表数据量达到 1,000 万行以后，为什么写入 TPS 会从最初的 8,000 骤降到几百？请画出 InnoDB B+ 树底层的物理变化。
+> 2. **Snowflake 极限精算**：画出 Twitter Snowflake 算法的 64 位结构。41 位时间戳能用多少年？12 位序列号能支撑多高的单机发号 QPS？如果某一毫秒内发号请求超过了 4096 次，算法应该如何处理？
+> 3. **时钟回拨灾难**：分布式服务器运行久了物理时钟都会偏斜，NTP 守护进程会自动调整时间。如果时钟突然被往回调了 100 毫秒（Clock Rollback），Snowflake 会发生什么？如果你只会在代码里抛出 `Clock moved backwards! Refusing to generate id` 异常，在线交易将在 100ms 内全部中断报错，你如何从工程上消除这一脆弱性？
 > 4. **新一代工业标准**：Snowflake 最大的运维负担在于需要分配和维护每个节点的机器 ID（Worker ID），极易发生机房部署冲突。2024 年正式发布的 **IETF RFC 9562 UUIDv7** 规范带来了什么颠覆性升级？”
 
 ---

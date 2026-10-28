@@ -1,7 +1,8 @@
 ---
-title: "面试官：AI 大模型时代，K8s 如何安全高效切分一张 80GB 的 A100/H100 显卡？（从 NVIDIA Device Plugin、CUDA 截获、MIG 硬件切片到 DRA 动态资源分配）"
+title: "Kubernetes GPU 虚拟化与动态资源调度：NVIDIA Device Plugin、MIG 硬件切片与 DRA 架构"
 description: "一张昂贵的 80GB A100/H100 显卡跑小型推理模型导致 70% 显存严重闲置，企业如何实现多任务高效复用？深度拆解 Kubernetes 调度异构算力的底层链路：为什么原生 NVIDIA Device Plugin 只支持整卡独占调度，声明 nvidia.com/gpu: 0.5 会直接报错？全面剖析软件级虚拟化（CUDA Driver 拦截劫持显存与时间片轮转）的性能与隔离缺陷；硬核推导 NVIDIA MIG（多实例 GPU）在硬件物理层实现 SM 计算核心与显存独立切片的工业架构；终极揭秘 Kubernetes 1.30+ 官方革命性特性 DRA（Dynamic Resource Allocation）如何彻底重塑 AI 复杂拓扑（NVLink、RDMA 亲和性）编排未来。"
 publishedAt: "2026-06-26"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "GPU虚拟化", "NVIDIA", "MIG", "DRA", "大模型", "AI算力编排", "CUDA", "面试题", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“万元显卡算力闲置”到“GPU 硬件级虚拟化切分”的连环追问
+## 一、 核心痛点与演进背景：从“万元显卡算力闲置”到“GPU 硬件级虚拟化切分”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "我们公司采购了一批 80GB 的 NVIDIA A100 显卡搭建 AI 推理集群。
    为什么开发在 Pod YAML 里声明 resources.requests: { 'nvidia.com/gpu': '0.5' } 时，Kubernetes 会直接拒绝报错？
    如果多个轻量推理 Pod 想要共享同一张物理 GPU，业界有哪些主流切分方案？
@@ -65,7 +66,7 @@ sequenceDiagram
     Plugin->>Klet: 2. 通过 gRPC Register() 注册资源名称: "nvidia.com/gpu"
     Plugin->>Klet: 3. ListAndWatch() 上报可用设备列表: IDs: ["GPU-0-UUID"] (容量: 1)
     Klet->>API: 4. PATCH 节点容量: status.capacity["nvidia.com/gpu"] = 1
-    
+
     Note over API,Sched: 业务提交 Pod: resources.requests: {"nvidia.com/gpu": 1}
     Sched->>API: 5. 调度成功，将 Pod 绑定至该节点
 
@@ -231,7 +232,7 @@ flowchart LR
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ```mermaid
 mindmap
@@ -255,7 +256,7 @@ mindmap
 
 ### 6.1 现场 2 分钟极速电梯演讲（高分答题模板）
 
-> **面试官问：**“AI 大模型时代，K8s 如何安全高效切分一张 80GB 的 A100/H100 显卡？软件虚拟化与 MIG 有何区别？DRA 解决了什么？”
+> **核心架构问题：**“AI 大模型时代，K8s 如何安全高效切分一张 80GB 的 A100/H100 显卡？软件虚拟化与 MIG 有何区别？DRA 解决了什么？”
 
 **高分应答结构（递进式穿透）：**
 
@@ -270,7 +271,7 @@ mindmap
 > **第三层（官方架构终局：DRA 动态资源分配）：**
 > 在大模型训练时代，标量资源模型已彻底破产，因为它无法表达‘4 张卡必须具有 NVLink 全互联，且与同一 NUMA 节点的 RoCE 网卡绑定’的拓扑需求。Kubernetes 1.30+ 推行了 **DRA（Dynamic Resource Allocation）**，引入类似于存储 PVC 的 **`ResourceClaim`** 抽象，并结合结构化参数让标准调度器直接能够根据 GPU 的 NVLink 拓扑矩阵做出毫秒级最优硬件装箱决策，彻底重塑了 AI 算力底座的编排标准。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对不要说“用 cgroups 可以直接限制 GPU 显存”**：Linux 内核 cgroups 目前只能限制宿主机 CPU、普通内存和磁盘 IO，GPU 显存必须依赖 NVIDIA 专有驱动体系；
 2. **明确 MIG 的硬件门槛**：MIG 是一项硬件特性，只在 NVIDIA Ampere 及之后的高端数据中心卡（A100、A30、H100）上支持；普通的消费级显卡（如 RTX 3090/4090）或老旧的 T4/V100 **完全不支持 MIG**，只能依赖软件截获方案；

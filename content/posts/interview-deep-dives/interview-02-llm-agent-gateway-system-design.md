@@ -1,5 +1,5 @@
 ---
-title: 面试官：如何设计支撑千万级流量的 LLM 智能体网关？（从 Radix Tree 前缀缓存路由、流式 SSE 背压到 Token 预算动态拦截）
+title: "支撑千万级流量的 LLM 智能体网关架构：从 Radix Tree 前缀缓存路由、流式 SSE 背压到 Token 预算动态拦截"
 description: 深度拆解大模型智能体网关的核心系统设计：为何传统 Envoy/Kong 轮询会导致 KV Cache 击穿与显存雪崩？剖析基于 Radix Tree 的前缀缓存感知路由、流式 SSE 反应式背压与僵尸连接熔断、以及两阶段预扣对账的 Token Leaky Bucket 限流引擎。
 publishedAt: 2026-04-18
 series: "资深工程师面试深度拆解"
@@ -17,7 +17,7 @@ featured: false
 
 在海内外顶尖 AI 基础设施团队（如 OpenAI、Anthropic、ByteDance、DeepSeek）的系统设计面试中，面试官往往开门见山抛出这个核心痛点：
 
-> **面试官提问：**  
+> **核心架构挑战：**
 > “我们公司正在将成百上千个企业级 Agent（包含长 System Prompt、RAG 向量检索上下文、多轮工具调用）接入统一网关。底层挂载了数百张 H100/H800 组成的 vLLM 推理集群。为什么直接套用公司现成的 Envoy 或 Kong 网关后，首字延迟（TTFT）极高，集群 GPU 利用率居高不下，偶发大面积 OOM 和 429 报错？如果由你从零设计一个 LLM 专属智能体网关，你的核心架构与调度算法是什么？”
 
 大部分候选人的回答往往停留在“增加 Redis 缓存 API 返回”、“加一个 Nginx 负载均衡”、“按用户 IP 做 Rate Limit”等泛泛之谈，这在资深工程师面试中会被直接判定为**不理解现代 LLM 推理的物理本质与瓶颈约束**。
@@ -111,8 +111,8 @@ $$\text{Score}(i) = \alpha \cdot \frac{\text{CachedTokens}_i}{\text{TotalPromptT
 - $\text{PendingTokens}_i$：节点 $i$ 当前正在排队和 Decode 的在途 Token 估算量。
 - $\alpha, \beta$：权重调优参数（通常 $\alpha \in [1.0, 1.5]$，$\beta \in [0.3, 0.6]$）。
 
-> **关键面试避坑点（Tie-Breaking）：**  
-> 当一个全新 Prompt 模板第一次进入集群（冷启动）时，所有 GPU 节点的 `CachedTokens` 均为 0，评分相同。若随意分配给第一台机器，会导致该节点显存被挤爆，随后的请求又全部陷入颠簸。  
+> **关键面试避坑点（Tie-Breaking）：**
+> 当一个全新 Prompt 模板第一次进入集群（冷启动）时，所有 GPU 节点的 `CachedTokens` 均为 0，评分相同。若随意分配给第一台机器，会导致该节点显存被挤爆，随后的请求又全部陷入颠簸。
 > **正确方案：** 在评分并列（Tie）时，退化为**对前缀首块哈希（Prefix Root Hash）做一致性哈希（Consistent Hashing）**，将该模板的所有后续请求固定引导至特定的 GPU 节点组，确保冷启动后迅速形成热点亲和。
 
 ---
@@ -277,4 +277,3 @@ ALL TESTS PASSED SUCCESSFULLY.
 1. **vLLM: Efficient Memory Management for Large Language Models with PagedAttention (SOSP 2023)** - PagedAttention 虚拟内存块分配与前缀缓存机制。
 2. **SGLang: Efficient Execution of Structured Language Model Programs (ICML 2024)** - RadixAttention 树状缓存结构与前缀亲和路由算法设计。
 3. **Envoy Proxy Gateway Documentation: LLM Filter & Connection Buffering** - 高性能反向代理中的反应式背压与 Socket 水位线控制规范。
-

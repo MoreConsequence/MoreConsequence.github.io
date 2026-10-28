@@ -1,5 +1,5 @@
 ---
-title: 面试官：Cilium 为什么能彻底干掉 kube-proxy？深入 eBPF sockops 与 sk_msg 套接字直通原理
+title: "Cilium 彻底旁路 kube-proxy 的内核机制：深入 eBPF sockops 与 sk_msg 套接字直通原理"
 description: 深度拆解云原生网络与内核高性能转发的核心面试考点：为何传统 iptables 在数万 Service 下遭遇线性 O(N) 规则匹配与 xtables_lock 全局锁雪崩？剖析 Cilium 如何通过 cgroup/connect4 实现系统调用级 L4 负载均衡，以及如何利用 eBPF sockops 与 sk_msg 彻底绕过整个 TCP/IP 协议栈与 veth 网卡驱动，实现近乎 IPC 级的套接字直通。
 publishedAt: 2026-04-20
 series: "资深工程师面试深度拆解"
@@ -17,7 +17,7 @@ featured: false
 
 在海内外顶级云原生与基础架构团队（如 Google Cloud、字节跳动、AWS、Cisco）的面试中，关于 Kubernetes 网络数据面的高阶问题几乎必考：
 
-> **面试官提问：**  
+> **核心架构挑战：**
 > “在超大规模 Kubernetes 集群（比如 5000 个节点，5 万个 Service，20 万个 Pod）中，传统的 `kube-proxy` 会暴露哪些致命瓶颈？为什么说即便切换到 IPVS 模式，同节点 Pod 间通信依然不是最优解？Cilium 是如何利用 eBPF 的 `cgroup/connect4`、`sockops` 和 `sk_msg` 彻底重构网络路径的？请在内核数据结构层面画出完整的数据流转对比。”
 
 浅尝辄止的回答通常只说出“iptables 慢，eBPF 快”、“eBPF 用哈希表实现了 $O(1)$ 查找”。在资深/架构级面试中，面试官期待的是你对 **Linux 内核协议栈漫长路径的解构**、**`struct sock` 与 `sk_buff` 的生命周期成本**、以及 **内核锁争享与 Conntrack 溢出** 的本质理解。
@@ -269,4 +269,3 @@ ALL TESTS PASSED SUCCESSFULLY.
 1. **Linux Kernel Source (`net/core/sock_map.c`)** - `BPF_MAP_TYPE_SOCKHASH` 与 `bpf_msg_redirect_hash()` 内核实现。
 2. **Cilium Documentation: Kubernetes Without kube-proxy** - 基于 eBPF 的 Host-Routing 与 Socket-Level LoadBalancing 规范。
 3. **Daniel Borkmann (Linux Plumbers Conference)** - *Accelerating Envoy and Service Mesh with eBPF and Sockmap*.
-

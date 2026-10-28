@@ -1,7 +1,8 @@
 ---
-title: "面试官：Flannel、Calico 与 Cilium 底层通信有什么本质区别？为什么 Cilium eBPF 性能远超 iptables？（从 VXLAN 封包、BGP 路由到 sockops 旁路加速）"
+title: "Kubernetes CNI 网络模型与插件演进：Flannel、Calico BGP 与 Cilium eBPF 内核转发"
 description: "跨节点容器通信如何做到无需 NAT 扁平互联？深度拆解 Kubernetes 网络三大金科玉律与 CNI 插件规范（veth-pair 与 Linux Bridge 链路）；横向推导 Flannel UDP/VXLAN 封包解包损耗与 VTEP 转发模型；剖析 Calico 基于 BGP 纯三层路由广播与路由反射器（Route Reflector）的无损网络架构；终极揭秘 Cilium 如何凭借 eBPF 彻底终结 iptables/IPVS 的规则扫描瓶颈，利用 sockops 在套接字层直接短路转发，释放千万级 PPS 极致性能。"
 publishedAt: "2026-06-17"
+updatedAt: "2026-10-29"
 tags: ["Kubernetes", "CNI", "Flannel", "Calico", "Cilium", "eBPF", "VXLAN", "BGP", "Linux网络", "面试题", "系统设计"]
 category: "系统架构设计与资深实战"
 draft: false
@@ -13,10 +14,10 @@ series: "Kubernetes 架构内核与生产实战"
 
 ---
 
-## 一、 面试现场：从“三大网络铁律”到“eBPF 旁路加速”的连环追问
+## 一、 核心痛点与演进背景：从“三大网络铁律”到“eBPF 旁路加速”的连环追问
 
 ```text
-面试官提问：
+核心架构挑战：
   "Kubernetes 是如何实现跨主机容器通信不用做端口映射和 NAT 的？
    Flannel、Calico 和 Cilium 底层转发数据包的物理链路有什么根本区别？
    为什么在万级 Pod 的超大规模集群中，传统的 iptables 会成为网络性能杀手，而 Cilium 的 eBPF sockops 却能实现纳秒级套接字短路转发？"
@@ -83,13 +84,13 @@ sequenceDiagram
 
     Kubelet->>CNI: 1. 执行 CNI 插件二进制，传入环境变量 (CNI_COMMAND="ADD", CNI_CONTAINERID, CNI_NETNS)
     Note over CNI: 解析网络配置文件 /etc/cni/net.d/*.conflist
-    
+
     CNI->>HostNet: 2. 在宿主机创建虚拟以太网卡对 (veth-pair: 一端叫 vethxxx)
     CNI->>PodNet: 3. 将 veth-pair 的另一端移动到容器命名空间，并重命名为 eth0
-    
+
     CNI->>PodNet: 4. 从 IPAM 地址池中分配合法 Pod IP (如 10.244.1.25/24) 赋给 eth0
     CNI->>PodNet: 5. 在容器内配置默认路由: default via 169.254.1.1 (或网桥网关) dev eth0
-    
+
     CNI->>HostNet: 6. 在宿主机打通路由表 / 挂载 eBPF 字节码
     CNI-->>Kubelet: 7. 返回 JSON 格式结果 (IP 分配成功、网关、路由)
 ```
@@ -315,7 +316,7 @@ stateDiagram-v2
 
 ---
 
-## 七、 面试通关复盘与架构师高分回答模板
+## 七、 架构决策复盘与生产级核心要点总结
 
 ```mermaid
 mindmap
@@ -341,7 +342,7 @@ mindmap
 
 ### 7.1 现场 2 分钟极速电梯演讲（高分答题模板）
 
-> **面试官问：**“Flannel、Calico 与 Cilium 底层通信有什么本质区别？为什么 Cilium eBPF 性能远超 iptables？”
+> **核心架构问题：**“Flannel、Calico 与 Cilium 底层通信有什么本质区别？为什么 Cilium eBPF 性能远超 iptables？”
 
 **高分应答结构（递进式穿透）：**
 
@@ -356,7 +357,7 @@ mindmap
 > **第三层（sockops 套接字层短路黑科技）：**
 > 在同节点 Pod 通信场景中，传统网络必须经历两次完整 TCP/IP 协议栈遍历（进入 veth $\to$ 宿主机网络栈 $\to$ 另一端 veth）。Cilium 利用 eBPF `sockops` 程序拦截 Socket 的连接建立，将发送方 Socket 的发包缓冲区（`sk_buff`）直接重定向并写入接收方 Socket 的接收队列，**在第四层套接字层直接短路短接，物理上跳过了整个 IP 层与二层网络协议栈**，延迟降至微秒级，PPS 突破千万级别。”
 
-### 7.2 生产面试关键避坑守则
+### 7.2 生产级架构关键避坑守则
 
 1. **绝对不要忽视 MTU 设置陷阱**：在使用 VXLAN 等 Overlay 方案时，物理网卡 MTU 若为 1500，容器内 MTU 必须显式下调为 1450（预留 50 字节报头）。否则大报文（如 SQL 大查询、文件流）会在物理链路被静默分片或丢弃，导致偶发性连接挂死；
 2. **点明 iptables 并发写锁危机**：iptables 规则更新是非增量的，修改单条规则需要全量提取、替换内核内存并加互斥锁，万级 Service 下每次发布都会导致数十毫秒的网络转发冻结与抖动；

@@ -1,7 +1,8 @@
 ---
-title: "面试官：如何设计超大规模分布式死锁检测与悲观事务引擎？（从等待图环路检测、Snooping 到死锁预防 Wound-Wait 算法）"
+title: "超大规模分布式死锁检测与悲观事务引擎：等待图环路检测、Snooping 与 Wound-Wait 算法"
 description: "深入剖析分布式数据库（如 TiDB、CockroachDB、Google Spanner）在悲观两阶段锁（2PL）高并发事务下的核心痛点：分布式死锁。为什么简单的“锁超时（Lock Timeout）”在金融级场景不可接受？中心化检测器如何基于有向等待图（Wait-For Graph）与 Tarjan 强连通分量算法毫秒级斩断死锁环？详解两大经典死锁预防算法 Wait-Die vs Wound-Wait 的数学公理、单调事务时间戳优先级与级联回滚成本精算。"
 publishedAt: "2026-06-13"
+updatedAt: "2026-10-29"
 tags: ["系统设计", "面试题", "分布式数据库", "死锁检测", "Wound-Wait", "两阶段锁", "事务引擎", "高并发"]
 category: 面试深度拆解
 draft: false
@@ -13,10 +14,10 @@ series: "资深工程师面试深度拆解"
 
 ---
 
-## 一、 面试现场：从单机死锁到分布式跨节点死锁死局
+## 一、 核心痛点与演进背景：从单机死锁到分布式跨节点死锁死局
 
 ```text
-面试官提问：
+核心架构挑战：
   "在一个大规模分布式数据库（如 TiDB / CockroachDB / Spanner）中，采用悲观两阶段锁（2PL）保证事务严格串行化。
    多个并发事务涉及跨网络分片、跨数据中心的复杂多行更新操作。
    请设计一套高吞吐、低开销的分布式死锁治理引擎，说明死锁是如何跨节点形成的，并比较检测法与预防法的取舍。"
@@ -36,13 +37,13 @@ sequenceDiagram
 
     Note over T1,N1: T1 成功获取 Node 1 上的行记录 Row A 的写锁
     T1->>N1: Lock Row A (Granted)
-    
+
     Note over T2,N2: T2 成功获取 Node 2 上的行记录 Row B 的写锁
     T2->>N2: Lock Row B (Granted)
 
     Note over T1,N2: 跨节点死锁形成：T1 试图更新 Row B，进入等待队列
     T1->>N2: Lock Row B (Blocked! 等待 T2 释放)
-    
+
     Note over T2,N1: T2 试图更新 Row A，进入等待队列
     T2->>N1: Lock Row A (Blocked! 等待 T1 释放)
 
